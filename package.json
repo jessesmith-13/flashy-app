@@ -8,7 +8,10 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test": "vitest --config vite.config.ts --project tsconfig.vitest.json"
+    "test": "vitest",
+    "test:run": "vitest run --config vite.config.ts --project tsconfig.vitest.json",
+    "test:coverage": "vitest run --coverage --config vite.config.ts --project tsconfig.vitest.json",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@radix-ui/react-alert-dialog": "^1.1.15",
