@@ -5,20 +5,9 @@
     { "path": "./tsconfig.node.json" }
   ],
   "compilerOptions": {
-    "target": "ESNext",
-    "module": "ESNext",
-    "moduleResolution": "bundler",
-    "jsx": "react-jsx",
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-    "allowJs": false,
-    "esModuleInterop": true,
+    "types": ["vitest", "vitest/globals", "node"],
     "skipLibCheck": true,
-    "noEmit": true,
-    "baseUrl": "./src",
-    "paths": {
-      "@/*": ["*"]
-    }
+    "noEmit": true
   },
-  "include": ["src", "hooks", "utils"]
+  "include": ["vitest.setup.ts", "src", "hooks", "utils"]
 }

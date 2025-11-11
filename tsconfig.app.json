@@ -5,7 +5,7 @@
     "useDefineForClassFields": true,
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "module": "ESNext",
-    "types": ["vite/client"],
+    "types": ["vite/client", "vitest/globals"],
     "skipLibCheck": true,
     "composite": true,
     "resolveJsonModule": true,
@@ -16,21 +16,23 @@
     "paths": {
       "@/*": ["*"]
     },
-
-    /* Bundler mode */
     "moduleResolution": "bundler",
     "allowSyntheticDefaultImports": true,
     "verbatimModuleSyntax": false,
     "moduleDetection": "force",
     "noEmit": false,
     "jsx": "react-jsx",
-
-    /* Linting */
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true,
-    "noUncheckedSideEffectImports": true
+    "noFallthroughCasesInSwitch": true
   },
-  "include": ["src", "store", "hooks", "utils"]
+  "include": [
+    "src",
+    "store",
+    "hooks",
+    "utils",
+    "vite.config.ts",
+    "vitest.setup.ts"
+  ]
 }
