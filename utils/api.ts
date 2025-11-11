@@ -1,6 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { projectId, publicAnonKey } from './supabase/info'
 import { createClient } from '@supabase/supabase-js'
+import type { CreateCardInput, UpdateCardInput } from './api.types'
+import type { Card } from '../store/useStore'
 
 const API_BASE = `https://${projectId}.supabase.co/functions/v1/make-server-8a1502a9`
 
@@ -66,11 +68,14 @@ export const resetPassword = async (email: string) => {
   return data
 }
 
-export const signOut = async () => {
-  const { error } = await supabaseClient.auth.signOut()
-  
-  if (error) {
-    throw new Error(error.message)
+// utils/api.ts
+export async function signOut() {
+  try {
+    // Attempt sign out, even if no session
+    const { error } = await supabaseClient.auth.signOut()
+    if (error) throw error
+  } catch (err) {
+    console.warn('Supabase signOut warning:', err)
   }
 }
 
@@ -78,7 +83,9 @@ export const getSession = async () => {
   const { data, error } = await supabaseClient.auth.getSession()
   
   if (error) {
-    throw new Error(error.message)
+    // Don't throw for missing/invalid refresh tokens - just return null
+    console.log('Session check error (this is normal for logged out users):', error.message)
+    return null
   }
 
   return data.session
@@ -314,33 +321,33 @@ export const fetchCards = async (accessToken: string, deckId: string) => {
 export const createCard = async (
   accessToken: string,
   deckId: string,
-  card: { front: string; back: string; cardType: string; options?: string[]; acceptedAnswers?: string[]; frontImageUrl?: string; backImageUrl?: string }
-) => {
+  cardData: CreateCardInput,
+): Promise<Card> => {
   const response = await fetch(`${API_BASE}/decks/${deckId}/cards`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${accessToken}`,
     },
-    body: JSON.stringify(card),
+    body: JSON.stringify(cardData),
   })
 
-  const data = await response.json()
-  
+  const result = await response.json()
+
   if (!response.ok) {
-    console.error('Failed to create card:', data.error)
-    throw new Error(data.error || 'Failed to create card')
+    console.error('Failed to create card:', result.error)
+    throw new Error(result.error || 'Failed to create card')
   }
 
-  return data.card
+  return result.card
 }
 
 export const updateCard = async (
   accessToken: string,
   deckId: string,
   cardId: string,
-  updates: Partial<{ front: string; back: string; cardType: string; options?: string[]; acceptedAnswers?: string[]; favorite?: boolean; ignored?: boolean; frontImageUrl?: string; backImageUrl?: string }>
-) => {
+  updates: UpdateCardInput
+): Promise<Card> => {
   const response = await fetch(`${API_BASE}/decks/${deckId}/cards/${cardId}`, {
     method: 'PUT',
     headers: {
@@ -350,14 +357,14 @@ export const updateCard = async (
     body: JSON.stringify(updates),
   })
 
-  const data = await response.json()
-  
+  const result = await response.json()
+
   if (!response.ok) {
-    console.error('Failed to update card:', data.error)
-    throw new Error(data.error || 'Failed to update card')
+    console.error('Failed to update card:', result.error)
+    throw new Error(result.error || 'Failed to update card')
   }
 
-  return data.card
+  return result.card
 }
 
 export const deleteCard = async (

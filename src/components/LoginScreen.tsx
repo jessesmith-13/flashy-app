@@ -74,14 +74,16 @@ export function LoginScreen() {
         
         setCurrentView('decks')
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Login error:', err)
-      console.error('Error message:', err.message)
-      const errorMessage = err.message || 'Failed to login'
-      if (errorMessage.includes('Invalid login credentials')) {
-        setError('Invalid email or password. Please check your credentials or create a new account below.')
-      } else {
-        setError(errorMessage)
+      if (err instanceof Error) {
+        console.error('Error message:', err.message)
+        const errorMessage = err.message || 'Failed to login'
+        if (errorMessage.includes('Invalid login credentials')) {
+          setError('Invalid email or password. Please check your credentials or create a new account below.')
+        } else {
+          setError(errorMessage)
+        }
       }
     } finally {
       setLoading(false)
@@ -94,10 +96,12 @@ export function LoginScreen() {
       setLoading(true)
       await api.signInWithGoogle()
       // The redirect will be handled by Supabase
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Google sign-in error:', err)
-      setError(err.message || 'Failed to sign in with Google')
-      setLoading(false)
+      if (err instanceof Error) {
+        setError(err.message || 'Failed to sign in with Google')
+        setLoading(false)
+      }
     }
   }
 
@@ -114,9 +118,11 @@ export function LoginScreen() {
         setResetSuccess(false)
         setResetEmail('')
       }, 3000)
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Password reset error:', err)
-      setError(err.message || 'Failed to send password reset email')
+      if (err instanceof Error) {
+        setError(err.message || 'Failed to send password reset email')
+      }
     } finally {
       setLoading(false)
     }
@@ -148,15 +154,17 @@ export function LoginScreen() {
       try {
         await api.signUp(testEmail, testPassword, testName)
         console.log('Test account created successfully')
-      } catch (signupErr: any) {
-        // Account already exists, which is fine - we'll just login
-        const errorMsg = signupErr.message || ''
-        if (errorMsg.toLowerCase().includes('already') || errorMsg.toLowerCase().includes('registered')) {
-          console.log('Test account already exists, proceeding to login')
-        } else {
-          console.log('Signup error (non-critical):', errorMsg)
+      } catch (signupErr: unknown) {
+        if (signupErr instanceof Error) {
+          // Account already exists, which is fine - we'll just login
+          const errorMsg = signupErr.message || ''
+          if (errorMsg.toLowerCase().includes('already') || errorMsg.toLowerCase().includes('registered')) {
+            console.log('Test account already exists, proceeding to login')
+          } else {
+            console.log('Signup error (non-critical):', errorMsg)
+          }
+          // Don't throw - continue to login regardless
         }
-        // Don't throw - continue to login regardless
       }
 
       // Now login with test account
@@ -200,9 +208,11 @@ export function LoginScreen() {
         
         setCurrentView('decks')
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Test login error:', err)
-      setError('Failed to create/login test account: ' + err.message)
+      if (err instanceof Error) {
+        setError('Failed to create/login test account: ' + err.message)
+      }
     } finally {
       setLoading(false)
     }
