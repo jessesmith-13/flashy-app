@@ -1,5 +1,5 @@
-import { Button } from '../ui/button'
-import { useStore } from '../../store/useStore'
+import { Button } from '../../ui/button'
+import { useStore } from '../../../store/useStore'
 import { Zap, Brain, Users, Trophy, Sparkles, ArrowRight, Check, Moon, Sun } from 'lucide-react'
 import { useEffect, useState } from 'react'
 

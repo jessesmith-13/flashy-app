@@ -41,7 +41,7 @@ export function ShareDeckDialog({
       const fullUrl = `${window.location.origin}/shared/${result.shareId}`
       setShareUrl(fullUrl)
       toast.success('Share link created!')
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Failed to create share link:', error)
       toast.error('Failed to create share link')
     } finally {

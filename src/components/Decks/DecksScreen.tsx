@@ -1,27 +1,27 @@
 import { useEffect, useState } from 'react'
-import { useStore } from '../../store/useStore'
-import * as api from '../../utils/api'
-import { AppLayout } from './AppLayout'
-import { Button } from '../ui/button'
-import { Pagination } from './Pagination'
+import { useStore, Deck } from '../../../store/useStore'
+import * as api from '../../../utils/api'
+import { AppLayout } from '../Layout/AppLayout'
+import { Button } from '../../ui/button'
+import { Pagination } from '../Pagination/Pagination'
 import { Plus, BookOpen, GripVertical, Trash2, Star, CheckCircle, ArrowUpDown, Search, X, Filter, FileEdit, Crown, Download, User, Share2, Upload } from 'lucide-react'
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog'
-import { Input } from '../ui/input'
-import { Label } from '../ui/label'
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog'
-import { Tabs, TabsList, TabsTrigger } from '../ui/tabs'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../../ui/dialog'
+import { Input } from '../../ui/input'
+import { Label } from '../../ui/label'
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../../ui/alert-dialog'
+import { Tabs, TabsList, TabsTrigger } from '../../ui/tabs'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../ui/select'
 import { toast } from 'sonner'
-import { DECK_CATEGORIES } from '../../utils/categories'
-import { ShareDeckDialog } from './ShareDeckDialog'
+import { DECK_CATEGORIES } from '../../../utils/categories'
+import { ShareDeckDialog } from '../ShareDeckDialog'
 
 type SortOption = 'alphabetical-asc' | 'alphabetical-desc' | 'newest' | 'oldest' | 'recently-studied' | 'most-studied' | 'least-studied'
 
-import { UpgradeModal } from './UpgradeModal'
-import { canCreateDeck, isPremiumUser, canPublishToCommunity } from '../../utils/subscription'
-import { ColorPicker } from './ColorPicker'
-import { EmojiPicker } from './EmojiPicker'
-import { useIsSuperuser } from '../../utils/userUtils'
+import { UpgradeModal } from '../UpgradeModal'
+import { canCreateDeck, canPublishToCommunity } from '../../../utils/subscription'
+import { ColorPicker } from '../ColorPicker'
+import { EmojiPicker } from '../EmojiPicker'
+import { useIsSuperuser } from '../../../utils/userUtils'
 
 export function DecksScreen() {
   const { user, accessToken, decks, setDecks, addDeck, updateDeck, removeDeck, setCurrentView, setSelectedDeckId, userAchievements, setUserAchievements, studySessions } = useStore()
@@ -44,7 +44,7 @@ export function DecksScreen() {
   const [filterCategory, setFilterCategory] = useState<string>('all')
   const [filterSubtopic, setFilterSubtopic] = useState<string>('all')
   const [editDialogOpen, setEditDialogOpen] = useState(false)
-  const [editingDeck, setEditingDeck] = useState<any>(null)
+  const [editingDeck, setEditingDeck] = useState<Deck | null>(null)
   const [editDeckName, setEditDeckName] = useState('')
   const [editEmoji, setEditEmoji] = useState('')
   const [editColor, setEditColor] = useState('')
@@ -54,9 +54,9 @@ export function DecksScreen() {
   const [currentPage, setCurrentPage] = useState(1)
   const ITEMS_PER_PAGE = 12
   const [shareDialogOpen, setShareDialogOpen] = useState(false)
-  const [sharingDeck, setSharingDeck] = useState<any>(null)
+  const [sharingDeck, setSharingDeck] = useState<Deck | null>(null)
   const [publishDialogOpen, setPublishDialogOpen] = useState(false)
-  const [publishingDeck, setPublishingDeck] = useState<any>(null)
+  const [publishingDeck, setPublishingDeck] = useState<Deck | null>(null)
   const [publishing, setPublishing] = useState(false)
 
   useEffect(() => {
@@ -202,7 +202,7 @@ export function DecksScreen() {
     }
   }
 
-  const handleOpenEditDialog = (e: React.MouseEvent, deck: any) => {
+  const handleOpenEditDialog = (e: React.MouseEvent, deck: Deck) => {
     e.stopPropagation()
     setEditingDeck(deck)
     setEditDeckName(deck.name)
@@ -332,8 +332,8 @@ export function DecksScreen() {
       // Publish to community using the correct API format
       const result = await api.publishDeckToCommunity(accessToken, {
         deckId: publishingDeck.id,
-        category: publishingDeck.category,
-        subtopic: publishingDeck.subtopic,
+        category: publishingDeck.category ?? '',
+        subtopic: publishingDeck.subtopic ?? '',
       })
 
       // Update local deck with community reference
@@ -348,9 +348,13 @@ export function DecksScreen() {
       }
       setPublishDialogOpen(false)
       setPublishingDeck(null)
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Failed to publish deck:', error)
-      toast.error(error.message || 'Failed to publish deck to community')
+      let message = 'Failed to publish deck to community'
+      if (error instanceof Error) {
+        message = error.message
+      }
+      toast.error(message)
     } finally {
       setPublishing(false)
     }

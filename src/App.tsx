@@ -3,15 +3,16 @@ import { useEffect, useState } from 'react'
 import { useStore } from '../store/useStore'
 import * as api from '../utils/api'
 import './App.css'
-import LandingPage from './components/LandingPage'
+import LandingPage from './components/Landing/LandingPage'
 import { LoginScreen } from './components/LoginScreen'
-import { DecksScreen } from './components/DecksScreen'
+import { DecksScreen } from './components/Decks/DecksScreen'
 import { UpgradeModal } from './components/UpgradeModal'
+import { DeckDetailScreen } from './components/Decks/DeckDetail/DeckDetailScreen'
 import { Toaster } from './ui/sonner'
 import { useAchievementTracking } from '../hooks/useAchievements'
 
 export default function App() {
-  const { currentView, setAuth, setCurrentView, updateUser, setFriends, setFriendRequests, darkMode } = useStore()
+  const { currentView, setAuth, setCurrentView, setFriends, setFriendRequests, darkMode } = useStore()
   const [sharedDeckId, setSharedDeckId] = useState<string | null>(null)
   
   // Track achievements
@@ -88,6 +89,7 @@ export default function App() {
       {currentView === 'landing' && <LandingPage />}
       {currentView === 'login' && <LoginScreen />}
       {currentView === 'decks' && <DecksScreen />}
+      {currentView === 'deck-detail' && <DeckDetailScreen />}
       {currentView === 'upgrade' && <UpgradeModal open={true} onOpenChange={(open) => !open && setCurrentView('decks')} />}
       <Toaster position="top-center" richColors />
     </>
