@@ -1,5 +1,4 @@
 import { create } from 'zustand'
-
 export type CardType = 'classic-flip' | 'multiple-choice' | 'type-answer'
 
 export interface Card {
@@ -103,7 +102,7 @@ interface User {
   isBanned?: boolean // User ban status (managed by superuser)
 }
 
-interface AppState {
+export interface AppState {
   // Auth state
   user: User | null
   accessToken: string | null

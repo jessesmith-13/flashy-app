@@ -1,5 +1,5 @@
 import { ReactNode, useState, useEffect } from 'react'
-import { useStore } from '../../store/useStore'
+import { useStore, AppState } from '../../store/useStore'
 import * as api from '../../utils/api'
 import { Button } from '../ui/button'
 import { Home, Users, User, LogOut, Crown, Layers, Settings, Shield, FileText, Mail, Menu } from 'lucide-react'
@@ -56,8 +56,10 @@ export function AppLayout({ children }: AppLayoutProps) {
     }
   }
 
+  type CurrentView = AppState['currentView']
+
   const handleMobileMenuItemClick = (view: string) => {
-    setCurrentView(view as any)
+    setCurrentView(view as CurrentView)
     setMobileMenuOpen(false)
   }
 

@@ -24,3 +24,66 @@ dist-ssr
 *.sw?
 .env
 .env.local
+
+# =========================
+# Node & Vite build files
+# =========================
+node_modules/
+dist/
+.vite/
+.cache/
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+.DS_Store
+
+# =========================
+# TypeScript build artifacts
+# =========================
+*.tsbuildinfo
+*.d.ts.map
+tsconfig.tsbuildinfo
+node_modules/.tmp/
+
+# =========================
+# Coverage & test output
+# =========================
+coverage/
+.vitest/
+.vscode-test/
+*.test-result.json
+
+# =========================
+# IDE & editor files
+# =========================
+.idea/
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+
+# =========================
+# Environment & secrets
+# =========================
+.env
+.env.local
+.env.development.local
+.env.production.local
+.env.test.local
+
+# =========================
+# Supabase / Build artifacts
+# =========================
+.supabase/
+functions/
+*.db
+tmp/
+temp/
+
+# =========================
+# System files
+# =========================
+Thumbs.db
+*.swp
