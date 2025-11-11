@@ -2,7 +2,7 @@
 import { projectId, publicAnonKey } from './supabase/info'
 import { createClient } from '@supabase/supabase-js'
 import type { CreateCardInput, UpdateCardInput } from './api.types'
-import type { Card } from '../store/useStore'
+import type { Card, DeckRating } from '../store/useStore'
 
 const API_BASE = `https://${projectId}.supabase.co/functions/v1/make-server-8a1502a9`
 
@@ -850,7 +850,7 @@ export const rateDeck = async (
   return data
 }
 
-export const getDeckRatings = async (deckId: string, accessToken?: string) => {
+export const getDeckRatings = async (deckId: string, accessToken?: string): Promise<DeckRating> => {
   const response = await fetch(`${API_BASE}/decks/${deckId}/ratings`, {
     headers: {
       Authorization: `Bearer ${accessToken || publicAnonKey}`,

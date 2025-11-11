@@ -8,6 +8,7 @@ import { LoginScreen } from './components/LoginScreen'
 import { DecksScreen } from './components/Decks/DecksScreen'
 import { UpgradeModal } from './components/UpgradeModal'
 import { DeckDetailScreen } from './components/Decks/DeckDetail/DeckDetailScreen'
+import { CommunityScreen } from './components/Community/CommunityScreen'
 import { Toaster } from './ui/sonner'
 import { useAchievementTracking } from '../hooks/useAchievements'
 
@@ -90,6 +91,7 @@ export default function App() {
       {currentView === 'login' && <LoginScreen />}
       {currentView === 'decks' && <DecksScreen />}
       {currentView === 'deck-detail' && <DeckDetailScreen />}
+      {currentView === 'community' && <CommunityScreen />}
       {currentView === 'upgrade' && <UpgradeModal open={true} onOpenChange={(open) => !open && setCurrentView('decks')} />}
       <Toaster position="top-center" richColors />
     </>

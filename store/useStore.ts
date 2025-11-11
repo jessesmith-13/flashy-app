@@ -42,6 +42,23 @@ export interface Deck {
   communityDeckVersion?: number   // Track version of imported community deck
 }
 
+export interface CommunityDeck  extends Deck {
+  featured: boolean
+  downloads: number
+  publishedAt: string
+  updatedAt: string
+  authorId: string
+  author: string
+  cards: Card[]
+  version: number
+}
+
+export interface DeckRating {
+  averageRating: number
+  totalRatings: number
+  userRating: number | null
+}
+
 export interface StudyOptions {
   timedMode: boolean
   continuousShuffle: boolean
