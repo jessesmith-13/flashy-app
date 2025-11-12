@@ -1,6 +1,6 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { vi, describe, it, expect, beforeEach } from 'vitest'
-import { LoginScreen } from '../LoginScreen'
+import { LoginScreen } from '../Auth/Login/LoginScreen'
 import * as api from '../../../utils/api'
 import { useStore } from '../../../store/useStore'
 import type { Session } from '@supabase/supabase-js'

@@ -4,7 +4,8 @@ import { useStore } from '../store/useStore'
 import * as api from '../utils/api'
 import './App.css'
 import LandingPage from './components/Landing/LandingPage'
-import { LoginScreen } from './components/LoginScreen'
+import { LoginScreen } from './components/Auth/Login/LoginScreen'
+import { SignupScreen } from './components/Auth/Signup/SignupScreen'
 import { DecksScreen } from './components/Decks/DecksScreen'
 import { UpgradeModal } from './components/UpgradeModal'
 import { DeckDetailScreen } from './components/Decks/DeckDetail/DeckDetailScreen'
@@ -13,6 +14,7 @@ import { Toaster } from './ui/sonner'
 import { useAchievementTracking } from '../hooks/useAchievements'
 import { StudyScreen } from './components/Study/StudyScreen'
 import { StudyOptionsScreen } from './components/Study/StudyOptionsScreen'
+import { SettingsScreen } from './components/Settings/SettingsScreen'
 
 export default function App() {
   const { currentView, setAuth, setCurrentView, setFriends, setFriendRequests, darkMode } = useStore()
@@ -91,11 +93,13 @@ export default function App() {
     <>
       {currentView === 'landing' && <LandingPage />}
       {currentView === 'login' && <LoginScreen />}
+      {currentView === 'signup' && <SignupScreen />}
       {currentView === 'decks' && <DecksScreen />}
       {currentView === 'deck-detail' && <DeckDetailScreen />}
       {currentView === 'community' && <CommunityScreen />}
       {currentView === 'study' && <StudyScreen />}
       {currentView === 'study-options' && <StudyOptionsScreen />}
+      {currentView === 'settings' && <SettingsScreen />}
       {currentView === 'upgrade' && <UpgradeModal open={true} onOpenChange={(open) => !open && setCurrentView('decks')} />}
       <Toaster position="top-center" richColors />
     </>
