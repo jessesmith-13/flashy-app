@@ -1,4 +1,6 @@
 import { create } from 'zustand'
+import { projectId } from '../utils/supabase/info'
+
 export type CardType = 'classic-flip' | 'multiple-choice' | 'type-answer'
 
 export interface Card {
@@ -42,23 +44,19 @@ export interface Deck {
   communityDeckVersion?: number   // Track version of imported community deck
 }
 
-export interface CommunityDeck  extends Deck {
-  featured: boolean
-  downloads: number
-  publishedAt: string
-  updatedAt: string
-  authorId: string
-  author: string
-  cards: Card[]
-  version: number
-  rating: number
-  ratingCount: number
-}
-
-export interface DeckRating {
-  averageRating: number
-  totalRatings: number
-  userRating: number | null
+// CommunityDeck extends Deck and adds community-specific fields
+export interface CommunityDeck extends Omit<Deck, 'userId' | 'position' | 'favorite' | 'learned' | 'sourceCommunityDeckId' | 'communityPublishedId' | 'communityDeckVersion'> {
+  authorId: string // Replaces userId for community context
+  author: string // Display name of the author
+  cards: Card[] // Community decks include cards inline
+  publishedAt: string // When it was published
+  updatedAt?: string // When it was last updated
+  downloads: number // Number of times downloaded
+  featured?: boolean // Featured by superuser
+  version?: number // Version number for updates
+  averageRating?: number // Average rating from users
+  ratingCount?: number // Number of ratings
+  commentCount?: number // Number of comments
 }
 
 export interface StudyOptions {
@@ -106,46 +104,54 @@ export interface UserAchievements {
   slowCardReview: boolean
 }
 
-export interface Friend {
-  /** Unique identifier for the friend (matches user.id) */
+export type SubscriptionTier = 'free' | 'monthly' | 'annual' | 'lifetime'
+
+export interface FriendRequest {
   id: string
-
-  /** Display name shown in UI (fallback to name) */
+  name: string
   displayName?: string
-
-  /** Real name, optional */
-  name?: string
-
-  /** Friend’s email for contact / identification */
   email: string
-
-  /** Optional profile picture URL */
   avatarUrl?: string
+}
 
-  /** Whether the user has made their decks public */
-  decksPublic?: boolean
-
-  /** Optional status field for richer friend interactions */
-  status?: 'online' | 'offline' | 'studying' | 'idle'
-
-  /** Optional field for pending friend requests */
-  friendshipStatus?: 'accepted' | 'pending' | 'requested' | 'blocked'
-
-  /** Date when friendship was created or accepted */
-  createdAt?: string
-
-  /** Optional field for showing shared activity (e.g., recent deck studied) */
-  lastActivity?: {
+export interface Notification {
+  id: string
+  userId: string
+  type: 'friend_request' | 'comment' | 'reply' | 'deck_comment'
+  message: string
+  createdAt: string
+  read: boolean
+  seen: boolean
+  // Friend request fields
+  fromUserId?: string
+  fromUserName?: string
+  fromUserAvatar?: string
+  // Comment/reply fields
+  deckId?: string
+  deckName?: string
+  commentId?: string
+  commentText?: string
+  parentCommentId?: string
+  // Legacy data field (kept for backwards compatibility)
+  data?: {
+    requesterId?: string
+    requesterName?: string
+    requesterDisplayName?: string
+    requesterAvatar?: string
+    deckId?: string
     deckName?: string
-    timestamp?: string
-    score?: number
+    commentId?: string
+    replyId?: string
+    commentText?: string
   }
 }
 
+export interface TemporaryStudyDeck {
+  deck: CommunityDeck
+  cards: Card[]
+}
 
-export type SubscriptionTier = 'free' | 'monthly' | 'annual' | 'lifetime'
-
-export interface User {
+interface User {
   id: string
   email: string
   name: string
@@ -158,7 +164,7 @@ export interface User {
   isBanned?: boolean // User ban status (managed by superuser)
 }
 
-export interface AppState {
+interface AppState {
   // Auth state
   user: User | null
   accessToken: string | null
@@ -168,10 +174,10 @@ export interface AppState {
   
   // Friends state
   friends: string[]
-  friendRequests: string[] // User IDs who sent friend requests to me
+  friendRequests: FriendRequest[] // Full user objects who sent friend requests to me
   pendingFriendRequests: string[] // User IDs I sent friend requests to
   setFriends: (friends: string[]) => void
-  setFriendRequests: (requests: string[]) => void
+  setFriendRequests: (requests: FriendRequest[]) => void
   setPendingFriendRequests: (requests: string[]) => void
   addFriend: (userId: string) => void
   removeFriend: (userId: string) => void
@@ -181,8 +187,8 @@ export interface AppState {
   removePendingFriendRequest: (userId: string) => void
 
   // Notifications state
-  mentionNotifications: any[]
-  setMentionNotifications: (notifications: any[]) => void
+  mentionNotifications: Notification[]
+  setMentionNotifications: (notifications: Notification[]) => void
   removeMentionNotification: (notificationId: string) => void
   clearAllMentionNotifications: () => void
 
@@ -215,26 +221,36 @@ export interface AppState {
   unlockAchievement: (achievementId: string) => void
 
   // UI state
-  currentView: 'landing' | 'login' | 'signup' | 'decks' | 'deck-detail' | 'study' | 'study-options' | 'community' | 'profile' | 'ai-generate' | 'upgrade' | 'all-cards' | 'settings' | 'privacy' | 'terms' | 'contact'
+  currentView: 'landing' | 'login' | 'signup' | 'decks' | 'deck-detail' | 'study' | 'study-options' | 'community' | 'profile' | 'ai-generate' | 'upgrade' | 'all-cards' | 'settings' | 'privacy' | 'terms' | 'contact' | 'notifications'
   currentSection: 'flashcards' | 'community' | 'profile'
   selectedDeckId: string | null
   studyOptions: StudyOptions
   studyAllCards: boolean
   darkMode: boolean
-  temporaryStudyDeck: { deck: any; cards: Card[] } | null // For studying community decks without adding them
-  returnToCommunityDeck: any | null // Track which community deck to return to after studying
-  setCurrentView: (view: 'landing' | 'login' | 'signup' | 'decks' | 'deck-detail' | 'study' | 'study-options' | 'community' | 'profile' | 'ai-generate' | 'upgrade' | 'all-cards' | 'settings' | 'privacy' | 'terms' | 'contact') => void
+  temporaryStudyDeck: TemporaryStudyDeck | null // For studying community decks without adding them
+  returnToCommunityDeck: CommunityDeck | null // Track which community deck to return to after studying
+  returnToUserDeck: { deck: any; cards: any[]; ownerId: string } | null // Track which user deck to return to after studying
+  viewingCommunityDeckId: string | null // Track which community deck to view (for notifications)
+  targetCommentId: string | null // Track which comment to scroll to (for notifications)
+  viewingUserId: string | null // Track which user profile to view
+  userProfileReturnView: 'community' | 'profile' | null // Track where to return after viewing a user profile
+  setCurrentView: (view: 'landing' | 'login' | 'signup' | 'decks' | 'deck-detail' | 'study' | 'study-options' | 'community' | 'profile' | 'ai-generate' | 'upgrade' | 'all-cards' | 'settings' | 'privacy' | 'terms' | 'contact' | 'notifications') => void
   setCurrentSection: (section: 'flashcards' | 'community' | 'profile') => void
   setSelectedDeckId: (deckId: string | null) => void
   setStudyOptions: (options: StudyOptions) => void
   setStudyAllCards: (studyAll: boolean) => void
   setDarkMode: (darkMode: boolean) => void
   toggleDarkMode: () => void
-  setTemporaryStudyDeck: (deck: { deck: any; cards: Card[] } | null) => void
-  setReturnToCommunityDeck: (deck: any | null) => void
+  setTemporaryStudyDeck: (deck: TemporaryStudyDeck | null) => void
+  setReturnToCommunityDeck: (deck: CommunityDeck | null) => void
+  setReturnToUserDeck: (userDeck: { deck: any; cards: any[]; ownerId: string } | null) => void
+  setViewingCommunityDeckId: (deckId: string | null) => void
+  setTargetCommentId: (commentId: string | null) => void
+  setViewingUserId: (userId: string | null) => void
+  setUserProfileReturnView: (view: 'community' | 'profile' | null) => void
 }
 
-export const useStore = create<AppState>((set) => ({
+export const useStore = create<AppState>((set, get) => ({
   // Auth state
   user: null,
   accessToken: null,
@@ -254,10 +270,10 @@ export const useStore = create<AppState>((set) => ({
   addFriend: (userId) => set((state) => ({ friends: [...state.friends, userId] })),
   removeFriend: (userId) => set((state) => ({ friends: state.friends.filter(id => id !== userId) })),
   addFriendRequest: (userId) => set((state) => ({ 
-    friendRequests: state.friendRequests.includes(userId) ? state.friendRequests : [...state.friendRequests, userId] 
+    friendRequests: state.friendRequests.some(req => req.id === userId) ? state.friendRequests : [...state.friendRequests, {id: userId, name: '', email: ''}] 
   })),
   removeFriendRequest: (userId) => set((state) => ({ 
-    friendRequests: state.friendRequests.filter(id => id !== userId) 
+    friendRequests: state.friendRequests.filter(req => req.id !== userId) 
   })),
   addPendingFriendRequest: (userId) => set((state) => ({ 
     pendingFriendRequests: state.pendingFriendRequests.includes(userId) ? state.pendingFriendRequests : [...state.pendingFriendRequests, userId] 
@@ -316,15 +332,37 @@ export const useStore = create<AppState>((set) => ({
   // User achievements
   userAchievements: null,
   setUserAchievements: (achievements) => set({ userAchievements: achievements }),
-  unlockAchievement: (achievementId) => 
-    set((state) => ({
-      userAchievements: state.userAchievements
-        ? {
-            ...state.userAchievements,
-            unlockedAchievementIds: [...state.userAchievements.unlockedAchievementIds, achievementId]
+  unlockAchievement: (achievementId) => {
+    const state = get()
+    const newAchievements = state.userAchievements
+      ? {
+          ...state.userAchievements,
+          unlockedAchievementIds: [...state.userAchievements.unlockedAchievementIds, achievementId]
+        }
+      : null
+    
+    set({ userAchievements: newAchievements })
+    
+    // Persist to backend
+    if (state.accessToken && newAchievements) {
+      fetch(`https://${projectId}.supabase.co/functions/v1/make-server-8a1502a9/achievements`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${state.accessToken}`,
+        },
+        body: JSON.stringify({ achievements: newAchievements }),
+      })
+        .then(response => {
+          if (!response.ok) {
+            console.error('Failed to save achievements to backend')
           }
-        : null
-    })),
+        })
+        .catch(error => {
+          console.error('Error saving achievements:', error)
+        })
+    }
+  },
 
   // UI state
   currentView: 'landing',
@@ -341,6 +379,11 @@ export const useStore = create<AppState>((set) => ({
   darkMode: false,
   temporaryStudyDeck: null,
   returnToCommunityDeck: null,
+  returnToUserDeck: null,
+  viewingCommunityDeckId: null,
+  targetCommentId: null,
+  viewingUserId: null,
+  userProfileReturnView: null,
   setCurrentView: (view) => set({ currentView: view }),
   setCurrentSection: (section) => set({ currentSection: section }),
   setSelectedDeckId: (deckId) => set({ selectedDeckId: deckId }),
@@ -350,4 +393,9 @@ export const useStore = create<AppState>((set) => ({
   toggleDarkMode: () => set((state) => ({ darkMode: !state.darkMode })),
   setTemporaryStudyDeck: (deck) => set({ temporaryStudyDeck: deck }),
   setReturnToCommunityDeck: (deck) => set({ returnToCommunityDeck: deck }),
+  setReturnToUserDeck: (userDeck) => set({ returnToUserDeck: userDeck }),
+  setViewingCommunityDeckId: (deckId) => set({ viewingCommunityDeckId: deckId }),
+  setTargetCommentId: (commentId) => set({ targetCommentId: commentId }),
+  setViewingUserId: (userId) => set({ viewingUserId: userId }),
+  setUserProfileReturnView: (view) => set({ userProfileReturnView: view }),
 }))

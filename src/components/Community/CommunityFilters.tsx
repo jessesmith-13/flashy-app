@@ -129,14 +129,7 @@ export function CommunityFilters({
         </div>
 
         <div className="w-full sm:w-64">
-          <Tabs
-            value={sortBy}
-            onValueChange={(value) => {
-              if (value === 'popular' || value === 'rating' || value === 'newest') {
-                onSortChange(value)
-              }
-            }}
-          >
+          <Tabs value={sortBy} onValueChange={(value) => onSortChange(value as any)}>
             <TabsList className="grid w-full grid-cols-3 gap-1 bg-white dark:bg-gray-800 p-1">
               <TabsTrigger 
                 value="popular" 

@@ -1,8 +1,5 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { projectId, publicAnonKey } from './supabase/info'
 import { createClient } from '@supabase/supabase-js'
-import type { CreateCardInput, UpdateCardInput } from './api.types'
-import type { Card, DeckRating } from '../store/useStore'
 
 const API_BASE = `https://${projectId}.supabase.co/functions/v1/make-server-8a1502a9`
 
@@ -48,11 +45,14 @@ export const signInWithGoogle = async () => {
   const { data, error } = await supabaseClient.auth.signInWithOAuth({
     provider: 'google',
     options: {
-      redirectTo: `${window.location.origin}/auth/v1/callback`,
-    },
+      redirectTo: window.location.origin,
+    }
   })
 
-  if (error) throw new Error(error.message)
+  if (error) {
+    throw new Error(error.message)
+  }
+
   return data
 }
 
@@ -68,14 +68,11 @@ export const resetPassword = async (email: string) => {
   return data
 }
 
-// utils/api.ts
-export async function signOut() {
-  try {
-    // Attempt sign out, even if no session
-    const { error } = await supabaseClient.auth.signOut()
-    if (error) throw error
-  } catch (err) {
-    console.warn('Supabase signOut warning:', err)
+export const signOut = async () => {
+  const { error } = await supabaseClient.auth.signOut()
+  
+  if (error) {
+    throw new Error(error.message)
   }
 }
 
@@ -321,33 +318,33 @@ export const fetchCards = async (accessToken: string, deckId: string) => {
 export const createCard = async (
   accessToken: string,
   deckId: string,
-  cardData: CreateCardInput,
-): Promise<Card> => {
+  card: { front: string; back: string; cardType: string; options?: string[]; acceptedAnswers?: string[]; frontImageUrl?: string; backImageUrl?: string }
+) => {
   const response = await fetch(`${API_BASE}/decks/${deckId}/cards`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${accessToken}`,
     },
-    body: JSON.stringify(cardData),
+    body: JSON.stringify(card),
   })
 
-  const result = await response.json()
-
+  const data = await response.json()
+  
   if (!response.ok) {
-    console.error('Failed to create card:', result.error)
-    throw new Error(result.error || 'Failed to create card')
+    console.error('Failed to create card:', data.error)
+    throw new Error(data.error || 'Failed to create card')
   }
 
-  return result.card
+  return data.card
 }
 
 export const updateCard = async (
   accessToken: string,
   deckId: string,
   cardId: string,
-  updates: UpdateCardInput
-): Promise<Card> => {
+  updates: Partial<{ front: string; back: string; cardType: string; options?: string[]; acceptedAnswers?: string[]; favorite?: boolean; ignored?: boolean; frontImageUrl?: string; backImageUrl?: string }>
+) => {
   const response = await fetch(`${API_BASE}/decks/${deckId}/cards/${cardId}`, {
     method: 'PUT',
     headers: {
@@ -357,14 +354,14 @@ export const updateCard = async (
     body: JSON.stringify(updates),
   })
 
-  const result = await response.json()
-
+  const data = await response.json()
+  
   if (!response.ok) {
-    console.error('Failed to update card:', result.error)
-    throw new Error(result.error || 'Failed to update card')
+    console.error('Failed to update card:', data.error)
+    throw new Error(data.error || 'Failed to update card')
   }
 
-  return result.card
+  return data.card
 }
 
 export const deleteCard = async (
@@ -480,15 +477,36 @@ export const getUserProfile = async (userId: string) => {
   return data.user
 }
 
+// Get a specific user's deck (read-only)
+export const getUserDeck = async (
+  accessToken: string,
+  userId: string,
+  deckId: string
+) => {
+  const response = await fetch(`${API_BASE}/users/${userId}/decks/${deckId}`, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  })
+
+  const data = await response.json()
+  
+  if (!response.ok) {
+    console.error('Failed to fetch user deck:', data.error)
+    throw new Error(data.error || 'Failed to fetch user deck')
+  }
+
+  return data
+}
+
 // Friend API
 export const sendFriendRequest = async (accessToken: string, friendId: string) => {
-  const response = await fetch(`${API_BASE}/friends/request`, {
+  const response = await fetch(`${API_BASE}/friends/request/${friendId}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${accessToken}`,
     },
-    body: JSON.stringify({ friendId }),
   })
 
   const data = await response.json()
@@ -540,13 +558,11 @@ export const declineFriendRequest = async (accessToken: string, requestId: strin
 }
 
 export const removeFriend = async (accessToken: string, friendId: string) => {
-  const response = await fetch(`${API_BASE}/friends/remove`, {
-    method: 'POST',
+  const response = await fetch(`${API_BASE}/friends/${friendId}`, {
+    method: 'DELETE',
     headers: {
-      'Content-Type': 'application/json',
       Authorization: `Bearer ${accessToken}`,
     },
-    body: JSON.stringify({ friendId }),
   })
 
   const data = await response.json()
@@ -569,6 +585,10 @@ export const getFriendRequests = async (accessToken: string) => {
   const data = await response.json()
   
   if (!response.ok) {
+    // Silently fail for unauthorized errors (logged out users)
+    if (response.status === 401) {
+      throw new Error('Unauthorized')
+    }
     console.error('Failed to fetch friend requests:', data.error)
     throw new Error(data.error || 'Failed to fetch friend requests')
   }
@@ -577,19 +597,31 @@ export const getFriendRequests = async (accessToken: string) => {
 }
 
 export const getFriends = async (accessToken: string) => {
+  console.log('getFriends API call - URL:', `${API_BASE}/friends`)
+  console.log('getFriends API call - accessToken exists:', !!accessToken)
+  
   const response = await fetch(`${API_BASE}/friends`, {
     headers: {
       Authorization: `Bearer ${accessToken}`,
     },
   })
 
+  console.log('getFriends API call - response status:', response.status)
+  console.log('getFriends API call - response ok:', response.ok)
+  
   const data = await response.json()
+  console.log('getFriends API call - response data:', data)
   
   if (!response.ok) {
+    // Silently fail for unauthorized errors (logged out users)
+    if (response.status === 401) {
+      throw new Error('Unauthorized')
+    }
     console.error('Failed to fetch friends:', data.error)
     throw new Error(data.error || 'Failed to fetch friends')
   }
 
+  console.log('getFriends API call - returning data.friends:', data.friends)
   return data.friends
 }
 
@@ -764,6 +796,23 @@ export const fetchCommunityDecks = async () => {
   return data.decks || []
 }
 
+export const getCommunityDeck = async (deckId: string) => {
+  const response = await fetch(`${API_BASE}/community/decks/${deckId}`, {
+    headers: {
+      Authorization: `Bearer ${publicAnonKey}`,
+    },
+  })
+
+  const data = await response.json()
+  
+  if (!response.ok) {
+    console.error('Failed to fetch community deck:', data.error)
+    return null
+  }
+
+  return data.deck || null
+}
+
 export const fetchFeaturedCommunityDecks = async () => {
   const response = await fetch(`${API_BASE}/community/decks/featured`, {
     headers: {
@@ -850,7 +899,7 @@ export const rateDeck = async (
   return data
 }
 
-export const getDeckRatings = async (deckId: string, accessToken?: string): Promise<DeckRating> => {
+export const getDeckRatings = async (deckId: string, accessToken?: string) => {
   const response = await fetch(`${API_BASE}/decks/${deckId}/ratings`, {
     headers: {
       Authorization: `Bearer ${accessToken || publicAnonKey}`,
@@ -912,13 +961,20 @@ export const postDeckComment = async (
 
 // Notifications API
 export const getNotifications = async (accessToken: string) => {
+  console.log('=== GET NOTIFICATIONS START ===')
+  console.log('API Base URL:', API_BASE)
+  console.log('Full URL:', `${API_BASE}/notifications`)
+  console.log('Access Token (first 20 chars):', accessToken.substring(0, 20) + '...')
+  
   const response = await fetch(`${API_BASE}/notifications`, {
     headers: {
       Authorization: `Bearer ${accessToken}`,
     },
   })
 
+  console.log('Response status:', response.status)
   const data = await response.json()
+  console.log('Response data:', data)
   
   if (!response.ok) {
     console.error('Failed to fetch notifications:', data.error)
@@ -941,6 +997,24 @@ export const markNotificationRead = async (accessToken: string, notificationId: 
   if (!response.ok) {
     console.error('Failed to mark notification as read:', data.error)
     throw new Error(data.error || 'Failed to mark notification as read')
+  }
+
+  return data
+}
+
+export const markAllNotificationsSeen = async (accessToken: string) => {
+  const response = await fetch(`${API_BASE}/notifications/mark-seen`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  })
+
+  const data = await response.json()
+  
+  if (!response.ok) {
+    console.error('Failed to mark notifications as seen:', data.error)
+    throw new Error(data.error || 'Failed to mark notifications as seen')
   }
 
   return data

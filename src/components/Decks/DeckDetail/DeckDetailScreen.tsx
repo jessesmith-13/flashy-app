@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useStore, CardType, Deck } from '../../../../store/useStore'
+import { useStore, CardType } from '../../../../store/useStore'
 import * as api from '../../../../utils/api'
 import { AppLayout } from '../../Layout/AppLayout'
 import { DeckHeader } from './DeckHeader'
@@ -11,8 +11,6 @@ import { CardList } from './CardList'
 import { UpgradeModal } from '../../UpgradeModal'
 import { toast } from 'sonner'
 import { canPublishToCommunity } from '../../../../utils/subscription'
-import type { CreateCardInput, UpdateCardInput } from '../../../../utils/api.types'
-
 
 export function DeckDetailScreen() {
   const {
@@ -102,10 +100,9 @@ export function DeckDetailScreen() {
   const loadCommunityDeckAuthor = async (communityDeckId: string) => {
     try {
       const publishedDecks = await api.fetchCommunityDecks()
-      const { MOCK_COMMUNITY_DECKS } = await import('../../../../utils/mockCommunityData')
-      const allDecks = [...publishedDecks, ...MOCK_COMMUNITY_DECKS]
+      const allDecks = publishedDecks
       
-      const communityDeck = allDecks.find((d: Deck) => d.id === communityDeckId)
+      const communityDeck = allDecks.find((d: any) => d.id === communityDeckId)
       
       if (communityDeck) {
         setCommunityDeckAuthor({
@@ -132,7 +129,8 @@ export function DeckDetailScreen() {
     }
   }
 
-  const handleCreateCard = async (closeDialog: boolean = true) => {
+  const handleCreateCard = async (e: React.FormEvent, closeDialog: boolean = true) => {
+    e.preventDefault()
     if (!accessToken || !selectedDeckId) return
     
     if (!newCardFront.trim() && !newCardImageFile) {
@@ -169,7 +167,7 @@ export function DeckDetailScreen() {
 
     setCreating(true)
     try {
-      const cardData: CreateCardInput = {
+      const cardData: any = {
         front: newCardFront,
         cardType: newCardType,
       }
@@ -326,7 +324,7 @@ export function DeckDetailScreen() {
 
     setUpdating(true)
     try {
-      const cardData: UpdateCardInput = {
+      const cardData: any = {
         front: editCardFront,
         cardType: editCardType,
       }
@@ -530,16 +528,14 @@ export function DeckDetailScreen() {
         toast.success('Deck published to community!')
       }
       setPublishDialogOpen(false)
-    } catch (error: unknown) {
+    } catch (error: any) {
       console.error('Failed to publish deck:', error)
-      if (error instanceof Error) {
-        if (error.message.includes('already been published')) {
-          toast.info(error.message)
-        } else if (error.message.includes('10 cards')) {
-          toast.error(error.message)
-        } else {
-          toast.error(error.message || 'Failed to publish deck')
-        }
+      if (error.message.includes('already been published')) {
+        toast.info(error.message)
+      } else if (error.message.includes('10 cards')) {
+        toast.error(error.message)
+      } else {
+        toast.error(error.message || 'Failed to publish deck')
       }
     } finally {
       setPublishing(false)

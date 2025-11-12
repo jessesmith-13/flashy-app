@@ -3,7 +3,7 @@ import { useStore, AppState } from '../../../store/useStore'
 import * as api from '../../../utils/api'
 import { Button } from '../../ui/button'
 import { Home, Users, User, LogOut, Crown, Layers, Settings, Shield, FileText, Mail, Menu } from 'lucide-react'
-import { NotificationCenter } from '../NotificationCenter'
+import { NotificationCenter } from '../Notifications/NotificationCenter'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '../../ui/sheet'
 
 interface AppLayoutProps {

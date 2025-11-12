@@ -1,17 +1,21 @@
 import { Button } from '../../ui/button'
 import { Switch } from '../../ui/switch'
 import { Label } from '../../ui/label'
-import { Download } from 'lucide-react'
+import { Download, Eye } from 'lucide-react'
 
 interface DataPrivacySectionProps {
   autoBackup: boolean
+  decksPublic: boolean
   onAutoBackupChange: (checked: boolean) => void
+  onDecksPublicChange: (checked: boolean) => void
   onExportData: () => void
 }
 
 export function DataPrivacySection({
   autoBackup,
+  decksPublic,
   onAutoBackupChange,
+  onDecksPublicChange,
   onExportData
 }: DataPrivacySectionProps) {
   return (
@@ -34,6 +38,25 @@ export function DataPrivacySection({
             id="autoBackup"
             checked={autoBackup}
             onCheckedChange={onAutoBackupChange}
+          />
+        </div>
+
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Eye className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+            <div>
+              <Label htmlFor="decksPublic" className="text-sm">
+                Make Decks Public
+              </Label>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Allow others to view your decks on your profile
+              </p>
+            </div>
+          </div>
+          <Switch
+            id="decksPublic"
+            checked={decksPublic}
+            onCheckedChange={onDecksPublicChange}
           />
         </div>
 

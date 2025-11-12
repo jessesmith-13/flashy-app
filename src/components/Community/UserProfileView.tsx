@@ -1,11 +1,9 @@
-import { useEffect, useState } from 'react'
-import { useStore } from '../../../store/useStore'
+import { useState, useEffect } from 'react'
 import { AppLayout } from '../Layout/AppLayout'
 import { Flame, Trophy, Target, ArrowLeft, UserPlus, UserMinus, Lock, CheckCircle2, ShieldOff, Shield, Users } from 'lucide-react'
 import { Button } from '../../ui/button'
 import * as api from '../../../utils/api'
 import { toast } from 'sonner'
-import { MOCK_USERS, MOCK_USER_ACHIEVEMENTS, MOCK_USER_DECKS } from '../../../utils/mockCommunityData'
 import { getAchievementsByCategory, CATEGORY_LABELS, AchievementCategory } from '../../../utils/achievements'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../ui/tabs'
 import {
@@ -18,11 +16,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '../../ui/alert-dialog'
+import { useStore } from '../../../store/useStore'
 
 interface UserProfileViewProps {
   userId: string
   onBack: () => void
-  onViewDeck?: (deckId: string) => void
+  onViewDeck?: (deckId: string, userId: string) => void
   onViewUser?: (userId: string) => void
 }
 
@@ -42,8 +41,17 @@ export function UserProfileView({ userId, onBack, onViewDeck, onViewUser }: User
   const isSuperuser = user?.isSuperuser === true
   const isUserBanned = profileUser?.isBanned === true
 
+  // Debug logging
+  useEffect(() => {
+    console.log('UserProfileView - Checking friend status for userId:', userId)
+    console.log('UserProfileView - Current friends array:', friends)
+    console.log('UserProfileView - isFriend:', isFriend)
+    console.log('UserProfileView - isPending:', isPending)
+  }, [userId, friends, isFriend, isPending])
+
   useEffect(() => {
     loadUserProfile()
+    loadUserFriends() // Load friends when profile loads
   }, [userId])
 
   useEffect(() => {
@@ -57,15 +65,14 @@ export function UserProfileView({ userId, onBack, onViewDeck, onViewUser }: User
     try {
       setLoading(true)
       
-      // Check if it's a mock user first
-      const mockUser = MOCK_USERS.find(u => u.id === userId)
-      if (mockUser) {
-        setProfileUser(mockUser)
-      } else {
-        // Try to load from API
-        const userData = await api.getUserProfile(userId)
-        setProfileUser(userData)
-      }
+      // Load from API only
+      const userData = await api.getUserProfile(userId)
+      console.log('UserProfileView - Loaded user data:', userData)
+      console.log('UserProfileView - Achievements:', userData.achievements)
+      console.log('UserProfileView - Decks:', userData.decks)
+      console.log('UserProfileView - decksPublic:', userData.decksPublic)
+      console.log('UserProfileView - Number of decks:', userData.decks?.length || 0)
+      setProfileUser(userData)
     } catch (error) {
       console.error('Failed to load user profile:', error)
       toast.error('Failed to load user profile')
@@ -166,7 +173,7 @@ export function UserProfileView({ userId, onBack, onViewDeck, onViewUser }: User
   }
 
   // Get user's achievements and decks
-  const userAchievementIds = MOCK_USER_ACHIEVEMENTS[userId] || []
+  const userAchievementIds = profileUser.achievements || []
   const achievementsByCategory = getAchievementsByCategory(userAchievementIds)
   const totalAchievements = Object.values(achievementsByCategory).reduce(
     (sum, cat) => sum + cat.unlocked.length + cat.locked.length,
@@ -174,8 +181,18 @@ export function UserProfileView({ userId, onBack, onViewDeck, onViewUser }: User
   )
   const unlockedCount = userAchievementIds.length
 
-  const userDecks = MOCK_USER_DECKS[userId] || []
+  const userDecks = profileUser.decks || []
   const showDecks = profileUser.decksPublic !== false
+  
+  // Filter out any null or undefined decks as a safety measure
+  const validDecks = userDecks.filter((deck: any) => deck && deck.id && deck.name)
+  
+  // Debug logging
+  console.log('UserProfileView - Computed values:')
+  console.log('  userDecks:', userDecks)
+  console.log('  showDecks:', showDecks)
+  console.log('  validDecks:', validDecks)
+  console.log('  validDecks.length:', validDecks.length)
 
   return (
     <AppLayout>
@@ -227,6 +244,10 @@ export function UserProfileView({ userId, onBack, onViewDeck, onViewUser }: User
                       <span className="text-gray-900 dark:text-gray-100">{userDecks.length} decks</span>
                     </div>
                   )}
+                  <div className="flex items-center gap-2 px-4 py-2 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+                    <Users className="w-5 h-5 text-purple-500 dark:text-purple-400" />
+                    <span className="text-gray-900 dark:text-gray-100">{friendsLoading ? '...' : userFriends.length} friends</span>
+                  </div>
                 </div>
                 
                 {!isOwnProfile && (
@@ -290,11 +311,7 @@ export function UserProfileView({ userId, onBack, onViewDeck, onViewUser }: User
             </div>
           </div>
 
-          <Tabs defaultValue="achievements" className="w-full" onValueChange={(value) => {
-            if (value === 'friends' && userFriends.length === 0 && !friendsLoading) {
-              loadUserFriends()
-            }
-          }}>
+          <Tabs defaultValue="achievements" className="w-full">
             <TabsList className="w-full grid grid-cols-3 mb-6">
               <TabsTrigger value="achievements">Achievements</TabsTrigger>
               <TabsTrigger value="decks">Decks</TabsTrigger>
@@ -377,16 +394,16 @@ export function UserProfileView({ userId, onBack, onViewDeck, onViewUser }: User
                     <Lock className="w-12 h-12 text-gray-400 dark:text-gray-500 mx-auto mb-4" />
                     <p className="text-gray-600 dark:text-gray-400">This user's decks are private</p>
                   </div>
-                ) : userDecks.length === 0 ? (
+                ) : validDecks.length === 0 ? (
                   <div className="text-center py-12">
                     <p className="text-gray-600 dark:text-gray-400">No decks yet</p>
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {userDecks.map((deck) => (
+                    {validDecks.map((deck) => (
                       <div
                         key={deck.id}
-                        onClick={() => onViewDeck?.(deck.id)}
+                        onClick={() => onViewDeck?.(deck.id, userId)}
                         className="p-6 rounded-xl border-2 border-gray-200 dark:border-gray-700 hover:border-emerald-300 dark:hover:border-emerald-600 transition-all cursor-pointer"
                         style={{ borderColor: deck.color + '40', backgroundColor: deck.color + '10' }}
                       >
