@@ -13,6 +13,7 @@ import { Toaster } from './ui/sonner'
 import { useAchievementTracking } from '../hooks/useAchievements'
 import { StudyScreen } from './components/Study/StudyScreen'
 import { StudyOptionsScreen } from './components/Study/StudyOptionsScreen'
+import { SettingsScreen } from './components/Settings/SettingsScreen'
 
 export default function App() {
   const { currentView, setAuth, setCurrentView, setFriends, setFriendRequests, darkMode } = useStore()
@@ -96,6 +97,7 @@ export default function App() {
       {currentView === 'community' && <CommunityScreen />}
       {currentView === 'study' && <StudyScreen />}
       {currentView === 'study-options' && <StudyOptionsScreen />}
+      {currentView === 'settings' && <SettingsScreen />}
       {currentView === 'upgrade' && <UpgradeModal open={true} onOpenChange={(open) => !open && setCurrentView('decks')} />}
       <Toaster position="top-center" richColors />
     </>
