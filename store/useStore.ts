@@ -51,6 +51,8 @@ export interface CommunityDeck  extends Deck {
   author: string
   cards: Card[]
   version: number
+  rating: number
+  ratingCount: number
 }
 
 export interface DeckRating {

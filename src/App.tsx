@@ -11,6 +11,8 @@ import { DeckDetailScreen } from './components/Decks/DeckDetail/DeckDetailScreen
 import { CommunityScreen } from './components/Community/CommunityScreen'
 import { Toaster } from './ui/sonner'
 import { useAchievementTracking } from '../hooks/useAchievements'
+import { StudyScreen } from './components/Study/StudyScreen'
+import { StudyOptionsScreen } from './components/Study/StudyOptionsScreen'
 
 export default function App() {
   const { currentView, setAuth, setCurrentView, setFriends, setFriendRequests, darkMode } = useStore()
@@ -92,6 +94,8 @@ export default function App() {
       {currentView === 'decks' && <DecksScreen />}
       {currentView === 'deck-detail' && <DeckDetailScreen />}
       {currentView === 'community' && <CommunityScreen />}
+      {currentView === 'study' && <StudyScreen />}
+      {currentView === 'study-options' && <StudyOptionsScreen />}
       {currentView === 'upgrade' && <UpgradeModal open={true} onOpenChange={(open) => !open && setCurrentView('decks')} />}
       <Toaster position="top-center" richColors />
     </>
