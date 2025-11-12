@@ -6,11 +6,11 @@ import { DeckComments } from './DeckComments'
 import { DeckCardPreviewList } from './DeckCardPreviewList'
 import { AppLayout } from '../Layout/AppLayout'
 import { toast } from 'sonner'
-import { CommunityDeck } from '../../../store/useStore'
+import { Deck, CommunityDeck } from '../../../store/useStore' 
 
 interface CommunityDeckDetailProps {
   deck: CommunityDeck
-  userDecks: CommunityDeck[]
+  userDecks: Deck[]
   isSuperuser: boolean
   addingDeckId: string | null
   deletingDeckId: string | null
@@ -19,10 +19,11 @@ interface CommunityDeckDetailProps {
   cardsPerPage: number
   flaggedDecks: Set<string>
   flaggedCards: Set<string>
+  targetCommentId?: string | null
   onBack: () => void
   onViewUser: (userId: string) => void
   onAddDeck: (deck: CommunityDeck) => void
-  onUpdateDeck: (communityDeck: CommunityDeck, importedDeck: CommunityDeck) => void
+  onUpdateDeck: (communityDeck: CommunityDeck, importedDeck: Deck) => void
   onToggleFeatured: (deckId: string) => void
   onDeleteDeck: (deckId: string, deckName: string) => void
   onFlagDeck: (deckId: string, deckName: string) => void
@@ -43,6 +44,7 @@ export function CommunityDeckDetail({
   cardsPerPage,
   flaggedDecks,
   flaggedCards,
+  targetCommentId,
   onBack,
   onViewUser,
   onAddDeck,
@@ -252,7 +254,12 @@ export function CommunityDeckDetail({
           </div>
           
           {/* Comment Section */}
-          <DeckComments deckId={deck.id} deckAuthorId={deck.authorId} />
+          <DeckComments 
+            deckId={deck.id} 
+            deckAuthorId={deck.authorId} 
+            targetCommentId={targetCommentId}
+            onViewUser={onViewUser}
+          />
         </div>
       </div>
     </AppLayout>

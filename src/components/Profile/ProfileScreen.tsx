@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useStore, Friend } from '../../../store/useStore'
+import { useStore } from '../../../store/useStore'
 import { AppLayout } from '../Layout/AppLayout'
 import { BarChart3, Trophy, Users } from 'lucide-react'
 import { getAchievementsByCategory } from '../../../utils/achievements'
@@ -13,14 +13,14 @@ import * as api from '../../../utils/api'
 import { toast } from 'sonner'
 
 export function ProfileScreen() {
-  const { user, accessToken, decks, studySessions, userStats, userAchievements, setUserStats, updateUser, friends } = useStore()
+  const { user, accessToken, decks, studySessions, userStats, userAchievements, setUserStats, updateUser, friends, removeFriend, setCurrentView, setViewingUserId, setUserProfileReturnView } = useStore()
   const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [displayName, setDisplayName] = useState(user?.displayName || user?.name || '')
   const [avatarUrl, setAvatarUrl] = useState(user?.avatarUrl || '')
   const [decksPublic, setDecksPublic] = useState(user?.decksPublic ?? true)
   const [saving, setSaving] = useState(false)
   const [uploading, setUploading] = useState(false)
-  const [userFriends, setUserFriends] = useState<Friend[]>([])
+  const [userFriends, setUserFriends] = useState<any[]>([])
   const [friendsLoading, setFriendsLoading] = useState(false)
 
   useEffect(() => {
@@ -43,13 +43,13 @@ export function ProfileScreen() {
       : 0
 
     // Calculate study streak
-    // const today = new Date().toDateString()
+    const today = new Date().toDateString()
     const sortedSessions = [...studySessions].sort((a, b) => 
       new Date(b.date).getTime() - new Date(a.date).getTime()
     )
     
     let streak = 0
-    const currentDate = new Date()
+    let currentDate = new Date()
     
     for (const session of sortedSessions) {
       const sessionDate = new Date(session.date).toDateString()
@@ -178,7 +178,10 @@ export function ProfileScreen() {
   }
 
   const loadUserFriends = async () => {
-    if (!accessToken || !user?.id) return
+    if (!accessToken || !user?.id) {
+      console.log('Skipping loadUserFriends: no accessToken or user.id')
+      return
+    }
     
     setFriendsLoading(true)
     try {
@@ -186,10 +189,40 @@ export function ProfileScreen() {
       setUserFriends(friendsData)
     } catch (error) {
       console.error('Failed to load user friends:', error)
-      toast.error('Failed to load user friends')
+      // Only show toast if it's not an auth error (auth errors are handled by App.tsx)
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      if (!errorMessage.includes('Unauthorized') && !errorMessage.includes('401')) {
+        toast.error('Failed to load user friends')
+      }
     } finally {
       setFriendsLoading(false)
     }
+  }
+
+  const handleRemoveFriend = async (friendId: string) => {
+    if (!accessToken) return
+
+    try {
+      await api.removeFriend(accessToken, friendId)
+      
+      // Update Zustand store
+      removeFriend(friendId)
+      
+      // Update local state
+      setUserFriends((prev) => prev.filter((f) => f.id !== friendId))
+      
+      toast.success('Friend removed')
+    } catch (error) {
+      console.error('Failed to remove friend:', error)
+      toast.error('Failed to remove friend')
+    }
+  }
+
+  const handleViewFriend = (friendId: string) => {
+    // Navigate to community tab and set the viewing user ID in Zustand
+    setViewingUserId(friendId)
+    setUserProfileReturnView('profile') // Set return view to profile
+    setCurrentView('community')
   }
 
   return (
@@ -250,6 +283,8 @@ export function ProfileScreen() {
               <ProfileFriends
                 friends={userFriends}
                 loading={friendsLoading}
+                onRemoveFriend={handleRemoveFriend}
+                onViewFriend={handleViewFriend}
               />
             </TabsContent>
           </Tabs>

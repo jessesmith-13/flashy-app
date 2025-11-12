@@ -13,7 +13,7 @@ export function LoginScreen() {
   const [showForgotPassword, setShowForgotPassword] = useState(false)
   const [resetSuccess, setResetSuccess] = useState(false)
 
-  const { setAuth, setCurrentView, addFriendRequest } = useStore()
+  const { setAuth, setCurrentView, setFriends, setFriendRequests } = useStore()
 
   const handleLogin = async (email: string, password: string) => {
     setError('')
@@ -45,22 +45,27 @@ export function LoginScreen() {
           session.access_token
         )
         
-        // Add some mock friend requests for demo purposes
-        addFriendRequest('user-maria')
-        addFriendRequest('user-john')
+        // Load friend data
+        try {
+          const friends = await api.getFriends(session.access_token)
+          setFriends(friends)
+          
+          const requests = await api.getFriendRequests(session.access_token)
+          setFriendRequests(requests)
+        } catch (error) {
+          console.error('Failed to load friends data:', error)
+        }
         
         setCurrentView('decks')
       }
-    } catch (err: unknown) {
+    } catch (err: any) {
       console.error('Login error:', err)
-      if (err instanceof Error) {
-        console.error('Error message:', err.message)
-        const errorMessage = err.message || 'Failed to login'
-        if (errorMessage.includes('Invalid login credentials')) {
-          setError('Invalid email or password. Please check your credentials or create a new account below.')
-        } else {
-          setError(errorMessage)
-        }
+      console.error('Error message:', err.message)
+      const errorMessage = err.message || 'Failed to login'
+      if (errorMessage.includes('Invalid login credentials')) {
+        setError('Invalid email or password. Please check your credentials or create a new account below.')
+      } else {
+        setError(errorMessage)
       }
     } finally {
       setLoading(false)
@@ -73,11 +78,9 @@ export function LoginScreen() {
       setLoading(true)
       await api.signInWithGoogle()
       // The redirect will be handled by Supabase
-    } catch (err: unknown) {
+    } catch (err: any) {
       console.error('Google sign-in error:', err)
-      if (err instanceof Error) {
-        setError(err.message || 'Failed to sign in with Google')
-      }
+      setError(err.message || 'Failed to sign in with Google')
       setLoading(false)
     }
   }
@@ -93,11 +96,9 @@ export function LoginScreen() {
         setShowForgotPassword(false)
         setResetSuccess(false)
       }, 3000)
-    } catch (err: unknown) {
+    } catch (err: any) {
       console.error('Password reset error:', err)
-      if (err instanceof Error) {
-        setError(err.message || 'Failed to send password reset email')
-      }
+      setError(err.message || 'Failed to send password reset email')
     } finally {
       setLoading(false)
     }
@@ -129,17 +130,15 @@ export function LoginScreen() {
       try {
         await api.signUp(testEmail, testPassword, testName)
         console.log('Test account created successfully')
-      } catch (signupErr: unknown) {
-        if (signupErr instanceof Error) {
-          const errorMsg = signupErr.message || ''
-          if (errorMsg.toLowerCase().includes('already') || errorMsg.toLowerCase().includes('registered')) {
-            console.log('Test account already exists, proceeding to login')
-          } else {
-            console.log('Signup error (non-critical):', errorMsg)
-          }
-          // Don't throw - continue to login regardless
-        }
+      } catch (signupErr: any) {
         // Account already exists, which is fine - we'll just login
+        const errorMsg = signupErr.message || ''
+        if (errorMsg.toLowerCase().includes('already') || errorMsg.toLowerCase().includes('registered')) {
+          console.log('Test account already exists, proceeding to login')
+        } else {
+          console.log('Signup error (non-critical):', errorMsg)
+        }
+        // Don't throw - continue to login regardless
       }
 
       // Now login with test account
@@ -177,17 +176,22 @@ export function LoginScreen() {
           session.access_token
         )
         
-        // Add some mock friend requests for demo purposes
-        addFriendRequest('user-maria')
-        addFriendRequest('user-john')
+        // Load friend data
+        try {
+          const friends = await api.getFriends(session.access_token)
+          setFriends(friends)
+          
+          const requests = await api.getFriendRequests(session.access_token)
+          setFriendRequests(requests)
+        } catch (error) {
+          console.error('Failed to load friends data:', error)
+        }
         
         setCurrentView('decks')
       }
-    } catch (err: unknown) {
+    } catch (err: any) {
       console.error('Test login error:', err)
-      if (err instanceof Error) {
-        setError('Failed to create/login test account: ' + err.message)
-      }
+      setError('Failed to create/login test account: ' + err.message)
     } finally {
       setLoading(false)
     }

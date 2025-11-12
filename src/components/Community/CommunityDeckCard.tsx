@@ -1,9 +1,8 @@
 import { Button } from '../../ui/button'
-import { Star, Users, Plus, Check, Upload, X } from 'lucide-react'
+import { Star, Users, Plus, Check, Upload, X, MessageCircle } from 'lucide-react'
 import { DeckRatingDisplay } from './DeckRatingDisplay'
 import { toast } from 'sonner'
-import { CommunityDeck } from '../../../store/useStore'
-
+import { Deck, CommunityDeck } from '../../../store/useStore'
 interface CommunityDeckCardProps {
   deck: CommunityDeck
   isAdded: boolean
@@ -15,10 +14,10 @@ interface CommunityDeckCardProps {
   onViewDeck: (deck: CommunityDeck) => void
   onViewUser: (userId: string) => void
   onAddDeck: (deck: CommunityDeck) => void
-  onUpdateDeck: (communityDeck: CommunityDeck, importedDeck: CommunityDeck) => void
+  onUpdateDeck: (communityDeck: CommunityDeck, importedDeck: Deck) => void
   onToggleFeatured: (deckId: string) => void
   onDeleteDeck: (deckId: string, deckName: string) => void
-  importedDeck?: CommunityDeck
+  importedDeck?: Deck
   isFeatured?: boolean
 }
 
@@ -80,6 +79,10 @@ export function CommunityDeckCard({
           <div className="flex items-center gap-1">
             <Plus className="w-4 h-4" />
             <span>{deck.downloads}</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <MessageCircle className="w-4 h-4" />
+            <span>{deck.commentCount || 0}</span>
           </div>
         </div>
 

@@ -16,6 +16,7 @@ import { StudyScreen } from './components/Study/StudyScreen'
 import { StudyOptionsScreen } from './components/Study/StudyOptionsScreen'
 import { SettingsScreen } from './components/Settings/SettingsScreen'
 import { ProfileScreen } from './components/Profile/ProfileScreen'
+import { NotificationsScreen } from './components/Notifications/NotificationsScreen'
 
 export default function App() {
   const { currentView, setAuth, setCurrentView, setFriends, setFriendRequests, darkMode } = useStore()
@@ -69,7 +70,7 @@ export default function App() {
 
         // Load friends list
         try {
-          const friends = await api.getFriends(session.access_token)
+          const friends = await api.getUserFriends(session.access_token, session.user.id)
           setFriends(friends)
         } catch (error) {
           console.error('Failed to load friends:', error)
@@ -77,7 +78,7 @@ export default function App() {
 
         // Load friend requests
         try {
-          const requests = await api.getFriendRequests(session.access_token)
+          const requests = await api.getFriendRequests(session.access_token, session.user.id)
           setFriendRequests(requests)
         } catch (error) {
           console.error('Failed to load friend requests:', error)
@@ -102,6 +103,7 @@ export default function App() {
       {currentView === 'study' && <StudyScreen />}
       {currentView === 'study-options' && <StudyOptionsScreen />}
       {currentView === 'settings' && <SettingsScreen />}
+      {currentView === 'notifications' && <NotificationsScreen />}
       {currentView === 'upgrade' && <UpgradeModal open={true} onOpenChange={(open) => !open && setCurrentView('decks')} />}
       <Toaster position="top-center" richColors />
     </>

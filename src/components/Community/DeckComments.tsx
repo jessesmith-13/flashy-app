@@ -1,124 +1,57 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useStore } from '../../../store/useStore'
 import { Button } from '../../ui/button'
 import { MessageCircle, Send, Reply } from 'lucide-react'
 import * as api from '../../../utils/api'
 import { toast } from 'sonner'
-
-interface Comment {
-  id: string
-  deckId: string
-  userId: string
-  userName: string
-  userAvatar: string | null
-  text: string
-  parentId: string | null
-  createdAt: string
-  replies: Comment[]
-}
+import { CommentItem, Comment } from './CommentItem'
 
 interface DeckCommentsProps {
   deckId: string
   deckAuthorId?: string
+  targetCommentId?: string | null
+  onViewUser?: (userId: string) => void
 }
 
-function CommentItem({ 
-  comment, 
-  onReply, 
-  level = 0, 
-  deckAuthorId 
-}: { 
-  comment: Comment
-  onReply: (commentId: string, userName: string) => void
-  level?: number
-  deckAuthorId?: string
-}) {
-  const maxLevel = 3 // Maximum nesting level
-  const isAuthor = deckAuthorId && comment.userId === deckAuthorId
-
-  return (
-    <div className={`${level > 0 ? 'ml-8 mt-4' : 'mt-4'} ${level === 0 ? 'pb-4 border-b border-gray-200 dark:border-gray-700' : ''}`}>
-      <div className="flex items-start gap-3">
-        {/* User Avatar */}
-        {comment.userAvatar ? (
-          <img
-            src={comment.userAvatar}
-            alt={comment.userName}
-            className="w-8 h-8 rounded-full object-cover flex-shrink-0"
-          />
-        ) : (
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-400 to-blue-500 flex items-center justify-center text-white text-sm flex-shrink-0">
-            {comment.userName.charAt(0).toUpperCase()}
-          </div>
-        )}
-
-        <div className="flex-1 min-w-0">
-          {/* Comment Header */}
-          <div className="flex items-center gap-2 mb-1 flex-wrap">
-            <span className="font-medium text-sm text-gray-900 dark:text-gray-100">{comment.userName}</span>
-            {isAuthor && (
-              <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs bg-gradient-to-r from-emerald-500 to-blue-500 text-white font-medium">
-                Creator
-              </span>
-            )}
-            <span className="text-xs text-gray-500 dark:text-gray-400">
-              {new Date(comment.createdAt).toLocaleDateString(undefined, {
-                month: 'short',
-                day: 'numeric',
-                year: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
-              })}
-            </span>
-          </div>
-
-          {/* Comment Text */}
-          <p className="text-sm text-gray-700 dark:text-gray-300 mb-2 whitespace-pre-wrap break-words">
-            {comment.text}
-          </p>
-
-          {/* Reply Button */}
-          {level < maxLevel && (
-            <button
-              onClick={() => onReply(comment.id, comment.userName)}
-              className="text-xs text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 font-medium flex items-center gap-1 transition-colors"
-            >
-              <Reply className="w-3 h-3" />
-              Reply
-            </button>
-          )}
-
-          {/* Nested Replies */}
-          {comment.replies && comment.replies.length > 0 && (
-            <div className="mt-2">
-              {comment.replies.map((reply) => (
-                <CommentItem
-                  key={reply.id}
-                  comment={reply}
-                  onReply={onReply}
-                  level={level + 1}
-                  deckAuthorId={deckAuthorId}
-                />
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  )
-}
-
-export function DeckComments({ deckId, deckAuthorId }: DeckCommentsProps) {
+export function DeckComments({ deckId, deckAuthorId, targetCommentId, onViewUser }: DeckCommentsProps) {
   const { user, accessToken } = useStore()
   const [comments, setComments] = useState<Comment[]>([])
   const [loading, setLoading] = useState(true)
   const [commentText, setCommentText] = useState('')
   const [posting, setPosting] = useState(false)
   const [replyingTo, setReplyingTo] = useState<{ id: string; userName: string } | null>(null)
+  const [visibleComments, setVisibleComments] = useState(10)
+  const commentRef = useRef<HTMLDivElement | null>(null)
+
+  const hasMoreComments = comments.length > visibleComments
 
   useEffect(() => {
     loadComments()
   }, [deckId])
+
+  // Scroll to target comment when comments are loaded and targetCommentId is set
+  useEffect(() => {
+    if (targetCommentId && !loading && comments.length > 0) {
+      // If the target comment is not in the visible range, show all comments up to it
+      const targetIndex = comments.findIndex(c => 
+        c.id === targetCommentId || c.replies?.some(r => r.id === targetCommentId)
+      )
+      if (targetIndex >= visibleComments) {
+        setVisibleComments(targetIndex + 1)
+      }
+      
+      // Use setTimeout to ensure DOM is fully rendered
+      setTimeout(() => {
+        const targetElement = document.getElementById(targetCommentId)
+        if (targetElement) {
+          targetElement.scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'center'
+          })
+        }
+      }, 300)
+    }
+  }, [targetCommentId, loading, comments, visibleComments])
 
   const loadComments = async () => {
     try {
@@ -165,7 +98,7 @@ export function DeckComments({ deckId, deckAuthorId }: DeckCommentsProps) {
     }
   }
 
-  const handleReply = (commentId: string, userName: string) => {
+  const handleReply = (commentId: string, userName: string, rootCommentId: string) => {
     setReplyingTo({ id: commentId, userName })
     setCommentText(`@${userName} `)
     // Focus on textarea
@@ -263,14 +196,26 @@ export function DeckComments({ deckId, deckAuthorId }: DeckCommentsProps) {
         </div>
       ) : (
         <div className="space-y-2">
-          {comments.map((comment) => (
+          {comments.slice(0, visibleComments).map((comment) => (
             <CommentItem
               key={comment.id}
               comment={comment}
               onReply={handleReply}
               deckAuthorId={deckAuthorId}
+              targetCommentId={targetCommentId}
+              onViewUser={onViewUser}
             />
           ))}
+          
+          {/* Load More Comments Button */}
+          {hasMoreComments && (
+            <button
+              onClick={() => setVisibleComments(prev => prev + 10)}
+              className="mt-4 text-sm text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 font-medium transition-colors"
+            >
+              Load more comments ({comments.length - visibleComments} remaining)
+            </button>
+          )}
         </div>
       )}
     </div>

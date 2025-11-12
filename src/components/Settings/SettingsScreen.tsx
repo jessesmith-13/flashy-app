@@ -20,6 +20,8 @@ export function SettingsScreen() {
   const [emailCommentReplies, setEmailCommentReplies] = useState(true)
   const [emailFriendRequests, setEmailFriendRequests] = useState(true)
   const [autoBackup, setAutoBackup] = useState(true)
+  // Initialize from user data, default to true if undefined
+  const [decksPublic, setDecksPublic] = useState(user?.decksPublic ?? true)
   const [showCancelDialog, setShowCancelDialog] = useState(false)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [cancelling, setCancelling] = useState(false)
@@ -33,6 +35,30 @@ export function SettingsScreen() {
         ...userAchievements,
         studiedInDarkMode: true
       })
+    }
+  }
+
+  const handleDecksPublicToggle = async (enabled: boolean) => {
+    if (!accessToken) return
+    
+    setDecksPublic(enabled)
+    
+    try {
+      await api.updateProfile(accessToken, {
+        decksPublic: enabled
+      })
+      
+      // Update local state
+      updateUser({
+        decksPublic: enabled
+      })
+      
+      toast.success(enabled ? 'Decks are now public' : 'Decks are now private')
+    } catch (error) {
+      console.error('Failed to update decks visibility:', error)
+      toast.error('Failed to update decks visibility')
+      // Revert the toggle on error
+      setDecksPublic(!enabled)
     }
   }
 
@@ -138,7 +164,9 @@ export function SettingsScreen() {
 
             <DataPrivacySection
               autoBackup={autoBackup}
+              decksPublic={decksPublic}
               onAutoBackupChange={setAutoBackup}
+              onDecksPublicChange={handleDecksPublicToggle}
               onExportData={handleExportData}
             />
 
