@@ -96,9 +96,9 @@ export default function LandingPage() {
                 <span className="text-sm">AI-Powered Flashcard Learning</span>
               </div>
               <h1 className="text-5xl lg:text-6xl mb-6 text-gray-900 dark:text-gray-100">
-                Learn Anything,{' '}
+                Learn Anything, in a <br />
                 <span className="bg-gradient-to-r from-emerald-600 to-blue-600 bg-clip-text text-transparent">
-                  Fast
+                  Flash
                 </span>
               </h1>
               <p className="text-xl text-gray-600 dark:text-gray-400 mb-8 leading-relaxed">

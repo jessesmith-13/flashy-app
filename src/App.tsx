@@ -15,6 +15,7 @@ import { useAchievementTracking } from '../hooks/useAchievements'
 import { StudyScreen } from './components/Study/StudyScreen'
 import { StudyOptionsScreen } from './components/Study/StudyOptionsScreen'
 import { SettingsScreen } from './components/Settings/SettingsScreen'
+import { ProfileScreen } from './components/Profile/ProfileScreen'
 
 export default function App() {
   const { currentView, setAuth, setCurrentView, setFriends, setFriendRequests, darkMode } = useStore()
@@ -97,6 +98,7 @@ export default function App() {
       {currentView === 'decks' && <DecksScreen />}
       {currentView === 'deck-detail' && <DeckDetailScreen />}
       {currentView === 'community' && <CommunityScreen />}
+      {currentView === 'profile' && <ProfileScreen />}
       {currentView === 'study' && <StudyScreen />}
       {currentView === 'study-options' && <StudyOptionsScreen />}
       {currentView === 'settings' && <SettingsScreen />}

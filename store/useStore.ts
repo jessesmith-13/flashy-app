@@ -106,9 +106,46 @@ export interface UserAchievements {
   slowCardReview: boolean
 }
 
+export interface Friend {
+  /** Unique identifier for the friend (matches user.id) */
+  id: string
+
+  /** Display name shown in UI (fallback to name) */
+  displayName?: string
+
+  /** Real name, optional */
+  name?: string
+
+  /** Friend’s email for contact / identification */
+  email: string
+
+  /** Optional profile picture URL */
+  avatarUrl?: string
+
+  /** Whether the user has made their decks public */
+  decksPublic?: boolean
+
+  /** Optional status field for richer friend interactions */
+  status?: 'online' | 'offline' | 'studying' | 'idle'
+
+  /** Optional field for pending friend requests */
+  friendshipStatus?: 'accepted' | 'pending' | 'requested' | 'blocked'
+
+  /** Date when friendship was created or accepted */
+  createdAt?: string
+
+  /** Optional field for showing shared activity (e.g., recent deck studied) */
+  lastActivity?: {
+    deckName?: string
+    timestamp?: string
+    score?: number
+  }
+}
+
+
 export type SubscriptionTier = 'free' | 'monthly' | 'annual' | 'lifetime'
 
-interface User {
+export interface User {
   id: string
   email: string
   name: string
