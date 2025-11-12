@@ -4,7 +4,8 @@ import { useStore } from '../store/useStore'
 import * as api from '../utils/api'
 import './App.css'
 import LandingPage from './components/Landing/LandingPage'
-import { LoginScreen } from './components/LoginScreen'
+import { LoginScreen } from './components/Auth/Login/LoginScreen'
+import { SignupScreen } from './components/Auth/Signup/SignupScreen'
 import { DecksScreen } from './components/Decks/DecksScreen'
 import { UpgradeModal } from './components/UpgradeModal'
 import { DeckDetailScreen } from './components/Decks/DeckDetail/DeckDetailScreen'
@@ -92,6 +93,7 @@ export default function App() {
     <>
       {currentView === 'landing' && <LandingPage />}
       {currentView === 'login' && <LoginScreen />}
+      {currentView === 'signup' && <SignupScreen />}
       {currentView === 'decks' && <DecksScreen />}
       {currentView === 'deck-detail' && <DeckDetailScreen />}
       {currentView === 'community' && <CommunityScreen />}
