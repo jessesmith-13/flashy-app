@@ -11,6 +11,7 @@ import { CardList } from './CardList'
 import { UpgradeModal } from '../../UpgradeModal'
 import { toast } from 'sonner'
 import { canPublishToCommunity } from '../../../../utils/subscription'
+import { handleAuthError } from '../../../../utils/authErrorHandler'
 
 export function DeckDetailScreen() {
   const {
@@ -122,7 +123,7 @@ export function DeckDetailScreen() {
       const fetchedCards = await api.fetchCards(accessToken, selectedDeckId)
       setCards(fetchedCards)
     } catch (error) {
-      console.error('Failed to load cards:', error)
+      handleAuthError(error)
       toast.error('Failed to load cards. Please check the console for details.')
     } finally {
       setLoading(false)
@@ -251,6 +252,7 @@ export function DeckDetailScreen() {
         toast.success('Card added! Add another card below.')
       }
     } catch (error) {
+      handleAuthError(error)
       console.error('Failed to create card:', error)
     } finally {
       setCreating(false)
@@ -399,6 +401,7 @@ export function DeckDetailScreen() {
       setEditCardDialogOpen(false)
       setEditingCardId(null)
     } catch (error) {
+      handleAuthError(error)
       console.error('Failed to update card:', error)
     } finally {
       setUpdating(false)
@@ -416,6 +419,7 @@ export function DeckDetailScreen() {
         updateDeck(deck.id, { cardCount: Math.max(0, (deck.cardCount || 0) - 1) })
       }
     } catch (error) {
+      handleAuthError(error)
       console.error('Failed to delete card:', error)
     }
   }
@@ -435,6 +439,7 @@ export function DeckDetailScreen() {
         toast.success('Deck deleted successfully')
       }
     } catch (error) {
+      handleAuthError(error)
       console.error('Failed to delete deck:', error)
       toast.error('Failed to delete deck')
     } finally {
@@ -465,6 +470,7 @@ export function DeckDetailScreen() {
         })
       }
     } catch (error) {
+      handleAuthError(error)
       console.error('Failed to update deck:', error)
       toast.error('Failed to update deck')
     }
@@ -529,6 +535,7 @@ export function DeckDetailScreen() {
       }
       setPublishDialogOpen(false)
     } catch (error: any) {
+      handleAuthError(error)
       console.error('Failed to publish deck:', error)
       if (error.message.includes('already been published')) {
         toast.info(error.message)
@@ -575,6 +582,7 @@ export function DeckDetailScreen() {
     try {
       await api.updateCardPositions(accessToken, selectedDeckId, updatedDeckCards.map(c => ({ id: c.id, position: c.position })))
     } catch (error) {
+      handleAuthError(error)
       console.error('Failed to update card positions:', error)
     }
   }
@@ -592,6 +600,7 @@ export function DeckDetailScreen() {
       updateCard(cardId, { favorite: newFavoriteValue })
       toast.success(newFavoriteValue ? 'Added to favorites' : 'Removed from favorites')
     } catch (error) {
+      handleAuthError(error)
       console.error('Failed to toggle favorite:', error)
       toast.error('Failed to update favorite status')
     }
@@ -610,6 +619,7 @@ export function DeckDetailScreen() {
       updateCard(cardId, { ignored: newIgnoredValue })
       toast.success(newIgnoredValue ? 'Card ignored' : 'Card unignored')
     } catch (error) {
+      handleAuthError(error)
       console.error('Failed to toggle ignored:', error)
       toast.error('Failed to update ignored status')
     }

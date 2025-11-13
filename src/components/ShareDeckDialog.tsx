@@ -38,10 +38,10 @@ export function ShareDeckDialog({
     setGenerating(true)
     try {
       const result = await api.createShareLink(accessToken, deckId, isCommunityDeck)
-      const fullUrl = `${window.location.origin}/shared/${result.shareId}`
+      const fullUrl = `${window.location.origin}/#/shared/${result.shareId}`
       setShareUrl(fullUrl)
       toast.success('Share link created!')
-    } catch (error: unknown) {
+    } catch (error: any) {
       console.error('Failed to create share link:', error)
       toast.error('Failed to create share link')
     } finally {
@@ -52,13 +52,38 @@ export function ShareDeckDialog({
   const handleCopyLink = async () => {
     if (shareUrl) {
       try {
+        // Try modern clipboard API first
         await navigator.clipboard.writeText(shareUrl)
         setCopied(true)
         toast.success('Link copied to clipboard!')
         setTimeout(() => setCopied(false), 2000)
       } catch (error) {
-        console.error('Failed to copy link:', error)
-        toast.error('Failed to copy link')
+        // Fallback method for when Clipboard API is blocked (don't log expected error)
+        try {
+          const textArea = document.createElement('textarea')
+          textArea.value = shareUrl
+          textArea.style.position = 'fixed'
+          textArea.style.left = '-999999px'
+          textArea.style.top = '-999999px'
+          document.body.appendChild(textArea)
+          textArea.focus()
+          textArea.select()
+          
+          const successful = document.execCommand('copy')
+          textArea.remove()
+          
+          if (successful) {
+            setCopied(true)
+            toast.success('Link copied to clipboard!')
+            setTimeout(() => setCopied(false), 2000)
+          } else {
+            console.error('Failed to copy link - both clipboard methods failed')
+            toast.error('Failed to copy link. Please copy manually.')
+          }
+        } catch (fallbackError) {
+          console.error('Failed to copy link - both clipboard methods failed:', fallbackError)
+          toast.error('Failed to copy link. Please copy manually.')
+        }
       }
     }
   }

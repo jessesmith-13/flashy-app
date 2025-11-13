@@ -31,7 +31,7 @@ export function ProfileFriends({ friends, loading, onRemoveFriend, onViewFriend 
   const [friendToRemove, setFriendToRemove] = useState<Friend | null>(null)
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm">
+    <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 sm:p-6 shadow-sm w-full overflow-hidden">
       <h2 className="text-xl text-gray-900 dark:text-gray-100 mb-6">Friends</h2>
       
       {loading ? (
@@ -50,11 +50,11 @@ export function ProfileFriends({ friends, loading, onRemoveFriend, onViewFriend 
           {friends.map((friend) => (
             <div
               key={friend.id}
-              className="p-6 rounded-xl border-2 border-gray-200 dark:border-gray-700 hover:border-emerald-300 dark:hover:border-emerald-600 transition-all cursor-pointer"
+              className="p-4 sm:p-6 rounded-xl border-2 border-gray-200 dark:border-gray-700 hover:border-emerald-300 dark:hover:border-emerald-600 transition-all cursor-pointer overflow-hidden"
               onClick={() => onViewFriend?.(friend.id)}
             >
-              <div className="flex items-center gap-3">
-                <div className="relative">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="relative flex-shrink-0">
                   {friend.avatarUrl ? (
                     <img
                       src={friend.avatarUrl}
@@ -78,10 +78,10 @@ export function ProfileFriends({ friends, loading, onRemoveFriend, onViewFriend 
                     e.stopPropagation() // Prevent triggering the card click
                     setFriendToRemove(friend)
                   }}
-                  className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-900/20"
+                  className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-900/20 flex-shrink-0"
                 >
                   <UserMinus className="w-4 h-4 mr-2" />
-                  Remove
+                  <span className="hidden sm:inline">Remove</span>
                 </Button>
               </div>
             </div>

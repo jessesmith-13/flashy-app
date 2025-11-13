@@ -1,8 +1,13 @@
 import { Button } from '../../../ui/button'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../../../ui/alert-dialog'
-import { GripVertical, Edit, Star, EyeOff, Trash2, FlipVertical } from 'lucide-react'
-import type { Card } from '../../../../store/useStore'
-import { CARD_TYPES } from '../../constants'
+import { GripVertical, Edit, Star, EyeOff, Trash2, FlipVertical, CheckCircle, Keyboard } from 'lucide-react'
+import type { Card, CardType } from '../../../../store/useStore'
+
+const CARD_TYPES: { value: CardType; label: string; icon: typeof FlipVertical }[] = [
+  { value: 'classic-flip', label: 'Classic Flip', icon: FlipVertical },
+  { value: 'multiple-choice', label: 'Multiple Choice', icon: CheckCircle },
+  { value: 'type-answer', label: 'Type to Answer', icon: Keyboard },
+]
 
 interface CardItemProps {
   card: Card

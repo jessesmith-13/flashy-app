@@ -43,11 +43,16 @@ export function UserProfileView({ userId, onBack, onViewDeck, onViewUser }: User
 
   // Debug logging
   useEffect(() => {
-    console.log('UserProfileView - Checking friend status for userId:', userId)
-    console.log('UserProfileView - Current friends array:', friends)
-    console.log('UserProfileView - isFriend:', isFriend)
-    console.log('UserProfileView - isPending:', isPending)
-  }, [userId, friends, isFriend, isPending])
+    console.log('=== UserProfileView Friend Status Debug ===')
+    console.log('Viewing userId:', userId)
+    console.log('Current user ID:', user?.id)
+    console.log('Friends array from store:', friends)
+    console.log('Pending requests array from store:', pendingFriendRequests)
+    console.log('isFriend:', isFriend)
+    console.log('isPending:', isPending)
+    console.log('isOwnProfile:', isOwnProfile)
+    console.log('========================================')
+  }, [userId, friends, isFriend, isPending, pendingFriendRequests, user])
 
   useEffect(() => {
     loadUserProfile()

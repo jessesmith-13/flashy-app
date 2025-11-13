@@ -48,21 +48,30 @@ export function SignupScreen() {
         setNewUserDisplayName(displayName)
         setShowSuccess(true)
         
-        // Auto-redirect after 2 seconds
-        setTimeout(() => {
-          setCurrentView('decks')
-        }, 2000)
-      }
-    } catch (err: unknown) {
-      console.error('Signup error:', err)
-      if (err instanceof Error) {
-        console.error('Error message:', err.message)
-        const errorMessage = err.message || 'Failed to sign up'
-        if (errorMessage.includes('User already registered') || errorMessage.includes('already registered')) {
-          setError('This email is already registered. Try logging in instead.')
+        // Check if user was viewing a shared deck before signing up
+        const returnToSharedDeck = sessionStorage.getItem('returnToSharedDeck')
+        if (returnToSharedDeck) {
+          console.log('SignUpScreen - Returning to shared deck after signup:', returnToSharedDeck)
+          sessionStorage.removeItem('returnToSharedDeck')
+          // Redirect after showing success message
+          setTimeout(() => {
+            window.location.hash = `#/shared/${returnToSharedDeck}`
+          }, 2000)
         } else {
-          setError(errorMessage)
+          // Auto-redirect after 2 seconds
+          setTimeout(() => {
+            setCurrentView('decks')
+          }, 2000)
         }
+      }
+    } catch (err: any) {
+      console.error('Signup error:', err)
+      console.error('Error message:', err.message)
+      const errorMessage = err.message || 'Failed to sign up'
+      if (errorMessage.includes('User already registered') || errorMessage.includes('already registered')) {
+        setError('This email is already registered. Try logging in instead.')
+      } else {
+        setError(errorMessage)
       }
     } finally {
       setLoading(false)
@@ -76,16 +85,27 @@ export function SignupScreen() {
   }
 
   const handleContinue = () => {
-    setCurrentView('decks')
+    // Check if user was viewing a shared deck before signing up
+    const returnToSharedDeck = sessionStorage.getItem('returnToSharedDeck')
+    if (returnToSharedDeck) {
+      console.log('SignUpScreen - Returning to shared deck after continue:', returnToSharedDeck)
+      sessionStorage.removeItem('returnToSharedDeck')
+      window.location.hash = `#/shared/${returnToSharedDeck}`
+    } else {
+      setCurrentView('decks')
+    }
   }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-blue-50 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
       <div className="w-full max-w-md bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 sm:p-10">
-        <AuthHeader subtitle="Start your learning journey" />
+        <AuthHeader 
+          onBackToHome={() => setCurrentView('landing')}
+          subtitle="Start your learning journey"
+        />
 
         {showSuccess ? (
-          <SignupSuccess
+          <SignupSuccess 
             displayName={newUserDisplayName}
             onContinue={handleContinue}
           />

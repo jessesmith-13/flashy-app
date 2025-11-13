@@ -33,7 +33,8 @@
     "hooks",
     "utils",
     "vite.config.ts",
-    "vitest.setup.ts"
+    "vitest.setup.ts",
+    "supabase/functions"
   ],
   "exclude": [
     "node_modules",

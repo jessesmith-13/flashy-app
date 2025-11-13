@@ -68,13 +68,15 @@ export const resetPassword = async (email: string) => {
   return data
 }
 
-export const signOut = async () => {
-  const { error } = await supabaseClient.auth.signOut()
-  
-  if (error) {
-    throw new Error(error.message)
+export async function signOut() {
+  try {
+    const { error } = await supabaseClient.auth.signOut()
+    if (error && error.message !== 'Auth session missing!') throw error
+  } catch (err) {
+    console.warn('Supabase signOut warning:', err)
   }
 }
+
 
 export const getSession = async () => {
   const { data, error } = await supabaseClient.auth.getSession()
@@ -961,27 +963,30 @@ export const postDeckComment = async (
 
 // Notifications API
 export const getNotifications = async (accessToken: string) => {
-  console.log('=== GET NOTIFICATIONS START ===')
-  console.log('API Base URL:', API_BASE)
-  console.log('Full URL:', `${API_BASE}/notifications`)
-  console.log('Access Token (first 20 chars):', accessToken.substring(0, 20) + '...')
-  
-  const response = await fetch(`${API_BASE}/notifications`, {
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-    },
-  })
+  try {
+    const response = await fetch(`${API_BASE}/notifications`, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    })
+    
+    // Try to parse JSON response
+    let data
+    try {
+      data = await response.json()
+    } catch (jsonError) {
+      throw new Error('Invalid response from server')
+    }
+    
+    if (!response.ok) {
+      throw new Error(data.error || 'Failed to fetch notifications')
+    }
 
-  console.log('Response status:', response.status)
-  const data = await response.json()
-  console.log('Response data:', data)
-  
-  if (!response.ok) {
-    console.error('Failed to fetch notifications:', data.error)
-    throw new Error(data.error || 'Failed to fetch notifications')
+    return data.notifications || []
+  } catch (error) {
+    // Re-throw to let the caller handle it silently
+    throw error
   }
-
-  return data.notifications || []
 }
 
 export const markNotificationRead = async (accessToken: string, notificationId: string) => {

@@ -5,6 +5,7 @@ import { Bell, X, Check, UserPlus, MessageCircle, Reply, FileText } from 'lucide
 import { Button } from '../../ui/button'
 import * as api from '../../../utils/api'
 import { toast } from 'sonner'
+import { handleAuthError } from '../../../utils/authErrorHandler'
 
 export function NotificationCenter() {
   const { 
@@ -15,6 +16,7 @@ export function NotificationCenter() {
     setMentionNotifications,
     removeMentionNotification,
     setCurrentView,
+    setCurrentSection,
     setViewingCommunityDeckId,
     setTargetCommentId
   } = useStore()
@@ -51,6 +53,7 @@ export function NotificationCenter() {
       setMentionNotifications(mentionNotifications.map(n => ({ ...n, seen: true })))
     } catch (error) {
       console.error('Failed to mark notifications as seen:', error)
+      handleAuthError(error)
     }
   }
 
@@ -61,7 +64,10 @@ export function NotificationCenter() {
       const notifications = await api.getNotifications(accessToken)
       setMentionNotifications(notifications)
     } catch (error) {
-      console.error('Failed to load notifications:', error)
+      // Completely silent - no console logs, no toasts, no auth error handling
+      // Notifications are a background feature and shouldn't interrupt the user
+      // If there's an auth error, the user will be prompted to log in when they
+      // try to perform an actual action (not background polling)
     }
   }
 
@@ -90,6 +96,7 @@ export function NotificationCenter() {
     } catch (error) {
       console.error('Failed to accept friend request:', error)
       toast.error('Failed to accept friend request')
+      handleAuthError(error)
     } finally {
       setLoading(null)
     }
@@ -113,6 +120,7 @@ export function NotificationCenter() {
     } catch (error) {
       console.error('Failed to decline friend request:', error)
       toast.error('Failed to decline friend request')
+      handleAuthError(error)
     } finally {
       setLoading(null)
     }
@@ -257,6 +265,7 @@ export function NotificationCenter() {
                             }`}
                             onClick={async () => {
                               // Navigate to community tab and view deck
+                              setCurrentSection('community')
                               setCurrentView('community')
                               setViewingCommunityDeckId(notification.deckId)
                               setTargetCommentId(notification.parentCommentId) // Scroll to the parent comment
@@ -268,6 +277,7 @@ export function NotificationCenter() {
                                 removeMentionNotification(notification.id)
                               } catch (error) {
                                 console.error('Failed to mark notification as read:', error)
+                                handleAuthError(error)
                               }
                             }}
                           >
@@ -321,6 +331,7 @@ export function NotificationCenter() {
                             }`}
                             onClick={async () => {
                               // Navigate to community tab and view deck
+                              setCurrentSection('community')
                               setCurrentView('community')
                               setViewingCommunityDeckId(notification.deckId)
                               setIsOpen(false)
@@ -331,6 +342,7 @@ export function NotificationCenter() {
                                 removeMentionNotification(notification.id)
                               } catch (error) {
                                 console.error('Failed to mark notification as read:', error)
+                                handleAuthError(error)
                               }
                             }}
                           >
@@ -392,6 +404,7 @@ export function NotificationCenter() {
                               removeMentionNotification(notification.id)
                             } catch (error) {
                               console.error('Failed to mark notification as read:', error)
+                              handleAuthError(error)
                             }
                             
                             // TODO: Navigate to the specific deck
