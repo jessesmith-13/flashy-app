@@ -37,7 +37,8 @@ export function NotificationsScreen() {
         await api.markAllNotificationsSeen(accessToken)
       }
     } catch (error) {
-      console.error('Failed to load notifications:', error)
+      // Completely silent - notifications are non-critical
+      // Only log to console for debugging
     }
   }
 

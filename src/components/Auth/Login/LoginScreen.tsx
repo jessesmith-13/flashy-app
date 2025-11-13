@@ -48,7 +48,7 @@ export function LoginScreen() {
         // Load friend data
         try {
           const friends = await api.getFriends(session.access_token)
-          setFriends(friends)
+          setFriends(friends.map(f => f.id)) // Extract just the IDs
           
           const requests = await api.getFriendRequests(session.access_token)
           setFriendRequests(requests)
@@ -56,7 +56,17 @@ export function LoginScreen() {
           console.error('Failed to load friends data:', error)
         }
         
-        setCurrentView('decks')
+        // Check if user was viewing a shared deck before logging in
+        const returnToSharedDeck = sessionStorage.getItem('returnToSharedDeck')
+        if (returnToSharedDeck) {
+          console.log('LoginScreen - Returning to shared deck after login:', returnToSharedDeck)
+          sessionStorage.removeItem('returnToSharedDeck')
+          // Set the hash so App.tsx will pick it up
+          window.location.hash = `#/shared/${returnToSharedDeck}`
+          // Don't set a view - let App.tsx handle it
+        } else {
+          setCurrentView('decks')
+        }
       }
     } catch (err: any) {
       console.error('Login error:', err)
@@ -179,7 +189,9 @@ export function LoginScreen() {
         // Load friend data
         try {
           const friends = await api.getFriends(session.access_token)
-          setFriends(friends)
+          console.log('LoginScreen (Google) - getFriends returned:', friends)
+          console.log('LoginScreen (Google) - Extracting IDs:', friends.map(f => f.id))
+          setFriends(friends.map(f => f.id)) // Extract just the IDs
           
           const requests = await api.getFriendRequests(session.access_token)
           setFriendRequests(requests)
@@ -187,7 +199,17 @@ export function LoginScreen() {
           console.error('Failed to load friends data:', error)
         }
         
-        setCurrentView('decks')
+        // Check if user was viewing a shared deck before logging in
+        const returnToSharedDeck = sessionStorage.getItem('returnToSharedDeck')
+        if (returnToSharedDeck) {
+          console.log('LoginScreen (Test) - Returning to shared deck after login:', returnToSharedDeck)
+          sessionStorage.removeItem('returnToSharedDeck')
+          // Set the hash so App.tsx will pick it up
+          window.location.hash = `#/shared/${returnToSharedDeck}`
+          // Don't set a view - let App.tsx handle it
+        } else {
+          setCurrentView('decks')
+        }
       }
     } catch (err: any) {
       console.error('Test login error:', err)

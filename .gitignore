@@ -81,6 +81,7 @@ functions/
 *.db
 tmp/
 temp/
+supabase/.temp
 
 # =========================
 # System files

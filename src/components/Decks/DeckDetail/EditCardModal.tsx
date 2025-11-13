@@ -5,10 +5,15 @@ import { Label } from '../../../ui/label'
 import { Textarea } from '../../../ui/textarea'
 import { Checkbox } from '../../../ui/checkbox'
 import { Badge } from '../../../ui/badge'
-import { ImageIcon, Crown, X } from 'lucide-react'
-import type { CardType, SubscriptionTier } from '../../../../store/useStore'
+import { FlipVertical, CheckCircle, Keyboard, ImageIcon, Crown, X } from 'lucide-react'
+import type { CardType } from '../../../../store/useStore'
 import { canAddImageToCard } from '../../../../utils/subscription'
-import { CARD_TYPES } from '../../constants'
+
+const CARD_TYPES: { value: CardType; label: string; icon: typeof FlipVertical; description: string }[] = [
+  { value: 'classic-flip', label: 'Classic Flip', icon: FlipVertical, description: 'Flip card with ✓/✗ rating' },
+  { value: 'multiple-choice', label: 'Multiple Choice', icon: CheckCircle, description: 'Choose from 4 options' },
+  { value: 'type-answer', label: 'Type to Answer', icon: Keyboard, description: 'Type the exact answer' },
+]
 
 interface EditCardModalProps {
   open: boolean
@@ -26,7 +31,7 @@ interface EditCardModalProps {
   updating: boolean
   uploadingImage: boolean
   uploadingBackImage: boolean
-  userTier?: SubscriptionTier
+  userTier?: string
   onCardTypeChange: (type: CardType) => void
   onFrontChange: (value: string) => void
   onBackChange: (value: string) => void
@@ -46,7 +51,9 @@ export function EditCardModal({
   front,
   back,
   frontImageUrl,
+  frontImageFile,
   backImageUrl,
+  backImageFile,
   options,
   correctIndices,
   acceptedAnswers,

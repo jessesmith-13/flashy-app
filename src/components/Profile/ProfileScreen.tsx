@@ -227,8 +227,8 @@ export function ProfileScreen() {
 
   return (
     <AppLayout>
-      <div className="min-h-screen bg-gray-100 dark:bg-gray-900 p-4 lg:p-8">
-        <div className="max-w-6xl mx-auto">
+      <div className="min-h-screen bg-gray-100 dark:bg-gray-900 p-4 lg:p-8 overflow-x-hidden">
+        <div className="max-w-6xl mx-auto overflow-x-hidden">
           <ProfileHeader
             user={{
               avatarUrl: user?.avatarUrl,
@@ -245,19 +245,19 @@ export function ProfileScreen() {
           />
 
           {/* Tabs */}
-          <Tabs defaultValue="stats" className="w-full" onValueChange={(value) => {
+          <Tabs defaultValue="stats" className="w-full overflow-x-hidden" onValueChange={(value) => {
             if (value === 'friends' && userFriends.length === 0 && !friendsLoading) {
               loadUserFriends()
             }
           }}>
-            <TabsList className="w-full grid grid-cols-3 mb-6">
-              <TabsTrigger value="stats"><BarChart3 className="w-4 h-4 mr-2" />Stats</TabsTrigger>
-              <TabsTrigger value="achievements"><Trophy className="w-4 h-4 mr-2" />Achievements</TabsTrigger>
-              <TabsTrigger value="friends"><Users className="w-4 h-4 mr-2" />Friends</TabsTrigger>
+            <TabsList className="w-full flex justify-center mb-6">
+              <TabsTrigger value="stats" className="flex-none"><BarChart3 className="w-4 h-4 mr-2" />Stats</TabsTrigger>
+              <TabsTrigger value="achievements" className="flex-none"><Trophy className="w-4 h-4 mr-2" />Achievements</TabsTrigger>
+              <TabsTrigger value="friends" className="flex-none"><Users className="w-4 h-4 mr-2" />Friends</TabsTrigger>
             </TabsList>
 
             {/* Stats Tab */}
-            <TabsContent value="stats">
+            <TabsContent value="stats" className="w-full overflow-hidden">
               <ProfileStats
                 userStats={{
                   totalDecks: userStats?.totalDecks || 0,
@@ -272,14 +272,14 @@ export function ProfileScreen() {
             </TabsContent>
 
             {/* Achievements Tab */}
-            <TabsContent value="achievements">
+            <TabsContent value="achievements" className="w-full overflow-hidden">
               <ProfileAchievements
                 unlockedAchievementIds={userAchievements?.unlockedAchievementIds || []}
               />
             </TabsContent>
 
             {/* Friends Tab */}
-            <TabsContent value="friends">
+            <TabsContent value="friends" className="w-full overflow-hidden">
               <ProfileFriends
                 friends={userFriends}
                 loading={friendsLoading}

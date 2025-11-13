@@ -230,6 +230,7 @@ interface AppState {
   temporaryStudyDeck: TemporaryStudyDeck | null // For studying community decks without adding them
   returnToCommunityDeck: CommunityDeck | null // Track which community deck to return to after studying
   returnToUserDeck: { deck: any; cards: any[]; ownerId: string } | null // Track which user deck to return to after studying
+  returnToSharedDeckId: string | null // Track which shared deck to return to after studying
   viewingCommunityDeckId: string | null // Track which community deck to view (for notifications)
   targetCommentId: string | null // Track which comment to scroll to (for notifications)
   viewingUserId: string | null // Track which user profile to view
@@ -244,6 +245,7 @@ interface AppState {
   setTemporaryStudyDeck: (deck: TemporaryStudyDeck | null) => void
   setReturnToCommunityDeck: (deck: CommunityDeck | null) => void
   setReturnToUserDeck: (userDeck: { deck: any; cards: any[]; ownerId: string } | null) => void
+  setReturnToSharedDeckId: (deckId: string | null) => void
   setViewingCommunityDeckId: (deckId: string | null) => void
   setTargetCommentId: (commentId: string | null) => void
   setViewingUserId: (userId: string | null) => void
@@ -380,6 +382,7 @@ export const useStore = create<AppState>((set, get) => ({
   temporaryStudyDeck: null,
   returnToCommunityDeck: null,
   returnToUserDeck: null,
+  returnToSharedDeckId: null,
   viewingCommunityDeckId: null,
   targetCommentId: null,
   viewingUserId: null,
@@ -394,6 +397,7 @@ export const useStore = create<AppState>((set, get) => ({
   setTemporaryStudyDeck: (deck) => set({ temporaryStudyDeck: deck }),
   setReturnToCommunityDeck: (deck) => set({ returnToCommunityDeck: deck }),
   setReturnToUserDeck: (userDeck) => set({ returnToUserDeck: userDeck }),
+  setReturnToSharedDeckId: (deckId) => set({ returnToSharedDeckId: deckId }),
   setViewingCommunityDeckId: (deckId) => set({ viewingCommunityDeckId: deckId }),
   setTargetCommentId: (commentId) => set({ targetCommentId: commentId }),
   setViewingUserId: (userId) => set({ viewingUserId: userId }),

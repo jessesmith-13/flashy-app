@@ -5,10 +5,15 @@ import { Label } from '../../../ui/label'
 import { Textarea } from '../../../ui/textarea'
 import { Checkbox } from '../../../ui/checkbox'
 import { Badge } from '../../../ui/badge'
-import { ImageIcon, Crown, X } from 'lucide-react'
-import type { CardType, SubscriptionTier } from '../../../../store/useStore'
+import { FlipVertical, CheckCircle, Keyboard, ImageIcon, Crown, X } from 'lucide-react'
+import type { CardType } from '../../../../store/useStore'
 import { canAddImageToCard } from '../../../../utils/subscription'
-import { CARD_TYPES } from '../../constants'
+
+const CARD_TYPES: { value: CardType; label: string; icon: typeof FlipVertical; description: string }[] = [
+  { value: 'classic-flip', label: 'Classic Flip', icon: FlipVertical, description: 'Flip card with ✓/✗ rating' },
+  { value: 'multiple-choice', label: 'Multiple Choice', icon: CheckCircle, description: 'Choose from 4 options' },
+  { value: 'type-answer', label: 'Type to Answer', icon: Keyboard, description: 'Type the exact answer' },
+]
 
 interface AddCardModalProps {
   open: boolean
@@ -26,7 +31,7 @@ interface AddCardModalProps {
   creating: boolean
   uploadingImage: boolean
   uploadingBackImage: boolean
-  userTier?: SubscriptionTier
+  userTier?: string
   onCardTypeChange: (type: CardType) => void
   onFrontChange: (value: string) => void
   onBackChange: (value: string) => void
@@ -35,7 +40,7 @@ interface AddCardModalProps {
   onOptionsChange: (options: string[]) => void
   onCorrectIndicesChange: (indices: number[]) => void
   onAcceptedAnswersChange: (value: string) => void
-  onSubmit: (closeDialog?: boolean) => void
+  onSubmit: (e: React.FormEvent, closeDialog?: boolean) => void
   onUpgradeClick: () => void
 }
 
@@ -46,7 +51,9 @@ export function AddCardModal({
   front,
   back,
   frontImageUrl,
+  frontImageFile,
   backImageUrl,
+  backImageFile,
   options,
   correctIndices,
   acceptedAnswers,
@@ -103,7 +110,7 @@ export function AddCardModal({
             Choose a card type and create your flashcard.
           </DialogDescription>
         </DialogHeader>
-      <form onSubmit={(e) => { e.preventDefault(); onSubmit(true) }} className="space-y-4 mt-4">
+        <form onSubmit={(e) => onSubmit(e, true)} className="space-y-4 mt-4">
           <div>
             <Label>Card Type</Label>
             <div className="grid grid-cols-1 gap-2 mt-2">
@@ -373,10 +380,13 @@ export function AddCardModal({
             >
               {creating ? 'Adding...' : 'Add Card'}
             </Button>
-           <Button
+            <Button
               type="button"
               variant="outline"
-              onClick={() => onSubmit(false)}
+              onClick={(e) => {
+                e.preventDefault()
+                onSubmit(e as any, false)
+              }}
               disabled={creating}
               className="flex-1"
             >

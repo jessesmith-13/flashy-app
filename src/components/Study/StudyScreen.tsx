@@ -9,7 +9,7 @@ import { StudyStats } from './StudyStats'
 import { EmptyDeckState } from './EmptyDeckState'
 
 export function StudyScreen() {
-  const { selectedDeckId, decks, cards, studyOptions, studyAllCards, setCurrentView, userAchievements, setUserAchievements, addStudySession, temporaryStudyDeck, setTemporaryStudyDeck, setReturnToCommunityDeck } = useStore()
+  const { selectedDeckId, decks, cards, studyOptions, studyAllCards, setCurrentView, userAchievements, setUserAchievements, addStudySession, temporaryStudyDeck, setTemporaryStudyDeck, setReturnToCommunityDeck, returnToUserDeck, setReturnToUserDeck, returnToSharedDeckId, setReturnToSharedDeckId } = useStore()
   
   // Check if we're studying a temporary community deck
   const isTemporaryStudy = temporaryStudyDeck !== null
@@ -43,7 +43,7 @@ export function StudyScreen() {
     }
     
     // Order cards based on study options
-    const orderedCards = [...filteredCards]
+    let orderedCards = [...filteredCards]
     
     if (order === 'randomized') {
       orderedCards.sort(() => Math.random() - 0.5)
@@ -144,7 +144,6 @@ export function StudyScreen() {
     
     const correct = finalCorrect ?? correctAnswers
     const wrong = finalWrong ?? wrongAnswers
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const studied = finalCardsStudied ?? cardsStudied
     
     // Only save study session if studying a specific deck (not all cards)
@@ -191,6 +190,7 @@ export function StudyScreen() {
     if (isTemporaryStudy) {
       setTemporaryStudyDeck(null)
       setReturnToCommunityDeck(null)
+      setReturnToUserDeck(null) // Clear user deck return state
       setCurrentView('community')
     } else {
       setCurrentView(studyAllCards ? 'all-cards' : 'deck-detail')
@@ -198,9 +198,18 @@ export function StudyScreen() {
   }
 
   const handleViewDeckDetails = () => {
-    // Keep the return deck set, just clear temporary study and go back to community
-    setTemporaryStudyDeck(null)
-    setCurrentView('community')
+    // Check if we came from a shared deck
+    if (returnToSharedDeckId) {
+      // Clear temporary study and return to shared deck view
+      setTemporaryStudyDeck(null)
+      const shareId = returnToSharedDeckId
+      setReturnToSharedDeckId(null)
+      window.location.hash = `#/shared/${shareId}`
+    } else {
+      // Keep the return deck set, just clear temporary study and go back to community
+      setTemporaryStudyDeck(null)
+      setCurrentView('community')
+    }
   }
 
   const handleRestart = () => {
@@ -215,7 +224,7 @@ export function StudyScreen() {
       filteredCards = filteredCards.filter(c => c.favorite)
     }
     
-    const orderedCards = [...filteredCards]
+    let orderedCards = [...filteredCards]
     
     if (order === 'randomized') {
       orderedCards.sort(() => Math.random() - 0.5)

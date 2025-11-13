@@ -44,7 +44,7 @@ export function DecksScreen() {
   const [filterCategory, setFilterCategory] = useState<string>('all')
   const [filterSubtopic, setFilterSubtopic] = useState<string>('all')
   const [editDialogOpen, setEditDialogOpen] = useState(false)
-  const [editingDeck, setEditingDeck] = useState<Deck | null>(null)
+  const [editingDeck, setEditingDeck] = useState<any>(null)
   const [editDeckName, setEditDeckName] = useState('')
   const [editEmoji, setEditEmoji] = useState('')
   const [editColor, setEditColor] = useState('')
@@ -54,31 +54,54 @@ export function DecksScreen() {
   const [currentPage, setCurrentPage] = useState(1)
   const ITEMS_PER_PAGE = 12
   const [shareDialogOpen, setShareDialogOpen] = useState(false)
-  const [sharingDeck, setSharingDeck] = useState<Deck | null>(null)
+  const [sharingDeck, setSharingDeck] = useState<any>(null)
   const [publishDialogOpen, setPublishDialogOpen] = useState(false)
-  const [publishingDeck, setPublishingDeck] = useState<Deck | null>(null)
+  const [publishingDeck, setPublishingDeck] = useState<any>(null)
   const [publishing, setPublishing] = useState(false)
 
   useEffect(() => {
     loadDecks()
+    loadAchievements()
   }, [])
 
-  // Reset to page 1 when filters or sorting changes
-  useEffect(() => {
-    setCurrentPage(1)
-  }, [activeTab, sortOption, searchQuery, filterCategory, filterSubtopic])
-
   const loadDecks = async () => {
-    if (!accessToken) return
+    if (!accessToken || !user) {
+      setLoading(false)
+      return
+    }
     
     try {
       const fetchedDecks = await api.fetchDecks(accessToken)
       setDecks(fetchedDecks)
     } catch (error) {
       console.error('Failed to load decks:', error)
-      toast.error('Failed to load decks. Please check the console for details.')
+      // Don't show error toast on initial mount - user might not be logged in yet
+      if (accessToken && user) {
+        toast.error('Failed to load decks. Please try refreshing the page.')
+      }
     } finally {
       setLoading(false)
+    }
+  }
+
+  const loadAchievements = async () => {
+    if (!accessToken) return
+    
+    try {
+      const response = await fetch(`https://${projectId}.supabase.co/functions/v1/make-server-8a1502a9/achievements`, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      })
+      
+      if (response.ok) {
+        const data = await response.json()
+        if (data.achievements) {
+          setUserAchievements(data.achievements)
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load achievements:', error)
     }
   }
 
@@ -332,8 +355,8 @@ export function DecksScreen() {
       // Publish to community using the correct API format
       const result = await api.publishDeckToCommunity(accessToken, {
         deckId: publishingDeck.id,
-        category: publishingDeck.category ?? '',
-        subtopic: publishingDeck.subtopic ?? '',
+        category: publishingDeck.category,
+        subtopic: publishingDeck.subtopic,
       })
 
       // Update local deck with community reference
@@ -348,13 +371,9 @@ export function DecksScreen() {
       }
       setPublishDialogOpen(false)
       setPublishingDeck(null)
-    } catch (error: unknown) {
+    } catch (error: any) {
       console.error('Failed to publish deck:', error)
-      let message = 'Failed to publish deck to community'
-      if (error instanceof Error) {
-        message = error.message
-      }
-      toast.error(message)
+      toast.error(error.message || 'Failed to publish deck to community')
     } finally {
       setPublishing(false)
     }
@@ -958,18 +977,21 @@ export function DecksScreen() {
                         <Upload className="w-4 h-4" />
                       </Button>
                     )}
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        setSharingDeck(deck)
-                        setShareDialogOpen(true)
-                      }}
-                      className="h-7 w-7 transition-colors text-gray-400 hover:text-blue-600 hover:bg-blue-50"
-                    >
-                      <Share2 className="w-4 h-4" />
-                    </Button>
+                    {!deck.sourceCommunityDeckId && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setSharingDeck(deck)
+                          setShareDialogOpen(true)
+                        }}
+                        className="h-7 w-7 transition-colors text-gray-400 hover:text-blue-600 hover:bg-blue-50"
+                        title="Share Deck"
+                      >
+                        <Share2 className="w-4 h-4" />
+                      </Button>
+                    )}
                   </div>
                 </div>
               </div>
