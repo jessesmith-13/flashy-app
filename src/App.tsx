@@ -18,6 +18,7 @@ import { SettingsScreen } from './components/Settings/SettingsScreen'
 import { ProfileScreen } from './components/Profile/ProfileScreen'
 import { NotificationsScreen } from './components/Notifications/NotificationsScreen'
 import { SharedDeckView } from './components/SharedDeckView'
+import { ContactScreen } from './components/Contact/ContactScreen'
 
 export default function App() {
   console.log('App component mounting...')
@@ -124,6 +125,9 @@ export default function App() {
           const requests = await api.getFriendRequests(session.access_token)
           setFriendRequests(requests)
           
+          // Check if user is the Flashy superuser
+          const isSuperuser = session.user.email === 'flashy@flashy.app'
+          
           // Token is valid, set auth
           setAuth(
             {
@@ -135,6 +139,7 @@ export default function App() {
               decksPublic: session.user.user_metadata?.decksPublic ?? true,
               subscriptionTier: session.user.user_metadata?.subscriptionTier || 'free',
               subscriptionExpiry: session.user.user_metadata?.subscriptionExpiry,
+              isSuperuser,
             },
             session.access_token
           )
@@ -221,6 +226,7 @@ export default function App() {
               {currentView === 'profile' && <ProfileScreen />}
               {currentView === 'upgrade' && <UpgradeModal open={true} onOpenChange={(open) => !open && setCurrentView('decks')} />}
               {currentView === 'settings' && <SettingsScreen />}
+              {currentView === 'contact' && <ContactScreen />}
               {currentView === 'notifications' && <NotificationsScreen />}
             </>
           )}
