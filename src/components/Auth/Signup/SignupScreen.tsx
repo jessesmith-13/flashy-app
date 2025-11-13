@@ -4,6 +4,7 @@ import * as api from '../../../../utils/api'
 import { AuthHeader } from '../Login/AuthHeader'
 import { SignupForm } from './SignupForm'
 import { SignupSuccess } from './SignupSuccess'
+import { GoogleLoginButton } from '../Login/GoogleLoginButton'
 
 export function SignupScreen() {
   const [loading, setLoading] = useState(false)
@@ -78,6 +79,21 @@ export function SignupScreen() {
     }
   }
 
+  const handleGoogleSignUp = async () => {
+    try {
+      setError('')
+      setLoading(true)
+      // Save that we're signing up (not logging in) for potential analytics
+      sessionStorage.setItem('authAction', 'signup')
+      await api.signInWithGoogle()
+      // The redirect will be handled by Supabase
+    } catch (err: any) {
+      console.error('Google sign-up error:', err)
+      setError(err.message || 'Failed to sign up with Google')
+      setLoading(false)
+    }
+  }
+
   const handleLoginClick = () => {
     // Set a flag so LoginScreen shows the form directly
     sessionStorage.setItem('showLoginForm', 'true')
@@ -110,12 +126,20 @@ export function SignupScreen() {
             onContinue={handleContinue}
           />
         ) : (
-          <SignupForm
-            onSubmit={handleSignup}
-            onLoginClick={handleLoginClick}
-            error={error}
-            loading={loading}
-          />
+          <>
+            <SignupForm
+              onSubmit={handleSignup}
+              onLoginClick={handleLoginClick}
+              error={error}
+              loading={loading}
+            />
+
+            <GoogleLoginButton
+              onClick={handleGoogleSignUp}
+              loading={loading}
+              text="Sign up with Google"
+            />
+          </>
         )}
       </div>
     </div>
