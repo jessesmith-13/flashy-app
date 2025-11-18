@@ -1,5 +1,5 @@
 import { Button } from '../../../ui/button'
-import { ArrowLeft, Palette, Upload, Trash2, Play, Plus, Crown, Users } from 'lucide-react'
+import { ArrowLeft, Palette, Upload, Trash2, Play, Plus, Crown, Users, Sparkles } from 'lucide-react'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../../../ui/alert-dialog'
 import type { Deck } from '../../../../store/useStore'
 
@@ -12,6 +12,7 @@ interface DeckHeaderProps {
   onDelete: () => void
   onStartStudy: () => void
   onAddCard: () => void
+  onAIGenerate: () => void
   deleting: boolean
   canPublish: boolean
   communityDeckAuthor?: { id: string; name: string } | null
@@ -26,6 +27,7 @@ export function DeckHeader({
   onDelete,
   onStartStudy,
   onAddCard,
+  onAIGenerate,
   deleting,
   canPublish,
   communityDeckAuthor
@@ -143,6 +145,13 @@ export function DeckHeader({
             >
               <Plus className="w-4 h-4 mr-2" />
               Add Card
+            </Button>
+            <Button
+              onClick={onAIGenerate}
+              className="flex-1 sm:flex-initial bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              <Sparkles className="w-4 h-4 mr-2" />
+              AI Generate
             </Button>
             <Button
               onClick={onStartStudy}

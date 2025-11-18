@@ -1,22 +1,34 @@
 import { useState } from 'react'
 import { useStore } from '../../../store/useStore'
 import { useNavigation } from '../../../hooks/useNavigation'
+import * as api from '../../../utils/api'
 import { AppLayout } from '../Layout/AppLayout'
 import { Button } from '../../ui/button'
 import { Textarea } from '../../ui/textarea'
 import { Input } from '../../ui/input'
 import { Label } from '../../ui/label'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../ui/tabs'
-import { Sparkles, ArrowLeft, MessageSquare, FileText, FileSpreadsheet, Upload } from 'lucide-react'
+import { Sparkles, ArrowLeft, MessageSquare, FileText, FileSpreadsheet, Upload, Check, X, Edit2 } from 'lucide-react'
+import { toast } from 'sonner'
+
+interface GeneratedCard {
+  front: string
+  back: string
+  cardType?: string
+  options?: string[]
+  acceptedAnswers?: string[]
+}
 
 export function AIGenerateScreen() {
-  const { selectedDeckId, decks } = useStore()
+  const { selectedDeckId, decks, addCard, accessToken, updateDeck } = useStore()
   const { navigateTo } = useNavigation()
   const [activeTab, setActiveTab] = useState('chat')
   
   // AI Chat state
   const [topic, setTopic] = useState('')
   const [numCards, setNumCards] = useState('10')
+  const [mixedCardTypes, setMixedCardTypes] = useState(false)
+  const [includeImages, setIncludeImages] = useState(false)
   const [loading, setLoading] = useState(false)
 
   // CSV Upload state
@@ -25,7 +37,17 @@ export function AIGenerateScreen() {
 
   // PDF Upload state
   const [pdfFile, setPdfFile] = useState<File | null>(null)
+  const [pdfNumCards, setPdfNumCards] = useState('15')
   const [pdfLoading, setPdfLoading] = useState(false)
+
+  // Generated cards state
+  const [generatedCards, setGeneratedCards] = useState<GeneratedCard[]>([])
+  const [editingIndex, setEditingIndex] = useState<number | null>(null)
+  const [editFront, setEditFront] = useState('')
+  const [editBack, setEditBack] = useState('')
+  const [editOptions, setEditOptions] = useState<string[]>([])
+  const [editAcceptedAnswers, setEditAcceptedAnswers] = useState<string[]>([])
+  const [saving, setSaving] = useState(false)
 
   // Get the current deck if navigated from deck detail
   const currentDeck = decks.find(d => d.id === selectedDeckId)
@@ -36,11 +58,27 @@ export function AIGenerateScreen() {
     e.preventDefault()
     setLoading(true)
     
-    // Simulate AI generation
-    setTimeout(() => {
+    try {
+      const response = await api.generateCardsWithAI(topic, parseInt(numCards), mixedCardTypes, includeImages)
+      
+      if (response.cards && response.cards.length > 0) {
+        setGeneratedCards(response.cards)
+        toast.success(`Generated ${response.cards.length} flashcards!`)
+      } else {
+        toast.error('No cards were generated. Please try again.')
+      }
+    } catch (error: any) {
+      console.error('AI generation error:', error)
+      if (error.message.includes('Premium') || error.message.includes('subscription')) {
+        toast.error('AI generation requires a Premium or Pro subscription')
+      } else if (error.message.includes('API key')) {
+        toast.error('AI service not configured. Please contact support.')
+      } else {
+        toast.error(error.message || 'Failed to generate cards')
+      }
+    } finally {
       setLoading(false)
-      alert('AI deck generation coming soon! This will use AI to create flashcards based on your topic.')
-    }, 2000)
+    }
   }
 
   const handleCSVUpload = async (e: React.FormEvent) => {
@@ -49,11 +87,21 @@ export function AIGenerateScreen() {
     
     setCsvLoading(true)
     
-    // Simulate CSV processing
-    setTimeout(() => {
+    try {
+      const response = await api.importCardsFromCSV(csvFile)
+      
+      if (response.cards && response.cards.length > 0) {
+        setGeneratedCards(response.cards)
+        toast.success(`Imported ${response.cards.length} flashcards!`)
+      } else {
+        toast.error('No cards were found in the CSV file.')
+      }
+    } catch (error: any) {
+      console.error('CSV import error:', error)
+      toast.error(error.message || 'Failed to import CSV')
+    } finally {
       setCsvLoading(false)
-      alert('CSV import coming soon! Upload a CSV with "Front" and "Back" columns to import flashcards.')
-    }, 1500)
+    }
   }
 
   const handlePDFUpload = async (e: React.FormEvent) => {
@@ -62,11 +110,303 @@ export function AIGenerateScreen() {
     
     setPdfLoading(true)
     
-    // Simulate PDF processing
-    setTimeout(() => {
+    try {
+      const response = await api.generateCardsFromPDF(pdfFile, parseInt(pdfNumCards))
+      
+      if (response.cards && response.cards.length > 0) {
+        setGeneratedCards(response.cards)
+        toast.success(`Generated ${response.cards.length} flashcards!`)
+      } else if (response.error) {
+        toast.error(response.error)
+      } else {
+        toast.error('Failed to process PDF. Please try using AI Chat with extracted text.')
+      }
+    } catch (error: any) {
+      console.error('PDF import error:', error)
+      if (error.message.includes('Premium') || error.message.includes('subscription')) {
+        toast.error('PDF import requires a Premium or Pro subscription')
+      } else {
+        toast.error(error.message || 'Failed to process PDF. Try using AI Chat instead.')
+      }
+    } finally {
       setPdfLoading(false)
-      alert('PDF import coming soon! AI will extract content from your PDF and generate flashcards.')
-    }, 2000)
+    }
+  }
+
+  const handleRemoveCard = (index: number) => {
+    setGeneratedCards(prev => prev.filter((_, i) => i !== index))
+    toast.success('Card removed')
+  }
+
+  const handleEditCard = (index: number) => {
+    const card = generatedCards[index]
+    setEditingIndex(index)
+    setEditFront(card.front)
+    setEditBack(card.back)
+    setEditOptions(card.options || [])
+    setEditAcceptedAnswers(card.acceptedAnswers || [])
+  }
+
+  const handleSaveEdit = () => {
+    if (editingIndex === null) return
+    
+    const originalCard = generatedCards[editingIndex]
+    setGeneratedCards(prev => prev.map((card, i) => 
+      i === editingIndex ? { 
+        ...originalCard,
+        front: editFront, 
+        back: editBack, 
+        options: editOptions, 
+        acceptedAnswers: editAcceptedAnswers 
+      } : card
+    ))
+    setEditingIndex(null)
+    toast.success('Card updated')
+  }
+
+  const handleCancelEdit = () => {
+    setEditingIndex(null)
+  }
+
+  const handleSaveAllCards = async () => {
+    if (!selectedDeckId) {
+      toast.error('Please select a deck first')
+      return
+    }
+
+    if (!accessToken) {
+      toast.error('You must be logged in to save cards')
+      return
+    }
+
+    if (generatedCards.length === 0) {
+      toast.error('No cards to save')
+      return
+    }
+
+    setSaving(true)
+    try {
+      // Save all cards to the selected deck
+      let savedCount = 0
+      for (const card of generatedCards) {
+        const cardData: any = {
+          front: card.front,
+          back: card.back,
+          cardType: card.cardType || 'classic-flip'
+        }
+        
+        // Add options for multiple-choice cards
+        if (card.cardType === 'multiple-choice' && card.options) {
+          cardData.options = card.options
+        }
+        
+        // Add accepted answers for type-answer cards
+        if (card.cardType === 'type-answer' && card.acceptedAnswers) {
+          cardData.acceptedAnswers = card.acceptedAnswers
+        }
+        
+        const newCard = await api.createCard(accessToken, selectedDeckId, cardData)
+        addCard(newCard)
+        savedCount++
+      }
+      
+      // Update deck card count
+      if (currentDeck) {
+        updateDeck(currentDeck.id, { cardCount: (currentDeck.cardCount || 0) + savedCount })
+      }
+      
+      toast.success(`Saved ${savedCount} cards to ${currentDeck?.name || 'deck'}`)
+      
+      // Reset state and navigate back
+      setGeneratedCards([])
+      setTopic('')
+      setCsvFile(null)
+      setPdfFile(null)
+      
+      navigateTo('deck-detail')
+    } catch (error: any) {
+      console.error('Error saving cards:', error)
+      toast.error(error.message || 'Failed to save cards')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleDiscardCards = () => {
+    setGeneratedCards([])
+    toast.success('Cards discarded')
+  }
+
+  // Show review screen if we have generated cards
+  if (generatedCards.length > 0) {
+    return (
+      <AppLayout>
+        <div className="min-h-screen bg-gray-100 dark:bg-gray-900 p-4 lg:p-8">
+          <div className="max-w-4xl mx-auto">
+            <Button
+              variant="ghost"
+              onClick={handleDiscardCards}
+              className="mb-6"
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to Generator
+            </Button>
+
+            <div className="bg-white dark:bg-gray-800 rounded-2xl p-8 shadow-sm border border-gray-200 dark:border-gray-700">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h1 className="text-2xl text-gray-900 dark:text-gray-100">Review Generated Cards</h1>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">{generatedCards.length} cards ready to save</p>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={handleDiscardCards}
+                    disabled={saving}
+                    className="border-red-300 text-red-600 hover:bg-red-50 dark:border-red-700 dark:text-red-400"
+                  >
+                    <X className="w-4 h-4 mr-2" />
+                    Discard All
+                  </Button>
+                  <Button
+                    onClick={handleSaveAllCards}
+                    disabled={saving}
+                    className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {saving ? (
+                      <>Saving...</>
+                    ) : (
+                      <>
+                        <Check className="w-4 h-4 mr-2" />
+                        Save to {currentDeck?.name || 'Deck'}
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                {generatedCards.map((card, index) => (
+                  <div
+                    key={index}
+                    className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 border border-gray-200 dark:border-gray-600"
+                  >
+                    {editingIndex === index ? (
+                      <div className="space-y-3">
+                        <div>
+                          <Label className="text-xs text-gray-600 dark:text-gray-400">Front</Label>
+                          <Textarea
+                            value={editFront}
+                            onChange={(e) => setEditFront(e.target.value)}
+                            className="mt-1 min-h-[60px] bg-white dark:bg-gray-800"
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-xs text-gray-600 dark:text-gray-400">Back</Label>
+                          <Textarea
+                            value={editBack}
+                            onChange={(e) => setEditBack(e.target.value)}
+                            className="mt-1 min-h-[60px] bg-white dark:bg-gray-800"
+                          />
+                        </div>
+                        <div className="flex gap-2">
+                          <Button size="sm" onClick={handleSaveEdit}>
+                            <Check className="w-3 h-3 mr-1" />
+                            Save
+                          </Button>
+                          <Button size="sm" variant="outline" onClick={handleCancelEdit}>
+                            <X className="w-3 h-3 mr-1" />
+                            Cancel
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-gray-500 dark:text-gray-400">Card {index + 1}</span>
+                            {card.cardType === 'multiple-choice' && (
+                              <span className="text-xs px-2 py-0.5 rounded bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300">
+                                Multiple Choice
+                              </span>
+                            )}
+                            {card.cardType === 'type-answer' && (
+                              <span className="text-xs px-2 py-0.5 rounded bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300">
+                                Type Answer
+                              </span>
+                            )}
+                            {card.cardType === 'classic-flip' && (
+                              <span className="text-xs px-2 py-0.5 rounded bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300">
+                                Classic Flip
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex gap-1">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => handleEditCard(index)}
+                              className="h-7 w-7 p-0"
+                            >
+                              <Edit2 className="w-3 h-3" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => handleRemoveCard(index)}
+                              className="h-7 w-7 p-0 text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/30"
+                            >
+                              <X className="w-3 h-3" />
+                            </Button>
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <div>
+                            <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">Front:</div>
+                            <div className="text-sm text-gray-900 dark:text-gray-100">{card.front}</div>
+                          </div>
+                          <div className="h-px bg-gray-200 dark:bg-gray-600" />
+                          <div>
+                            <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">Back:</div>
+                            <div className="text-sm text-gray-900 dark:text-gray-100">{card.back}</div>
+                          </div>
+                          {card.cardType === 'multiple-choice' && card.options && card.options.length > 0 && (
+                            <>
+                              <div className="h-px bg-gray-200 dark:bg-gray-600" />
+                              <div>
+                                <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">Incorrect Options:</div>
+                                <ul className="text-sm text-gray-700 dark:text-gray-300 list-disc list-inside">
+                                  {card.options.map((option, optIdx) => (
+                                    <li key={optIdx}>{option}</li>
+                                  ))}
+                                </ul>
+                              </div>
+                            </>
+                          )}
+                          {card.cardType === 'type-answer' && card.acceptedAnswers && card.acceptedAnswers.length > 0 && (
+                            <>
+                              <div className="h-px bg-gray-200 dark:bg-gray-600" />
+                              <div>
+                                <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">Accepted Answers:</div>
+                                <ul className="text-sm text-gray-700 dark:text-gray-300 list-disc list-inside">
+                                  {card.acceptedAnswers.map((answer, ansIdx) => (
+                                    <li key={ansIdx}>{answer}</li>
+                                  ))}
+                                </ul>
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </AppLayout>
+    )
   }
 
   return (
@@ -151,6 +491,41 @@ export function AIGenerateScreen() {
                       <li>• Include context (e.g., "for beginners", "advanced level")</li>
                       <li>• Mention the format you prefer</li>
                     </ul>
+                  </div>
+
+                  <div className="bg-purple-50 dark:bg-purple-900/30 border border-purple-200 dark:border-purple-800 rounded-lg p-4">
+                    <p className="text-xs text-purple-800 dark:text-purple-400">
+                      ⚡ Requires Premium or Pro subscription
+                    </p>
+                  </div>
+
+                  <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 space-y-3">
+                    <Label className="text-sm text-gray-700 dark:text-gray-300">Advanced Options</Label>
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="checkbox"
+                        id="mixedTypes"
+                        checked={mixedCardTypes}
+                        onChange={(e) => setMixedCardTypes(e.target.checked)}
+                        className="w-4 h-4 text-purple-600 bg-gray-100 border-gray-300 rounded focus:ring-purple-500"
+                      />
+                      <label htmlFor="mixedTypes" className="text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
+                        Mix of card types (Classic, Multiple Choice, Type-Answer)
+                      </label>
+                    </div>
+                    <div className="flex items-center gap-3 opacity-50 cursor-not-allowed">
+                      <input
+                        type="checkbox"
+                        id="includeImages"
+                        checked={includeImages}
+                        onChange={(e) => setIncludeImages(e.target.checked)}
+                        disabled
+                        className="w-4 h-4 text-purple-600 bg-gray-100 border-gray-300 rounded focus:ring-purple-500"
+                      />
+                      <label htmlFor="includeImages" className="text-sm text-gray-500 dark:text-gray-500">
+                        Generate images (Coming soon - uses DALL-E)
+                      </label>
+                    </div>
                   </div>
 
                   <Button
@@ -270,7 +645,8 @@ export function AIGenerateScreen() {
                       type="number"
                       min="5"
                       max="50"
-                      defaultValue="15"
+                      value={pdfNumCards}
+                      onChange={(e) => setPdfNumCards(e.target.value)}
                       className="mt-1 bg-gray-50 dark:bg-gray-700 dark:border-gray-600"
                     />
                   </div>
@@ -283,6 +659,18 @@ export function AIGenerateScreen() {
                       <li>• Flashcards will be automatically generated</li>
                       <li>• You can review and edit before saving</li>
                     </ul>
+                  </div>
+
+                  <div className="bg-purple-50 dark:bg-purple-900/30 border border-purple-200 dark:border-purple-800 rounded-lg p-4">
+                    <p className="text-xs text-purple-800 dark:text-purple-400">
+                      ⚡ Requires Premium or Pro subscription
+                    </p>
+                  </div>
+
+                  <div className="bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
+                    <p className="text-xs text-yellow-800 dark:text-yellow-400">
+                      ⚠️ PDF parsing is currently in beta. For best results, use AI Chat with extracted text or CSV import.
+                    </p>
                   </div>
 
                   <Button
@@ -302,16 +690,6 @@ export function AIGenerateScreen() {
                 </form>
               </TabsContent>
             </Tabs>
-
-            <div className="mt-8 pt-8 border-t border-gray-200 dark:border-gray-700">
-              <h3 className="text-sm text-gray-700 dark:text-gray-300 mb-3">Coming Soon:</h3>
-              <ul className="text-sm text-gray-600 dark:text-gray-400 space-y-2">
-                <li>✨ Full AI integration for all generation methods</li>
-                <li>🎯 Difficulty level customization</li>
-                <li>🌐 Multi-language support</li>
-                <li>🖼️ Image extraction from PDFs</li>
-              </ul>
-            </div>
           </div>
         </div>
       </div>

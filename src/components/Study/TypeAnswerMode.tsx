@@ -36,7 +36,19 @@ export function TypeAnswerMode({ cards, onNext, currentIndex, isTemporaryStudy =
     if (!userAnswer.trim() || hasAnswered) return
 
     // Case-insensitive comparison, trimming whitespace
-    const correct = userAnswer.trim().toLowerCase() === currentCard.back.trim().toLowerCase()
+    const normalizedAnswer = userAnswer.trim().toLowerCase()
+    const normalizedCorrectAnswer = currentCard.back.trim().toLowerCase()
+    
+    // Check if answer matches the main answer
+    let correct = normalizedAnswer === normalizedCorrectAnswer
+    
+    // Also check against accepted alternatives if they exist
+    if (!correct && currentCard.acceptedAnswers && currentCard.acceptedAnswers.length > 0) {
+      correct = currentCard.acceptedAnswers.some(
+        acceptedAnswer => normalizedAnswer === acceptedAnswer.trim().toLowerCase()
+      )
+    }
+    
     setIsCorrect(correct)
     setHasAnswered(true)
   }
@@ -182,6 +194,9 @@ export function TypeAnswerMode({ cards, onNext, currentIndex, isTemporaryStudy =
                       </div>
                       <p className="text-sm">Your answer: <strong>{userAnswer}</strong></p>
                       <p className="text-sm mt-1">Correct answer: <strong>{currentCard.back}</strong></p>
+                      {currentCard.acceptedAnswers && currentCard.acceptedAnswers.length > 0 && (
+                        <p className="text-sm mt-1">Also accepted: <strong>{currentCard.acceptedAnswers.join(', ')}</strong></p>
+                      )}
                     </div>
                   )}
                 </div>
