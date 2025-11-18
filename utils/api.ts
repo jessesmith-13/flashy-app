@@ -68,7 +68,7 @@ export const resetPassword = async (email: string) => {
   return data
 }
 
-export async function signOut() {
+export const signOut = async () => {
   try {
     const { error } = await supabaseClient.auth.signOut()
     if (error && error.message !== 'Auth session missing!') throw error
@@ -77,17 +77,27 @@ export async function signOut() {
   }
 }
 
-
 export const getSession = async () => {
-  const { data, error } = await supabaseClient.auth.getSession()
-  
-  if (error) {
-    // Don't throw for missing/invalid refresh tokens - just return null
-    console.log('Session check error (this is normal for logged out users):', error.message)
+  try {
+    const { data, error } = await supabaseClient.auth.getSession()
+    
+    if (error) {
+      // Don't throw for missing/invalid refresh tokens - just return null
+      // This is normal for logged out users or expired sessions
+      if (error.message.includes('Refresh Token') || error.message.includes('Auth session missing')) {
+        console.log('No active session found')
+      } else {
+        console.log('Session check error:', error.message)
+      }
+      return null
+    }
+
+    return data.session
+  } catch (err) {
+    // Catch any unexpected errors
+    console.log('Session check failed:', err)
     return null
   }
-
-  return data.session
 }
 
 // Deck API
@@ -659,7 +669,12 @@ export const getUserFriends = async (accessToken: string, userId: string) => {
   const data = await response.json()
   
   if (!response.ok) {
-    console.error('Failed to fetch user friends:', data.error)
+    console.error('Failed to fetch user friends:', {
+      status: response.status,
+      statusText: response.statusText,
+      error: data.error,
+      url: `${API_BASE}/users/${userId}/friends`
+    })
     throw new Error(data.error || 'Failed to fetch user friends')
   }
 
@@ -1069,13 +1084,18 @@ export const createShareLink = async (
 }
 
 export const getSharedDeck = async (shareId: string) => {
+  console.log('getSharedDeck - Making request for shareId:', shareId)
+  console.log('getSharedDeck - API_BASE:', API_BASE)
+  
   const response = await fetch(`${API_BASE}/shared/${shareId}`, {
     headers: {
       Authorization: `Bearer ${publicAnonKey}`,
     },
   })
 
+  console.log('getSharedDeck - Response status:', response.status)
   const data = await response.json()
+  console.log('getSharedDeck - Response data:', data)
   
   if (!response.ok) {
     console.error('Failed to get shared deck:', data.error)
@@ -1109,6 +1129,92 @@ export const flagCommunityItem = async (
   if (!response.ok) {
     console.error('Failed to flag item:', data.error)
     throw new Error(data.error || 'Failed to flag item')
+  }
+
+  return data
+}
+
+// AI Generation API
+export const generateCardsWithAI = async (topic: string, numCards: number, mixedCardTypes: boolean = false, includeImages: boolean = false) => {
+  const { data: { session } } = await supabaseClient.auth.getSession()
+  
+  if (!session?.access_token) {
+    throw new Error('Not authenticated')
+  }
+
+  const response = await fetch(`${API_BASE}/ai-generate-chat`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${session.access_token}`,
+    },
+    body: JSON.stringify({ topic, numCards: numCards.toString(), mixedCardTypes, includeImages }),
+  })
+
+  const data = await response.json()
+  
+  if (!response.ok) {
+    throw new Error(data.error || 'Failed to generate cards with AI')
+  }
+
+  return data
+}
+
+export const importCardsFromCSV = async (file: File) => {
+  const { data: { session } } = await supabaseClient.auth.getSession()
+  
+  if (!session?.access_token) {
+    throw new Error('Not authenticated')
+  }
+
+  const formData = new FormData()
+  formData.append('file', file)
+
+  const response = await fetch(`${API_BASE}/ai-generate-csv`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${session.access_token}`,
+    },
+    body: formData,
+  })
+
+  const data = await response.json()
+  
+  if (!response.ok) {
+    throw new Error(data.error || 'Failed to import CSV')
+  }
+
+  return data
+}
+
+export const generateCardsFromPDF = async (file: File, numCards: number) => {
+  const { data: { session } } = await supabaseClient.auth.getSession()
+  
+  if (!session?.access_token) {
+    throw new Error('Not authenticated')
+  }
+
+  const formData = new FormData()
+  formData.append('file', file)
+  formData.append('numCards', numCards.toString())
+
+  const response = await fetch(`${API_BASE}/ai-generate-pdf`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${session.access_token}`,
+    },
+    body: formData,
+  })
+
+  const data = await response.json()
+  
+  // PDF endpoint returns 501 status with helpful error message
+  if (response.status === 501) {
+    return data // Return the error message and workaround
+  }
+  
+  if (!response.ok) {
+    throw new Error(data.error || 'Failed to generate cards from PDF')
   }
 
   return data

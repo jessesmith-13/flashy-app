@@ -665,6 +665,7 @@ export function DeckDetailScreen() {
             onDelete={handleDeleteDeck}
             onStartStudy={handleStartStudy}
             onAddCard={() => setCreateDialogOpen(true)}
+            onAIGenerate={() => navigateTo('ai-generate')}
             deleting={deleting}
             canPublish={canPublishToCommunity(user?.subscriptionTier)}
             communityDeckAuthor={communityDeckAuthor}
