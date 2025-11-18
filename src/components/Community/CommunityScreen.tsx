@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react'
+import { useStore, CommunityDeck, Deck, Card } from '../../../store/useStore'
+import { useNavigation } from '../../../hooks/useNavigation'
 import { AppLayout } from '../Layout/AppLayout'
 import { Button } from '../../ui/button'
 import { Pagination } from '../Pagination/Pagination'
 import { Upload } from 'lucide-react'
-import { useStore, CommunityDeck, Deck, Card } from '../../../store/useStore'
 import { UserProfileView } from './UserProfileView'
 import { UserDeckViewer } from './UserDeckViewer'
 import { CommunityFilters } from './CommunityFilters'
@@ -19,8 +20,46 @@ import { toast } from 'sonner'
 import { canImportCommunityDecks, canPublishToCommunity } from '../../../utils/subscription'
 import { useIsSuperuser } from '../../../utils/userUtils'
 
+interface Card {
+  id: string
+  front: string
+  back: string
+  deckId: string
+}
+
+interface Deck {
+  id: string
+  name: string
+  emoji: string
+  color: string
+  cardCount: number
+  category?: string
+  subtopic?: string
+  sourceCommunityDeckId?: string
+  communityPublishedId?: string
+}
+
+interface CommunityDeck {
+  id: string
+  name: string
+  emoji: string
+  color: string
+  author: string
+  authorId: string
+  downloads: number
+  rating: number
+  ratingCount: number
+  cards: Card[]
+  category: string
+  subtopic: string
+  featured?: boolean
+  publishedAt?: string
+  version?: number
+}
+
 export function CommunityScreen() {
-  const { user, accessToken, addDeck, updateDeck, setCurrentView, decks, setTemporaryStudyDeck, setReturnToCommunityDeck, setReturnToUserDeck, returnToCommunityDeck, returnToUserDeck, viewingCommunityDeckId, setViewingCommunityDeckId, targetCommentId, setTargetCommentId, viewingUserId, setViewingUserId, userProfileReturnView, setUserProfileReturnView } = useStore()
+  const { user, accessToken, addDeck, updateDeck, decks, setTemporaryStudyDeck, setReturnToCommunityDeck, setReturnToUserDeck, returnToCommunityDeck, returnToUserDeck, viewingCommunityDeckId, setViewingCommunityDeckId, targetCommentId, setTargetCommentId, viewingUserId, setViewingUserId, userProfileReturnView, setUserProfileReturnView } = useStore()
+  const { navigateTo } = useNavigation()
   const isSuperuser = useIsSuperuser()
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null)
@@ -462,7 +501,7 @@ export function CommunityScreen() {
       cards: deck.cards
     })
     setReturnToCommunityDeck(deck)
-    setCurrentView('study')
+    navigateTo('study')
   }
 
   // If viewing a user profile, show that instead
@@ -472,7 +511,7 @@ export function CommunityScreen() {
       onBack={() => {
         // Check if we should return to profile or community
         if (userProfileReturnView === 'profile') {
-          setCurrentView('profile')
+          navigateTo('profile')
           setUserProfileReturnView(null) // Clear the return view
         }
         setSelectedUserId(null)
@@ -498,7 +537,7 @@ export function CommunityScreen() {
         onStudy={(deck, cards) => {
           setTemporaryStudyDeck({ deck, cards })
           setReturnToUserDeck(viewingUserDeck)
-          setCurrentView('study')
+          navigateTo('study')
         }}
       />
     )

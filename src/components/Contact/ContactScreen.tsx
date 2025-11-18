@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useStore } from '../../../store/useStore'
+import { useNavigation } from '../../../hooks/useNavigation'
 import { AppLayout } from '../Layout/AppLayout'
 import { Button } from '../../ui/button'
 import { ArrowLeft, Mail, MessageSquare, Send } from 'lucide-react'
@@ -10,7 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { toast } from 'sonner'
 
 export function ContactScreen() {
-  const { user, setCurrentView } = useStore()
+  const { user } = useStore()
+  const { navigateTo } = useNavigation()
   const [subject, setSubject] = useState('')
   const [category, setCategory] = useState('')
   const [message, setMessage] = useState('')
@@ -38,7 +40,7 @@ export function ContactScreen() {
           <div className="mb-6">
             <Button
               variant="ghost"
-              onClick={() => setCurrentView('decks')}
+              onClick={() => navigateTo('decks')}
               className="mb-4 -ml-2"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />

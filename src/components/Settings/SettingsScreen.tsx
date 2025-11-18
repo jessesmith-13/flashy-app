@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useStore } from '../../../store/useStore'
+import { useNavigation } from '../../../hooks/useNavigation'
 import { AppLayout } from '../Layout/AppLayout'
 import { Button } from '../../ui/button'
 import { ArrowLeft, Crown } from 'lucide-react'
@@ -14,7 +15,8 @@ import { CancelSubscriptionDialog } from './CancelSubscriptionDialog'
 import { DeleteAccountDialog } from './DeleteAccountDialog'
 
 export function SettingsScreen() {
-  const { setCurrentView, darkMode, setDarkMode, userAchievements, setUserAchievements, user, accessToken, updateUser } = useStore()
+  const { darkMode, setDarkMode, userAchievements, setUserAchievements, user, accessToken, updateUser } = useStore()
+  const { navigateTo } = useNavigation()
   const [emailNotifications, setEmailNotifications] = useState(true)
   const [emailOffers, setEmailOffers] = useState(true)
   const [emailCommentReplies, setEmailCommentReplies] = useState(true)
@@ -124,7 +126,7 @@ export function SettingsScreen() {
           <div className="mb-6">
             <Button
               variant="ghost"
-              onClick={() => setCurrentView('decks')}
+              onClick={() => navigateTo('decks')}
               className="mb-4 -ml-2"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
@@ -141,7 +143,7 @@ export function SettingsScreen() {
               isPremiumSubscription={isPremiumSubscription}
               canCancelSubscription={canCancelSubscription}
               subscriptionInfo={subscriptionInfo}
-              onUpgrade={() => setCurrentView('upgrade')}
+              onUpgrade={() => navigateTo('upgrade')}
               onCancelSubscription={() => setShowCancelDialog(true)}
             />
 

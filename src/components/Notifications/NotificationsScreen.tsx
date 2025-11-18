@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useStore } from '../../../store/useStore'
+import { useNavigation } from '../../../hooks/useNavigation'
 import { ArrowLeft, Bell, Check, X, UserPlus, MessageCircle, Reply, FileText, Trash2 } from 'lucide-react'
 import { Button } from '../../ui/button'
 import * as api from '../../../utils/api'
@@ -7,7 +8,6 @@ import { toast } from 'sonner'
 
 export function NotificationsScreen() {
   const { 
-    setCurrentView,
     removeFriendRequest, 
     addFriend, 
     accessToken,
@@ -17,6 +17,7 @@ export function NotificationsScreen() {
     setViewingCommunityDeckId,
     setTargetCommentId
   } = useStore()
+  const { navigateTo } = useNavigation()
   const [loading, setLoading] = useState<string | null>(null)
   const [filter, setFilter] = useState<'all' | 'friend_requests' | 'comments' | 'replies'>('all')
 
@@ -131,7 +132,7 @@ export function NotificationsScreen() {
         <div className="max-w-4xl mx-auto px-4 py-4">
           <div className="flex items-center gap-4">
             <button
-              onClick={() => setCurrentView('decks')}
+              onClick={() => navigateTo('decks')}
               className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
             >
               <ArrowLeft className="w-5 h-5 text-gray-600 dark:text-gray-400" />
@@ -289,7 +290,7 @@ export function NotificationsScreen() {
                     className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow cursor-pointer relative group"
                     onClick={async () => {
                       // Navigate to community tab and view deck
-                      setCurrentView('community')
+                      navigateTo('community')
                       setViewingCommunityDeckId(notification.deckId)
                       setTargetCommentId(notification.parentCommentId)
                       
@@ -359,7 +360,7 @@ export function NotificationsScreen() {
                     className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow cursor-pointer relative group"
                     onClick={async () => {
                       // Navigate to community tab and view deck
-                      setCurrentView('community')
+                      navigateTo('community')
                       setViewingCommunityDeckId(notification.deckId)
                       
                       // Mark notification as read

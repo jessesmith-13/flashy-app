@@ -1,13 +1,15 @@
 import { Button } from '../../ui/button'
 import { useStore } from '../../../store/useStore'
+import { useNavigation } from '../../../hooks/useNavigation'
 import { Zap, Brain, Users, Trophy, Sparkles, ArrowRight, Check, Moon, Sun } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
 export default function LandingPage() {
-  const { setCurrentView, darkMode, toggleDarkMode } = useStore()
-  const [isDarkMode, setIsDarkMode] = useState(false)
   const logoLight="../../public/logoLight.png"
   const logoDark="../../public/logoDark.png"
+   const { darkMode, toggleDarkMode } = useStore()
+  const { navigateTo } = useNavigation()
+  const [isDarkMode, setIsDarkMode] = useState(false)
 
   useEffect(() => {
     setIsDarkMode(darkMode)
@@ -70,13 +72,13 @@ export default function LandingPage() {
               </Button>
               <Button
                 variant="ghost"
-                onClick={() => setCurrentView('login')}
+                onClick={() => navigateTo('login')}
                 className="text-gray-700 dark:text-gray-300"
               >
                 Sign In
               </Button>
               <Button
-                onClick={() => setCurrentView('signup')}
+                onClick={() => navigateTo('signup')}
                 className="bg-emerald-600 hover:bg-emerald-700 text-white"
               >
                 Get Started
@@ -96,9 +98,9 @@ export default function LandingPage() {
                 <span className="text-sm">AI-Powered Flashcard Learning</span>
               </div>
               <h1 className="text-5xl lg:text-6xl mb-6 text-gray-900 dark:text-gray-100">
-                Learn Anything, in a <br />
+                Learn Anything,{' '}
                 <span className="bg-gradient-to-r from-emerald-600 to-blue-600 bg-clip-text text-transparent">
-                  Flash
+                  Fast
                 </span>
               </h1>
               <p className="text-xl text-gray-600 dark:text-gray-400 mb-8 leading-relaxed">
@@ -108,7 +110,7 @@ export default function LandingPage() {
               <div className="flex flex-col sm:flex-row gap-4">
                 <Button
                   size="lg"
-                  onClick={() => setCurrentView('signup')}
+                  onClick={() => navigateTo('signup')}
                   className="bg-emerald-600 hover:bg-emerald-700 text-white text-lg px-8 py-6"
                 >
                   Start Learning Free
@@ -117,7 +119,7 @@ export default function LandingPage() {
                 <Button
                   size="lg"
                   variant="outline"
-                  onClick={() => setCurrentView('login')}
+                  onClick={() => navigateTo('login')}
                   className="text-lg px-8 py-6 border-gray-300 dark:border-gray-600"
                 >
                   Sign In
@@ -217,7 +219,7 @@ export default function LandingPage() {
           </p>
           <Button
             size="lg"
-            onClick={() => setCurrentView('signup')}
+            onClick={() => navigateTo('signup')}
             className="bg-white text-emerald-600 hover:bg-gray-100 text-lg px-8 py-6"
           >
             Get Started for Free
@@ -246,25 +248,25 @@ export default function LandingPage() {
             <div>
               <h4 className="mb-4 text-gray-900 dark:text-gray-100">Product</h4>
               <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
-                <li><button onClick={() => setCurrentView('signup')} className="hover:text-emerald-600 dark:hover:text-emerald-400">Features</button></li>
-                <li><button onClick={() => setCurrentView('signup')} className="hover:text-emerald-600 dark:hover:text-emerald-400">Pricing</button></li>
-                <li><button onClick={() => setCurrentView('signup')} className="hover:text-emerald-600 dark:hover:text-emerald-400">AI Generation</button></li>
+                <li><button onClick={() => navigateTo('signup')} className="hover:text-emerald-600 dark:hover:text-emerald-400">Features</button></li>
+                <li><button onClick={() => navigateTo('signup')} className="hover:text-emerald-600 dark:hover:text-emerald-400">Pricing</button></li>
+                <li><button onClick={() => navigateTo('signup')} className="hover:text-emerald-600 dark:hover:text-emerald-400">AI Generation</button></li>
               </ul>
             </div>
             <div>
               <h4 className="mb-4 text-gray-900 dark:text-gray-100">Company</h4>
               <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
-                <li><button onClick={() => setCurrentView('login')} className="hover:text-emerald-600 dark:hover:text-emerald-400">About</button></li>
-                <li><button onClick={() => setCurrentView('login')} className="hover:text-emerald-600 dark:hover:text-emerald-400">Blog</button></li>
-                <li><button onClick={() => setCurrentView('login')} className="hover:text-emerald-600 dark:hover:text-emerald-400">Careers</button></li>
+                <li><button onClick={() => navigateTo('login')} className="hover:text-emerald-600 dark:hover:text-emerald-400">About</button></li>
+                <li><button onClick={() => navigateTo('login')} className="hover:text-emerald-600 dark:hover:text-emerald-400">Blog</button></li>
+                <li><button onClick={() => navigateTo('login')} className="hover:text-emerald-600 dark:hover:text-emerald-400">Careers</button></li>
               </ul>
             </div>
             <div>
               <h4 className="mb-4 text-gray-900 dark:text-gray-100">Legal</h4>
               <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
-                <li><button onClick={() => setCurrentView('login')} className="hover:text-emerald-600 dark:hover:text-emerald-400">Privacy</button></li>
-                <li><button onClick={() => setCurrentView('login')} className="hover:text-emerald-600 dark:hover:text-emerald-400">Terms</button></li>
-                <li><button onClick={() => setCurrentView('login')} className="hover:text-emerald-600 dark:hover:text-emerald-400">Contact</button></li>
+                <li><button onClick={() => navigateTo('login')} className="hover:text-emerald-600 dark:hover:text-emerald-400">Privacy</button></li>
+                <li><button onClick={() => navigateTo('login')} className="hover:text-emerald-600 dark:hover:text-emerald-400">Terms</button></li>
+                <li><button onClick={() => navigateTo('login')} className="hover:text-emerald-600 dark:hover:text-emerald-400">Contact</button></li>
               </ul>
             </div>
           </div>

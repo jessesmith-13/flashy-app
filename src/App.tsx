@@ -1,33 +1,48 @@
-
 import { useEffect, useState } from 'react'
+import { BrowserRouter, Routes, Route, Navigate, useNavigate, useParams } from 'react-router-dom'
 import { useStore } from '../store/useStore'
 import * as api from '../utils/api'
-import './App.css'
 import LandingPage from './components/Landing/LandingPage'
 import { LoginScreen } from './components/Auth/Login/LoginScreen'
 import { SignupScreen } from './components/Auth/Signup/SignupScreen'
 import { DecksScreen } from './components/Decks/DecksScreen'
-import { UpgradeModal } from './components/UpgradeModal'
 import { DeckDetailScreen } from './components/Decks/DeckDetail/DeckDetailScreen'
+import { StudyOptionsScreen } from './components/Study/StudyOptionsScreen'
+import { StudyScreen } from './components/Study/StudyScreen'
 import { CommunityScreen } from './components/Community/CommunityScreen'
+import { ProfileScreen } from './components/Profile/ProfileScreen'
+import { AIGenerateScreen } from './components/AI/AIGenerateScreen'
+import { UpgradeModal } from './components/UpgradeModal'
+import { AllCardsScreen } from './components/AllCardsScreen'
+import { SettingsScreen } from './components/Settings/SettingsScreen'
+import { PrivacyPolicyScreen } from './components/Legal/PrivacyPolicyScreen'
+import { TermsScreen } from './components/Legal/TermsScreen'
+import { ContactScreen } from './components/Contact/ContactScreen'
+import { SharedDeckView } from './components/SharedDeckView'
+import { NotificationsScreen } from './components/Notifications/NotificationsScreen'
+import  ProtectedRoute from './components/ProtectedRoute'
 import { Toaster } from './ui/sonner'
 import { useAchievementTracking } from '../hooks/useAchievements'
-import { StudyScreen } from './components/Study/StudyScreen'
-import { StudyOptionsScreen } from './components/Study/StudyOptionsScreen'
-import { SettingsScreen } from './components/Settings/SettingsScreen'
-import { ProfileScreen } from './components/Profile/ProfileScreen'
-import { NotificationsScreen } from './components/Notifications/NotificationsScreen'
-import { SharedDeckView } from './components/SharedDeckView'
-import { ContactScreen } from './components/Contact/ContactScreen'
 
-export default function App() {
-  console.log('App component mounting...')
-  const { currentView, setAuth, setCurrentView, updateUser, setFriends, setFriendRequests, darkMode, user } = useStore()
-  const [sharedDeckId, setSharedDeckId] = useState<string | null>(null)
+// Wrapper component for shared deck route
+function SharedDeckRoute() {
+  const { shareId } = useParams()
+  const navigate = useNavigate()
+
+  return (
+    <SharedDeckView
+      shareId={shareId || ''}
+      onBack={() => navigate('/')}
+    />
+  )
+}
+
+// Main app component that handles session checking
+function AppContent() {
+  const { setAuth, setFriends, setFriendRequests, darkMode, user } = useStore()
   const [checkingSession, setCheckingSession] = useState(true)
-  
-  console.log('App state - sharedDeckId:', sharedDeckId, 'checkingSession:', checkingSession, 'currentView:', currentView, 'user:', user ? `logged in as ${user.email}` : 'not logged in')
-  
+  const navigate = useNavigate()
+
   // Track achievements
   useAchievementTracking()
 
@@ -40,65 +55,9 @@ export default function App() {
     }
   }, [darkMode])
 
-  // Clear shared deck when navigating to other views
   useEffect(() => {
-    // If currentView changes to something other than the shared deck view
-    // and we have a sharedDeckId, clear it and the hash
-    if (sharedDeckId && currentView !== 'landing' && currentView !== 'login' && currentView !== 'signup') {
-      const hash = window.location.hash
-      // Only clear if user is navigating away (not if we're just returning from login)
-      if (!hash.includes('/shared/')) {
-        console.log('Clearing shared deck state due to view change to:', currentView)
-        setSharedDeckId(null)
-      }
-    }
-  }, [currentView])
-
-  useEffect(() => {
-    checkForSharedDeck()
     checkSession()
-    
-    // Listen for hash changes (for navigation within the app)
-    const handleHashChange = () => {
-      console.log('Hash changed, re-checking for shared deck')
-      checkForSharedDeck()
-      // Force re-render after hash change by triggering checkingSession briefly
-      setCheckingSession(true)
-      setTimeout(() => setCheckingSession(false), 100)
-    }
-    window.addEventListener('hashchange', handleHashChange)
-    
-    return () => {
-      window.removeEventListener('hashchange', handleHashChange)
-    }
   }, [])
-
-  const checkForSharedDeck = () => {
-    // Check if URL has /shared/:shareId pattern (path-based) or #/shared/:shareId (hash-based)
-    const path = window.location.pathname
-    const hash = window.location.hash
-    console.log('Checking for shared deck in path:', path, 'hash:', hash)
-    
-    // Try hash-based routing first (for static deployments)
-    const hashMatch = hash.match(/#\/shared\/([^/]+)/)
-    if (hashMatch && hashMatch[1]) {
-      console.log('Found shared deck ID in hash:', hashMatch[1])
-      setSharedDeckId(hashMatch[1])
-      // Don't set checkingSession to false here - let checkSession() complete first
-      return
-    }
-    
-    // Fall back to path-based routing
-    const sharedMatch = path.match(/\/shared\/([^/]+)/)
-    if (sharedMatch && sharedMatch[1]) {
-      console.log('Found shared deck ID in path:', sharedMatch[1])
-      setSharedDeckId(sharedMatch[1])
-      // Don't set checkingSession to false here - let checkSession() complete first
-    } else {
-      console.log('No shared deck found in URL')
-      setSharedDeckId(null) // Clear shared deck if not in URL
-    }
-  }
 
   const checkSession = async () => {
     console.log('checkSession - Starting...')
@@ -151,14 +110,13 @@ export default function App() {
             sessionStorage.removeItem('returnToSharedDeck')
             // Set the hash and directly update sharedDeckId
             window.location.hash = `#/shared/${returnToSharedDeck}`
-            setSharedDeckId(returnToSharedDeck)
             // checkingSession will be set to false in finally block
             return
           }
 
           // If there's a shared deck, don't change the view - let SharedDeckView render
           if (!hasSharedDeck) {
-            setCurrentView('decks')
+            navigate('/decks')
           }
         } catch (error) {
           // Token is invalid or expired - clear session
@@ -172,13 +130,13 @@ export default function App() {
           
           // If there's a shared deck, don't redirect - let them view it as guest
           if (!hasSharedDeck) {
-            setCurrentView('landing')
+            navigate('/')
           }
         }
       } else {
         // No session found - if no shared deck, go to landing page
         if (!hasSharedDeck) {
-          setCurrentView('landing')
+          navigate('/')
         }
       }
     } catch (error) {
@@ -189,7 +147,7 @@ export default function App() {
       const hasSharedDeck = hash.includes('/shared/') || path.includes('/shared/')
       
       if (!hasSharedDeck) {
-        setCurrentView('landing')
+        navigate('/')
       }
     } finally {
       setCheckingSession(false)
@@ -204,35 +162,42 @@ export default function App() {
         </div>
       ) : (
         <>
-          {sharedDeckId ? (
-            <SharedDeckView 
-              shareId={sharedDeckId} 
-              onBack={() => {
-                setSharedDeckId(null)
-                // Clear the hash from URL
-                window.location.hash = ''
-              }} 
-            />
-          ) : (
-            <>
-              {currentView === 'landing' && <LandingPage />}
-              {currentView === 'login' && <LoginScreen />}
-              {currentView === 'signup' && <SignupScreen />}
-              {currentView === 'decks' && <DecksScreen />}
-              {currentView === 'deck-detail' && <DeckDetailScreen />}
-              {currentView === 'study-options' && <StudyOptionsScreen />}
-              {currentView === 'study' && <StudyScreen />}
-              {currentView === 'community' && <CommunityScreen />}
-              {currentView === 'profile' && <ProfileScreen />}
-              {currentView === 'upgrade' && <UpgradeModal open={true} onOpenChange={(open) => !open && setCurrentView('decks')} />}
-              {currentView === 'settings' && <SettingsScreen />}
-              {currentView === 'contact' && <ContactScreen />}
-              {currentView === 'notifications' && <NotificationsScreen />}
-            </>
-          )}
+          <Routes>
+            <Route path="/" element={<LandingPage />} />
+            <Route path="/login" element={<LoginScreen />} />
+            <Route path="/signup" element={<SignupScreen />} />
+            <Route path="/decks" element={<ProtectedRoute><DecksScreen /></ProtectedRoute>} />
+            <Route path="/deck-detail/:deckId" element={<ProtectedRoute><DeckDetailScreen /></ProtectedRoute>} />
+            <Route path="/study-options/:deckId" element={<ProtectedRoute><StudyOptionsScreen /></ProtectedRoute>} />
+            {/* Study route without deckId for all-cards and temporary decks */}
+            <Route path="/study" element={<ProtectedRoute><StudyScreen /></ProtectedRoute>} />
+            {/* Study route with deckId for regular deck study */}
+            <Route path="/study/:deckId" element={<ProtectedRoute><StudyScreen /></ProtectedRoute>} />
+            <Route path="/community" element={<ProtectedRoute><CommunityScreen /></ProtectedRoute>} />
+            <Route path="/profile" element={<ProtectedRoute><ProfileScreen /></ProtectedRoute>} />
+            <Route path="/ai-generate" element={<ProtectedRoute><AIGenerateScreen /></ProtectedRoute>} />
+            <Route path="/upgrade" element={<ProtectedRoute><UpgradeModal open={true} onOpenChange={(open) => !open && navigate('/decks')} /></ProtectedRoute>} />
+            <Route path="/all-cards" element={<ProtectedRoute><AllCardsScreen /></ProtectedRoute>} />
+            <Route path="/settings" element={<ProtectedRoute><SettingsScreen /></ProtectedRoute>} />
+            <Route path="/privacy" element={<PrivacyPolicyScreen />} />
+            <Route path="/terms" element={<TermsScreen />} />
+            <Route path="/contact" element={<ContactScreen />} />
+            <Route path="/notifications" element={<ProtectedRoute><NotificationsScreen /></ProtectedRoute>} />
+            <Route path="/shared/:shareId" element={<SharedDeckRoute />} />
+            {/* Catch-all route for unmatched paths (including preview_page_v2.html) */}
+            <Route path="*" element={user ? <Navigate to="/decks" replace /> : <LandingPage />} />
+          </Routes>
         </>
       )}
       <Toaster position="top-center" richColors />
     </>
+  )
+}
+
+export default function App() {
+  return (
+    <BrowserRouter>
+      <AppContent />
+    </BrowserRouter>
   )
 }

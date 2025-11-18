@@ -1,5 +1,7 @@
 import { ReactNode, useState, useEffect } from 'react'
 import { useStore } from '../../../store/useStore'
+import { useNavigation } from '../../../hooks/useNavigation'
+import { useLocation } from 'react-router-dom'
 import * as api from '../../../utils/api'
 import { Button } from '../../ui/button'
 import { Home, Users, User, LogOut, Crown, Layers, Settings, Shield, FileText, Mail, Menu } from 'lucide-react'
@@ -11,12 +13,16 @@ interface AppLayoutProps {
 }
 
 export function AppLayout({ children }: AppLayoutProps) {
-  const { user, currentView, currentSection, setCurrentSection, setCurrentView, logout } = useStore()
+  const logoLight="../../public/logoLight.png"
+  const logoDark="../../public/logoDark.png"
+  const { user, currentSection, setCurrentSection, logout } = useStore()
+  const { navigateTo } = useNavigation()
+  const location = useLocation()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [isDarkMode, setIsDarkMode] = useState(false)
 
-  const logoLight="../../public/logoLight.png"
-  const logoDark="../../public/logoDark.png"
+  // Determine current view from URL path
+  const currentView = location.pathname.split('/')[1] || 'landing'
 
   useEffect(() => {
     // Check if dark mode is enabled
@@ -53,11 +59,11 @@ export function AppLayout({ children }: AppLayoutProps) {
     
     setCurrentSection(section)
     if (section === 'flashcards') {
-      setCurrentView('decks')
+      navigateTo('decks')
     } else if (section === 'community') {
-      setCurrentView('community')
+      navigateTo('community')
     } else if (section === 'profile') {
-      setCurrentView('profile')
+      navigateTo('profile')
     }
   }
 
@@ -67,7 +73,7 @@ export function AppLayout({ children }: AppLayoutProps) {
       window.location.hash = ''
     }
     
-    setCurrentView(view as any)
+    navigateTo(view as any)
     setMobileMenuOpen(false)
   }
 
@@ -141,7 +147,7 @@ export function AppLayout({ children }: AppLayoutProps) {
                     window.location.hash = ''
                   }
                   setCurrentSection('flashcards') // Clear section highlight
-                  setCurrentView('upgrade')
+                  navigateTo('upgrade')
                 }}
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
                   currentView === 'upgrade'
@@ -161,7 +167,7 @@ export function AppLayout({ children }: AppLayoutProps) {
                   window.location.hash = ''
                 }
                 setCurrentSection('flashcards') // Clear section highlight
-                setCurrentView('all-cards')
+                navigateTo('all-cards')
               }}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
                 currentView === 'all-cards'
@@ -180,7 +186,7 @@ export function AppLayout({ children }: AppLayoutProps) {
                   window.location.hash = ''
                 }
                 setCurrentSection('flashcards') // Clear section highlight
-                setCurrentView('settings')
+                navigateTo('settings')
               }}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
                 currentView === 'settings'
@@ -203,7 +209,7 @@ export function AppLayout({ children }: AppLayoutProps) {
                   window.location.hash = ''
                 }
                 setCurrentSection('flashcards') // Clear section highlight
-                setCurrentView('privacy')
+                navigateTo('privacy')
               }}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
                 currentView === 'privacy'
@@ -222,7 +228,7 @@ export function AppLayout({ children }: AppLayoutProps) {
                   window.location.hash = ''
                 }
                 setCurrentSection('flashcards') // Clear section highlight
-                setCurrentView('terms')
+                navigateTo('terms')
               }}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
                 currentView === 'terms'
@@ -241,7 +247,7 @@ export function AppLayout({ children }: AppLayoutProps) {
                   window.location.hash = ''
                 }
                 setCurrentSection('flashcards') // Clear section highlight
-                setCurrentView('contact')
+                navigateTo('contact')
               }}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
                 currentView === 'contact'

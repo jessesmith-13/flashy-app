@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useStore } from '../../../store/useStore'
+import { useNavigation } from '../../../hooks/useNavigation'
 import { AppLayout } from '../Layout/AppLayout'
 import { BarChart3, Trophy, Users } from 'lucide-react'
 import { getAchievementsByCategory } from '../../../utils/achievements'
@@ -13,7 +14,8 @@ import * as api from '../../../utils/api'
 import { toast } from 'sonner'
 
 export function ProfileScreen() {
-  const { user, accessToken, decks, studySessions, userStats, userAchievements, setUserStats, updateUser, friends, removeFriend, setCurrentView, setViewingUserId, setUserProfileReturnView } = useStore()
+  const { user, accessToken, decks, studySessions, userStats, userAchievements, setUserStats, updateUser, friends, removeFriend, setViewingUserId, setUserProfileReturnView } = useStore()
+  const { navigateTo } = useNavigation()
   const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [displayName, setDisplayName] = useState(user?.displayName || user?.name || '')
   const [avatarUrl, setAvatarUrl] = useState(user?.avatarUrl || '')
@@ -222,7 +224,7 @@ export function ProfileScreen() {
     // Navigate to community tab and set the viewing user ID in Zustand
     setViewingUserId(friendId)
     setUserProfileReturnView('profile') // Set return view to profile
-    setCurrentView('community')
+    navigateTo('community')
   }
 
   return (
