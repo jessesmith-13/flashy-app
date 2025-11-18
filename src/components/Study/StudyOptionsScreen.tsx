@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useStore } from '../../../store/useStore'
+import { useNavigation } from '../../../hooks/useNavigation'
 import { AppLayout } from '../Layout/AppLayout'
 import { Button } from '../../ui/button'
 import { ArrowLeft, Play, Clock, Shuffle, ArrowRight, Star, EyeOff } from 'lucide-react'
@@ -7,7 +8,8 @@ import { Label } from '../../ui/label'
 import { Switch } from '../../ui/switch'
 
 export function StudyOptionsScreen() {
-  const { decks, selectedDeckId, cards, setCurrentView, setStudyOptions, setStudyAllCards } = useStore()
+  const { decks, selectedDeckId, cards, setStudyOptions, setStudyAllCards } = useStore()
+  const { navigateTo } = useNavigation()
   const deck = decks.find((d) => d.id === selectedDeckId)
   const deckCards = cards.filter((c) => c.deckId === selectedDeckId)
 
@@ -29,7 +31,7 @@ export function StudyOptionsScreen() {
       favoritesOnly,
     })
     setStudyAllCards(false) // Ensure we're studying a specific deck
-    setCurrentView('study')
+    navigateTo('study')
   }
 
   if (!deck) {
@@ -47,7 +49,7 @@ export function StudyOptionsScreen() {
       <div className="min-h-screen bg-gray-100 dark:bg-gray-900 p-4 lg:p-8">
         <div className="max-w-2xl mx-auto">
           <div className="mb-6">
-            <Button variant="ghost" onClick={() => setCurrentView('deck-detail')}>
+            <Button variant="ghost" onClick={() => navigateTo('deck-detail')}>
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Deck
             </Button>

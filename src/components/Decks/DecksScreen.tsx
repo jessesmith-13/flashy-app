@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useStore, Deck } from '../../../store/useStore'
+import { useNavigation } from '../../../hooks/useNavigation'
 import * as api from '../../../utils/api'
 import { AppLayout } from '../Layout/AppLayout'
 import { Button } from '../../ui/button'
@@ -25,7 +26,8 @@ import { EmojiPicker } from '../EmojiPicker'
 import { useIsSuperuser } from '../../../utils/userUtils'
 
 export function DecksScreen() {
-  const { user, accessToken, decks, setDecks, addDeck, updateDeck, removeDeck, setCurrentView, setSelectedDeckId, userAchievements, setUserAchievements, studySessions } = useStore()
+  const { user, accessToken, decks, setDecks, addDeck, updateDeck, removeDeck, setSelectedDeckId, userAchievements, setUserAchievements, studySessions } = useStore()
+  const { navigateTo, navigate } = useNavigation()
   const isSuperuser = useIsSuperuser()
   const [loading, setLoading] = useState(true)
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
@@ -201,7 +203,8 @@ export function DecksScreen() {
 
   const handleDeckClick = (deckId: string) => {
     setSelectedDeckId(deckId)
-    setCurrentView('deck-detail')
+    // Navigate directly with deckId to avoid state update timing issues
+    navigate(`/deck-detail/${deckId}`)
   }
 
   const handleDeleteDeck = async (deckId: string) => {
@@ -472,7 +475,7 @@ export function DecksScreen() {
           <div className="flex gap-2 flex-shrink-0">
             {user?.subscriptionTier === 'free' && (
               <Button 
-                onClick={() => setCurrentView('upgrade')} 
+                onClick={() => navigateTo('upgrade')} 
                 className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white h-9 sm:h-10 lg:h-12 px-3 sm:px-4 lg:px-6 text-xs sm:text-sm lg:text-base"
               >
                 <Crown className="w-4 h-4 sm:w-5 sm:h-5 mr-1 sm:mr-2" />

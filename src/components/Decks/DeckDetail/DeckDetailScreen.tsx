@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useStore, CardType } from '../../../../store/useStore'
+import { useNavigation } from '../../../../hooks/useNavigation'
 import * as api from '../../../../utils/api'
 import { AppLayout } from '../../Layout/AppLayout'
 import { DeckHeader } from './DeckHeader'
@@ -26,8 +27,8 @@ export function DeckDetailScreen() {
     removeCard,
     removeDeck,
     updateDeck,
-    setCurrentView,
   } = useStore()
+  const { navigateTo } = useNavigation()
 
   const deck = decks.find((d) => d.id === selectedDeckId)
   const deckCards = cards.filter((c) => c.deckId === selectedDeckId)
@@ -431,7 +432,7 @@ export function DeckDetailScreen() {
     try {
       const result = await api.deleteDeck(accessToken, selectedDeckId)
       removeDeck(selectedDeckId)
-      setCurrentView('decks')
+      navigateTo('decks')
       
       if (result.deletedFromCommunity) {
         toast.success('Deck deleted from your collection and unpublished from community')
@@ -478,7 +479,7 @@ export function DeckDetailScreen() {
 
   const handleStartStudy = () => {
     if (deckCards.length === 0) return
-    setCurrentView('study-options')
+    navigateTo('study-options')
   }
 
   const handlePublishDeck = async () => {
@@ -652,7 +653,7 @@ export function DeckDetailScreen() {
           <DeckHeader
             deck={deck}
             cardCount={deckCards.length}
-            onBack={() => setCurrentView('decks')}
+            onBack={() => navigateTo('decks')}
             onOpenSettings={() => setEditDialogOpen(true)}
             onOpenPublish={() => {
               if (!canPublishToCommunity(user?.subscriptionTier)) {

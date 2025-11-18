@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
 import { useStore } from '../../store/useStore'
+import { useNavigation } from '../../hooks/useNavigation'
 import { AppLayout } from './Layout/AppLayout'
 import { Button } from '../ui/button'
-import { ArrowLeft, BookOpen, Download } from 'lucide-react'
+import { ArrowLeft, BookOpen, Check } from 'lucide-react'
 import { toast } from 'sonner'
 import * as api from '../../utils/api'
 
@@ -12,10 +13,12 @@ interface SharedDeckViewProps {
 }
 
 export function SharedDeckView({ shareId, onBack }: SharedDeckViewProps) {
+  const [deckData, setDeckData] = useState<any>(null)
   const [loading, setLoading] = useState(true)
-  const [sharedDeck, setSharedDeck] = useState<any>(null)
+  const [error, setError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
-  const { setTemporaryStudyDeck, setCurrentView, user, accessToken, setStudyOptions, setReturnToSharedDeckId } = useStore()
+  const { setTemporaryStudyDeck, user, accessToken, setStudyOptions, setReturnToSharedDeckId } = useStore()
+  const { navigateTo } = useNavigation()
   const [navigatingToAuth, setNavigatingToAuth] = useState(false)
 
   useEffect(() => {
@@ -34,22 +37,20 @@ export function SharedDeckView({ shareId, onBack }: SharedDeckViewProps) {
       console.log('Loading shared deck with shareId:', shareId)
       const deck = await api.getSharedDeck(shareId)
       console.log('Loaded shared deck:', deck)
-      setSharedDeck(deck)
+      setDeckData(deck)
     } catch (error: any) {
       console.error('Failed to load shared deck:', error)
-      toast.error('Failed to load shared deck')
+      setError('Failed to load shared deck')
     } finally {
       setLoading(false)
     }
   }
 
   const handleStudyDeck = () => {
-    if (!sharedDeck) return
+    if (!deckData) return
 
     console.log('handleStudyDeck called - user:', user ? `logged in as ${user.email}` : 'not logged in')
-    console.log('Setting up temporary study deck with cards:', sharedDeck.deckData.cards.length)
-
-    const deckData = sharedDeck.deckData
+    console.log('Setting up temporary study deck with cards:', deckData.cards.length)
 
     // Set default study options for shared decks
     setStudyOptions({
@@ -66,7 +67,7 @@ export function SharedDeckView({ shareId, onBack }: SharedDeckViewProps) {
     // Set up temporary study deck in store
     setTemporaryStudyDeck({
       deck: {
-        id: sharedDeck.shareId,
+        id: shareId,
         name: deckData.name,
         color: deckData.color,
         emoji: deckData.emoji,
@@ -90,16 +91,14 @@ export function SharedDeckView({ shareId, onBack }: SharedDeckViewProps) {
     onBack()
     
     // Navigate to study screen
-    setCurrentView('study')
+    navigateTo('study')
   }
 
   const handleSaveToDeck = async () => {
-    if (!user || !accessToken || !sharedDeck) return
+    if (!user || !accessToken || !deckData) return
 
     setSaving(true)
     try {
-      const deckData = sharedDeck.deckData
-      
       await api.addDeckFromCommunity(accessToken, {
         communityDeckId: shareId, // Use shareId as identifier
         name: deckData.name,
@@ -114,8 +113,7 @@ export function SharedDeckView({ shareId, onBack }: SharedDeckViewProps) {
       
       // Navigate to decks view after short delay
       setTimeout(() => {
-        window.location.hash = ''
-        setCurrentView('decks')
+        navigateTo('decks')
       }, 1000)
     } catch (error: any) {
       console.error('Failed to save deck:', error)
@@ -139,7 +137,7 @@ export function SharedDeckView({ shareId, onBack }: SharedDeckViewProps) {
     )
   }
 
-  if (!sharedDeck) {
+  if (error) {
     return (
       <AppLayout>
         <div className="min-h-screen bg-gray-100 dark:bg-gray-900 p-8">
@@ -159,8 +157,6 @@ export function SharedDeckView({ shareId, onBack }: SharedDeckViewProps) {
       </AppLayout>
     )
   }
-
-  const deckData = sharedDeck.deckData
 
   return (
     <AppLayout>
@@ -278,7 +274,7 @@ export function SharedDeckView({ shareId, onBack }: SharedDeckViewProps) {
                     sessionStorage.setItem('returnToSharedDeck', shareId)
                     // Clear the shared deck view so login/signup can show
                     onBack()
-                    setCurrentView('signup')
+                    navigateTo('signup')
                   }}
                   className="bg-white text-emerald-600 hover:bg-emerald-50"
                 >
@@ -290,7 +286,7 @@ export function SharedDeckView({ shareId, onBack }: SharedDeckViewProps) {
                     sessionStorage.setItem('returnToSharedDeck', shareId)
                     // Clear the shared deck view so login/signup can show
                     onBack()
-                    setCurrentView('login')
+                    navigateTo('login')
                   }}
                   variant="outline"
                   className="border-white text-white hover:bg-white/10"
@@ -299,7 +295,7 @@ export function SharedDeckView({ shareId, onBack }: SharedDeckViewProps) {
                 </Button>
               </div>
             </div>
-          ) : user.id !== sharedDeck.createdBy ? (
+          ) : user.id !== deckData.createdBy ? (
             <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700 text-center">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
                 Want to keep this deck?
@@ -312,7 +308,7 @@ export function SharedDeckView({ shareId, onBack }: SharedDeckViewProps) {
                 disabled={saving}
                 className="bg-emerald-600 hover:bg-emerald-700 text-white"
               >
-                <Download className="w-4 h-4 mr-2" />
+                <Check className="w-4 h-4 mr-2" />
                 {saving ? 'Saving...' : 'Save to My Decks'}
               </Button>
             </div>

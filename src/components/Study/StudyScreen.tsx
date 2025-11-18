@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useStore } from '../../../store/useStore'
+import { useNavigation } from '../../../hooks/useNavigation'
 import { AppLayout } from '../Layout/AppLayout'
 import { ClassicFlipMode } from './ClassicFlipMode'
 import { MultipleChoiceMode } from './MultipleChoiceMode'
@@ -9,7 +10,8 @@ import { StudyStats } from './StudyStats'
 import { EmptyDeckState } from './EmptyDeckState'
 
 export function StudyScreen() {
-  const { selectedDeckId, decks, cards, studyOptions, studyAllCards, setCurrentView, userAchievements, setUserAchievements, addStudySession, temporaryStudyDeck, setTemporaryStudyDeck, setReturnToCommunityDeck, returnToUserDeck, setReturnToUserDeck, returnToSharedDeckId, setReturnToSharedDeckId } = useStore()
+  const { selectedDeckId, decks, cards, studyOptions, studyAllCards, userAchievements, setUserAchievements, addStudySession, temporaryStudyDeck, setTemporaryStudyDeck, setReturnToCommunityDeck, returnToUserDeck, setReturnToUserDeck, returnToSharedDeckId, setReturnToSharedDeckId } = useStore()
+  const { navigateTo } = useNavigation()
   
   // Check if we're studying a temporary community deck
   const isTemporaryStudy = temporaryStudyDeck !== null
@@ -191,9 +193,9 @@ export function StudyScreen() {
       setTemporaryStudyDeck(null)
       setReturnToCommunityDeck(null)
       setReturnToUserDeck(null) // Clear user deck return state
-      setCurrentView('community')
+      navigateTo('community')
     } else {
-      setCurrentView(studyAllCards ? 'all-cards' : 'deck-detail')
+      navigateTo(studyAllCards ? 'all-cards' : 'deck-detail')
     }
   }
 
@@ -208,7 +210,7 @@ export function StudyScreen() {
     } else {
       // Keep the return deck set, just clear temporary study and go back to community
       setTemporaryStudyDeck(null)
-      setCurrentView('community')
+      navigateTo('community')
     }
   }
 

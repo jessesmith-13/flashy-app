@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useStore } from '../../../../store/useStore'
 import * as api from '../../../../utils/api'
+import { useNavigation } from '../../../../hooks/useNavigation'
 import { AuthHeader } from './AuthHeader'
 import { LoginForm } from './LoginForm'
 import { ForgotPasswordForm } from './ForgotPasswordForm'
@@ -13,7 +14,8 @@ export function LoginScreen() {
   const [showForgotPassword, setShowForgotPassword] = useState(false)
   const [resetSuccess, setResetSuccess] = useState(false)
 
-  const { setAuth, setCurrentView, setFriends, setFriendRequests } = useStore()
+  const { setAuth, setFriends, setFriendRequests } = useStore()
+  const { navigateTo } = useNavigation()
 
   const handleLogin = async (email: string, password: string) => {
     setError('')
@@ -65,7 +67,7 @@ export function LoginScreen() {
           window.location.hash = `#/shared/${returnToSharedDeck}`
           // Don't set a view - let App.tsx handle it
         } else {
-          setCurrentView('decks')
+          navigateTo('decks')
         }
       }
     } catch (err: any) {
@@ -208,7 +210,7 @@ export function LoginScreen() {
           window.location.hash = `#/shared/${returnToSharedDeck}`
           // Don't set a view - let App.tsx handle it
         } else {
-          setCurrentView('decks')
+          navigateTo('decks')
         }
       }
     } catch (err: any) {
@@ -228,7 +230,7 @@ export function LoginScreen() {
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-blue-50 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
       <div className="w-full max-w-md bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 sm:p-10">
         <AuthHeader 
-          onBackToHome={() => setCurrentView('landing')}
+          onBackToHome={() => navigateTo('landing')}
           subtitle="Welcome back!"
         />
 
@@ -258,7 +260,7 @@ export function LoginScreen() {
 
         <TestLoginButtons
           onTestLogin={handleTestLogin}
-          onCreateAccount={() => setCurrentView('signup')}
+          onCreateAccount={() => navigateTo('signup')}
           loading={loading}
         />
       </div>
