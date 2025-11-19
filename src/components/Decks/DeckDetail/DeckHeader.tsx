@@ -1,5 +1,5 @@
 import { Button } from '../../../ui/button'
-import { ArrowLeft, Palette, Upload, Trash2, Play, Plus, Crown, Users, Sparkles } from 'lucide-react'
+import { ArrowLeft, FileEdit, Upload, Trash2, Play, Plus, Crown, Users, Sparkles } from 'lucide-react'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../../../ui/alert-dialog'
 import type { Deck } from '../../../../store/useStore'
 
@@ -42,7 +42,7 @@ export function DeckHeader({
         </Button>
         <div className="flex items-center gap-2">
           <Button variant="ghost" size="icon" onClick={onOpenSettings}>
-            <Palette className="w-5 h-5" />
+            <FileEdit className="w-5 h-5" />
           </Button>
 
           {/* Only show publish button for decks created by the user (not imported from community) */}
@@ -116,6 +116,20 @@ export function DeckHeader({
                 {deck.subtopic && (
                   <span className="text-sm px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400">
                     {deck.subtopic}
+                  </span>
+                )}
+                {deck.difficulty && (
+                  <span className={`text-sm px-2 py-0.5 rounded-full ${
+                    deck.difficulty === 'beginner' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' :
+                    deck.difficulty === 'intermediate' ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400' :
+                    deck.difficulty === 'advanced' ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400' :
+                    deck.difficulty === 'expert' ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400' :
+                    'bg-gradient-to-r from-purple-100 to-pink-100 dark:from-purple-900/30 dark:to-pink-900/30 text-purple-700 dark:text-purple-400'
+                  }`}>
+                    {deck.difficulty === 'beginner' ? '🟢' :
+                     deck.difficulty === 'intermediate' ? '🟡' :
+                     deck.difficulty === 'advanced' ? '🟠' :
+                     deck.difficulty === 'expert' ? '🔴' : '🌈'} {deck.difficulty.charAt(0).toUpperCase() + deck.difficulty.slice(1)}
                   </span>
                 )}
                 {deck.communityPublishedId && (

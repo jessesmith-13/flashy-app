@@ -8,7 +8,8 @@ import { Textarea } from '../../ui/textarea'
 import { Input } from '../../ui/input'
 import { Label } from '../../ui/label'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../ui/tabs'
-import { Sparkles, ArrowLeft, MessageSquare, FileText, FileSpreadsheet, Upload, Check, X, Edit2 } from 'lucide-react'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../ui/select'
+import { Sparkles, ArrowLeft, MessageSquare, FileText, FileSpreadsheet, Upload, Check, X, Edit2, Crown, Lock } from 'lucide-react'
 import { toast } from 'sonner'
 
 interface GeneratedCard {
@@ -20,15 +21,20 @@ interface GeneratedCard {
 }
 
 export function AIGenerateScreen() {
-  const { selectedDeckId, decks, addCard, accessToken, updateDeck } = useStore()
+  const { selectedDeckId, decks, addCard, accessToken, updateDeck, user } = useStore()
   const { navigateTo } = useNavigation()
   const [activeTab, setActiveTab] = useState('chat')
   
   // AI Chat state
   const [topic, setTopic] = useState('')
   const [numCards, setNumCards] = useState('10')
-  const [mixedCardTypes, setMixedCardTypes] = useState(false)
+  const [cardTypes, setCardTypes] = useState({
+    classicFlip: true,
+    multipleChoice: false,
+    typeAnswer: false
+  })
   const [includeImages, setIncludeImages] = useState(false)
+  const [difficulty, setDifficulty] = useState('mixed')
   const [loading, setLoading] = useState(false)
 
   // CSV Upload state
@@ -53,13 +59,17 @@ export function AIGenerateScreen() {
   const currentDeck = decks.find(d => d.id === selectedDeckId)
   const backButtonText = currentDeck ? 'Back to Deck' : 'Back to Decks'
   const backView = currentDeck ? 'deck-detail' : 'decks'
+  
+  // Check if user is on free tier
+  const isFreeUser = !user?.subscriptionTier || user.subscriptionTier === 'free'
 
   const handleAIGenerate = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
     
     try {
-      const response = await api.generateCardsWithAI(topic, parseInt(numCards), mixedCardTypes, includeImages)
+      console.log('AI Generation Request:', { topic, numCards, cardTypes, difficulty })
+      const response = await api.generateCardsWithAI(topic, parseInt(numCards), cardTypes, includeImages, difficulty)
       
       if (response.cards && response.cards.length > 0) {
         setGeneratedCards(response.cards)
@@ -452,6 +462,34 @@ export function AIGenerateScreen() {
                 </TabsTrigger>
               </TabsList>
 
+              {/* Free User Warning Banner */}
+              {isFreeUser && (
+                <div className="mb-6 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 border-2 border-amber-300 dark:border-amber-700 rounded-lg p-4">
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-full bg-amber-500 dark:bg-amber-600 flex items-center justify-center flex-shrink-0">
+                      <Lock className="w-5 h-5 text-white" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-sm text-amber-900 dark:text-amber-200 mb-1 flex items-center gap-2">
+                        <Crown className="w-4 h-4" />
+                        Premium Feature
+                      </h3>
+                      <p className="text-xs text-amber-800 dark:text-amber-300 mb-3">
+                        AI card generation is available exclusively for Premium and Pro subscribers. Upgrade to unlock AI-powered flashcard creation with customizable difficulty levels and card types.
+                      </p>
+                      <Button
+                        size="sm"
+                        onClick={() => navigateTo('upgrade')}
+                        className="bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white h-8"
+                      >
+                        <Crown className="w-4 h-4 mr-1.5" />
+                        Upgrade Now
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* AI Chat Tab */}
               <TabsContent value="chat">
                 <form onSubmit={handleAIGenerate} className="space-y-6">
@@ -484,6 +522,22 @@ export function AIGenerateScreen() {
                     />
                   </div>
 
+                  <div>
+                    <Label htmlFor="difficulty" className="text-gray-700 dark:text-gray-300">Difficulty Level</Label>
+                    <Select value={difficulty} onValueChange={setDifficulty}>
+                      <SelectTrigger className="mt-1 bg-gray-50 dark:bg-gray-700 dark:border-gray-600">
+                        <SelectValue placeholder="Select difficulty..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="beginner">🟢 Beginner - Simple concepts and definitions</SelectItem>
+                        <SelectItem value="intermediate">🟡 Intermediate - Moderate complexity</SelectItem>
+                        <SelectItem value="advanced">🟠 Advanced - Complex concepts and applications</SelectItem>
+                        <SelectItem value="expert">🔴 Expert - Mastery-level knowledge</SelectItem>
+                        <SelectItem value="mixed">🌈 Mixed - Progressive difficulty</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
                   <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
                     <h3 className="text-sm text-blue-900 dark:text-blue-300 mb-2">💡 Pro Tips:</h3>
                     <ul className="text-xs text-blue-800 dark:text-blue-400 space-y-1">
@@ -500,19 +554,64 @@ export function AIGenerateScreen() {
                   </div>
 
                   <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 space-y-3">
-                    <Label className="text-sm text-gray-700 dark:text-gray-300">Advanced Options</Label>
+                    <Label className="text-sm text-gray-700 dark:text-gray-300">Card Types</Label>
                     <div className="flex items-center gap-3">
                       <input
                         type="checkbox"
-                        id="mixedTypes"
-                        checked={mixedCardTypes}
-                        onChange={(e) => setMixedCardTypes(e.target.checked)}
+                        id="classicFlip"
+                        checked={cardTypes.classicFlip}
+                        onChange={(e) => {
+                          // Prevent unchecking if it's the only one selected
+                          if (!e.target.checked && !cardTypes.multipleChoice && !cardTypes.typeAnswer) {
+                            return
+                          }
+                          setCardTypes({ ...cardTypes, classicFlip: e.target.checked })
+                        }}
                         className="w-4 h-4 text-purple-600 bg-gray-100 border-gray-300 rounded focus:ring-purple-500"
                       />
-                      <label htmlFor="mixedTypes" className="text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
-                        Mix of card types (Classic, Multiple Choice, Type-Answer)
+                      <label htmlFor="classicFlip" className="text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
+                        Classic Flip
                       </label>
                     </div>
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="checkbox"
+                        id="multipleChoice"
+                        checked={cardTypes.multipleChoice}
+                        onChange={(e) => {
+                          // Prevent unchecking if it's the only one selected
+                          if (!e.target.checked && !cardTypes.classicFlip && !cardTypes.typeAnswer) {
+                            return
+                          }
+                          setCardTypes({ ...cardTypes, multipleChoice: e.target.checked })
+                        }}
+                        className="w-4 h-4 text-purple-600 bg-gray-100 border-gray-300 rounded focus:ring-purple-500"
+                      />
+                      <label htmlFor="multipleChoice" className="text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
+                        Multiple Choice
+                      </label>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="checkbox"
+                        id="typeAnswer"
+                        checked={cardTypes.typeAnswer}
+                        onChange={(e) => {
+                          // Prevent unchecking if it's the only one selected
+                          if (!e.target.checked && !cardTypes.classicFlip && !cardTypes.multipleChoice) {
+                            return
+                          }
+                          setCardTypes({ ...cardTypes, typeAnswer: e.target.checked })
+                        }}
+                        className="w-4 h-4 text-purple-600 bg-gray-100 border-gray-300 rounded focus:ring-purple-500"
+                      />
+                      <label htmlFor="typeAnswer" className="text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
+                        Type Answer
+                      </label>
+                    </div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 pt-2 border-t border-gray-200 dark:border-gray-600">
+                      Select one or more card types (at least one required). Multiple types will be mixed evenly.
+                    </p>
                     <div className="flex items-center gap-3 opacity-50 cursor-not-allowed">
                       <input
                         type="checkbox"

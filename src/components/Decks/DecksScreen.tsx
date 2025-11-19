@@ -38,6 +38,7 @@ export function DecksScreen() {
   const [selectedColor, setSelectedColor] = useState('#10B981')
   const [selectedCategory, setSelectedCategory] = useState('')
   const [selectedSubtopic, setSelectedSubtopic] = useState('')
+  const [selectedDifficulty, setSelectedDifficulty] = useState<string>('')
   const [creating, setCreating] = useState(false)
   const [draggedDeck, setDraggedDeck] = useState<string | null>(null)
   const [deletingDeckId, setDeletingDeckId] = useState<string | null>(null)
@@ -53,6 +54,7 @@ export function DecksScreen() {
   const [editColor, setEditColor] = useState('')
   const [editCategory, setEditCategory] = useState('')
   const [editSubtopic, setEditSubtopic] = useState('')
+  const [editDifficulty, setEditDifficulty] = useState<string>('')
   const [updating, setUpdating] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
   const ITEMS_PER_PAGE = 12
@@ -138,6 +140,7 @@ export function DecksScreen() {
         color: selectedColor,
         category: selectedCategory || undefined,
         subtopic: selectedSubtopic || undefined,
+        difficulty: selectedDifficulty || undefined,
       })
       
       addDeck(deck)
@@ -156,6 +159,7 @@ export function DecksScreen() {
       setSelectedColor('#10B981')
       setSelectedCategory('')
       setSelectedSubtopic('')
+      setSelectedDifficulty('')
     } catch (error) {
       console.error('Failed to create deck:', error)
     } finally {
@@ -237,6 +241,7 @@ export function DecksScreen() {
     setEditColor(deck.color)
     setEditCategory(deck.category || '')
     setEditSubtopic(deck.subtopic || '')
+    setEditDifficulty(deck.difficulty || '')
     setEditDialogOpen(true)
   }
 
@@ -253,6 +258,7 @@ export function DecksScreen() {
         color: editColor,
         category: editCategory || undefined,
         subtopic: editSubtopic || undefined,
+        difficulty: editDifficulty || undefined,
       })
 
       updateDeck(editingDeck.id, {
@@ -261,6 +267,7 @@ export function DecksScreen() {
         color: editColor,
         category: editCategory || undefined,
         subtopic: editSubtopic || undefined,
+        difficulty: editDifficulty || undefined,
       })
 
       // If this is a deck the user created and published to community, also update the community version
@@ -273,6 +280,7 @@ export function DecksScreen() {
             color: editColor,
             category: editCategory || undefined,
             subtopic: editSubtopic || undefined,
+            difficulty: editDifficulty || undefined,
             cards: deckCards
           })
           toast.success('Deck and community version updated successfully!')
@@ -558,6 +566,22 @@ export function DecksScreen() {
                 </div>
               )}
 
+              <div>
+                <Label htmlFor="difficulty">Difficulty (Optional)</Label>
+                <Select value={selectedDifficulty} onValueChange={setSelectedDifficulty}>
+                  <SelectTrigger className="mt-1">
+                    <SelectValue placeholder="Select difficulty level..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="beginner">🟢 Beginner</SelectItem>
+                    <SelectItem value="intermediate">🟡 Intermediate</SelectItem>
+                    <SelectItem value="advanced">🟠 Advanced</SelectItem>
+                    <SelectItem value="expert">🔴 Expert</SelectItem>
+                    <SelectItem value="mixed">🌈 Mixed</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
               <Button
                 type="submit"
                 className="w-full bg-emerald-600 hover:bg-emerald-700 text-white"
@@ -640,6 +664,23 @@ export function DecksScreen() {
                   </Select>
                 </div>
               )}
+
+              <div>
+                <Label htmlFor="editDifficulty">Difficulty (Optional)</Label>
+                <Select value={editDifficulty || 'none'} onValueChange={(value) => setEditDifficulty(value === 'none' ? '' : value)}>
+                  <SelectTrigger className="mt-1">
+                    <SelectValue placeholder="Select difficulty level..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">None</SelectItem>
+                    <SelectItem value="beginner">🟢 Beginner</SelectItem>
+                    <SelectItem value="intermediate">🟡 Intermediate</SelectItem>
+                    <SelectItem value="advanced">🟠 Advanced</SelectItem>
+                    <SelectItem value="expert">🔴 Expert</SelectItem>
+                    <SelectItem value="mixed">🌈 Mixed</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
               <Button
                 type="submit"
@@ -882,14 +923,30 @@ export function DecksScreen() {
                       )}
                     </div>
                     
-                    {deck.category && (
+                    {(deck.category || deck.difficulty) && (
                       <div className="mt-2 flex flex-wrap gap-1">
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
-                          {deck.category}
-                        </span>
+                        {deck.category && (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
+                            {deck.category}
+                          </span>
+                        )}
                         {deck.subtopic && (
                           <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400">
                             {deck.subtopic}
+                          </span>
+                        )}
+                        {deck.difficulty && (
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs ${
+                            deck.difficulty === 'beginner' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' :
+                            deck.difficulty === 'intermediate' ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400' :
+                            deck.difficulty === 'advanced' ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400' :
+                            deck.difficulty === 'expert' ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400' :
+                            'bg-gradient-to-r from-purple-100 to-pink-100 dark:from-purple-900/30 dark:to-pink-900/30 text-purple-700 dark:text-purple-400'
+                          }`}>
+                            {deck.difficulty === 'beginner' ? '🟢' :
+                             deck.difficulty === 'intermediate' ? '🟡' :
+                             deck.difficulty === 'advanced' ? '🟠' :
+                             deck.difficulty === 'expert' ? '🔴' : '🌈'} {deck.difficulty.charAt(0).toUpperCase() + deck.difficulty.slice(1)}
                           </span>
                         )}
                       </div>

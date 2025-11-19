@@ -3,6 +3,8 @@ import { projectId } from '../utils/supabase/info'
 
 export type CardType = 'classic-flip' | 'multiple-choice' | 'type-answer'
 
+export type DifficultyLevel = 'beginner' | 'intermediate' | 'advanced' | 'expert' | 'mixed'
+
 export interface Card {
   id: string
   deckId: string
@@ -39,6 +41,7 @@ export interface Deck {
   learned?: boolean   // Mark deck as learned
   category?: string   // Deck category
   subtopic?: string   // Deck subtopic
+  difficulty?: DifficultyLevel  // Deck difficulty level
   sourceCommunityDeckId?: string  // Track which community deck this was imported from
   communityPublishedId?: string   // Track which community deck ID this deck was published as
   communityDeckVersion?: number   // Track version of imported community deck

@@ -148,7 +148,7 @@ export const fetchDecks = async (accessToken: string) => {
 
 export const createDeck = async (
   accessToken: string,
-  deck: { name: string; color?: string; emoji?: string; deckType?: string; category?: string; subtopic?: string }
+  deck: { name: string; color?: string; emoji?: string; deckType?: string; category?: string; subtopic?: string; difficulty?: string }
 ) => {
   const response = await fetch(`${API_BASE}/decks`, {
     method: 'POST',
@@ -172,7 +172,7 @@ export const createDeck = async (
 export const updateDeck = async (
   accessToken: string,
   deckId: string,
-  updates: Partial<{ name: string; color: string; emoji: string; deckType: string; favorite: boolean; learned: boolean; category: string; subtopic: string }>
+  updates: Partial<{ name: string; color: string; emoji: string; deckType: string; favorite: boolean; learned: boolean; category: string; subtopic: string; difficulty: string }>
 ) => {
   const response = await fetch(`${API_BASE}/decks/${deckId}`, {
     method: 'PUT',
@@ -731,7 +731,7 @@ export const publishDeckToCommunity = async (
 export const updateCommunityDeck = async (
   accessToken: string,
   communityDeckId: string,
-  updates: { name: string; emoji: string; color: string; category?: string; subtopic?: string; cards: any[] }
+  updates: { name: string; emoji: string; color: string; category?: string; subtopic?: string; difficulty?: string; cards: any[] }
 ) => {
   const response = await fetch(`${API_BASE}/community/decks/${communityDeckId}`, {
     method: 'PUT',
@@ -889,6 +889,23 @@ export const updateImportedDeck = async (
   }
 
   return data.deck
+}
+
+export const searchCommunityUsers = async (query: string) => {
+  const response = await fetch(`${API_BASE}/community/users/search?q=${encodeURIComponent(query)}`, {
+    headers: {
+      Authorization: `Bearer ${publicAnonKey}`,
+    },
+  })
+
+  const data = await response.json()
+  
+  if (!response.ok) {
+    console.error('Failed to search community users:', data.error)
+    throw new Error(data.error || 'Failed to search users')
+  }
+
+  return data.users || []
 }
 
 // Ratings API
@@ -1135,7 +1152,13 @@ export const flagCommunityItem = async (
 }
 
 // AI Generation API
-export const generateCardsWithAI = async (topic: string, numCards: number, mixedCardTypes: boolean = false, includeImages: boolean = false) => {
+export const generateCardsWithAI = async (
+  topic: string, 
+  numCards: number, 
+  cardTypes: { classicFlip: boolean, multipleChoice: boolean, typeAnswer: boolean } = { classicFlip: true, multipleChoice: false, typeAnswer: false }, 
+  includeImages: boolean = false, 
+  difficulty: string = 'mixed'
+) => {
   const { data: { session } } = await supabaseClient.auth.getSession()
   
   if (!session?.access_token) {
@@ -1148,7 +1171,7 @@ export const generateCardsWithAI = async (topic: string, numCards: number, mixed
       'Content-Type': 'application/json',
       Authorization: `Bearer ${session.access_token}`,
     },
-    body: JSON.stringify({ topic, numCards: numCards.toString(), mixedCardTypes, includeImages }),
+    body: JSON.stringify({ topic, numCards: numCards.toString(), cardTypes, includeImages, difficulty }),
   })
 
   const data = await response.json()

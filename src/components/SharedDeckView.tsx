@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react'
 import { useStore } from '../../store/useStore'
 import { useNavigation } from '../../hooks/useNavigation'
-import { AppLayout } from './Layout/AppLayout'
+import * as api from '../../utils/api'
 import { Button } from '../ui/button'
 import { ArrowLeft, BookOpen, Check } from 'lucide-react'
 import { toast } from 'sonner'
-import * as api from '../../utils/api'
+import { AppLayout } from './Layout/AppLayout'
 
 interface SharedDeckViewProps {
   shareId: string
@@ -194,6 +194,20 @@ export function SharedDeckView({ shareId, onBack }: SharedDeckViewProps) {
                     {deckData.subtopic && (
                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400">
                         {deckData.subtopic}
+                      </span>
+                    )}
+                    {deckData.difficulty && (
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs ${
+                        deckData.difficulty === 'beginner' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' :
+                        deckData.difficulty === 'intermediate' ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400' :
+                        deckData.difficulty === 'advanced' ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400' :
+                        deckData.difficulty === 'expert' ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400' :
+                        'bg-gradient-to-r from-purple-100 to-pink-100 dark:from-purple-900/30 dark:to-pink-900/30 text-purple-700 dark:text-purple-400'
+                      }`}>
+                        {deckData.difficulty === 'beginner' ? '🟢' :
+                         deckData.difficulty === 'intermediate' ? '🟡' :
+                         deckData.difficulty === 'advanced' ? '🟠' :
+                         deckData.difficulty === 'expert' ? '🔴' : '🌈'} {deckData.difficulty.charAt(0).toUpperCase() + deckData.difficulty.slice(1)}
                       </span>
                     )}
                   </div>
