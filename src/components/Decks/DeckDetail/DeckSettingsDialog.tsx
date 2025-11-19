@@ -15,11 +15,13 @@ interface DeckSettingsDialogProps {
   color: string
   category: string
   subtopic: string
+  difficulty: string
   onNameChange: (name: string) => void
   onEmojiChange: (emoji: string) => void
   onColorChange: (color: string) => void
   onCategoryChange: (category: string) => void
   onSubtopicChange: (subtopic: string) => void
+  onDifficultyChange: (difficulty: string) => void
   onSubmit: (e: React.FormEvent) => void
 }
 
@@ -31,11 +33,13 @@ export function DeckSettingsDialog({
   color,
   category,
   subtopic,
+  difficulty,
   onNameChange,
   onEmojiChange,
   onColorChange,
   onCategoryChange,
   onSubtopicChange,
+  onDifficultyChange,
   onSubmit
 }: DeckSettingsDialogProps) {
   const handleCategoryChange = (value: string) => {
@@ -107,6 +111,23 @@ export function DeckSettingsDialog({
               </Select>
             </div>
           )}
+
+          <div>
+            <Label htmlFor="editDifficulty">Difficulty</Label>
+            <Select value={difficulty || 'none'} onValueChange={(value) => onDifficultyChange(value === 'none' ? '' : value)}>
+              <SelectTrigger className="mt-1">
+                <SelectValue placeholder="Choose a difficulty..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">None</SelectItem>
+                <SelectItem value="beginner">🟢 Beginner</SelectItem>
+                <SelectItem value="intermediate">🟡 Intermediate</SelectItem>
+                <SelectItem value="advanced">🟠 Advanced</SelectItem>
+                <SelectItem value="expert">🔴 Expert</SelectItem>
+                <SelectItem value="mixed">🌈 Mixed</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
 
           <Button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-700 text-white">
             Save Changes

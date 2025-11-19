@@ -73,6 +73,7 @@ export function DeckDetailScreen() {
   const [editColor, setEditColor] = useState('')
   const [editCategory, setEditCategory] = useState('')
   const [editSubtopic, setEditSubtopic] = useState('')
+  const [editDifficulty, setEditDifficulty] = useState('')
   const [draggedCard, setDraggedCard] = useState<string | null>(null)
   
   const [publishDialogOpen, setPublishDialogOpen] = useState(false)
@@ -87,6 +88,7 @@ export function DeckDetailScreen() {
       setEditColor(deck.color)
       setEditCategory(deck.category || '')
       setEditSubtopic(deck.subtopic || '')
+      setEditDifficulty(deck.difficulty || '')
       
       if (deck.sourceCommunityDeckId) {
         loadCommunityDeckAuthor(deck.sourceCommunityDeckId)
@@ -459,6 +461,7 @@ export function DeckDetailScreen() {
         color: editColor,
         category: editCategory,
         subtopic: editSubtopic,
+        difficulty: editDifficulty,
       })
 
       updateDeck(selectedDeckId, updated)
@@ -679,11 +682,13 @@ export function DeckDetailScreen() {
             color={editColor}
             category={editCategory}
             subtopic={editSubtopic}
+            difficulty={editDifficulty}
             onNameChange={setEditName}
             onEmojiChange={setEditEmoji}
             onColorChange={setEditColor}
             onCategoryChange={setEditCategory}
             onSubtopicChange={setEditSubtopic}
+            onDifficultyChange={setEditDifficulty}
             onSubmit={handleUpdateDeck}
           />
 

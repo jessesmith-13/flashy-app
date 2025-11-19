@@ -1,24 +1,24 @@
-import { useState, useEffect } from 'react'
-import { useStore, CommunityDeck, Deck, Card } from '../../../store/useStore'
+import { useState, useEffect, useRef } from 'react'
+import { useStore } from '../../../store/useStore'
 import { useNavigation } from '../../../hooks/useNavigation'
-import { AppLayout } from '../Layout/AppLayout'
-import { Button } from '../../ui/button'
-import { Pagination } from '../Pagination/Pagination'
-import { Upload } from 'lucide-react'
-import { UserProfileView } from './UserProfileView'
-import { UserDeckViewer } from './UserDeckViewer'
-import { CommunityFilters } from './CommunityFilters'
-import { CommunityDeckGrid } from './CommunityDeckGrid'
-import { CommunityDeckDetail } from './CommunityDeckDetail'
-import { FlagReportDialog } from './FlagReportDialog'
-import { UpgradeModal } from '../UpgradeModal'
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '../../ui/dialog'
-import { Label } from '../../ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../ui/select'
 import * as api from '../../../utils/api'
 import { toast } from 'sonner'
 import { canImportCommunityDecks, canPublishToCommunity } from '../../../utils/subscription'
 import { useIsSuperuser } from '../../../utils/userUtils'
+import { AppLayout } from '../Layout/AppLayout'
+import { Button } from '../../ui/button'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '../../ui/dialog'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../ui/select'
+import { Label } from '../../ui/label'
+import { Upload } from 'lucide-react'
+import { CommunityDeckGrid } from './CommunityDeckGrid'
+import { CommunityDeckDetail } from './CommunityDeckDetail'
+import { CommunityFilters } from './CommunityFilters'
+import { UserProfileView } from './UserProfileView'
+import { UserDeckViewer } from './UserDeckViewer'
+import { Pagination } from '../Pagination/Pagination'
+import { UpgradeModal } from '../UpgradeModal'
+import { FlagReportDialog } from './FlagReportDialog'
 
 interface Card {
   id: string
@@ -74,6 +74,7 @@ export function CommunityScreen() {
   const [communityDecks, setCommunityDecks] = useState<CommunityDeck[]>([])
   const [featuredDecks, setFeaturedDecks] = useState<CommunityDeck[]>([])
   const [loading, setLoading] = useState(true)
+  const [searchedUsers, setSearchedUsers] = useState<{ id: string; name: string; deckCount: number }[]>([])
   
   // Superuser state
   const [deletingDeckId, setDeletingDeckId] = useState<string | null>(null)
@@ -117,6 +118,27 @@ export function CommunityScreen() {
   useEffect(() => {
     setCurrentPage(1)
   }, [searchQuery, filterCategory, filterSubtopic, sortBy, showFeaturedOnly, showFlashyDecksOnly])
+
+  // Search for users when search query changes
+  useEffect(() => {
+    const searchUsers = async () => {
+      if (searchQuery.length >= 2) {
+        try {
+          const users = await api.searchCommunityUsers(searchQuery)
+          setSearchedUsers(users)
+        } catch (error) {
+          console.error('Failed to search users:', error)
+          setSearchedUsers([])
+        }
+      } else {
+        setSearchedUsers([])
+      }
+    }
+
+    // Debounce the search
+    const timeoutId = setTimeout(searchUsers, 300)
+    return () => clearTimeout(timeoutId)
+  }, [searchQuery])
 
   // Reset deck detail page when viewing a new deck
   useEffect(() => {
@@ -782,6 +804,30 @@ export function CommunityScreen() {
               onToggleFlashy={() => setShowFlashyDecksOnly(!showFlashyDecksOnly)}
             />
           </div>
+
+          {/* User Search Results */}
+          {searchedUsers.length > 0 && (
+            <div className="mb-6">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">Users</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {searchedUsers.map(user => (
+                  <button
+                    key={user.id}
+                    onClick={() => setSelectedUserId(user.id)}
+                    className="flex items-center gap-3 p-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-emerald-500 dark:hover:border-emerald-500 transition-colors text-left"
+                  >
+                    <div className="w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 flex-shrink-0">
+                      {user.name.charAt(0).toUpperCase()}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-gray-900 dark:text-gray-100 truncate">{user.name}</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">{user.deckCount} {user.deckCount === 1 ? 'deck' : 'decks'}</p>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Decks Grid */}
           <CommunityDeckGrid

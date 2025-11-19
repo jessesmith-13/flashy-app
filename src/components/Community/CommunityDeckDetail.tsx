@@ -6,7 +6,7 @@ import { DeckComments } from './DeckComments'
 import { DeckCardPreviewList } from './DeckCardPreviewList'
 import { AppLayout } from '../Layout/AppLayout'
 import { toast } from 'sonner'
-import { Deck, CommunityDeck } from '../../../store/useStore' 
+import { CommunityDeck, Deck } from '../../../store/useStore' 
 
 interface CommunityDeckDetailProps {
   deck: CommunityDeck
@@ -231,6 +231,20 @@ export function CommunityDeckDetail({
               <span className="inline-flex items-center px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-xs sm:text-sm bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400">
                 {deck.subtopic}
               </span>
+              {deck.difficulty && (
+                <span className={`inline-flex items-center px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-xs sm:text-sm ${
+                  deck.difficulty === 'beginner' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' :
+                  deck.difficulty === 'intermediate' ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400' :
+                  deck.difficulty === 'advanced' ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400' :
+                  deck.difficulty === 'expert' ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400' :
+                  'bg-gradient-to-r from-purple-100 to-pink-100 dark:from-purple-900/30 dark:to-pink-900/30 text-purple-700 dark:text-purple-400'
+                }`}>
+                  {deck.difficulty === 'beginner' ? '🟢' :
+                   deck.difficulty === 'intermediate' ? '🟡' :
+                   deck.difficulty === 'advanced' ? '🟠' :
+                   deck.difficulty === 'expert' ? '🔴' : '🌈'} {deck.difficulty.charAt(0).toUpperCase() + deck.difficulty.slice(1)}
+                </span>
+              )}
             </div>
 
             <p className="text-gray-600 dark:text-gray-400 text-sm sm:text-base mb-0">
