@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useStore, CardType } from '../../../../store/useStore'
+import { useStore, CardType, CommunityDeck } from '../../../../store/useStore'
 import { useNavigation } from '../../../../hooks/useNavigation'
 import * as api from '../../../../utils/api'
 import { AppLayout } from '../../Layout/AppLayout'
@@ -13,6 +13,27 @@ import { UpgradeModal } from '../../UpgradeModal'
 import { toast } from 'sonner'
 import { canPublishToCommunity } from '../../../../utils/subscription'
 import { handleAuthError } from '../../../../utils/authErrorHandler'
+
+interface CardData {
+  front: string
+  back: string
+  cardType: string
+  frontImageUrl?: string | null
+  backImageUrl?: string | null
+  options?: string[]
+  correctAnswers?: string[]
+  acceptedAnswers?: string[]
+}
+
+interface ApiCardData {
+  front: string
+  back: string
+  cardType: string
+  frontImageUrl?: string
+  backImageUrl?: string
+  options?: string[]
+  acceptedAnswers?: string[]
+}
 
 export function DeckDetailScreen() {
   const {
@@ -106,7 +127,7 @@ export function DeckDetailScreen() {
       const publishedDecks = await api.fetchCommunityDecks()
       const allDecks = publishedDecks
       
-      const communityDeck = allDecks.find((d: any) => d.id === communityDeckId)
+      const communityDeck = allDecks.find((d: CommunityDeck) => d.id === communityDeckId)
       
       if (communityDeck) {
         setCommunityDeckAuthor({
@@ -171,8 +192,9 @@ export function DeckDetailScreen() {
 
     setCreating(true)
     try {
-      const cardData: any = {
+      const cardData: CardData = {
         front: newCardFront,
+        back: newCardBack, // Initialize with default value
         cardType: newCardType,
       }
 
@@ -198,7 +220,7 @@ export function DeckDetailScreen() {
         const correctAnswers = newCardCorrectIndices.map(idx => filledOptions[idx])
         const incorrectOptions = filledOptions.filter((_, idx) => !newCardCorrectIndices.includes(idx))
         
-        cardData.back = correctAnswers[0]
+        cardData.back = correctAnswers[0] // Override for multiple-choice
         cardData.correctAnswers = correctAnswers
         cardData.options = incorrectOptions
       } else {
@@ -229,7 +251,17 @@ export function DeckDetailScreen() {
           .filter(ans => ans.length > 0)
       }
 
-      const card = await api.createCard(accessToken, selectedDeckId, cardData)
+      // Remove correctAnswers and convert null to undefined for API compatibility
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { correctAnswers: _correctAnswers, frontImageUrl, backImageUrl, ...rest } = cardData
+      
+      const apiData: ApiCardData = {
+        ...rest,
+        ...(frontImageUrl !== null && frontImageUrl !== undefined ? { frontImageUrl } : {}),
+        ...(backImageUrl !== null && backImageUrl !== undefined ? { backImageUrl } : {}),
+      }
+      
+      const card = await api.createCard(accessToken, selectedDeckId, apiData)
 
       addCard(card)
       
@@ -329,8 +361,9 @@ export function DeckDetailScreen() {
 
     setUpdating(true)
     try {
-      const cardData: any = {
+      const cardData: CardData = {
         front: editCardFront,
+        back: editCardBack, // Initialize with default value
         cardType: editCardType,
       }
 
@@ -358,7 +391,7 @@ export function DeckDetailScreen() {
         const correctAnswers = editCardCorrectIndices.map(idx => filledOptions[idx])
         const incorrectOptions = filledOptions.filter((_, idx) => !editCardCorrectIndices.includes(idx))
         
-        cardData.back = correctAnswers[0]
+        cardData.back = correctAnswers[0] // Override for multiple-choice
         cardData.correctAnswers = correctAnswers
         cardData.options = incorrectOptions
       } else {
@@ -397,7 +430,17 @@ export function DeckDetailScreen() {
         cardData.options = []
       }
 
-      const updatedCard = await api.updateCard(accessToken, selectedDeckId, editingCardId, cardData)
+      // Remove correctAnswers and convert null to undefined for API compatibility
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { correctAnswers: _correctAnswers, frontImageUrl, backImageUrl, ...rest } = cardData
+      
+      const apiData: ApiCardData = {
+        ...rest,
+        ...(frontImageUrl !== null && frontImageUrl !== undefined ? { frontImageUrl } : {}),
+        ...(backImageUrl !== null && backImageUrl !== undefined ? { backImageUrl } : {}),
+      }
+      
+      const updatedCard = await api.updateCard(accessToken, selectedDeckId, editingCardId, apiData)
 
       updateCard(editingCardId, updatedCard)
 
@@ -538,15 +581,20 @@ export function DeckDetailScreen() {
         toast.success('Deck published to community!')
       }
       setPublishDialogOpen(false)
-    } catch (error: any) {
+    } catch (error: unknown) {
       handleAuthError(error)
       console.error('Failed to publish deck:', error)
-      if (error.message.includes('already been published')) {
-        toast.info(error.message)
-      } else if (error.message.includes('10 cards')) {
-        toast.error(error.message)
+
+      if (error instanceof Error) {
+        if (error.message.includes('already been published')) {
+          toast.info(error.message)
+        } else if (error.message.includes('10 cards')) {
+          toast.error(error.message)
+        } else {
+          toast.error(error.message || 'Failed to publish deck')
+        }
       } else {
-        toast.error(error.message || 'Failed to publish deck')
+        toast.error('Failed to publish deck')
       }
     } finally {
       setPublishing(false)

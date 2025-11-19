@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useStore, Deck } from '../../../store/useStore'
+import { useStore } from '../../../store/useStore'
 import { useNavigation } from '../../../hooks/useNavigation'
 import * as api from '../../../utils/api'
 import { AppLayout } from '../Layout/AppLayout'
@@ -9,20 +9,19 @@ import { projectId } from '../../../utils/supabase/info'
 import { Plus, BookOpen, GripVertical, Trash2, Star, CheckCircle, ArrowUpDown, Search, X, Filter, FileEdit, Crown, Download, User, Share2, Upload } from 'lucide-react'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../../ui/dialog'
 import { Input } from '../../ui/input'
-import { Label } from '../../ui/label'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../../ui/alert-dialog'
 import { Tabs, TabsList, TabsTrigger } from '../../ui/tabs'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../ui/select'
 import { toast } from 'sonner'
 import { DECK_CATEGORIES } from '../../../utils/categories'
 import { ShareDeckDialog } from '../ShareDeckDialog'
+import { CreateDeckDialog } from './DeckDetail/CreateDeckDialog'
+import { EditDeckDialog } from './DeckDetail/EditDeckDialog'
 
 type SortOption = 'alphabetical-asc' | 'alphabetical-desc' | 'newest' | 'oldest' | 'recently-studied' | 'most-studied' | 'least-studied'
 
 import { UpgradeModal } from '../UpgradeModal'
 import { canCreateDeck, canPublishToCommunity } from '../../../utils/subscription'
-import { ColorPicker } from '../ColorPicker'
-import { EmojiPicker } from '../EmojiPicker'
 import { useIsSuperuser } from '../../../utils/userUtils'
 
 export function DecksScreen() {
@@ -33,13 +32,6 @@ export function DecksScreen() {
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
   const [upgradeModalOpen, setUpgradeModalOpen] = useState(false)
   const [upgradeFeature, setUpgradeFeature] = useState<string | undefined>()
-  const [newDeckName, setNewDeckName] = useState('')
-  const [selectedEmoji, setSelectedEmoji] = useState('📚')
-  const [selectedColor, setSelectedColor] = useState('#10B981')
-  const [selectedCategory, setSelectedCategory] = useState('')
-  const [selectedSubtopic, setSelectedSubtopic] = useState('')
-  const [selectedDifficulty, setSelectedDifficulty] = useState<string>('')
-  const [creating, setCreating] = useState(false)
   const [draggedDeck, setDraggedDeck] = useState<string | null>(null)
   const [deletingDeckId, setDeletingDeckId] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<'all' | 'favorites' | 'learned' | 'added' | 'created'>('all')
@@ -49,13 +41,6 @@ export function DecksScreen() {
   const [filterSubtopic, setFilterSubtopic] = useState<string>('all')
   const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [editingDeck, setEditingDeck] = useState<any>(null)
-  const [editDeckName, setEditDeckName] = useState('')
-  const [editEmoji, setEditEmoji] = useState('')
-  const [editColor, setEditColor] = useState('')
-  const [editCategory, setEditCategory] = useState('')
-  const [editSubtopic, setEditSubtopic] = useState('')
-  const [editDifficulty, setEditDifficulty] = useState<string>('')
-  const [updating, setUpdating] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
   const ITEMS_PER_PAGE = 12
   const [shareDialogOpen, setShareDialogOpen] = useState(false)
@@ -120,51 +105,28 @@ export function DecksScreen() {
     setCreateDialogOpen(true)
   }
 
-  const handleCreateDeck = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!accessToken || !newDeckName.trim()) return
+  const handleCreateDeck = async (data: {
+    name: string
+    emoji: string
+    color: string
+    category?: string
+    subtopic?: string
+    difficulty?: string
+  }) => {
+    if (!accessToken) return
 
-    // Double-check limit
-    if (!canCreateDeck(decks.length, user?.subscriptionTier)) {
-      setCreateDialogOpen(false)
-      setUpgradeFeature('unlimited decks')
-      setUpgradeModalOpen(true)
-      return
-    }
-
-    setCreating(true)
-    try {
-      const deck = await api.createDeck(accessToken, {
-        name: newDeckName,
-        emoji: selectedEmoji,
-        color: selectedColor,
-        category: selectedCategory || undefined,
-        subtopic: selectedSubtopic || undefined,
-        difficulty: selectedDifficulty || undefined,
+    const deck = await api.createDeck(accessToken, data)
+    addDeck(deck)
+    
+    // Track deck customization achievement
+    if ((data.emoji !== '📚' || data.color !== '#10B981') && userAchievements) {
+      setUserAchievements({
+        ...userAchievements,
+        customizedDeckTheme: true,
       })
-      
-      addDeck(deck)
-      
-      // Track deck customization achievement
-      if ((selectedEmoji !== '📚' || selectedColor !== '#10B981') && userAchievements) {
-        setUserAchievements({
-          ...userAchievements,
-          customizedDeckTheme: true,
-        })
-      }
-      
-      setCreateDialogOpen(false)
-      setNewDeckName('')
-      setSelectedEmoji('📚')
-      setSelectedColor('#10B981')
-      setSelectedCategory('')
-      setSelectedSubtopic('')
-      setSelectedDifficulty('')
-    } catch (error) {
-      console.error('Failed to create deck:', error)
-    } finally {
-      setCreating(false)
     }
+    
+    toast.success('Deck created successfully!')
   }
 
   const handleDragStart = (deckId: string) => {
@@ -230,75 +192,6 @@ export function DecksScreen() {
       toast.error('Failed to delete deck')
     } finally {
       setDeletingDeckId(null)
-    }
-  }
-
-  const handleOpenEditDialog = (e: React.MouseEvent, deck: Deck) => {
-    e.stopPropagation()
-    setEditingDeck(deck)
-    setEditDeckName(deck.name)
-    setEditEmoji(deck.emoji)
-    setEditColor(deck.color)
-    setEditCategory(deck.category || '')
-    setEditSubtopic(deck.subtopic || '')
-    setEditDifficulty(deck.difficulty || '')
-    setEditDialogOpen(true)
-  }
-
-  const handleUpdateDeck = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!accessToken || !editingDeck || !editDeckName.trim()) return
-
-    setUpdating(true)
-    try {
-      // Update the local deck
-      await api.updateDeck(accessToken, editingDeck.id, {
-        name: editDeckName,
-        emoji: editEmoji,
-        color: editColor,
-        category: editCategory || undefined,
-        subtopic: editSubtopic || undefined,
-        difficulty: editDifficulty || undefined,
-      })
-
-      updateDeck(editingDeck.id, {
-        name: editDeckName,
-        emoji: editEmoji,
-        color: editColor,
-        category: editCategory || undefined,
-        subtopic: editSubtopic || undefined,
-        difficulty: editDifficulty || undefined,
-      })
-
-      // If this is a deck the user created and published to community, also update the community version
-      if (editingDeck.communityPublishedId && !editingDeck.sourceCommunityDeckId) {
-        try {
-          const deckCards = await api.fetchCards(accessToken, editingDeck.id)
-          await api.updateCommunityDeck(accessToken, editingDeck.communityPublishedId, {
-            name: editDeckName,
-            emoji: editEmoji,
-            color: editColor,
-            category: editCategory || undefined,
-            subtopic: editSubtopic || undefined,
-            difficulty: editDifficulty || undefined,
-            cards: deckCards
-          })
-          toast.success('Deck and community version updated successfully!')
-        } catch (communityError) {
-          console.error('Failed to update community deck:', communityError)
-          toast.success('Deck updated! (Community version update failed)')
-        }
-      } else {
-        toast.success('Deck updated successfully!')
-      }
-
-      setEditDialogOpen(false)
-      setEditingDeck(null)
-    } catch (error) {
-      console.error('Failed to update deck:', error)
-      toast.error('Failed to update deck')
-    } finally {
-      setUpdating(false)
     }
   }
 
@@ -389,6 +282,47 @@ export function DecksScreen() {
     } finally {
       setPublishing(false)
     }
+  }
+
+  const handleOpenEditDialog = (e: React.MouseEvent, deck: any) => {
+    e.stopPropagation()
+    setEditingDeck(deck)
+    setEditDialogOpen(true)
+  }
+
+  const handleUpdateDeck = async (data: {
+    name: string
+    emoji: string
+    color: string
+    category?: string
+    subtopic?: string
+    difficulty?: string
+  }) => {
+    if (!accessToken || !editingDeck) return
+
+    // Update the local deck
+    await api.updateDeck(accessToken, editingDeck.id, data)
+
+    updateDeck(editingDeck.id, data)
+
+    // If this is a deck the user created and published to community, also update the community version
+    if (editingDeck.communityPublishedId && !editingDeck.sourceCommunityDeckId) {
+      try {
+        const deckCards = await api.fetchCards(accessToken, editingDeck.id)
+        await api.updateCommunityDeck(accessToken, editingDeck.communityPublishedId, {
+          ...data,
+          cards: deckCards
+        })
+        toast.success('Deck and community version updated successfully!')
+      } catch (communityError) {
+        console.error('Failed to update community deck:', communityError)
+        toast.success('Deck updated! (Community version update failed)')
+      }
+    } else {
+      toast.success('Deck updated successfully!')
+    }
+
+    setEditingDeck(null)
   }
 
   // Filter decks based on active tab, search query, and category/subtopic
@@ -498,200 +432,20 @@ export function DecksScreen() {
             </Button>
           </div>
 
-          <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-            <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle>Create New Deck</DialogTitle>
-              <DialogDescription>
-                Choose a name, emoji, and color for your new flashcard deck.
-              </DialogDescription>
-            </DialogHeader>
-            <form onSubmit={handleCreateDeck} className="space-y-4 mt-4">
-              <div>
-                <Label htmlFor="deckName">Deck Name</Label>
-                <Input
-                  id="deckName"
-                  placeholder="e.g., Spanish Vocabulary"
-                  value={newDeckName}
-                  onChange={(e) => setNewDeckName(e.target.value)}
-                  required
-                  className="mt-1"
-                />
-              </div>
-
-              <EmojiPicker 
-                emoji={selectedEmoji} 
-                onChange={setSelectedEmoji}
-              />
-
-              <ColorPicker 
-                color={selectedColor} 
-                onChange={setSelectedColor}
-              />
-
-              <div>
-                <Label htmlFor="category">Category (Optional)</Label>
-                <Select value={selectedCategory} onValueChange={(value) => {
-                  setSelectedCategory(value)
-                  setSelectedSubtopic('')
-                }}>
-                  <SelectTrigger className="mt-1">
-                    <SelectValue placeholder="Select a category..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {DECK_CATEGORIES.map(cat => (
-                      <SelectItem key={cat.category} value={cat.category}>
-                        {cat.category}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {selectedCategory && (
-                <div>
-                  <Label htmlFor="subtopic">Subtopic (Optional)</Label>
-                  <Select value={selectedSubtopic} onValueChange={setSelectedSubtopic}>
-                    <SelectTrigger className="mt-1">
-                      <SelectValue placeholder="Select a subtopic..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {DECK_CATEGORIES.find(c => c.category === selectedCategory)?.subtopics.map(subtopic => (
-                        <SelectItem key={subtopic} value={subtopic}>
-                          {subtopic}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-
-              <div>
-                <Label htmlFor="difficulty">Difficulty (Optional)</Label>
-                <Select value={selectedDifficulty} onValueChange={setSelectedDifficulty}>
-                  <SelectTrigger className="mt-1">
-                    <SelectValue placeholder="Select difficulty level..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="beginner">🟢 Beginner</SelectItem>
-                    <SelectItem value="intermediate">🟡 Intermediate</SelectItem>
-                    <SelectItem value="advanced">🟠 Advanced</SelectItem>
-                    <SelectItem value="expert">🔴 Expert</SelectItem>
-                    <SelectItem value="mixed">🌈 Mixed</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <Button
-                type="submit"
-                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white"
-                disabled={creating}
-              >
-                {creating ? 'Creating...' : 'Create Deck'}
-              </Button>
-            </form>
-            </DialogContent>
-          </Dialog>
+          <CreateDeckDialog
+            open={createDialogOpen}
+            onOpenChange={setCreateDialogOpen}
+            onCreateDeck={handleCreateDeck}
+          />
         </div>
 
         {/* Edit Deck Dialog */}
-        <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle>Edit Deck</DialogTitle>
-              <DialogDescription>
-                Update your deck's name, emoji, color, and category.
-              </DialogDescription>
-            </DialogHeader>
-            <form onSubmit={handleUpdateDeck} className="space-y-4 mt-4">
-              <div>
-                <Label htmlFor="editDeckName">Deck Name</Label>
-                <Input
-                  id="editDeckName"
-                  placeholder="e.g., Spanish Vocabulary"
-                  value={editDeckName}
-                  onChange={(e) => setEditDeckName(e.target.value)}
-                  required
-                  className="mt-1"
-                />
-              </div>
-
-              <EmojiPicker 
-                emoji={editEmoji} 
-                onChange={setEditEmoji}
-              />
-
-              <ColorPicker 
-                color={editColor} 
-                onChange={setEditColor}
-              />
-
-              <div>
-                <Label htmlFor="editCategory">Category (Optional)</Label>
-                <Select value={editCategory || 'none'} onValueChange={(value) => {
-                  setEditCategory(value === 'none' ? '' : value)
-                  setEditSubtopic('')
-                }}>
-                  <SelectTrigger className="mt-1">
-                    <SelectValue placeholder="Select a category..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">None</SelectItem>
-                    {DECK_CATEGORIES.map(cat => (
-                      <SelectItem key={cat.category} value={cat.category}>
-                        {cat.category}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {editCategory && (
-                <div>
-                  <Label htmlFor="editSubtopic">Subtopic (Optional)</Label>
-                  <Select value={editSubtopic || 'none'} onValueChange={(value) => setEditSubtopic(value === 'none' ? '' : value)}>
-                    <SelectTrigger className="mt-1">
-                      <SelectValue placeholder="Select a subtopic..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">None</SelectItem>
-                      {DECK_CATEGORIES.find(c => c.category === editCategory)?.subtopics.map(subtopic => (
-                        <SelectItem key={subtopic} value={subtopic}>
-                          {subtopic}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-
-              <div>
-                <Label htmlFor="editDifficulty">Difficulty (Optional)</Label>
-                <Select value={editDifficulty || 'none'} onValueChange={(value) => setEditDifficulty(value === 'none' ? '' : value)}>
-                  <SelectTrigger className="mt-1">
-                    <SelectValue placeholder="Select difficulty level..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">None</SelectItem>
-                    <SelectItem value="beginner">🟢 Beginner</SelectItem>
-                    <SelectItem value="intermediate">🟡 Intermediate</SelectItem>
-                    <SelectItem value="advanced">🟠 Advanced</SelectItem>
-                    <SelectItem value="expert">🔴 Expert</SelectItem>
-                    <SelectItem value="mixed">🌈 Mixed</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <Button
-                type="submit"
-                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white"
-                disabled={updating}
-              >
-                {updating ? 'Updating...' : 'Update Deck'}
-              </Button>
-            </form>
-          </DialogContent>
-        </Dialog>
+        <EditDeckDialog
+          open={editDialogOpen}
+          onOpenChange={setEditDialogOpen}
+          deck={editingDeck}
+          onUpdateDeck={handleUpdateDeck}
+        />
 
         {/* Search bar and filters */}
         <div className="mb-4 space-y-3 sm:space-y-4">
