@@ -24,6 +24,23 @@ import  ProtectedRoute from './components/ProtectedRoute'
 import { Toaster } from './ui/sonner'
 import { useAchievementTracking } from '../hooks/useAchievements'
 
+// Suppress Supabase auth errors from console
+const originalConsoleError = console.error
+console.error = (...args: unknown[]) => {
+  // Filter out expected Supabase auth errors
+  const message = args[0]?.toString() || ''
+  if (
+    message.includes('AuthApiError') ||
+    message.includes('Invalid Refresh Token') ||
+    message.includes('Refresh Token Not Found')
+  ) {
+    // Silently ignore these expected errors
+    return
+  }
+  // Log all other errors normally
+  originalConsoleError(...args)
+}
+
 // Wrapper component for shared deck route
 function SharedDeckRoute() {
   const { shareId } = useParams()
@@ -57,6 +74,60 @@ function AppContent() {
 
   useEffect(() => {
     checkSession()
+    
+    // Set up automatic session refresh
+    const { data: authListener } = api.supabaseClient.auth.onAuthStateChange(
+      async (event, session) => {
+        console.log('Auth state change:', event)
+        
+        if (event === 'SIGNED_OUT') {
+          // User signed out
+          useStore.getState().logout()
+          navigate('/')
+        } else if (event === 'TOKEN_REFRESHED' && session) {
+          // Token was refreshed, update the store
+          console.log('Token refreshed successfully')
+          
+          try {
+            // Fetch updated friends and friend requests with new token
+            const friends = await api.getFriends(session.access_token)
+            setFriends(friends.map((f: { id: string }) => f.id))
+            
+            const requests = await api.getFriendRequests(session.access_token)
+            setFriendRequests(requests)
+            
+            // Check if user is the Flashy superuser
+            const isSuperuser = session.user.email === 'flashy@flashy.app'
+            
+            // Update auth with refreshed token
+            setAuth(
+              {
+                id: session.user.id,
+                email: session.user.email || '',
+                name: session.user.user_metadata?.name || '',
+                displayName: session.user.user_metadata?.displayName || session.user.user_metadata?.name || '',
+                avatarUrl: session.user.user_metadata?.avatarUrl,
+                decksPublic: session.user.user_metadata?.decksPublic ?? true,
+                subscriptionTier: session.user.user_metadata?.subscriptionTier || 'free',
+                subscriptionExpiry: session.user.user_metadata?.subscriptionExpiry,
+                isSuperuser,
+              },
+              session.access_token
+            )
+          } catch (error) {
+            console.error('Failed to update data after token refresh:', error)
+          }
+        } else if (event === 'SIGNED_IN' && session) {
+          // User signed in
+          console.log('User signed in')
+        }
+      }
+    )
+
+    // Cleanup listener on unmount
+    return () => {
+      authListener.subscription.unsubscribe()
+    }
   }, [])
 
   const checkSession = async () => {
@@ -78,8 +149,8 @@ function AppContent() {
         try {
           const friends = await api.getFriends(session.access_token)
           console.log('App.tsx - getFriends returned:', friends)
-          console.log('App.tsx - Extracting IDs:', friends.map(f => f.id))
-          setFriends(friends.map(f => f.id)) // Extract just the IDs
+          console.log('App.tsx - Extracting IDs:', friends.map((f: { id: string }) => f.id))
+          setFriends(friends.map((f: { id: string }) => f.id)) // Extract just the IDs
           
           const requests = await api.getFriendRequests(session.access_token)
           setFriendRequests(requests)
@@ -121,11 +192,17 @@ function AppContent() {
         } catch (error) {
           // Token is invalid or expired - clear session
           console.log('Session token is invalid or expired, clearing session')
+          console.error('Session validation error:', error instanceof Error ? error.message : String(error))
+          if (error instanceof Error && error.stack) {
+            console.error('Error stack:', error.stack)
+          }
+          
           try {
             await api.signOut()
           } catch (signOutError) {
             // Ignore signOut errors - session might already be expired
             console.log('SignOut failed (session likely already expired)')
+            console.error('SignOut error details:', signOutError instanceof Error ? signOutError.message : String(signOutError))
           }
           
           // If there's a shared deck, don't redirect - let them view it as guest
@@ -141,6 +218,12 @@ function AppContent() {
       }
     } catch (error) {
       console.log('Session check completed - no active session')
+      console.error('Session check error details:', {
+        errorType: error instanceof Error ? error.constructor.name : typeof error,
+        message: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined
+      })
+      
       // On error, check if there's a shared deck
       const hash = window.location.hash
       const path = window.location.pathname
