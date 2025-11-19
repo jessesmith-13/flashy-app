@@ -152,29 +152,31 @@ export function DeckHeader({
               )}
             </div>
           </div>
-          <div className="flex gap-2 w-full sm:w-auto">
+          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
             <Button
               onClick={onAddCard}
-              className="flex-1 sm:flex-initial bg-emerald-600 hover:bg-emerald-700 text-white"
+              className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white"
             >
               <Plus className="w-4 h-4 mr-2" />
               Add Card
             </Button>
-            <Button
-              onClick={onAIGenerate}
-              className="flex-1 sm:flex-initial bg-blue-600 hover:bg-blue-700 text-white"
-            >
-              <Sparkles className="w-4 h-4 mr-2" />
-              AI Generate
-            </Button>
-            <Button
-              onClick={onStartStudy}
-              disabled={cardCount === 0}
-              className="flex-1 sm:flex-initial bg-blue-600 hover:bg-blue-700 text-white"
-            >
-              <Play className="w-4 h-4 mr-2" />
-              Study
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                onClick={onAIGenerate}
+                className="flex-1 sm:flex-initial sm:w-auto bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                <Sparkles className="w-4 h-4 mr-2" />
+                AI Generate
+              </Button>
+              <Button
+                onClick={onStartStudy}
+                disabled={cardCount === 0}
+                className="flex-1 sm:flex-initial sm:w-auto bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                <Play className="w-4 h-4 mr-2" />
+                Study
+              </Button>
+            </div>
           </div>
         </div>
       </div>
