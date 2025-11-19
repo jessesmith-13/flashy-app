@@ -1,4 +1,4 @@
-import { CheckCircle2, Lock, } from 'lucide-react'
+import { CheckCircle2, Lock } from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../ui/tabs'
 import { getAchievementsByCategory, CATEGORY_LABELS, AchievementCategory } from '../../../utils/achievements'
 
@@ -14,21 +14,33 @@ export function ProfileAchievements({ unlockedAchievementIds }: ProfileAchieveme
       <h2 className="text-xl text-gray-900 dark:text-gray-100 mb-6">Achievements</h2>
       
       <Tabs defaultValue="all" className="w-full">
-        <TabsList className="w-full grid grid-cols-3 lg:grid-cols-5 mb-6 h-auto gap-2">
-          <TabsTrigger value="all" className="text-xs lg:text-sm">
+        <TabsList className="w-full grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 mb-6 h-auto gap-2 p-1">
+          <TabsTrigger value="all" className="text-xs sm:text-sm whitespace-nowrap">
             All
           </TabsTrigger>
-          <TabsTrigger value="streaks" className="text-xs lg:text-sm">
-            Streaks
+          <TabsTrigger value="getting-started" className="text-xs sm:text-sm whitespace-nowrap">
+            🎯 Starter
           </TabsTrigger>
-          <TabsTrigger value="milestones" className="text-xs lg:text-sm">
-            Milestones
+          <TabsTrigger value="study-streaks" className="text-xs sm:text-sm whitespace-nowrap">
+            🔥 Streaks
           </TabsTrigger>
-          <TabsTrigger value="creation" className="text-xs lg:text-sm">
-            Creation
+          <TabsTrigger value="study-mastery" className="text-xs sm:text-sm whitespace-nowrap">
+            🧠 Mastery
           </TabsTrigger>
-          <TabsTrigger value="mastery" className="text-xs lg:text-sm">
-            Mastery
+          <TabsTrigger value="deck-creation" className="text-xs sm:text-sm whitespace-nowrap">
+            🛠️ Creation
+          </TabsTrigger>
+          <TabsTrigger value="community" className="text-xs sm:text-sm whitespace-nowrap">
+            🌍 Community
+          </TabsTrigger>
+          <TabsTrigger value="social" className="text-xs sm:text-sm whitespace-nowrap">
+            👥 Social
+          </TabsTrigger>
+          <TabsTrigger value="premium" className="text-xs sm:text-sm whitespace-nowrap">
+            👑 Premium
+          </TabsTrigger>
+          <TabsTrigger value="hidden" className="text-xs sm:text-sm whitespace-nowrap">
+            🎉 Hidden
           </TabsTrigger>
         </TabsList>
 

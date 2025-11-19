@@ -3,6 +3,7 @@ import { Star, Users, Plus, Check, Upload, X, MessageCircle } from 'lucide-react
 import { DeckRatingDisplay } from './DeckRatingDisplay'
 import { toast } from 'sonner'
 import { Deck, CommunityDeck } from '../../../store/useStore'
+
 interface CommunityDeckCardProps {
   deck: CommunityDeck
   isAdded: boolean
@@ -68,6 +69,20 @@ export function CommunityDeckCard({
             <span className="text-xs px-2 py-0.5 sm:py-1 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded-full truncate max-w-[100px]">
               {deck.subtopic}
             </span>
+            {deck.difficulty && (
+              <span className={`text-xs px-2 py-0.5 sm:py-1 rounded-full truncate max-w-[100px] ${
+                deck.difficulty === 'beginner' ? 'bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400' :
+                deck.difficulty === 'intermediate' ? 'bg-yellow-50 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400' :
+                deck.difficulty === 'advanced' ? 'bg-orange-50 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400' :
+                deck.difficulty === 'expert' ? 'bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400' :
+                'bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/30 dark:to-pink-900/30 text-purple-700 dark:text-purple-400'
+              }`}>
+                {deck.difficulty === 'beginner' ? '🟢' :
+                 deck.difficulty === 'intermediate' ? '🟡' :
+                 deck.difficulty === 'advanced' ? '🟠' :
+                 deck.difficulty === 'expert' ? '🔴' : '🌈'} {deck.difficulty.charAt(0).toUpperCase() + deck.difficulty.slice(1)}
+              </span>
+            )}
           </div>
         </div>
 

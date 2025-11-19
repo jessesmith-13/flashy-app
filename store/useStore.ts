@@ -97,14 +97,26 @@ export interface UserAchievements {
   customizedDeckTheme: boolean
   hasProfilePicture: boolean
   decksPublished: number
+  decksImported: number
   studiedBeforeEightAM: boolean
   studiedAfterMidnight: boolean
   studiedSixtyMinutesNonstop: boolean
   studiedThreeHoursInOneDay: boolean
   flippedCardFiveTimes: boolean
   studiedOnLowBattery: boolean
-  studiedInDarkMode: boolean
   slowCardReview: boolean
+  createdMultipleChoiceCard: boolean
+  createdTrueFalseCard: boolean
+  createdImageCard: boolean
+  completedBeginnerDeck: boolean
+  completedIntermediateDeck: boolean
+  completedAdvancedDeck: boolean
+  completedExpertDeck: boolean
+  completedMasterDeck: boolean
+  usedAI: boolean
+  aiCardsGenerated: number
+  commentsLeft: number
+  ratingsGiven: number
 }
 
 export type SubscriptionTier = 'free' | 'monthly' | 'annual' | 'lifetime'

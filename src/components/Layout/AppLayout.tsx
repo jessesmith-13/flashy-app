@@ -46,6 +46,8 @@ export function AppLayout({ children }: AppLayoutProps) {
     try {
       await api.signOut()
       logout()
+      // Navigate to landing page after logout
+      navigateTo('landing')
     } catch (error) {
       console.error('Failed to logout:', error)
     }

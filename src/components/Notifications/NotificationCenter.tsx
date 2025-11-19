@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { useStore } from '../../../store/useStore'
+import { useNavigation } from '../../../hooks/useNavigation'
 import { Bell, X, Check, UserPlus, MessageCircle, Reply, FileText } from 'lucide-react'
 import { Button } from '../../ui/button'
 import * as api from '../../../utils/api'
@@ -15,11 +16,11 @@ export function NotificationCenter() {
     mentionNotifications,
     setMentionNotifications,
     removeMentionNotification,
-    setCurrentView,
     setCurrentSection,
     setViewingCommunityDeckId,
     setTargetCommentId
   } = useStore()
+  const { navigateTo } = useNavigation()
   const [isOpen, setIsOpen] = useState(false)
   const [loading, setLoading] = useState<string | null>(null)
 
@@ -128,7 +129,7 @@ export function NotificationCenter() {
 
   const handleMentionClick = (notification: any) => {
     // Set the current section to the notification's section
-    setCurrentView(notification.section)
+    setCurrentSection(notification.section)
     // Set the viewing community deck ID
     setViewingCommunityDeckId(notification.context)
     // Remove the notification from the list
@@ -266,7 +267,7 @@ export function NotificationCenter() {
                             onClick={async () => {
                               // Navigate to community tab and view deck
                               setCurrentSection('community')
-                              setCurrentView('community')
+                              navigateTo('community')
                               setViewingCommunityDeckId(notification.deckId)
                               setTargetCommentId(notification.parentCommentId) // Scroll to the parent comment
                               setIsOpen(false)
@@ -332,7 +333,7 @@ export function NotificationCenter() {
                             onClick={async () => {
                               // Navigate to community tab and view deck
                               setCurrentSection('community')
-                              setCurrentView('community')
+                              navigateTo('community')
                               setViewingCommunityDeckId(notification.deckId)
                               setIsOpen(false)
                               
@@ -395,7 +396,7 @@ export function NotificationCenter() {
                           }`}
                           onClick={async () => {
                             // Navigate to community tab
-                            setCurrentView('community')
+                            navigateTo('community')
                             setIsOpen(false)
                             
                             // Mark notification as read
@@ -457,7 +458,7 @@ export function NotificationCenter() {
                         className="w-full py-2 text-center text-sm text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 font-medium transition-colors"
                         onClick={() => {
                           setIsOpen(false)
-                          setCurrentView('notifications')
+                          navigateTo('notifications')
                         }}
                       >
                         See All Notifications

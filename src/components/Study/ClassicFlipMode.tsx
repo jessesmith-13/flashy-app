@@ -114,7 +114,7 @@ export function ClassicFlipMode({ cards, onNext, onPrevious, currentIndex, isTem
           <motion.div
             className="relative w-full cursor-pointer"
             style={{ 
-              minHeight: '300px',
+              minHeight: '400px',
               transformStyle: 'preserve-3d'
             }}
             onClick={handleFlip}
@@ -124,45 +124,53 @@ export function ClassicFlipMode({ cards, onNext, onPrevious, currentIndex, isTem
           >
             {/* Front */}
             <div
-              className="absolute inset-0 bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-4 sm:p-8 md:p-12 flex flex-col items-center justify-center backface-hidden"
+              className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-4 sm:p-8 md:p-12 flex flex-col items-center justify-start min-h-[400px] backface-hidden"
               style={{
                 backfaceVisibility: 'hidden',
+                position: isFlipped ? 'absolute' : 'relative',
+                inset: isFlipped ? 0 : 'auto',
+                width: '100%',
               }}
             >
               <div className="text-xs text-emerald-600 dark:text-emerald-400 mb-6 uppercase tracking-wide">Question</div>
-              {currentCard.front && <p className="text-2xl md:text-3xl text-center max-w-2xl text-gray-900 dark:text-gray-100">{currentCard.front}</p>}
+              {currentCard.front && <p className="text-2xl md:text-3xl text-center max-w-2xl text-gray-900 dark:text-gray-100 mb-4">{currentCard.front}</p>}
               {currentCard.frontImageUrl && (
-                <div className="mt-4 rounded-lg overflow-hidden border max-w-md w-full">
+                <div className="mt-4 rounded-lg overflow-hidden border max-w-2xl w-full mx-auto">
                   <img 
                     src={currentCard.frontImageUrl} 
                     alt="Question" 
-                    className="w-full h-auto max-h-64 object-contain"
+                    className="w-full h-auto object-contain bg-gray-50 dark:bg-gray-900"
+                    style={{ maxHeight: '500px' }}
                   />
                 </div>
               )}
-              <div className="absolute bottom-8 text-sm text-gray-400 dark:text-gray-500">Click to flip</div>
+              <div className="mt-6 text-sm text-gray-400 dark:text-gray-500">Click to flip</div>
             </div>
 
             {/* Back */}
             <div
-              className="absolute inset-0 bg-emerald-600 dark:bg-emerald-700 text-white rounded-2xl shadow-2xl p-4 sm:p-8 md:p-12 flex flex-col items-center justify-center backface-hidden"
+              className="bg-emerald-600 dark:bg-emerald-700 text-white rounded-2xl shadow-2xl p-4 sm:p-8 md:p-12 flex flex-col items-center justify-start min-h-[400px] backface-hidden"
               style={{
                 backfaceVisibility: 'hidden',
                 transform: 'rotateY(180deg)',
+                position: isFlipped ? 'relative' : 'absolute',
+                inset: isFlipped ? 'auto' : 0,
+                width: '100%',
               }}
             >
               <div className="text-xs text-emerald-200 dark:text-emerald-300 mb-6 uppercase tracking-wide">Answer</div>
-              {currentCard.back && <p className="text-2xl md:text-3xl text-center max-w-2xl">{currentCard.back}</p>}
+              {currentCard.back && <p className="text-2xl md:text-3xl text-center max-w-2xl mb-4">{currentCard.back}</p>}
               {currentCard.backImageUrl && (
-                <div className="mt-4 rounded-lg overflow-hidden border border-emerald-400 max-w-md w-full">
+                <div className="mt-4 rounded-lg overflow-hidden border border-emerald-400 max-w-2xl w-full mx-auto">
                   <img 
                     src={currentCard.backImageUrl} 
                     alt="Answer" 
-                    className="w-full h-auto max-h-64 object-contain"
+                    className="w-full h-auto object-contain bg-white/10"
+                    style={{ maxHeight: '500px' }}
                   />
                 </div>
               )}
-              <div className="absolute bottom-8 text-sm text-emerald-200 dark:text-emerald-300">Rate your answer below</div>
+              <div className="mt-6 text-sm text-emerald-200 dark:text-emerald-300">Rate your answer below</div>
             </div>
           </motion.div>
         </div>

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useStore } from '../../../store/useStore'
 import { useNavigation } from '../../../hooks/useNavigation'
-import { ArrowLeft, Bell, Check, X, UserPlus, MessageCircle, Reply, FileText, Trash2 } from 'lucide-react'
+import { ArrowLeft, Bell, Check, X, UserPlus, Reply, FileText, Trash2 } from 'lucide-react'
 import { Button } from '../../ui/button'
 import * as api from '../../../utils/api'
 import { toast } from 'sonner'
