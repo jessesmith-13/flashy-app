@@ -13,7 +13,7 @@ export function useAchievementTracking() {
     unlockAchievement,
     setUserAchievements,
     darkMode,
-    subscriptionTier,
+    user,
     friends
   } = useStore()
 
@@ -54,9 +54,22 @@ export function useAchievementTracking() {
     if (!userStats || !userAchievements) return
 
     // Count card types
-    const multipleChoiceCards = cards.filter(c => c.type === 'multiple-choice').length
-    const trueFalseCards = cards.filter(c => c.type === 'true-false').length
+    const multipleChoiceCards = cards.filter(c => c.cardType === 'multiple-choice').length
+    const typeAnswerCards = cards.filter(c => c.cardType === 'type-answer').length
     const imageCards = cards.filter(c => c.frontImageUrl || c.backImageUrl).length
+
+    // Count unique categories used in user's created decks (not imported from community)
+    const uniqueCategories = new Set(
+      decks
+        .filter(d => !d.sourceCommunityDeckId && d.category) // Only user-created decks with categories
+        .map(d => d.category)
+    )
+    const categoriesUsed = uniqueCategories.size
+    
+    // Log category tracking for debugging (optional - can be removed later)
+    if (categoriesUsed > 0) {
+      console.log(`Achievement Tracking: User has created decks in ${categoriesUsed} different categories:`, Array.from(uniqueCategories))
+    }
 
     const stats: AchievementStats = {
       // Deck stats
@@ -89,9 +102,12 @@ export function useAchievementTracking() {
       hasProfilePicture: userAchievements.hasProfilePicture,
       usedDarkMode: darkMode,
       
+      // Deck organization
+      categoriesUsed: categoriesUsed,
+      
       // Card types
       createdMultipleChoiceCard: multipleChoiceCards > 0 || userAchievements.createdMultipleChoiceCard,
-      createdTrueFalseCard: trueFalseCards > 0 || userAchievements.createdTrueFalseCard,
+      createdTypeAnswerCard: typeAnswerCards > 0 || userAchievements.createdTrueFalseCard,
       createdImageCard: imageCards > 0 || userAchievements.createdImageCard,
       
       // Difficulty
@@ -114,7 +130,7 @@ export function useAchievementTracking() {
       // Premium features
       usedAI: userAchievements.usedAI,
       aiCardsGenerated: userAchievements.aiCardsGenerated,
-      isPremium: subscriptionTier === 'premium' || subscriptionTier === 'pro',
+      isPremium: user?.subscriptionTier === 'monthly' || user?.subscriptionTier === 'annual' || user?.subscriptionTier === 'lifetime',
       
       // Meta/Fun
       flippedCardFiveTimes: userAchievements.flippedCardFiveTimes,
@@ -143,5 +159,5 @@ export function useAchievementTracking() {
         }
       )
     })
-  }, [decks, cards, studySessions, userStats, userAchievements, darkMode, subscriptionTier, friends])
+  }, [decks, cards, studySessions, userStats, userAchievements, darkMode, user, friends])
 }

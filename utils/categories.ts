@@ -1,95 +1,11 @@
 export const DECK_CATEGORIES = [
   {
-    "category": "Mathematics",
+    "category": "Art & Design",
     "subtopics": [
-      "Algebra",
-      "Geometry",
-      "Calculus",
-      "Statistics",
-      "Trigonometry",
-      "Linear Algebra",
-      "Probability"
-    ]
-  },
-  {
-    "category": "Science",
-    "subtopics": [
-      "Physics",
-      "Chemistry",
-      "Biology",
-      "Earth Science",
-      "Environmental Science",
-      "Astronomy"
-    ]
-  },
-  {
-    "category": "Geography",
-    "subtopics": [
-      "World Geography",
-      "Countries & Capitals",
-      "Maps",
-      "Landforms",
-      "Climate",
-      "Cultural Regions"
-    ]
-  },
-  {
-    "category": "History",
-    "subtopics": [
-      "World History",
-      "U.S. History",
-      "Ancient Civilizations",
-      "European History",
-      "Modern Conflicts",
-      "Art History"
-    ]
-  },
-  {
-    "category": "Language & Literature",
-    "subtopics": [
-      "Grammar",
-      "Vocabulary",
-      "Literary Terms",
-      "Reading Comprehension",
-      "Classic Literature",
-      "Writing"
-    ]
-  },
-  {
-    "category": "Languages (Foreign)",
-    "subtopics": [
-      "Spanish",
-      "French",
-      "German",
-      "Italian",
-      "Mandarin",
-      "Japanese",
-      "Korean",
-      "Arabic",
-      "Latin",
-      "ASL"
-    ]
-  },
-  {
-    "category": "Computer Science",
-    "subtopics": [
-      "Programming Languages",
-      "Data Structures",
-      "Algorithms",
-      "Databases",
-      "Networking",
-      "Cybersecurity"
-    ]
-  },
-  {
-    "category": "Engineering",
-    "subtopics": [
-      "Mechanical Engineering",
-      "Electrical Engineering",
-      "Civil Engineering",
-      "Chemical Engineering",
-      "Aerospace Engineering",
-      "Materials Science"
+      "Architecture",
+      "Art History",
+      "Color Theory",
+      "Graphic Design"
     ]
   },
   {
@@ -97,166 +13,250 @@ export const DECK_CATEGORIES = [
     "subtopics": [
       "Accounting",
       "Economics",
-      "Marketing",
-      "Management",
+      "Entrepreneurship",
       "Investing",
-      "Entrepreneurship"
+      "Management",
+      "Marketing"
     ]
   },
   {
-    "category": "Law & Government",
+    "category": "Career Skills",
     "subtopics": [
-      "Political Science",
-      "Law",
-      "Civics",
-      "Constitution",
-      "International Relations"
+      "Communication",
+      "Interview Prep",
+      "Leadership",
+      "Resume Writing"
     ]
   },
   {
-    "category": "Medicine & Health",
+    "category": "Computer Science",
     "subtopics": [
-      "Anatomy",
-      "Physiology",
-      "Pharmacology",
-      "Nursing",
-      "Psychology",
-      "Nutrition",
-      "First Aid"
+      "Algorithms",
+      "Cybersecurity",
+      "Data Structures",
+      "Databases",
+      "Networking",
+      "Programming Languages"
     ]
   },
   {
     "category": "Education & Teaching",
     "subtopics": [
-      "Pedagogy",
       "Child Development",
+      "Classroom Management",
       "Learning Theories",
-      "Classroom Management"
+      "Pedagogy"
     ]
   },
   {
-    "category": "Art & Design",
+    "category": "Engineering",
     "subtopics": [
-      "Art History",
-      "Color Theory",
-      "Graphic Design",
-      "Architecture"
+      "Aerospace Engineering",
+      "Chemical Engineering",
+      "Civil Engineering",
+      "Electrical Engineering",
+      "Materials Science",
+      "Mechanical Engineering"
     ]
   },
   {
-    "category": "Music",
+    "category": "Exam & Test Prep",
     "subtopics": [
-      "Music Theory",
-      "Instruments",
-      "History of Music",
-      "Notation",
-      "Ear Training"
+      "ACT",
+      "AP Exams",
+      "AWS",
+      "CompTIA",
+      "CPA",
+      "GMAT",
+      "GRE",
+      "HSK",
+      "IELTS",
+      "JLPT",
+      "LSAT",
+      "MCAT",
+      "NCLEX",
+      "PMP",
+      "SAT",
+      "TOEFL"
     ]
   },
   {
     "category": "Film & Media",
     "subtopics": [
       "Film Studies",
-      "Screenwriting",
       "Media Literacy",
-      "Photography"
+      "Photography",
+      "Screenwriting"
+    ]
+  },
+  {
+    "category": "Geography",
+    "subtopics": [
+      "Climate",
+      "Countries & Capitals",
+      "Cultural Regions",
+      "Landforms",
+      "Maps",
+      "World Geography"
+    ]
+  },
+  {
+    "category": "History",
+    "subtopics": [
+      "Ancient Civilizations",
+      "Art History",
+      "European History",
+      "Modern Conflicts",
+      "U.S. History",
+      "World History"
+    ]
+  },
+  {
+    "category": "Hobbies",
+    "subtopics": [
+      "DIY",
+      "Fitness",
+      "Gaming",
+      "Photography",
+      "Travel"
+    ]
+  },
+  {
+    "category": "Language & Literature",
+    "subtopics": [
+      "Classic Literature",
+      "Grammar",
+      "Literary Terms",
+      "Reading Comprehension",
+      "Vocabulary",
+      "Writing"
+    ]
+  },
+  {
+    "category": "Languages (Foreign)",
+    "subtopics": [
+      "Arabic",
+      "ASL",
+      "French",
+      "German",
+      "Italian",
+      "Japanese",
+      "Korean",
+      "Latin",
+      "Mandarin",
+      "Spanish"
+    ]
+  },
+  {
+    "category": "Law & Government",
+    "subtopics": [
+      "Civics",
+      "Constitution",
+      "International Relations",
+      "Law",
+      "Political Science"
+    ]
+  },
+  {
+    "category": "Life Skills",
+    "subtopics": [
+      "Car Maintenance",
+      "Cooking",
+      "Financial Literacy",
+      "Gardening",
+      "Home Repair"
+    ]
+  },
+  {
+    "category": "Mathematics",
+    "subtopics": [
+      "Algebra",
+      "Calculus",
+      "Geometry",
+      "Linear Algebra",
+      "Probability",
+      "Statistics",
+      "Trigonometry"
+    ]
+  },
+  {
+    "category": "Medicine & Health",
+    "subtopics": [
+      "Anatomy",
+      "First Aid",
+      "Nursing",
+      "Nutrition",
+      "Pharmacology",
+      "Physiology",
+      "Psychology"
+    ]
+  },
+  {
+    "category": "Music",
+    "subtopics": [
+      "Ear Training",
+      "History of Music",
+      "Instruments",
+      "Music Theory",
+      "Notation"
+    ]
+  },
+  {
+    "category": "Personal Development",
+    "subtopics": [
+      "Goal Setting",
+      "Memory Techniques",
+      "Mindfulness",
+      "Time Management"
     ]
   },
   {
     "category": "Philosophy",
     "subtopics": [
       "Ethics",
-      "Logic",
-      "Metaphysics",
+      "Existentialism",
       "Famous Philosophers",
-      "Existentialism"
+      "Logic",
+      "Metaphysics"
     ]
   },
   {
     "category": "Religion & Spirituality",
     "subtopics": [
-      "World Religions",
-      "Mythology",
       "Biblical Studies",
-      "Eastern Philosophy"
+      "Eastern Philosophy",
+      "Mythology",
+      "World Religions"
+    ]
+  },
+  {
+    "category": "Science",
+    "subtopics": [
+      "Astronomy",
+      "Biology",
+      "Chemistry",
+      "Earth Science",
+      "Environmental Science",
+      "Physics"
     ]
   },
   {
     "category": "Technology & Software",
     "subtopics": [
+      "AI Tools",
       "Computer Basics",
       "Microsoft Office",
-      "Web Development",
-      "AI Tools"
-    ]
-  },
-  {
-    "category": "Personal Development",
-    "subtopics": [
-      "Time Management",
-      "Mindfulness",
-      "Goal Setting",
-      "Memory Techniques"
-    ]
-  },
-  {
-    "category": "Life Skills",
-    "subtopics": [
-      "Cooking",
-      "Home Repair",
-      "Gardening",
-      "Car Maintenance",
-      "Financial Literacy"
-    ]
-  },
-  {
-    "category": "Exam & Test Prep",
-    "subtopics": [
-      "SAT",
-      "ACT",
-      "GRE",
-      "GMAT",
-      "MCAT",
-      "LSAT",
-      "TOEFL",
-      "IELTS",
-      "JLPT",
-      "HSK",
-      "PMP",
-      "AWS",
-      "CompTIA",
-      "CPA",
-      "NCLEX",
-      "AP Exams"
+      "Web Development"
     ]
   },
   {
     "category": "Trivia & Quizzes",
     "subtopics": [
       "General Knowledge",
-      "Pop Culture",
+      "History",
       "Movies",
-      "Sports",
-      "History"
-    ]
-  },
-  {
-    "category": "Hobbies",
-    "subtopics": [
-      "Gaming",
-      "DIY",
-      "Fitness",
-      "Photography",
-      "Travel"
-    ]
-  },
-  {
-    "category": "Career Skills",
-    "subtopics": [
-      "Resume Writing",
-      "Interview Prep",
-      "Communication",
-      "Leadership"
+      "Pop Culture",
+      "Sports"
     ]
   },
   {
