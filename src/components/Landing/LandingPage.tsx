@@ -132,7 +132,7 @@ export default function LandingPage() {
             <div className="relative">
               <div className="absolute inset-0 bg-gradient-to-r from-emerald-400 to-blue-500 rounded-3xl blur-3xl opacity-20"></div>
               <img
-                src="https://images.unsplash.com/photo-1752920299211-28be8c9b0121?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzdHVkZW50JTIwc3R1ZHlpbmclMjBsZWFybmluZ3xlbnwxfHx8fDE3NjI4MDU0NTd8MA&ixlib=rb-4.1.0&q=80&w=1080"
+                src="public/my_decks.png"
                 alt="Student learning"
                 className="relative rounded-3xl shadow-2xl w-full h-[500px] object-cover"
               />

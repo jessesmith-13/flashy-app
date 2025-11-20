@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react'
-import { BrowserRouter, Routes, Route, Navigate, useNavigate, useParams } from 'react-router-dom'
+import { HashRouter, Routes, Route, Navigate, useNavigate, useParams } from 'react-router-dom'
 import { useStore } from '../store/useStore'
 import * as api from '../utils/api'
 import LandingPage from './components/Landing/LandingPage'
 import { LoginScreen } from './components/Auth/Login/LoginScreen'
-import { SignupScreen } from './components/Auth/Signup/SignupScreen'
+import { SignUpScreen } from './components/Auth/Signup/SignupScreen'
 import { DecksScreen } from './components/Decks/DecksScreen'
 import { DeckDetailScreen } from './components/Decks/DeckDetail/DeckDetailScreen'
 import { StudyOptionsScreen } from './components/Study/StudyOptionsScreen'
@@ -13,6 +13,7 @@ import { CommunityScreen } from './components/Community/CommunityScreen'
 import { ProfileScreen } from './components/Profile/ProfileScreen'
 import { AIGenerateScreen } from './components/AI/AIGenerateScreen'
 import { UpgradeModal } from './components/UpgradeModal'
+import { PaymentSuccessScreen } from './components/PaymentSuccessScreen'
 import { AllCardsScreen } from './components/AllCardsScreen'
 import { SettingsScreen } from './components/Settings/SettingsScreen'
 import { PrivacyPolicyScreen } from './components/Legal/PrivacyPolicyScreen'
@@ -32,7 +33,9 @@ console.error = (...args: unknown[]) => {
   if (
     message.includes('AuthApiError') ||
     message.includes('Invalid Refresh Token') ||
-    message.includes('Refresh Token Not Found')
+    message.includes('Refresh Token Not Found') ||
+    message.includes('project was deleted') ||
+    message.includes('Project not found')
   ) {
     // Silently ignore these expected errors
     return
@@ -152,7 +155,9 @@ function AppContent() {
           console.log('App.tsx - Extracting IDs:', friends.map((f: { id: string }) => f.id))
           setFriends(friends.map((f: { id: string }) => f.id)) // Extract just the IDs
           
+          console.log('checkSession - Fetching friend requests...')
           const requests = await api.getFriendRequests(session.access_token)
+          console.log('checkSession - Friend requests fetched:', requests)
           setFriendRequests(requests)
           
           // Check if user is the Flashy superuser
@@ -185,9 +190,14 @@ function AppContent() {
             return
           }
 
-          // If there's a shared deck, don't change the view - let SharedDeckView render
-          if (!hasSharedDeck) {
+          // If there's a shared deck or payment-success page, don't change the view
+          const isPaymentSuccess = hash.includes('/payment-success')
+          console.log('checkSession - Navigation decision:', { hasSharedDeck, isPaymentSuccess, willNavigate: !hasSharedDeck && !isPaymentSuccess })
+          if (!hasSharedDeck && !isPaymentSuccess) {
+            console.log('checkSession - Navigating to /decks')
             navigate('/decks')
+          } else {
+            console.log('checkSession - Staying on current page')
           }
         } catch (error) {
           // Token is invalid or expired - clear session
@@ -248,7 +258,7 @@ function AppContent() {
           <Routes>
             <Route path="/" element={<LandingPage />} />
             <Route path="/login" element={<LoginScreen />} />
-            <Route path="/signup" element={<SignupScreen />} />
+            <Route path="/signup" element={<SignUpScreen />} />
             <Route path="/decks" element={<ProtectedRoute><DecksScreen /></ProtectedRoute>} />
             <Route path="/deck-detail/:deckId" element={<ProtectedRoute><DeckDetailScreen /></ProtectedRoute>} />
             <Route path="/study-options/:deckId" element={<ProtectedRoute><StudyOptionsScreen /></ProtectedRoute>} />
@@ -260,6 +270,7 @@ function AppContent() {
             <Route path="/profile" element={<ProtectedRoute><ProfileScreen /></ProtectedRoute>} />
             <Route path="/ai-generate" element={<ProtectedRoute><AIGenerateScreen /></ProtectedRoute>} />
             <Route path="/upgrade" element={<ProtectedRoute><UpgradeModal open={true} onOpenChange={(open) => !open && navigate('/decks')} /></ProtectedRoute>} />
+            <Route path="/payment-success" element={<PaymentSuccessScreen />} />
             <Route path="/all-cards" element={<ProtectedRoute><AllCardsScreen /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><SettingsScreen /></ProtectedRoute>} />
             <Route path="/privacy" element={<PrivacyPolicyScreen />} />
@@ -279,8 +290,8 @@ function AppContent() {
 
 export default function App() {
   return (
-    <BrowserRouter>
+    <HashRouter>
       <AppContent />
-    </BrowserRouter>
+    </HashRouter>
   )
 }

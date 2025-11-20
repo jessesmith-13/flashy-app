@@ -1242,3 +1242,85 @@ export const generateCardsFromPDF = async (file: File, numCards: number) => {
 
   return data
 }
+
+// ==================== STRIPE PAYMENT API ====================
+
+// Create a Stripe Checkout Session
+export const createCheckoutSession = async (accessToken: string, planType: 'monthly' | 'annual' | 'lifetime') => {
+  const response = await fetch(`${API_BASE}/create-checkout-session`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify({ planType }),
+  })
+
+  const data = await response.json()
+  
+  if (!response.ok) {
+    console.error('Failed to create checkout session:', data.error)
+    throw new Error(data.error || 'Failed to create checkout session')
+  }
+
+  return data.url
+}
+
+// Verify payment and upgrade user (fallback if webhook doesn't fire)
+export const verifyPayment = async (accessToken: string, sessionId: string) => {
+  const response = await fetch(`${API_BASE}/verify-payment`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify({ sessionId }),
+  })
+
+  const data = await response.json()
+  
+  if (!response.ok) {
+    console.error('Failed to verify payment:', data.error)
+    throw new Error(data.error || 'Failed to verify payment')
+  }
+
+  return data
+}
+
+// Create a Stripe Customer Portal Session (for managing subscriptions)
+export const createPortalSession = async (accessToken: string) => {
+  const response = await fetch(`${API_BASE}/create-portal-session`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  })
+
+  const data = await response.json()
+  
+  if (!response.ok) {
+    console.error('Failed to create portal session:', data.error)
+    throw new Error(data.error || 'Failed to create portal session')
+  }
+
+  return data.url
+}
+
+// Cancel subscription
+export const cancelSubscription = async (accessToken: string) => {
+  const response = await fetch(`${API_BASE}/cancel-subscription`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  })
+
+  const data = await response.json()
+  
+  if (!response.ok) {
+    console.error('Failed to cancel subscription:', data.error)
+    throw new Error(data.error || 'Failed to cancel subscription')
+  }
+
+  return data
+}

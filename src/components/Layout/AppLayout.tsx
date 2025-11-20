@@ -141,7 +141,7 @@ export function AppLayout({ children }: AppLayoutProps) {
             <div className="border-t border-gray-200 dark:border-gray-700 my-2"></div>
 
             {/* Additional Options */}
-            {user?.subscriptionTier === 'free' && (
+            {(!user?.subscriptionTier || user?.subscriptionTier === 'free') && (
               <button
                 onClick={() => {
                   // Clear shared deck hash if present
@@ -364,7 +364,7 @@ export function AppLayout({ children }: AppLayoutProps) {
                 </SheetHeader>
                 <div className="mt-6 space-y-2">
                   {/* Upgrade (only show for free users) */}
-                  {user?.subscriptionTier === 'free' && (
+                  {(!user?.subscriptionTier || user?.subscriptionTier === 'free') && (
                     <button
                       onClick={() => handleMobileMenuItemClick('upgrade')}
                       className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${

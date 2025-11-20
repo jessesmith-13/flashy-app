@@ -7,7 +7,7 @@ import { SignupForm } from './SignupForm'
 import { SignupSuccess } from './SignupSuccess'
 import { GoogleLoginButton } from '../Login/GoogleLoginButton'
 
-export function SignupScreen() {
+export function SignUpScreen() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [showSuccess, setShowSuccess] = useState(false)
@@ -33,6 +33,7 @@ export function SignupScreen() {
       
       console.log('Login successful, session:', session ? 'exists' : 'null')
       console.log('User data:', user)
+      console.log('User subscription tier:', user.user_metadata?.subscriptionTier)
       
       if (session && user) {
         setAuth(
@@ -43,6 +44,8 @@ export function SignupScreen() {
             displayName: user.user_metadata?.displayName || user.user_metadata?.name || displayName,
             avatarUrl: user.user_metadata?.avatarUrl,
             decksPublic: user.user_metadata?.decksPublic ?? true,
+            subscriptionTier: user.user_metadata?.subscriptionTier || 'free',
+            subscriptionExpiry: user.user_metadata?.subscriptionExpiry,
           },
           session.access_token
         )
@@ -67,10 +70,10 @@ export function SignupScreen() {
           }, 2000)
         }
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Signup error:', err)
-      console.error('Error message:', err.message)
-      const errorMessage = err.message || 'Failed to sign up'
+      console.error('Error message:', err instanceof Error ? err.message : String(err))
+      const errorMessage = err instanceof Error ? err.message : 'Failed to sign up'
       if (errorMessage.includes('User already registered') || errorMessage.includes('already registered')) {
         setError('This email is already registered. Try logging in instead.')
       } else {
@@ -89,9 +92,10 @@ export function SignupScreen() {
       sessionStorage.setItem('authAction', 'signup')
       await api.signInWithGoogle()
       // The redirect will be handled by Supabase
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Google sign-up error:', err)
-      setError(err.message || 'Failed to sign up with Google')
+      const errorMessage = err instanceof Error ? err.message : 'Failed to sign up with Google'
+      setError(errorMessage)
       setLoading(false)
     }
   }

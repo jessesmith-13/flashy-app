@@ -1,16 +1,15 @@
-import { User } from '../../../store/useStore'
 import { Button } from '../../ui/button'
 import { Label } from '../../ui/label'
-import { Crown, CreditCard, X, LucideIcon } from 'lucide-react'
+import { Crown, CreditCard, X, AlertCircle } from 'lucide-react'
 
 interface SubscriptionSectionProps {
-  user?: User | null
-  isPremiumSubscription?: boolean | null
-  canCancelSubscription?: boolean | null
+  user: any
+  isPremiumSubscription: boolean
+  canCancelSubscription: boolean
   subscriptionInfo: {
     name: string
     color: string
-    icon: LucideIcon
+    icon: any
   }
   onUpgrade: () => void
   onCancelSubscription: () => void
@@ -43,6 +42,23 @@ export function SubscriptionSection({
       </div>
       
       <div className="space-y-4">
+        {/* Cancellation Warning */}
+        {user?.subscriptionCancelledAtPeriodEnd && user?.subscriptionExpiry && (
+          <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-700 rounded-lg p-4">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <p className="text-sm text-amber-900 dark:text-amber-200">
+                  Your subscription is set to cancel on <span className="font-medium">{new Date(user.subscriptionExpiry).toLocaleDateString()}</span>.
+                </p>
+                <p className="text-xs text-amber-700 dark:text-amber-300 mt-1">
+                  You'll keep premium access until then. You won't be charged again unless you reactivate.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <CreditCard className="w-5 h-5 text-gray-600 dark:text-gray-400" />
@@ -59,7 +75,7 @@ export function SubscriptionSection({
             </p>
             {user?.subscriptionExpiry && (
               <p className="text-xs text-gray-500 dark:text-gray-400">
-                Renews {new Date(user.subscriptionExpiry).toLocaleDateString()}
+                {user?.subscriptionCancelledAtPeriodEnd ? 'Ends' : 'Renews'} {new Date(user.subscriptionExpiry).toLocaleDateString()}
               </p>
             )}
           </div>
@@ -76,7 +92,7 @@ export function SubscriptionSection({
             </Button>
           )}
           
-          {canCancelSubscription && (
+          {canCancelSubscription && !user?.subscriptionCancelledAtPeriodEnd && (
             <Button
               variant="outline"
               onClick={onCancelSubscription}

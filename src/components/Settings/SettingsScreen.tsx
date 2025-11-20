@@ -92,19 +92,26 @@ export function SettingsScreen() {
     
     setCancelling(true)
     try {
-      // Update subscription to free tier
-      await api.updateProfile(accessToken, {
-        subscriptionTier: 'free',
-        subscriptionExpiry: undefined
-      })
+      // Cancel subscription via Stripe API
+      const result = await api.cancelSubscription(accessToken)
       
-      // Update local state
-      updateUser({
-        subscriptionTier: 'free',
-        subscriptionExpiry: undefined
-      })
+      console.log('Subscription cancelled:', result)
       
-      toast.success('Subscription cancelled successfully')
+      // Refresh session to get updated metadata
+      const { data: { session }, error } = await api.supabaseClient.auth.refreshSession()
+      
+      if (error) {
+        console.error('Error refreshing session after cancellation:', error)
+      }
+      
+      if (session?.user) {
+        // Update local state with the new metadata
+        updateUser({
+          subscriptionCancelledAtPeriodEnd: session.user.user_metadata?.subscriptionCancelledAtPeriodEnd
+        })
+      }
+      
+      toast.success('Subscription cancelled. You\'ll have access until the end of your billing period.')
       setShowCancelDialog(false)
     } catch (error) {
       console.error('Failed to cancel subscription:', error)
