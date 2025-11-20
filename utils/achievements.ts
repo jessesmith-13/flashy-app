@@ -48,9 +48,12 @@ export interface AchievementStats {
   hasProfilePicture: boolean
   usedDarkMode: boolean
   
+  // Deck organization
+  categoriesUsed: number
+  
   // Card types
   createdMultipleChoiceCard: boolean
-  createdTrueFalseCard: boolean
+  createdTypeAnswerCard: boolean
   createdImageCard: boolean
   
   // Difficulty
@@ -340,7 +343,7 @@ export const ACHIEVEMENTS: Achievement[] = [
     category: 'deck-creation',
     checkCondition: (stats) => 
       stats.createdMultipleChoiceCard && 
-      stats.createdTrueFalseCard && 
+      stats.createdTypeAnswerCard && 
       stats.createdImageCard,
   },
   {
@@ -357,7 +360,7 @@ export const ACHIEVEMENTS: Achievement[] = [
     title: 'Organized Mind',
     description: 'Create decks in 5 different categories',
     category: 'deck-creation',
-    checkCondition: (stats) => false, // TODO: track categories
+    checkCondition: (stats) => stats.categoriesUsed >= 5,
   },
 
   // ========== COMMUNITY ==========

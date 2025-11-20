@@ -68,8 +68,16 @@ export function AIGenerateScreen() {
     setLoading(true)
     
     try {
+      // Validate card count limit
+      const cardCount = parseInt(numCards)
+      if (cardCount > 100) {
+        toast.error('Maximum 100 cards can be generated at once')
+        setLoading(false)
+        return
+      }
+      
       console.log('AI Generation Request:', { topic, numCards, cardTypes, difficulty })
-      const response = await api.generateCardsWithAI(topic, parseInt(numCards), cardTypes, includeImages, difficulty)
+      const response = await api.generateCardsWithAI(topic, cardCount, cardTypes, includeImages, difficulty)
       
       if (response.cards && response.cards.length > 0) {
         setGeneratedCards(response.cards)
@@ -77,14 +85,15 @@ export function AIGenerateScreen() {
       } else {
         toast.error('No cards were generated. Please try again.')
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error('AI generation error:', error)
-      if (error.message.includes('Premium') || error.message.includes('subscription')) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+      if (errorMessage.includes('Premium') || errorMessage.includes('subscription')) {
         toast.error('AI generation requires a Premium or Pro subscription')
-      } else if (error.message.includes('API key')) {
+      } else if (errorMessage.includes('API key')) {
         toast.error('AI service not configured. Please contact support.')
       } else {
-        toast.error(error.message || 'Failed to generate cards')
+        toast.error(errorMessage || 'Failed to generate cards')
       }
     } finally {
       setLoading(false)
@@ -106,9 +115,10 @@ export function AIGenerateScreen() {
       } else {
         toast.error('No cards were found in the CSV file.')
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error('CSV import error:', error)
-      toast.error(error.message || 'Failed to import CSV')
+      const errorMessage = error instanceof Error ? error.message : 'Failed to import CSV'
+      toast.error(errorMessage)
     } finally {
       setCsvLoading(false)
     }
@@ -121,7 +131,15 @@ export function AIGenerateScreen() {
     setPdfLoading(true)
     
     try {
-      const response = await api.generateCardsFromPDF(pdfFile, parseInt(pdfNumCards))
+      // Validate card count limit
+      const cardCount = parseInt(pdfNumCards)
+      if (cardCount > 100) {
+        toast.error('Maximum 100 cards can be generated at once')
+        setPdfLoading(false)
+        return
+      }
+      
+      const response = await api.generateCardsFromPDF(pdfFile, cardCount)
       
       if (response.cards && response.cards.length > 0) {
         setGeneratedCards(response.cards)
@@ -131,12 +149,13 @@ export function AIGenerateScreen() {
       } else {
         toast.error('Failed to process PDF. Please try using AI Chat with extracted text.')
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error('PDF import error:', error)
-      if (error.message.includes('Premium') || error.message.includes('subscription')) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+      if (errorMessage.includes('Premium') || errorMessage.includes('subscription')) {
         toast.error('PDF import requires a Premium or Pro subscription')
       } else {
-        toast.error(error.message || 'Failed to process PDF. Try using AI Chat instead.')
+        toast.error(errorMessage || 'Failed to process PDF. Try using AI Chat instead.')
       }
     } finally {
       setPdfLoading(false)
@@ -199,7 +218,13 @@ export function AIGenerateScreen() {
       // Save all cards to the selected deck
       let savedCount = 0
       for (const card of generatedCards) {
-        const cardData: any = {
+        const cardData: {
+          front: string
+          back: string
+          cardType: string
+          options?: string[]
+          acceptedAnswers?: string[]
+        } = {
           front: card.front,
           back: card.back,
           cardType: card.cardType || 'classic-flip'
@@ -234,9 +259,10 @@ export function AIGenerateScreen() {
       setPdfFile(null)
       
       navigateTo('deck-detail')
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error saving cards:', error)
-      toast.error(error.message || 'Failed to save cards')
+      const errorMessage = error instanceof Error ? error.message : 'Failed to save cards'
+      toast.error(errorMessage)
     } finally {
       setSaving(false)
     }
@@ -513,13 +539,16 @@ export function AIGenerateScreen() {
                     <Input
                       id="numCards"
                       type="number"
-                      min="5"
-                      max="50"
+                      min="1"
+                      max="100"
                       value={numCards}
                       onChange={(e) => setNumCards(e.target.value)}
                       required
                       className="mt-1 bg-gray-50 dark:bg-gray-700 dark:border-gray-600"
                     />
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      Generate between 1-100 cards per request
+                    </p>
                   </div>
 
                   <div>
@@ -742,12 +771,15 @@ export function AIGenerateScreen() {
                     <Input
                       id="pdf-numCards"
                       type="number"
-                      min="5"
-                      max="50"
+                      min="1"
+                      max="100"
                       value={pdfNumCards}
                       onChange={(e) => setPdfNumCards(e.target.value)}
                       className="mt-1 bg-gray-50 dark:bg-gray-700 dark:border-gray-600"
                     />
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      Generate between 1-100 cards per request
+                    </p>
                   </div>
 
                   <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
