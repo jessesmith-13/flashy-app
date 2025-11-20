@@ -175,6 +175,7 @@ interface User {
   decksPublic?: boolean
   subscriptionTier?: SubscriptionTier
   subscriptionExpiry?: string // For monthly/annual subscriptions
+  subscriptionCancelledAtPeriodEnd?: boolean // If subscription is set to cancel at period end
   isSuperuser?: boolean // Superuser role for "Flashy" admin account
   isBanned?: boolean // User ban status (managed by superuser)
 }

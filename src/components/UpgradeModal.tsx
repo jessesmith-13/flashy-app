@@ -2,6 +2,10 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Button } from '../ui/button'
 import { Check, Sparkles, Crown, Infinity as InfinityIcon, Image, Brain, Users, Upload } from 'lucide-react'
 import { SUBSCRIPTION_PRICES } from '../../utils/subscription'
+import { useStore } from '../../store/useStore'
+import { createCheckoutSession } from '../../utils/api'
+import { useState } from 'react'
+import { toast } from 'sonner'
 
 interface UpgradeModalProps {
   open: boolean
@@ -10,6 +14,10 @@ interface UpgradeModalProps {
 }
 
 export function UpgradeModal({ open, onOpenChange, feature }: UpgradeModalProps) {
+  const user = useStore((state) => state.user)
+  const accessToken = useStore((state) => state.accessToken)
+  const [loading, setLoading] = useState<string | null>(null)
+
   const plans = [
     {
       id: 'monthly',
@@ -50,10 +58,26 @@ export function UpgradeModal({ open, onOpenChange, feature }: UpgradeModalProps)
     { icon: Upload, text: 'Publish decks to Community' },
   ]
 
-  const handleUpgrade = (planId: string) => {
-    // For now, just show a message - you'll implement payment processing later
-    alert(`Payment integration coming soon! Selected plan: ${planId}`)
-    onOpenChange(false)
+  const handleUpgrade = async (planId: string) => {
+    if (!accessToken) {
+      toast.error('Please log in to upgrade')
+      return
+    }
+    
+    setLoading(planId)
+    try {
+      const checkoutUrl = await createCheckoutSession(accessToken, planId as 'monthly' | 'annual' | 'lifetime')
+      // Redirect to Stripe Checkout at the top level (break out of iframe)
+      if (window.top) {
+        window.top.location.href = checkoutUrl
+      } else {
+        window.location.href = checkoutUrl
+      }
+    } catch (error) {
+      console.error('Checkout error:', error)
+      toast.error('Failed to start checkout. Please try again.')
+      setLoading(null)
+    }
   }
 
   return (
@@ -137,13 +161,14 @@ export function UpgradeModal({ open, onOpenChange, feature }: UpgradeModalProps)
 
                 <Button
                   onClick={() => handleUpgrade(plan.id)}
+                  disabled={loading === plan.id}
                   className={`w-full ${
                     plan.popular
                       ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
                       : 'bg-gray-900 hover:bg-gray-800 dark:bg-gray-700 dark:hover:bg-gray-600 text-white'
                   }`}
                 >
-                  Choose {plan.name}
+                  {loading === plan.id ? 'Loading...' : `Choose ${plan.name}`}
                 </Button>
               </div>
             )
