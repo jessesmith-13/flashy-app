@@ -1,25 +1,27 @@
 import { Star } from 'lucide-react'
 import { CommunityDeckCard } from './CommunityDeckCard'
-import { CommunityDeck } from '../../../store/useStore'
 
 interface CommunityDeckGridProps {
-  decks: CommunityDeck[]
-  featuredDecks: CommunityDeck[]
+  decks: any[]
+  featuredDecks: any[]
   showFeaturedSection: boolean
   showFeaturedOnly: boolean
   searchQuery: string
   filterCategory: string
-  userDecks: CommunityDeck[]
+  userDecks: any[]
+  userId: string | null
   isSuperuser: boolean
   addingDeckId: string | null
   deletingDeckId: string | null
   featuringDeckId: string | null
-  onViewDeck: (deck: CommunityDeck) => void
+  unpublishingDeckId: string | null
+  onViewDeck: (deck: any) => void
   onViewUser: (userId: string) => void
-  onAddDeck: (deck: CommunityDeck) => void
-  onUpdateDeck: (communityDeck: CommunityDeck, importedDeck: CommunityDeck) => void
+  onAddDeck: (deck: any) => void
+  onUpdateDeck: (communityDeck: any, importedDeck: any) => void
   onToggleFeatured: (deckId: string) => void
   onDeleteDeck: (deckId: string, deckName: string) => void
+  onUnpublishDeck: (deckId: string, deckName: string) => void
 }
 
 export function CommunityDeckGrid({
@@ -30,16 +32,19 @@ export function CommunityDeckGrid({
   searchQuery,
   filterCategory,
   userDecks,
+  userId,
   isSuperuser,
   addingDeckId,
   deletingDeckId,
   featuringDeckId,
+  unpublishingDeckId,
   onViewDeck,
   onViewUser,
   onAddDeck,
   onUpdateDeck,
   onToggleFeatured,
-  onDeleteDeck
+  onDeleteDeck,
+  onUnpublishDeck
 }: CommunityDeckGridProps) {
   return (
     <>
@@ -54,7 +59,7 @@ export function CommunityDeckGrid({
             {featuredDecks.map((deck) => {
               const importedDeck = userDecks.find(d => d.sourceCommunityDeckId === deck.id)
               const isAdded = !!importedDeck
-              const updateAvailable = !!(importedDeck && (deck.version || 1) > (importedDeck.communityDeckVersion || 1))
+              const updateAvailable = importedDeck && (deck.version || 1) > (importedDeck.communityDeckVersion || 1)
               
               return (
                 <CommunityDeckCard
@@ -63,15 +68,18 @@ export function CommunityDeckGrid({
                   isAdded={isAdded}
                   updateAvailable={updateAvailable}
                   isSuperuser={isSuperuser}
+                  isOwnDeck={deck.authorId === userId}
                   addingDeckId={addingDeckId}
                   deletingDeckId={deletingDeckId}
                   featuringDeckId={featuringDeckId}
+                  unpublishingDeckId={unpublishingDeckId}
                   onViewDeck={onViewDeck}
                   onViewUser={onViewUser}
                   onAddDeck={onAddDeck}
                   onUpdateDeck={onUpdateDeck}
                   onToggleFeatured={onToggleFeatured}
                   onDeleteDeck={onDeleteDeck}
+                  onUnpublishDeck={onUnpublishDeck}
                   importedDeck={importedDeck}
                   isFeatured={true}
                 />
@@ -105,7 +113,7 @@ export function CommunityDeckGrid({
         {decks.map((deck) => {
           const importedDeck = userDecks.find(d => d.sourceCommunityDeckId === deck.id)
           const isAdded = !!importedDeck
-          const updateAvailable = !!(importedDeck && (deck.version || 1) > (importedDeck.communityDeckVersion || 1))
+          const updateAvailable = importedDeck && (deck.version || 1) > (importedDeck.communityDeckVersion || 1)
           
           return (
             <CommunityDeckCard
@@ -114,15 +122,18 @@ export function CommunityDeckGrid({
               isAdded={isAdded}
               updateAvailable={updateAvailable}
               isSuperuser={isSuperuser}
+              isOwnDeck={deck.authorId === userId}
               addingDeckId={addingDeckId}
               deletingDeckId={deletingDeckId}
               featuringDeckId={featuringDeckId}
+              unpublishingDeckId={unpublishingDeckId}
               onViewDeck={onViewDeck}
               onViewUser={onViewUser}
               onAddDeck={onAddDeck}
               onUpdateDeck={onUpdateDeck}
               onToggleFeatured={onToggleFeatured}
               onDeleteDeck={onDeleteDeck}
+              onUnpublishDeck={onUnpublishDeck}
               importedDeck={importedDeck}
               isFeatured={false}
             />

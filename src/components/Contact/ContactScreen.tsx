@@ -9,10 +9,11 @@ import { Label } from '../../ui/label'
 import { Textarea } from '../../ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../ui/select'
 import { toast } from 'sonner'
+import { projectId } from '../../../utils/supabase/info'
 
 export function ContactScreen() {
-  const { user } = useStore()
-  const { navigateTo } = useNavigation()
+  const { user, accessToken } = useStore()
+  const { navigate } = useNavigation()
   const [subject, setSubject] = useState('')
   const [category, setCategory] = useState('')
   const [message, setMessage] = useState('')
@@ -20,16 +21,55 @@ export function ContactScreen() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    if (!accessToken) {
+      toast.error('You must be logged in to submit the contact form')
+      return
+    }
+    
+    if (!category || !subject || !message) {
+      toast.error('Please fill out all fields')
+      return
+    }
+    
     setSending(true)
 
-    // Simulate sending
-    await new Promise((resolve) => setTimeout(resolve, 1000))
+    try {
+      const response = await fetch(
+        `https://${projectId}.supabase.co/functions/v1/make-server-8a1502a9/contact`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${accessToken}`,
+          },
+          body: JSON.stringify({
+            category,
+            subject,
+            message,
+          }),
+        }
+      )
 
-    toast.success('Message sent successfully! We\'ll get back to you soon.')
-    setSubject('')
-    setCategory('')
-    setMessage('')
-    setSending(false)
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to submit contact form')
+      }
+
+      const data = await response.json()
+      
+      toast.success('Message sent successfully! We\'ll get back to you soon.')
+      
+      // Clear form
+      setSubject('')
+      setCategory('')
+      setMessage('')
+    } catch (error: any) {
+      console.error('Failed to submit contact form:', error)
+      toast.error(error.message || 'Failed to send message. Please try again.')
+    } finally {
+      setSending(false)
+    }
   }
 
   return (
@@ -40,7 +80,7 @@ export function ContactScreen() {
           <div className="mb-6">
             <Button
               variant="ghost"
-              onClick={() => navigateTo('decks')}
+              onClick={() => navigate(-1)}
               className="mb-4 -ml-2"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />

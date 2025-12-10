@@ -9,7 +9,7 @@ import { Input } from '../ui/input'
 import { toast } from 'sonner'
 
 export function AllCardsScreen() {
-  const { accessToken, cards, decks, setCards, setStudyAllCards } = useStore()
+  const { user, accessToken, cards, decks, setCards, setStudyAllCards } = useStore()
   const { navigateTo } = useNavigation()
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')

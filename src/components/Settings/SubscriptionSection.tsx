@@ -1,6 +1,6 @@
 import { Button } from '../../ui/button'
 import { Label } from '../../ui/label'
-import { Crown, CreditCard, X, AlertCircle } from 'lucide-react'
+import { Crown, CreditCard, X, AlertCircle, RefreshCw } from 'lucide-react'
 
 interface SubscriptionSectionProps {
   user: any
@@ -13,6 +13,7 @@ interface SubscriptionSectionProps {
   }
   onUpgrade: () => void
   onCancelSubscription: () => void
+  onChangePlan: () => void
 }
 
 export function SubscriptionSection({
@@ -21,17 +22,26 @@ export function SubscriptionSection({
   canCancelSubscription,
   subscriptionInfo,
   onUpgrade,
-  onCancelSubscription
+  onCancelSubscription,
+  onChangePlan
 }: SubscriptionSectionProps) {
+  // Check if user is moderator or superuser (they have premium features without a subscription)
+  const isModerator = user?.isModerator === true
+  const isSuperuser = user?.isSuperuser === true
+  const hasSpecialRole = isModerator || isSuperuser
+  
+  // Effective premium status includes special roles
+  const effectiveIsPremium = isPremiumSubscription || hasSpecialRole
+  
   return (
     <div className={`bg-white dark:bg-gray-800 rounded-lg p-6 border ${
-      isPremiumSubscription 
+      effectiveIsPremium 
         ? `border-${subscriptionInfo.color}-200 dark:border-${subscriptionInfo.color}-800` 
         : 'border-gray-200 dark:border-gray-700'
     }`}>
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg text-gray-900 dark:text-gray-100">Subscription</h2>
-        {isPremiumSubscription && (
+        {effectiveIsPremium && (
           <div className={`flex items-center gap-2 px-3 py-1 rounded-full bg-${subscriptionInfo.color}-100 dark:bg-${subscriptionInfo.color}-900/30`}>
             <Crown className={`w-4 h-4 text-${subscriptionInfo.color}-600 dark:text-${subscriptionInfo.color}-400`} />
             <span className={`text-sm text-${subscriptionInfo.color}-700 dark:text-${subscriptionInfo.color}-400`}>
@@ -53,6 +63,23 @@ export function SubscriptionSection({
                 </p>
                 <p className="text-xs text-amber-700 dark:text-amber-300 mt-1">
                   You'll keep premium access until then. You won't be charged again unless you reactivate.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Role Badge for Moderators/Superusers */}
+        {hasSpecialRole && (
+          <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg p-4">
+            <div className="flex items-start gap-3">
+              <Crown className="w-5 h-5 text-purple-600 dark:text-purple-400 flex-shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <p className="text-sm text-purple-900 dark:text-purple-200 font-medium">
+                  {isSuperuser ? 'Superuser Access' : 'Moderator Access'}
+                </p>
+                <p className="text-xs text-purple-700 dark:text-purple-300 mt-1">
+                  You have lifetime premium access and {isSuperuser ? 'full administrative' : 'moderation'} privileges.
                 </p>
               </div>
             </div>
@@ -82,7 +109,7 @@ export function SubscriptionSection({
         </div>
 
         <div className="pt-4 border-t dark:border-gray-700 space-y-2">
-          {!isPremiumSubscription && (
+          {!effectiveIsPremium && (
             <Button
               onClick={onUpgrade}
               className="w-full justify-start bg-emerald-600 hover:bg-emerald-700 text-white"
@@ -90,6 +117,16 @@ export function SubscriptionSection({
               <Crown className="w-4 h-4 mr-2" />
               Upgrade to Premium
             </Button>
+          )}
+          
+          {/* Show special role message for moderators/superusers */}
+          {hasSpecialRole && !isPremiumSubscription && (
+            <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg p-3">
+              <p className="text-sm text-purple-700 dark:text-purple-300 flex items-center gap-2">
+                <Crown className="w-4 h-4" />
+                You have access to all premium features through your {isSuperuser ? 'superuser' : 'moderator'} role!
+              </p>
+            </div>
           )}
           
           {canCancelSubscription && !user?.subscriptionCancelledAtPeriodEnd && (
@@ -110,6 +147,16 @@ export function SubscriptionSection({
                 You have lifetime access to all premium features!
               </p>
             </div>
+          )}
+          
+          {isPremiumSubscription && (
+            <Button
+              onClick={onChangePlan}
+              className="w-full justify-start bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Change Plan
+            </Button>
           )}
         </div>
       </div>

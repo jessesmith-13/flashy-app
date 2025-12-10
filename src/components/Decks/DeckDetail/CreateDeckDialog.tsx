@@ -5,6 +5,7 @@ import { Label } from '../../../ui/label'
 import { Button } from '../../../ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../ui/select'
 import { DECK_CATEGORIES } from '../../../../utils/categories'
+import { DECK_LANGUAGES } from '../../../../utils/languages'
 import { ColorPicker } from '../../ColorPicker'
 import { EmojiPicker } from '../../EmojiPicker'
 
@@ -18,6 +19,8 @@ interface CreateDeckDialogProps {
     category?: string
     subtopic?: string
     difficulty?: string
+    frontLanguage?: string
+    backLanguage?: string
   }) => Promise<void>
 }
 
@@ -28,6 +31,8 @@ export function CreateDeckDialog({ open, onOpenChange, onCreateDeck }: CreateDec
   const [selectedCategory, setSelectedCategory] = useState('')
   const [selectedSubtopic, setSelectedSubtopic] = useState('')
   const [selectedDifficulty, setSelectedDifficulty] = useState<string>('')
+  const [selectedFrontLanguage, setSelectedFrontLanguage] = useState<string>('')
+  const [selectedBackLanguage, setSelectedBackLanguage] = useState<string>('')
   const [creating, setCreating] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -43,6 +48,8 @@ export function CreateDeckDialog({ open, onOpenChange, onCreateDeck }: CreateDec
         category: selectedCategory || undefined,
         subtopic: selectedSubtopic || undefined,
         difficulty: selectedDifficulty || undefined,
+        frontLanguage: selectedFrontLanguage || undefined,
+        backLanguage: selectedBackLanguage || undefined,
       })
 
       // Reset form
@@ -52,6 +59,8 @@ export function CreateDeckDialog({ open, onOpenChange, onCreateDeck }: CreateDec
       setSelectedCategory('')
       setSelectedSubtopic('')
       setSelectedDifficulty('')
+      setSelectedFrontLanguage('')
+      setSelectedBackLanguage('')
       onOpenChange(false)
     } catch (error) {
       console.error('Failed to create deck:', error)
@@ -62,14 +71,14 @@ export function CreateDeckDialog({ open, onOpenChange, onCreateDeck }: CreateDec
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Create New Deck</DialogTitle>
           <DialogDescription>
-            Choose a name, emoji, and color for your new flashcard deck.
+            Create a new flashcard deck with a name, emoji, color, category, and languages.
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4 mt-4">
+        <form onSubmit={handleSubmit} className="space-y-4 mt-4 pb-4">{/* Added pb-4 for bottom padding */}
           <div>
             <Label htmlFor="deckName">Deck Name</Label>
             <Input
@@ -141,6 +150,38 @@ export function CreateDeckDialog({ open, onOpenChange, onCreateDeck }: CreateDec
                 <SelectItem value="advanced">🟠 Advanced</SelectItem>
                 <SelectItem value="expert">🔴 Expert</SelectItem>
                 <SelectItem value="mixed">🌈 Mixed</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
+            <Label htmlFor="frontLanguage">Front Language (Optional)</Label>
+            <Select value={selectedFrontLanguage} onValueChange={setSelectedFrontLanguage}>
+              <SelectTrigger className="mt-1">
+                <SelectValue placeholder="Select a language..." />
+              </SelectTrigger>
+              <SelectContent>
+                {DECK_LANGUAGES.map(lang => (
+                  <SelectItem key={lang.code} value={lang.name}>
+                    {lang.flag} {lang.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
+            <Label htmlFor="backLanguage">Back Language (Optional)</Label>
+            <Select value={selectedBackLanguage} onValueChange={setSelectedBackLanguage}>
+              <SelectTrigger className="mt-1">
+                <SelectValue placeholder="Select a language..." />
+              </SelectTrigger>
+              <SelectContent>
+                {DECK_LANGUAGES.map(lang => (
+                  <SelectItem key={lang.code} value={lang.name}>
+                    {lang.flag} {lang.name}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>

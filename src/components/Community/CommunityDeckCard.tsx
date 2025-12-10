@@ -1,24 +1,26 @@
 import { Button } from '../../ui/button'
-import { Star, Users, Plus, Check, Upload, X, MessageCircle } from 'lucide-react'
+import { Star, Users, Plus, Check, Upload, X, MessageCircle, EyeOff } from 'lucide-react'
 import { DeckRatingDisplay } from './DeckRatingDisplay'
 import { toast } from 'sonner'
-import { Deck, CommunityDeck } from '../../../store/useStore'
 
 interface CommunityDeckCardProps {
-  deck: CommunityDeck
+  deck: any
   isAdded: boolean
   updateAvailable: boolean
   isSuperuser: boolean
+  isOwnDeck: boolean
   addingDeckId: string | null
   deletingDeckId: string | null
   featuringDeckId: string | null
-  onViewDeck: (deck: CommunityDeck) => void
+  unpublishingDeckId: string | null
+  onViewDeck: (deck: any) => void
   onViewUser: (userId: string) => void
-  onAddDeck: (deck: CommunityDeck) => void
-  onUpdateDeck: (communityDeck: CommunityDeck, importedDeck: Deck) => void
+  onAddDeck: (deck: any) => void
+  onUpdateDeck: (communityDeck: any, importedDeck: any) => void
   onToggleFeatured: (deckId: string) => void
   onDeleteDeck: (deckId: string, deckName: string) => void
-  importedDeck?: Deck
+  onUnpublishDeck: (deckId: string, deckName: string) => void
+  importedDeck?: any
   isFeatured?: boolean
 }
 
@@ -27,21 +29,24 @@ export function CommunityDeckCard({
   isAdded,
   updateAvailable,
   isSuperuser,
+  isOwnDeck,
   addingDeckId,
   deletingDeckId,
   featuringDeckId,
+  unpublishingDeckId,
   onViewDeck,
   onViewUser,
   onAddDeck,
   onUpdateDeck,
   onToggleFeatured,
   onDeleteDeck,
+  onUnpublishDeck,
   importedDeck,
   isFeatured = false
 }: CommunityDeckCardProps) {
   const cardClassName = isFeatured
-    ? "bg-gradient-to-br from-purple-50 to-white dark:from-purple-900/20 dark:to-gray-800 rounded-xl p-4 sm:p-6 shadow-md hover:shadow-lg transition-shadow border-2 border-purple-200 dark:border-purple-700"
-    : "bg-white dark:bg-gray-800 rounded-xl p-4 sm:p-6 shadow-sm hover:shadow-md transition-shadow border border-transparent dark:border-gray-700"
+    ? "bg-gradient-to-br from-purple-50 to-white dark:from-purple-900/20 dark:to-gray-800 rounded-xl p-4 sm:p-6 shadow-md hover:shadow-lg transition-all border-2 border-purple-200 dark:border-purple-700 hover:border-purple-400 dark:hover:border-purple-500"
+    : "bg-white dark:bg-gray-800 rounded-xl p-4 sm:p-6 shadow-sm hover:shadow-md transition-all border border-gray-200 dark:border-gray-700 hover:border-emerald-400 dark:hover:border-emerald-500"
 
   return (
     <div className={cardClassName}>
@@ -109,8 +114,8 @@ export function CommunityDeckCard({
               day: 'numeric' 
             })}</div>
           )}
-          {deck.updatedAt && deck.updatedAt !== deck.publishedAt && (
-            <div>Updated: {new Date(deck.updatedAt).toLocaleDateString('en-US', { 
+          {deck.publishedAt && (
+            <div>Updated: {new Date(deck.updatedAt || deck.publishedAt).toLocaleDateString('en-US', { 
               year: 'numeric', 
               month: 'short', 
               day: 'numeric' 
@@ -163,6 +168,22 @@ export function CommunityDeckCard({
         </div>
       )}
 
+      {/* Unpublish Button for Deck Owner */}
+      {isOwnDeck && (
+        <Button
+          variant="outline"
+          onClick={(e) => {
+            e.stopPropagation()
+            onUnpublishDeck(deck.id, deck.name)
+          }}
+          disabled={unpublishingDeckId === deck.id}
+          className="w-full mb-3 border-orange-300 dark:border-orange-700 text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20"
+        >
+          <EyeOff className="w-4 h-4 mr-2" />
+          {unpublishingDeckId === deck.id ? 'Unpublishing...' : 'Unpublish Deck'}
+        </Button>
+      )}
+
       {/* Add/Update Buttons */}
       {updateAvailable && importedDeck ? (
         <div className="space-y-2">
@@ -203,7 +224,7 @@ export function CommunityDeckCard({
           ) : (
             <>
               <Plus className="w-4 h-4 mr-2" />
-              {addingDeckId === deck.id ? 'Adding...' : (isFeatured ? 'Add to My Decks' : 'Add Deck')}
+              {addingDeckId === deck.id ? 'Adding...' : 'Add to My Decks'}
             </>
           )}
         </Button>

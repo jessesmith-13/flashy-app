@@ -4,28 +4,31 @@ interface GoogleLoginButtonProps {
   onClick: () => void
   loading?: boolean
   text?: string // Allow custom text
+  showDivider?: boolean // Optional divider
 }
 
-export function GoogleLoginButton({ onClick, loading, text = 'Sign in with Google' }: GoogleLoginButtonProps) {
+export function GoogleLoginButton({ onClick, loading, text = 'Sign in with Google', showDivider = false }: GoogleLoginButtonProps) {
   return (
     <div className="mt-4">
-      <div className="relative">
-        <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t dark:border-gray-700"></div>
+      {showDivider && (
+        <div className="relative">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t dark:border-gray-700"></div>
+          </div>
+          <div className="relative flex justify-center text-sm">
+            <span className="px-2 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400">
+              Or continue with
+            </span>
+          </div>
         </div>
-        <div className="relative flex justify-center text-sm">
-          <span className="px-2 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400">
-            Or continue with
-          </span>
-        </div>
-      </div>
+      )}
 
       <Button
         type="button"
         variant="outline"
         onClick={onClick}
         disabled={loading}
-        className="w-full mt-4 border-gray-300 dark:border-gray-600"
+        className={`w-full border-gray-300 dark:border-gray-600 ${showDivider ? 'mt-4' : ''}`}
       >
         <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
           <path

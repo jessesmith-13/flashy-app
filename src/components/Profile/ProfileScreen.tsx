@@ -1,22 +1,24 @@
 import { useEffect, useState } from 'react'
 import { useStore } from '../../../store/useStore'
 import { useNavigation } from '../../../hooks/useNavigation'
+import * as api from '../../../utils/api'
+import { toast } from 'sonner'
+import { getAchievementsByCategory, CATEGORY_LABELS, AchievementCategory } from '../../../utils/achievements'
 import { AppLayout } from '../Layout/AppLayout'
-import { BarChart3, Trophy, Users } from 'lucide-react'
-import { getAchievementsByCategory } from '../../../utils/achievements'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../ui/tabs'
 import { ProfileHeader } from './ProfileHeader'
 import { ProfileStats } from './ProfileStats'
 import { ProfileAchievements } from './ProfileAchievements'
 import { ProfileFriends } from './ProfileFriends'
 import { EditProfileDialog } from './EditProfileDialog'
-import * as api from '../../../utils/api'
-import { toast } from 'sonner'
+import { InviteFriendDialog } from './InviteFriendDialog'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../ui/tabs'
+import { BarChart3, Trophy, Users } from 'lucide-react'
 
 export function ProfileScreen() {
   const { user, accessToken, decks, studySessions, userStats, userAchievements, setUserStats, updateUser, friends, removeFriend, setViewingUserId, setUserProfileReturnView } = useStore()
   const { navigateTo } = useNavigation()
   const [editDialogOpen, setEditDialogOpen] = useState(false)
+  const [inviteFriendDialogOpen, setInviteFriendDialogOpen] = useState(false)
   const [displayName, setDisplayName] = useState(user?.displayName || user?.name || '')
   const [avatarUrl, setAvatarUrl] = useState(user?.avatarUrl || '')
   const [decksPublic, setDecksPublic] = useState(user?.decksPublic ?? true)
@@ -45,24 +47,72 @@ export function ProfileScreen() {
       : 0
 
     // Calculate study streak
-    const today = new Date().toDateString()
     const sortedSessions = [...studySessions].sort((a, b) => 
       new Date(b.date).getTime() - new Date(a.date).getTime()
     )
     
-    let streak = 0
-    let currentDate = new Date()
+    console.log('📚 All study sessions:', studySessions.map(s => ({
+      date: s.date,
+      dateString: new Date(s.date).toDateString(),
+      score: s.score
+    })))
     
+    // Group sessions by day (in case there are multiple sessions per day)
+    const uniqueDaysSet = new Set<number>()
     for (const session of sortedSessions) {
-      const sessionDate = new Date(session.date).toDateString()
-      const expectedDate = new Date(currentDate).toDateString()
+      const sessionDate = new Date(session.date)
+      sessionDate.setHours(0, 0, 0, 0)
+      uniqueDaysSet.add(sessionDate.getTime())
+    }
+    
+    // Convert to sorted array of unique days as timestamps (most recent first)
+    const sortedDayTimestamps = Array.from(uniqueDaysSet).sort((a, b) => b - a)
+    
+    let streak = 0
+    
+    if (sortedDayTimestamps.length > 0) {
+      const today = new Date()
+      today.setHours(0, 0, 0, 0)
+      const todayTimestamp = today.getTime()
       
-      if (sessionDate === expectedDate) {
-        streak++
-        currentDate.setDate(currentDate.getDate() - 1)
+      const yesterday = new Date(today)
+      yesterday.setDate(yesterday.getDate() - 1)
+      const yesterdayTimestamp = yesterday.getTime()
+      
+      const mostRecentStudyTimestamp = sortedDayTimestamps[0]
+      
+      // Check if the most recent study was today or yesterday
+      // (if yesterday, the streak is still active but they haven't studied today yet)
+      if (mostRecentStudyTimestamp === todayTimestamp || mostRecentStudyTimestamp === yesterdayTimestamp) {
+        // Start counting consecutive days from the most recent study day
+        let expectedTimestamp = mostRecentStudyTimestamp
+        
+        for (const dayTimestamp of sortedDayTimestamps) {
+          if (dayTimestamp === expectedTimestamp) {
+            streak++
+            // Move to previous day
+            const nextExpectedDate = new Date(expectedTimestamp)
+            nextExpectedDate.setDate(nextExpectedDate.getDate() - 1)
+            expectedTimestamp = nextExpectedDate.getTime()
+          } else {
+            // Gap in streak found, stop counting
+            break
+          }
+        }
+        
+        console.log('📊 Streak calculation:', {
+          today: new Date(todayTimestamp).toDateString(),
+          mostRecentStudy: new Date(mostRecentStudyTimestamp).toDateString(),
+          uniqueDays: sortedDayTimestamps.map(ts => new Date(ts).toDateString()),
+          calculatedStreak: streak
+        })
       } else {
-        break
+        console.log('📊 Streak broken - last study was more than 1 day ago:', {
+          today: new Date(todayTimestamp).toDateString(),
+          lastStudy: new Date(mostRecentStudyTimestamp).toDateString()
+        })
       }
+      // If most recent study was more than 1 day ago, streak is 0 (broken)
     }
     
     const lastStudy = studySessions.length > 0 
@@ -244,6 +294,7 @@ export function ProfileScreen() {
             uploading={uploading}
             onAvatarClick={handleAvatarClick}
             onEditClick={() => setEditDialogOpen(true)}
+            onInviteClick={() => setInviteFriendDialogOpen(true)}
           />
 
           {/* Tabs */}
@@ -304,6 +355,12 @@ export function ProfileScreen() {
             onSave={handleSaveProfile}
             saving={saving}
             uploading={uploading}
+          />
+
+          <InviteFriendDialog
+            open={inviteFriendDialogOpen}
+            onOpenChange={setInviteFriendDialogOpen}
+            accessToken={accessToken}
           />
         </div>
       </div>

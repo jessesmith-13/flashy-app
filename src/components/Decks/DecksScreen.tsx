@@ -2,13 +2,13 @@ import { useEffect, useState } from 'react'
 import { useStore } from '../../../store/useStore'
 import { useNavigation } from '../../../hooks/useNavigation'
 import * as api from '../../../utils/api'
+import { projectId } from '../../../utils/supabase/info'
 import { AppLayout } from '../Layout/AppLayout'
 import { Button } from '../../ui/button'
 import { Pagination } from '../Pagination/Pagination'
-import { projectId } from '../../../utils/supabase/info'
-import { Plus, BookOpen, GripVertical, Trash2, Star, CheckCircle, ArrowUpDown, Search, X, Filter, FileEdit, Crown, Download, User, Share2, Upload } from 'lucide-react'
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../../ui/dialog'
 import { Input } from '../../ui/input'
+import { Plus, BookOpen, GripVertical, Trash2, Star, CheckCircle, ArrowUpDown, Search, X, Filter, FileEdit, Crown, Download, User, Share2, Upload, EyeOff } from 'lucide-react'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../../ui/dialog'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../../ui/alert-dialog'
 import { Tabs, TabsList, TabsTrigger } from '../../ui/tabs'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../ui/select'
@@ -18,14 +18,14 @@ import { ShareDeckDialog } from '../ShareDeckDialog'
 import { CreateDeckDialog } from './DeckDetail/CreateDeckDialog'
 import { EditDeckDialog } from './DeckDetail/EditDeckDialog'
 
-type SortOption = 'alphabetical-asc' | 'alphabetical-desc' | 'newest' | 'oldest' | 'recently-studied' | 'most-studied' | 'least-studied'
+type SortOption = 'custom' | 'alphabetical-asc' | 'alphabetical-desc' | 'newest' | 'oldest' | 'recently-studied' | 'most-studied' | 'least-studied'
 
 import { UpgradeModal } from '../UpgradeModal'
-import { canCreateDeck, canPublishToCommunity } from '../../../utils/subscription'
+import { canCreateDeck, isPremiumUser, canPublishToCommunity } from '../../../utils/subscription'
 import { useIsSuperuser } from '../../../utils/userUtils'
 
 export function DecksScreen() {
-  const { user, accessToken, decks, setDecks, addDeck, updateDeck, removeDeck, setSelectedDeckId, userAchievements, setUserAchievements, studySessions } = useStore()
+  const { user, accessToken, decks, setDecks, addDeck, updateDeck, removeDeck, setSelectedDeckId, userAchievements, setUserAchievements, studySessions, setStudySessions, shouldReloadDecks, invalidateDecksCache } = useStore()
   const { navigateTo, navigate } = useNavigation()
   const isSuperuser = useIsSuperuser()
   const [loading, setLoading] = useState(true)
@@ -34,8 +34,9 @@ export function DecksScreen() {
   const [upgradeFeature, setUpgradeFeature] = useState<string | undefined>()
   const [draggedDeck, setDraggedDeck] = useState<string | null>(null)
   const [deletingDeckId, setDeletingDeckId] = useState<string | null>(null)
-  const [activeTab, setActiveTab] = useState<'all' | 'favorites' | 'learned' | 'added' | 'created'>('all')
-  const [sortOption, setSortOption] = useState<SortOption>('alphabetical-asc')
+  const [unpublishingDeckId, setUnpublishingDeckId] = useState<string | null>(null)
+  const [activeTab, setActiveTab] = useState<'all' | 'favorites' | 'learned' | 'added' | 'created' | 'published'>('all')
+  const [sortOption, setSortOption] = useState<SortOption>('custom')
   const [searchQuery, setSearchQuery] = useState('')
   const [filterCategory, setFilterCategory] = useState<string>('all')
   const [filterSubtopic, setFilterSubtopic] = useState<string>('all')
@@ -48,10 +49,13 @@ export function DecksScreen() {
   const [publishDialogOpen, setPublishDialogOpen] = useState(false)
   const [publishingDeck, setPublishingDeck] = useState<any>(null)
   const [publishing, setPublishing] = useState(false)
+  const [unpublishDialogOpen, setUnpublishDialogOpen] = useState(false)
+  const [unpublishingDeck, setUnpublishingDeck] = useState<any>(null)
 
   useEffect(() => {
     loadDecks()
     loadAchievements()
+    loadStudySessions()
   }, [])
 
   const loadDecks = async () => {
@@ -60,6 +64,14 @@ export function DecksScreen() {
       return
     }
     
+    // Check if we need to reload decks
+    if (!shouldReloadDecks()) {
+      console.log('📦 Using cached decks, skipping reload')
+      setLoading(false)
+      return
+    }
+    
+    console.log('🔄 Cache stale or invalidated, reloading decks...')
     try {
       const fetchedDecks = await api.fetchDecks(accessToken)
       setDecks(fetchedDecks)
@@ -92,6 +104,18 @@ export function DecksScreen() {
       }
     } catch (error) {
       console.error('Failed to load achievements:', error)
+    }
+  }
+
+  const loadStudySessions = async () => {
+    if (!accessToken) return
+    
+    try {
+      const sessions = await api.fetchStudySessions(accessToken)
+      setStudySessions(sessions)
+      console.log('Loaded study sessions:', sessions.length)
+    } catch (error) {
+      console.error('Failed to load study sessions:', error)
     }
   }
 
@@ -242,6 +266,13 @@ export function DecksScreen() {
   const handlePublishToCommunity = async () => {
     if (!accessToken || !publishingDeck) return
 
+    console.log('=== PUBLISH/UPDATE ATTEMPT ===')
+    console.log('Deck ID:', publishingDeck.id)
+    console.log('Deck name:', publishingDeck.name)
+    console.log('Has communityPublishedId:', !!publishingDeck.communityPublishedId)
+    console.log('communityPublishedId value:', publishingDeck.communityPublishedId)
+    console.log('Card count:', publishingDeck.cardCount)
+
     // Validate minimum card count
     if (!publishingDeck.cardCount || publishingDeck.cardCount === 0) {
       toast.error('Cannot publish an empty deck')
@@ -264,9 +295,10 @@ export function DecksScreen() {
         subtopic: publishingDeck.subtopic,
       })
 
-      // Update local deck with community reference
+      // Update local deck with community reference and version
       updateDeck(publishingDeck.id, {
         communityPublishedId: result.publishedDeck?.id,
+        communityDeckVersion: result.publishedDeck?.version,
       })
 
       if (result.updated) {
@@ -278,9 +310,52 @@ export function DecksScreen() {
       setPublishingDeck(null)
     } catch (error: any) {
       console.error('Failed to publish deck:', error)
-      toast.error(error.message || 'Failed to publish deck to community')
+      if (error.message?.includes('already been published')) {
+        // Just show the info message, don't show error
+        toast.info('This deck is already published with no changes. Make edits to the deck to publish an update.')
+      } else {
+        toast.error(error.message || 'Failed to publish deck to community')
+      }
     } finally {
       setPublishing(false)
+    }
+  }
+
+  const handleUnpublishDeck = async (e: React.MouseEvent, deckId: string, deckName: string, communityPublishedId: string) => {
+    e.stopPropagation()
+    if (!accessToken) {
+      toast.error('Please log in to unpublish decks')
+      return
+    }
+
+    // Open unpublish dialog
+    const deck = decks.find(d => d.id === deckId)
+    if (deck) {
+      setUnpublishingDeck(deck)
+      setUnpublishDialogOpen(true)
+    }
+  }
+
+  const confirmUnpublish = async () => {
+    if (!unpublishingDeck || !accessToken) return
+
+    setUnpublishingDeckId(unpublishingDeck.id)
+    try {
+      await api.unpublishDeck(accessToken, unpublishingDeck.communityPublishedId)
+      
+      // Update local deck to remove community reference
+      updateDeck(unpublishingDeck.id, {
+        communityPublishedId: null
+      })
+      
+      toast.success(`"${unpublishingDeck.name}" has been unpublished from the community`)
+      setUnpublishDialogOpen(false)
+      setUnpublishingDeck(null)
+    } catch (error: any) {
+      console.error('Failed to unpublish deck:', error)
+      toast.error(error.message || 'Failed to unpublish deck')
+    } finally {
+      setUnpublishingDeckId(null)
     }
   }
 
@@ -331,8 +406,15 @@ export function DecksScreen() {
     const tabFilter = (() => {
       if (activeTab === 'favorites') return deck.favorite
       if (activeTab === 'learned') return deck.learned
-      if (activeTab === 'added') return !!deck.sourceCommunityDeckId // Imported from community
-      if (activeTab === 'created') return !deck.sourceCommunityDeckId // Created by user
+      if (activeTab === 'added') {
+        // Imported from community AND not the user's own published deck
+        return !!deck.sourceCommunityDeckId && !deck.communityPublishedId
+      }
+      if (activeTab === 'created') {
+        // Created by user OR re-added their own published deck from community
+        return !deck.sourceCommunityDeckId || !!deck.communityPublishedId
+      }
+      if (activeTab === 'published') return !!deck.communityPublishedId // Published to community
       return true // 'all' tab shows everything
     })()
     
@@ -362,6 +444,8 @@ export function DecksScreen() {
   // Sort decks based on selected option
   const sortedDecks = [...filteredDecks].sort((a, b) => {
     switch (sortOption) {
+      case 'custom':
+        return (a.position || 0) - (b.position || 0)
       case 'alphabetical-asc':
         return a.name.localeCompare(b.name)
       case 'alphabetical-desc':
@@ -397,16 +481,13 @@ export function DecksScreen() {
     currentPage * ITEMS_PER_PAGE
   )
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex items-center justify-center">
-        <div className="text-emerald-600 dark:text-emerald-400">Loading...</div>
-      </div>
-    )
-  }
-
   return (
     <AppLayout>
+      {loading ? (
+        <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex items-center justify-center">
+          <div className="text-emerald-600 dark:text-emerald-400">Loading My Flashcards...</div>
+        </div>
+      ) : (
       <div className="min-h-screen bg-gray-100 dark:bg-gray-900 px-3 pt-5 pb-3 sm:px-6 sm:pt-6 lg:p-8 overflow-x-hidden">
         {/* Welcome Section */}
         <div className="mb-4 sm:mb-6 flex items-center justify-between flex-wrap gap-2 sm:gap-4">
@@ -514,7 +595,7 @@ export function DecksScreen() {
         <div className="mb-4 sm:mb-6 flex flex-col gap-3 sm:gap-4">
           {/* Mobile: Dropdown Filter */}
           <div className="sm:hidden">
-            <Select value={activeTab} onValueChange={(value) => setActiveTab(value as 'all' | 'favorites' | 'learned' | 'added' | 'created')}>
+            <Select value={activeTab} onValueChange={(value) => setActiveTab(value as 'all' | 'favorites' | 'learned' | 'added' | 'created' | 'published')}>
               <SelectTrigger className="bg-white dark:bg-gray-800 text-sm w-full">
                 <Filter className="w-4 h-4 mr-2 flex-shrink-0" />
                 <SelectValue />
@@ -530,10 +611,13 @@ export function DecksScreen() {
                   Learned ({decks.filter(d => d.learned).length})
                 </SelectItem>
                 <SelectItem value="added">
-                  Added ({decks.filter(d => d.sourceCommunityDeckId).length})
+                  Added ({decks.filter(d => d.sourceCommunityDeckId && !d.communityPublishedId).length})
                 </SelectItem>
                 <SelectItem value="created">
-                  Your Decks ({decks.filter(d => !d.sourceCommunityDeckId).length})
+                  Your Decks ({decks.filter(d => !d.sourceCommunityDeckId || d.communityPublishedId).length})
+                </SelectItem>
+                <SelectItem value="published">
+                  Published ({decks.filter(d => d.communityPublishedId).length})
                 </SelectItem>
               </SelectContent>
             </Select>
@@ -541,7 +625,7 @@ export function DecksScreen() {
 
           {/* Desktop: Tab List */}
           <div className="hidden sm:block">
-            <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'all' | 'favorites' | 'learned' | 'added' | 'created')}>
+            <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'all' | 'favorites' | 'learned' | 'added' | 'created' | 'published')}>
               <TabsList className="bg-white dark:bg-gray-800 shadow-sm inline-flex">
                 <TabsTrigger value="all" className="data-[state=active]:bg-emerald-100 dark:data-[state=active]:bg-emerald-900/30 data-[state=active]:text-emerald-700 dark:data-[state=active]:text-emerald-400 text-sm whitespace-nowrap">
                   All
@@ -567,14 +651,21 @@ export function DecksScreen() {
                   <Download className="w-4 h-4 mr-1" />
                   Added
                   <span className="ml-2 text-xs bg-gray-200 dark:bg-gray-700 px-2 py-0.5 rounded-full">
-                    {decks.filter(d => d.sourceCommunityDeckId).length}
+                    {decks.filter(d => d.sourceCommunityDeckId && !d.communityPublishedId).length}
                   </span>
                 </TabsTrigger>
                 <TabsTrigger value="created" className="data-[state=active]:bg-emerald-100 dark:data-[state=active]:bg-emerald-900/30 data-[state=active]:text-emerald-700 dark:data-[state=active]:text-emerald-400 text-sm whitespace-nowrap">
                   <User className="w-4 h-4 mr-1" />
                   Your Decks
                   <span className="ml-2 text-xs bg-gray-200 dark:bg-gray-700 px-2 py-0.5 rounded-full">
-                    {decks.filter(d => !d.sourceCommunityDeckId).length}
+                    {decks.filter(d => !d.sourceCommunityDeckId || d.communityPublishedId).length}
+                  </span>
+                </TabsTrigger>
+                <TabsTrigger value="published" className="data-[state=active]:bg-emerald-100 dark:data-[state=active]:bg-emerald-900/30 data-[state=active]:text-emerald-700 dark:data-[state=active]:text-emerald-400 text-sm whitespace-nowrap">
+                  <Upload className="w-4 h-4 mr-1" />
+                  Published
+                  <span className="ml-2 text-xs bg-gray-200 dark:bg-gray-700 px-2 py-0.5 rounded-full">
+                    {decks.filter(d => d.communityPublishedId).length}
                   </span>
                 </TabsTrigger>
               </TabsList>
@@ -589,6 +680,7 @@ export function DecksScreen() {
                 <SelectValue placeholder="Sort by..." />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="custom">Custom Order</SelectItem>
                 <SelectItem value="alphabetical-asc">A → Z</SelectItem>
                 <SelectItem value="alphabetical-desc">Z → A</SelectItem>
                 <SelectItem value="newest">Newest First</SelectItem>
@@ -620,14 +712,16 @@ export function DecksScreen() {
                    activeTab === 'favorites' ? 'No favorite decks yet' : 
                    activeTab === 'learned' ? 'No learned decks yet' :
                    activeTab === 'added' ? 'No added decks yet' :
-                   'No created decks yet'}
+                   activeTab === 'created' ? 'No created decks yet' :
+                   'No published decks yet'}
                 </p>
                 <p className="text-sm text-gray-500 dark:text-gray-500">
                   {activeTab === 'all' ? 'Create your first deck to get started!' : 
                    activeTab === 'favorites' ? 'Star decks to mark them as favorites!' : 
                    activeTab === 'learned' ? 'Mark decks as learned when you master them!' :
                    activeTab === 'added' ? 'Import decks from the Community to see them here!' :
-                   'Create a new deck to get started!'}
+                   activeTab === 'created' ? 'Create a new deck to get started!' :
+                   'Publish a deck to the community to see it here!'}
                 </p>
               </>
             )}
@@ -635,182 +729,262 @@ export function DecksScreen() {
         ) : (
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-4 lg:gap-6">
-              {paginatedDecks.map((deck) => (
-              <div
-                key={deck.id}
-                draggable
-                onDragStart={() => handleDragStart(deck.id)}
-                onDragOver={handleDragOver}
-                onDrop={() => handleDrop(deck.id)}
-                className="bg-white dark:bg-gray-800 rounded-lg sm:rounded-xl lg:rounded-2xl p-3 sm:p-4 lg:p-6 shadow-md hover:shadow-xl transition-all group cursor-move relative overflow-hidden w-full border border-transparent dark:border-gray-700"
-              >
-                {/* Top action button - drag only */}
-                <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <GripVertical className="w-5 h-5 text-gray-400" />
-                </div>
-                <div className="w-full">
-                  <button
-                    onClick={() => handleDeckClick(deck.id)}
-                    className="w-full text-left"
+              {paginatedDecks.map((deck) => {
+                // DEBUG: Log deck properties for "Bugs" deck
+                if (deck.name === 'Bugs') {
+                  console.log('=== BUGS DECK RENDER ===')
+                  console.log('Deck ID:', deck.id)
+                  console.log('communityPublishedId:', deck.communityPublishedId)
+                  console.log('sourceCommunityDeckId:', deck.sourceCommunityDeckId)
+                  console.log('creatorId:', deck.creatorId)
+                  console.log('user.id:', user?.id)
+                  console.log('Should show green publish?', !deck.communityPublishedId && deck.creatorId === user?.id && !deck.sourceCommunityDeckId && deck.category && deck.subtopic)
+                  console.log('Should show blue update?', deck.communityPublishedId && deck.creatorId === user?.id)
+                }
+                
+                return (
+                  <div
+                    key={deck.id}
+                    draggable={sortOption === 'custom'}
+                    onDragStart={() => handleDragStart(deck.id)}
+                    onDragOver={handleDragOver}
+                    onDrop={() => handleDrop(deck.id)}
+                    className={`bg-white dark:bg-gray-800 rounded-lg sm:rounded-xl lg:rounded-2xl p-3 sm:p-4 lg:p-6 shadow-md hover:shadow-xl transition-all group relative overflow-hidden w-full border border-transparent dark:border-gray-700 ${
+                      sortOption === 'custom' ? 'cursor-move' : 'cursor-pointer'
+                    }`}
                   >
-                    <div
-                      className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl flex items-center justify-center text-2xl sm:text-3xl mb-3 sm:mb-4 group-hover:scale-110 transition-transform"
-                      style={{ backgroundColor: deck.color }}
-                    >
-                      {deck.emoji}
-                    </div>
-                    <h3 className="mb-2 truncate dark:text-gray-100">{deck.name}</h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      {deck.cardCount || 0} {deck.cardCount === 1 ? 'card' : 'cards'}
-                    </p>
-                    
-                    {/* Ownership indicator */}
-                    <div className="mt-2">
-                      {deck.sourceCommunityDeckId ? (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400">
-                          From Community
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400">
-                          Your Deck
-                        </span>
-                      )}
-                    </div>
-                    
-                    {(deck.category || deck.difficulty) && (
-                      <div className="mt-2 flex flex-wrap gap-1">
-                        {deck.category && (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
-                            {deck.category}
-                          </span>
-                        )}
-                        {deck.subtopic && (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400">
-                            {deck.subtopic}
-                          </span>
-                        )}
-                        {deck.difficulty && (
-                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs ${
-                            deck.difficulty === 'beginner' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' :
-                            deck.difficulty === 'intermediate' ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400' :
-                            deck.difficulty === 'advanced' ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400' :
-                            deck.difficulty === 'expert' ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400' :
-                            'bg-gradient-to-r from-purple-100 to-pink-100 dark:from-purple-900/30 dark:to-pink-900/30 text-purple-700 dark:text-purple-400'
-                          }`}>
-                            {deck.difficulty === 'beginner' ? '🟢' :
-                             deck.difficulty === 'intermediate' ? '🟡' :
-                             deck.difficulty === 'advanced' ? '🟠' :
-                             deck.difficulty === 'expert' ? '🔴' : '🌈'} {deck.difficulty.charAt(0).toUpperCase() + deck.difficulty.slice(1)}
-                          </span>
-                        )}
+                    {/* Top action button - drag only when in custom mode */}
+                    {sortOption === 'custom' && (
+                      <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <GripVertical className="w-5 h-5 text-gray-400" />
                       </div>
                     )}
-                  </button>
-                  
-                  {/* Action buttons - favorite, learned, edit, delete, publish, and share */}
-                  <div className="flex items-center gap-1 mt-3">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={(e) => handleToggleFavorite(e, deck.id)}
-                      className={`h-7 w-7 transition-colors ${
-                        deck.favorite 
-                          ? 'text-yellow-500 hover:text-yellow-600 hover:bg-yellow-50' 
-                          : 'text-gray-400 hover:text-yellow-500 hover:bg-yellow-50'
-                      }`}
-                    >
-                      <Star className={`w-4 h-4 ${deck.favorite ? 'fill-yellow-500' : ''}`} />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={(e) => handleToggleLearned(e, deck.id)}
-                      className={`h-7 w-7 transition-colors ${
-                        deck.learned 
-                          ? 'text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50' 
-                          : 'text-gray-400 hover:text-emerald-600 hover:bg-emerald-50'
-                      }`}
-                    >
-                      <CheckCircle className={`w-4 h-4 ${deck.learned ? 'fill-emerald-600' : ''}`} />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={(e) => handleOpenEditDialog(e, deck)}
-                      className="h-7 w-7 transition-colors text-gray-400 hover:text-blue-600 hover:bg-blue-50"
-                    >
-                      <FileEdit className="w-4 h-4" />
-                    </Button>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild onClick={(e) => e.stopPropagation()}>
+                    <div className="w-full">
+                      <button
+                        onClick={() => handleDeckClick(deck.id)}
+                        className="w-full text-left"
+                      >
+                        <div
+                          className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl flex items-center justify-center text-2xl sm:text-3xl mb-3 sm:mb-4 group-hover:scale-110 transition-transform"
+                          style={{ backgroundColor: deck.color }}
+                        >
+                          {deck.emoji}
+                        </div>
+                        <h3 className="mb-2 truncate dark:text-gray-100">{deck.name}</h3>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                          {deck.cardCount || 0} {deck.cardCount === 1 ? 'card' : 'cards'}
+                        </p>
+                        
+                        {/* Ownership indicator */}
+                        <div className="mt-2 flex flex-wrap gap-1">
+                          {deck.creatorId === user?.id ? (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400">
+                              Your Deck
+                            </span>
+                          ) : deck.sourceCommunityDeckId ? (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400">
+                              From Community
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400">
+                              Your Deck
+                            </span>
+                          )}
+                          {/* Published badge */}
+                          {deck.communityPublishedId && (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400">
+                              <Upload className="w-3 h-3 mr-1" />
+                              Published
+                            </span>
+                          )}
+                        </div>
+                        
+                        {(deck.category || deck.difficulty) && (
+                          <div className="mt-2 flex flex-wrap gap-1">
+                            {deck.category && (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
+                                {deck.category}
+                              </span>
+                            )}
+                            {deck.subtopic && (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400">
+                                {deck.subtopic}
+                              </span>
+                            )}
+                            {deck.difficulty && (
+                              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs ${
+                                deck.difficulty === 'beginner' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' :
+                                deck.difficulty === 'intermediate' ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400' :
+                                deck.difficulty === 'advanced' ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400' :
+                                deck.difficulty === 'expert' ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400' :
+                                'bg-gradient-to-r from-purple-100 to-pink-100 dark:from-purple-900/30 dark:to-pink-900/30 text-purple-700 dark:text-purple-400'
+                              }`}>
+                                {deck.difficulty === 'beginner' ? '🟢' :
+                                 deck.difficulty === 'intermediate' ? '🟡' :
+                                 deck.difficulty === 'advanced' ? '🟠' :
+                                 deck.difficulty === 'expert' ? '🔴' : '🌈'} {deck.difficulty.charAt(0).toUpperCase() + deck.difficulty.slice(1)}
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </button>
+                      
+                      {/* Action buttons - favorite, learned, edit, delete, publish, and share */}
+                      <div className="flex items-center gap-1 mt-3">
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-7 w-7 transition-colors text-gray-400 hover:text-red-600 hover:bg-red-50"
+                          onClick={(e) => handleToggleFavorite(e, deck.id)}
+                          className={`h-7 w-7 transition-colors ${
+                            deck.favorite 
+                              ? 'text-yellow-500 hover:text-yellow-600 hover:bg-yellow-50' 
+                              : 'text-gray-400 hover:text-yellow-500 hover:bg-yellow-50'
+                          }`}
                         >
-                          <Trash2 className="w-4 h-4" />
+                          <Star className={`w-4 h-4 ${deck.favorite ? 'fill-yellow-500' : ''}`} />
                         </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Delete Deck?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            This will permanently delete "{deck.name}" and all its cards. This action cannot be undone.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction
-                            onClick={() => handleDeleteDeck(deck.id)}
-                            disabled={deletingDeckId === deck.id}
-                            className="bg-red-600 hover:bg-red-700"
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={(e) => handleToggleLearned(e, deck.id)}
+                          className={`h-7 w-7 transition-colors ${
+                            deck.learned 
+                              ? 'text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50' 
+                              : 'text-gray-400 hover:text-emerald-600 hover:bg-emerald-50'
+                          }`}
+                        >
+                          <CheckCircle className={`w-4 h-4 ${deck.learned ? 'fill-emerald-600' : ''}`} />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={(e) => handleOpenEditDialog(e, deck)}
+                          className="h-7 w-7 transition-colors text-gray-400 hover:text-blue-600 hover:bg-blue-50"
+                        >
+                          <FileEdit className="w-4 h-4" />
+                        </Button>
+                        <AlertDialog key={`delete-${deck.id}`}>
+                          <AlertDialogTrigger asChild onClick={(e) => e.stopPropagation()}>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 transition-colors text-gray-400 hover:text-red-600 hover:bg-red-50"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Delete Deck?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                This will permanently delete "{deck.name}" and all its cards. This action cannot be undone.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => handleDeleteDeck(deck.id)}
+                                disabled={deletingDeckId === deck.id}
+                                className="bg-red-600 hover:bg-red-700"
+                              >
+                                {deletingDeckId === deck.id ? 'Deleting...' : 'Delete'}
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                        {/* Only show publish button for decks created by user with category and subtopic, and not already published */}
+                        {!deck.communityPublishedId && deck.creatorId === user?.id && !deck.sourceCommunityDeckId && deck.category && deck.subtopic && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              if (!canPublishToCommunity(user?.subscriptionTier, user?.isSuperuser, user?.isModerator)) {
+                                setUpgradeFeature('community publishing')
+                                setUpgradeModalOpen(true)
+                              } else {
+                                // Open publish dialog
+                                setPublishingDeck(deck)
+                                setPublishDialogOpen(true)
+                              }
+                            }}
+                            className="h-7 w-7 transition-colors text-gray-400 hover:text-emerald-600 hover:bg-emerald-50"
+                            title="Publish to Community"
                           >
-                            {deletingDeckId === deck.id ? 'Deleting...' : 'Delete'}
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                    {/* Only show publish button for decks created by user (not imported) with category and subtopic */}
-                    {!deck.sourceCommunityDeckId && deck.category && deck.subtopic && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          if (!canPublishToCommunity(user?.subscriptionTier)) {
-                            setUpgradeFeature('community publishing')
-                            setUpgradeModalOpen(true)
-                          } else {
-                            // Open publish dialog
-                            setPublishingDeck(deck)
-                            setPublishDialogOpen(true)
-                          }
-                        }}
-                        className="h-7 w-7 transition-colors text-gray-400 hover:text-emerald-600 hover:bg-emerald-50"
-                        title="Publish to Community"
-                      >
-                        <Upload className="w-4 h-4" />
-                      </Button>
-                    )}
-                    {!deck.sourceCommunityDeckId && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          setSharingDeck(deck)
-                          setShareDialogOpen(true)
-                        }}
-                        className="h-7 w-7 transition-colors text-gray-400 hover:text-blue-600 hover:bg-blue-50"
-                        title="Share Deck"
-                      >
-                        <Share2 className="w-4 h-4" />
-                      </Button>
-                    )}
+                            <Upload className="w-4 h-4" />
+                          </Button>
+                        )}
+                        {/* Show "incomplete" publish button for decks missing category or subtopic */}
+                        {!deck.communityPublishedId && deck.creatorId === user?.id && !deck.sourceCommunityDeckId && (!deck.category || !deck.subtopic) && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              toast.info(`Add ${!deck.category ? 'a category' : 'a subtopic'} to publish this deck`)
+                              handleOpenEditDialog(e, deck)
+                            }}
+                            className="h-7 w-7 transition-colors text-gray-300 dark:text-gray-600 hover:text-amber-500 hover:bg-amber-50"
+                            title={`Add ${!deck.category ? 'category' : 'subtopic'} to publish`}
+                          >
+                            <Upload className="w-4 h-4 opacity-50" />
+                          </Button>
+                        )}
+                        {/* Show update button for published decks created by user */}
+                        {deck.communityPublishedId && deck.creatorId === user?.id && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              if (!canPublishToCommunity(user?.subscriptionTier, user?.isSuperuser, user?.isModerator)) {
+                                setUpgradeFeature('community publishing')
+                                setUpgradeModalOpen(true)
+                              } else {
+                                // Open publish dialog (will update existing)
+                                setPublishingDeck(deck)
+                                setPublishDialogOpen(true)
+                              }
+                            }}
+                            className="h-7 w-7 transition-colors text-gray-400 hover:text-blue-600 hover:bg-blue-50"
+                            title="Update Published Deck"
+                          >
+                            <Upload className="w-4 h-4" />
+                          </Button>
+                        )}
+                        {/* Show unpublish button for published decks created by user */}
+                        {deck.communityPublishedId && deck.creatorId === user?.id && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={(e) => handleUnpublishDeck(e, deck.id, deck.name, deck.communityPublishedId)}
+                            className="h-7 w-7 transition-colors text-gray-400 hover:text-red-600 hover:bg-red-50"
+                            title="Unpublish from Community"
+                          >
+                            <Upload className="w-4 h-4 rotate-180" />
+                          </Button>
+                        )}
+                        {/* Show share button for decks created by user */}
+                        {deck.creatorId === user?.id && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setSharingDeck(deck)
+                              setShareDialogOpen(true)
+                            }}
+                            className="h-7 w-7 transition-colors text-gray-400 hover:text-blue-600 hover:bg-blue-50"
+                            title="Share Deck"
+                          >
+                            <Share2 className="w-4 h-4" />
+                          </Button>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
-            ))}
+                )
+              })}
             </div>
             
             <Pagination
@@ -821,7 +995,7 @@ export function DecksScreen() {
           </>
         )}
       </div>
-
+      )}
       <ShareDeckDialog
         open={shareDialogOpen}
         onOpenChange={setShareDialogOpen}
@@ -835,9 +1009,11 @@ export function DecksScreen() {
       <Dialog open={publishDialogOpen} onOpenChange={setPublishDialogOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Publish to Community</DialogTitle>
+            <DialogTitle>{publishingDeck?.communityPublishedId ? 'Update Published Deck' : 'Publish to Community'}</DialogTitle>
             <DialogDescription>
-              Share your deck with the Flashy community
+              {publishingDeck?.communityPublishedId 
+                ? 'Push your latest changes to the community version' 
+                : 'Share your deck with the Flashy community'}
             </DialogDescription>
           </DialogHeader>
           {publishingDeck && (
@@ -867,7 +1043,9 @@ export function DecksScreen() {
                 </div>
               </div>
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                Your deck will be visible to all community members. Are you ready to share your knowledge?
+                {publishingDeck.communityPublishedId
+                  ? 'This will update the community version with your latest changes. All users who added this deck will see the updates.'
+                  : 'Your deck will be visible to all community members. Are you ready to share your knowledge?'}
               </p>
             </div>
           )}
@@ -885,7 +1063,67 @@ export function DecksScreen() {
               disabled={publishing}
               className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white"
             >
-              {publishing ? 'Publishing...' : 'Publish'}
+              {publishing ? (publishingDeck?.communityPublishedId ? 'Updating...' : 'Publishing...') : (publishingDeck?.communityPublishedId ? 'Update' : 'Publish')}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Unpublish from Community Dialog */}
+      <Dialog open={unpublishDialogOpen} onOpenChange={setUnpublishDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Unpublish from Community</DialogTitle>
+            <DialogDescription>
+              Remove your deck from the Flashy community
+            </DialogDescription>
+          </DialogHeader>
+          {unpublishingDeck && (
+            <div className="space-y-4 py-4">
+              <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 space-y-2">
+                <div className="flex items-center gap-2">
+                  <div 
+                    className="w-12 h-12 rounded-lg flex items-center justify-center text-2xl"
+                    style={{ backgroundColor: unpublishingDeck.color }}
+                  >
+                    {unpublishingDeck.emoji}
+                  </div>
+                  <div>
+                    <h3 className="font-medium dark:text-gray-100">{unpublishingDeck.name}</h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      {unpublishingDeck.cardCount || 0} {unpublishingDeck.cardCount === 1 ? 'card' : 'cards'}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-2 pt-2">
+                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400">
+                    {unpublishingDeck.category}
+                  </span>
+                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400">
+                    {unpublishingDeck.subtopic}
+                  </span>
+                </div>
+              </div>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                This will remove your deck from the community, but you can republish it later. Are you sure?
+              </p>
+            </div>
+          )}
+          <div className="flex gap-3">
+            <Button
+              variant="outline"
+              onClick={() => setUnpublishDialogOpen(false)}
+              disabled={unpublishingDeckId !== null}
+              className="flex-1"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={confirmUnpublish}
+              disabled={unpublishingDeckId !== null}
+              className="flex-1 bg-red-600 hover:bg-red-700 text-white"
+            >
+              {unpublishingDeckId !== null ? 'Unpublishing...' : 'Unpublish'}
             </Button>
           </div>
         </DialogContent>

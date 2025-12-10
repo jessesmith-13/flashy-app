@@ -11,9 +11,10 @@ interface DeckCommentsProps {
   deckAuthorId?: string
   targetCommentId?: string | null
   onViewUser?: (userId: string) => void
+  onFlagComment?: (commentId: string, commentText: string) => void
 }
 
-export function DeckComments({ deckId, deckAuthorId, targetCommentId, onViewUser }: DeckCommentsProps) {
+export function DeckComments({ deckId, deckAuthorId, targetCommentId, onViewUser, onFlagComment }: DeckCommentsProps) {
   const { user, accessToken } = useStore()
   const [comments, setComments] = useState<Comment[]>([])
   const [loading, setLoading] = useState(true)
@@ -57,7 +58,29 @@ export function DeckComments({ deckId, deckAuthorId, targetCommentId, onViewUser
     try {
       setLoading(true)
       const fetchedComments = await api.getDeckComments(deckId)
-      setComments(fetchedComments)
+      
+      // Sort comments: top 3 by like count, then rest by newest first
+      const sortedComments = [...fetchedComments].sort((a, b) => {
+        const aLikes = a.likes?.length || 0
+        const bLikes = b.likes?.length || 0
+        
+        // Both in top 3 or both outside top 3 - determine by likes first
+        if (aLikes !== bLikes) {
+          return bLikes - aLikes // Higher likes first
+        }
+        
+        // If same likes, sort by date (newest first)
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      })
+      
+      // Separate top 3 most liked and the rest
+      const top3 = sortedComments.slice(0, 3)
+      const remaining = sortedComments.slice(3).sort((a, b) => {
+        // Sort remaining by newest first
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      })
+      
+      setComments([...top3, ...remaining])
     } catch (error) {
       console.error('Failed to load comments:', error)
       toast.error('Failed to load comments')
@@ -204,6 +227,8 @@ export function DeckComments({ deckId, deckAuthorId, targetCommentId, onViewUser
               deckAuthorId={deckAuthorId}
               targetCommentId={targetCommentId}
               onViewUser={onViewUser}
+              onFlagComment={onFlagComment}
+              onCommentDeleted={loadComments}
             />
           ))}
           

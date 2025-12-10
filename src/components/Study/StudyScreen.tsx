@@ -325,6 +325,8 @@ export function StudyScreen() {
                 currentIndex={currentIndex}
                 isLastCard={isLastCard}
                 isTemporaryStudy={isTemporaryStudy}
+                frontLanguage={deck?.frontLanguage}
+                backLanguage={deck?.backLanguage}
               />
             )}
             
@@ -335,6 +337,7 @@ export function StudyScreen() {
                 currentIndex={currentIndex}
                 isLastCard={isLastCard}
                 isTemporaryStudy={isTemporaryStudy}
+                frontLanguage={deck?.frontLanguage}
               />
             )}
             
@@ -345,6 +348,7 @@ export function StudyScreen() {
                 currentIndex={currentIndex}
                 isLastCard={isLastCard}
                 isTemporaryStudy={isTemporaryStudy}
+                frontLanguage={deck?.frontLanguage}
               />
             )}
           </>

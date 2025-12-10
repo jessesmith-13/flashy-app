@@ -5,9 +5,10 @@ import { Label } from '../../../ui/label'
 import { Textarea } from '../../../ui/textarea'
 import { Checkbox } from '../../../ui/checkbox'
 import { Badge } from '../../../ui/badge'
-import { FlipVertical, CheckCircle, Keyboard, ImageIcon, Crown, X } from 'lucide-react'
+import { FlipVertical, CheckCircle, Keyboard, ImageIcon, Crown, X, Sparkles } from 'lucide-react'
 import type { CardType } from '../../../../store/useStore'
 import { canAddImageToCard } from '../../../../utils/subscription'
+import { AudioRecorder } from './AudioRecorder'
 
 const CARD_TYPES: { value: CardType; label: string; icon: typeof FlipVertical; description: string }[] = [
   { value: 'classic-flip', label: 'Classic Flip', icon: FlipVertical, description: 'Flip card with ✓/✗ rating' },
@@ -25,6 +26,8 @@ interface EditCardModalProps {
   frontImageFile: File | null
   backImageUrl: string
   backImageFile: File | null
+  frontAudioUrl?: string
+  backAudioUrl?: string
   options: string[]
   correctIndices: number[]
   acceptedAnswers: string
@@ -32,16 +35,22 @@ interface EditCardModalProps {
   uploadingImage: boolean
   uploadingBackImage: boolean
   userTier?: string
+  deckFrontLanguage?: string
+  deckBackLanguage?: string
   onCardTypeChange: (type: CardType) => void
   onFrontChange: (value: string) => void
   onBackChange: (value: string) => void
   onFrontImageChange: (file: File | null, url: string) => void
   onBackImageChange: (file: File | null, url: string) => void
+  onFrontAudioChange?: (url: string) => void
+  onBackAudioChange?: (url: string) => void
   onOptionsChange: (options: string[]) => void
   onCorrectIndicesChange: (indices: number[]) => void
   onAcceptedAnswersChange: (value: string) => void
   onSubmit: (e: React.FormEvent) => void
   onUpgradeClick: () => void
+  onTranslateFront?: () => Promise<void>
+  onTranslateBack?: () => Promise<void>
 }
 
 export function EditCardModal({
@@ -54,6 +63,8 @@ export function EditCardModal({
   frontImageFile,
   backImageUrl,
   backImageFile,
+  frontAudioUrl,
+  backAudioUrl,
   options,
   correctIndices,
   acceptedAnswers,
@@ -61,16 +72,22 @@ export function EditCardModal({
   uploadingImage,
   uploadingBackImage,
   userTier,
+  deckFrontLanguage,
+  deckBackLanguage,
   onCardTypeChange,
   onFrontChange,
   onBackChange,
   onFrontImageChange,
   onBackImageChange,
+  onFrontAudioChange,
+  onBackAudioChange,
   onOptionsChange,
   onCorrectIndicesChange,
   onAcceptedAnswersChange,
   onSubmit,
-  onUpgradeClick
+  onUpgradeClick,
+  onTranslateFront,
+  onTranslateBack
 }: EditCardModalProps) {
   const handleAddOption = () => {
     onOptionsChange([...options, ''])
@@ -157,6 +174,18 @@ export function EditCardModal({
               onChange={(e) => onFrontChange(e.target.value)}
               className="mt-1 min-h-[80px]"
             />
+            {onTranslateFront && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={onTranslateFront}
+                className="mt-2 h-7 text-xs border-amber-300 text-amber-700 hover:bg-amber-100"
+              >
+                <Sparkles className="w-3 h-3 mr-1" />
+                Translate
+              </Button>
+            )}
           </div>
 
           {/* Question Image */}
@@ -231,6 +260,19 @@ export function EditCardModal({
             )}
           </div>
 
+          {/* Front Audio Section */}
+          {canAddImageToCard(userTier) && onFrontAudioChange && (
+            <div>
+              <AudioRecorder
+                onAudioSave={(url) => onFrontAudioChange(url)}
+                currentAudioUrl={frontAudioUrl}
+                onAudioRemove={() => onFrontAudioChange('')}
+                disabled={updating}
+                label="Question Audio (Optional)"
+              />
+            </div>
+          )}
+
           {cardType === 'multiple-choice' ? (
             <div>
               <Label className="text-sm">Options (check correct answers)</Label>
@@ -284,6 +326,31 @@ export function EditCardModal({
                 onChange={(e) => onBackChange(e.target.value)}
                 required={cardType !== 'classic-flip'}
                 className="mt-1 min-h-[80px]"
+              />
+              {onTranslateBack && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={onTranslateBack}
+                  className="mt-2 h-7 text-xs border-amber-300 text-amber-700 hover:bg-amber-100"
+                >
+                  <Sparkles className="w-3 h-3 mr-1" />
+                  Translate
+                </Button>
+              )}
+            </div>
+          )}
+
+          {/* Back Audio Section */}
+          {canAddImageToCard(userTier) && onBackAudioChange && (
+            <div>
+              <AudioRecorder
+                onAudioSave={(url) => onBackAudioChange(url)}
+                currentAudioUrl={backAudioUrl}
+                onAudioRemove={() => onBackAudioChange('')}
+                disabled={updating}
+                label="Answer Audio (Optional)"
               />
             </div>
           )}

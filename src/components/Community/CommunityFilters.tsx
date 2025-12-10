@@ -2,7 +2,7 @@ import { Input } from '../../ui/input'
 import { Button } from '../../ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../ui/select'
 import { Tabs, TabsList, TabsTrigger } from '../../ui/tabs'
-import { Search, Filter, X, Star, Users, TrendingUp, StarIcon, Clock } from 'lucide-react'
+import { Search, Filter, X, Star, Users, TrendingUp, StarIcon, Clock, User } from 'lucide-react'
 import { DECK_CATEGORIES } from '../../../utils/categories'
 
 interface CommunityFiltersProps {
@@ -18,6 +18,8 @@ interface CommunityFiltersProps {
   onToggleFeatured: () => void
   showFlashyDecksOnly: boolean
   onToggleFlashy: () => void
+  showMyPublishedOnly: boolean
+  onToggleMyPublished: () => void
 }
 
 export function CommunityFilters({
@@ -32,7 +34,9 @@ export function CommunityFilters({
   showFeaturedOnly,
   onToggleFeatured,
   showFlashyDecksOnly,
-  onToggleFlashy
+  onToggleFlashy,
+  showMyPublishedOnly,
+  onToggleMyPublished
 }: CommunityFiltersProps) {
   const availableSubtopics = filterCategory === 'all' 
     ? [] 
@@ -45,7 +49,7 @@ export function CommunityFilters({
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
         <Input
           type="text"
-          placeholder="Search decks..."
+          placeholder="Search Community..."
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
           className="pl-10 pr-10 bg-white dark:bg-gray-800"
@@ -125,6 +129,17 @@ export function CommunityFilters({
           >
             <Users className={`w-4 h-4 mr-2`} />
             {showFlashyDecksOnly ? 'Flashy Only' : 'Flashy Decks'}
+          </Button>
+        </div>
+
+        <div className="w-full sm:w-auto">
+          <Button
+            variant={showMyPublishedOnly ? "default" : "outline"}
+            onClick={onToggleMyPublished}
+            className={`w-full ${showMyPublishedOnly ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'border-blue-300 dark:border-blue-700 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20'}`}
+          >
+            <User className={`w-4 h-4 mr-2`} />
+            {showMyPublishedOnly ? 'My Published' : 'My Published'}
           </Button>
         </div>
 

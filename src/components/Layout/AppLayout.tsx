@@ -4,22 +4,23 @@ import { useNavigation } from '../../../hooks/useNavigation'
 import { useLocation } from 'react-router-dom'
 import * as api from '../../../utils/api'
 import { Button } from '../../ui/button'
-import { Home, Users, User, LogOut, Crown, Layers, Settings, Shield, FileText, Mail, Menu } from 'lucide-react'
+import { Home, Users, User, LogOut, Crown, Layers, Settings, Shield, FileText, Mail, Menu, ShieldAlert } from 'lucide-react'
 import { NotificationCenter } from '../Notifications/NotificationCenter'
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '../../ui/sheet'
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetDescription } from '../../ui/sheet'
+import { useIsSuperuser, useIsModerator } from '../../../utils/userUtils'
 
 interface AppLayoutProps {
   children: ReactNode
 }
 
 export function AppLayout({ children }: AppLayoutProps) {
-  const logoLight="../../public/logoLight.png"
-  const logoDark="../../public/logoDark.png"
   const { user, currentSection, setCurrentSection, logout } = useStore()
   const { navigateTo } = useNavigation()
   const location = useLocation()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [isDarkMode, setIsDarkMode] = useState(false)
+  const isSuperuser = useIsSuperuser()
+  const isModerator = useIsModerator()
 
   // Determine current view from URL path
   const currentView = location.pathname.split('/')[1] || 'landing'
@@ -87,7 +88,7 @@ export function AppLayout({ children }: AppLayoutProps) {
           <div className="p-6 border-b border-gray-200 dark:border-gray-700">
             <div className="flex items-center gap-2 mb-3">
               <img 
-                src={isDarkMode ? logoDark : logoLight} 
+                src={isDarkMode ? '../../../public/logoDark.png' : '../../../public/logoLight.png'} 
                 alt="Flashy Logo" 
                 className="w-10 h-10"
               />
@@ -200,6 +201,50 @@ export function AppLayout({ children }: AppLayoutProps) {
               <span>Settings</span>
             </button>
 
+            {/* Superuser Tools - Only visible to superusers */}
+            {isSuperuser && (
+              <button
+                onClick={() => {
+                  // Clear shared deck hash if present
+                  if (window.location.hash.includes('/shared/')) {
+                    window.location.hash = ''
+                  }
+                  setCurrentSection('flashcards') // Clear section highlight
+                  navigateTo('superuser')
+                }}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                  currentView === 'superuser'
+                    ? 'bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 border border-purple-200 dark:border-purple-700'
+                    : 'text-purple-700 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 border border-purple-200 dark:border-purple-700'
+                }`}
+              >
+                <ShieldAlert className="w-5 h-5" />
+                <span>Superuser Tools</span>
+              </button>
+            )}
+
+            {/* Moderator Tools - Only visible to moderators */}
+            {isModerator && (
+              <button
+                onClick={() => {
+                  // Clear shared deck hash if present
+                  if (window.location.hash.includes('/shared/')) {
+                    window.location.hash = ''
+                  }
+                  setCurrentSection('flashcards') // Clear section highlight
+                  navigateTo('moderator')
+                }}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                  currentView === 'moderator'
+                    ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-700'
+                    : 'text-blue-700 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 border border-blue-200 dark:border-blue-700'
+                }`}
+              >
+                <Shield className="w-5 h-5" />
+                <span>Moderator Tools</span>
+              </button>
+            )}
+
             {/* Divider */}
             <div className="border-t border-gray-200 dark:border-gray-700 my-2"></div>
 
@@ -290,7 +335,7 @@ export function AppLayout({ children }: AppLayoutProps) {
           <div className="flex items-center justify-between px-4 py-3">
             <div className="flex items-center gap-2">
               <img 
-                src={isDarkMode ? logoDark : logoLight} 
+                src={isDarkMode ? '../../../public/logoDark.png' : '../../../public/logoLight.png'} 
                 alt="Flashy Logo" 
                 className="w-7 h-7"
               />
@@ -361,6 +406,9 @@ export function AppLayout({ children }: AppLayoutProps) {
               <SheetContent side="bottom" className="h-auto max-h-[80vh] overflow-y-auto">
                 <SheetHeader>
                   <SheetTitle>Menu</SheetTitle>
+                  <SheetDescription className="sr-only">
+                    Navigation menu with access to all app features
+                  </SheetDescription>
                 </SheetHeader>
                 <div className="mt-6 space-y-2">
                   {/* Upgrade (only show for free users) */}
@@ -403,6 +451,36 @@ export function AppLayout({ children }: AppLayoutProps) {
                     <Settings className="w-5 h-5" />
                     <span>Settings</span>
                   </button>
+
+                  {/* Superuser Tools - Only visible to superusers */}
+                  {isSuperuser && (
+                    <button
+                      onClick={() => handleMobileMenuItemClick('superuser')}
+                      className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                        currentView === 'superuser'
+                          ? 'bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 border border-purple-200 dark:border-purple-700'
+                          : 'text-purple-700 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 border border-purple-200 dark:border-purple-700'
+                      }`}
+                    >
+                      <ShieldAlert className="w-5 h-5" />
+                      <span>Superuser Tools</span>
+                    </button>
+                  )}
+
+                  {/* Moderator Tools - Only visible to moderators */}
+                  {isModerator && (
+                    <button
+                      onClick={() => handleMobileMenuItemClick('moderator')}
+                      className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                        currentView === 'moderator'
+                          ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-700'
+                          : 'text-blue-700 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 border border-blue-200 dark:border-blue-700'
+                      }`}
+                    >
+                      <Shield className="w-5 h-5" />
+                      <span>Moderator Tools</span>
+                    </button>
+                  )}
 
                   {/* Divider */}
                   <div className="border-t border-gray-200 dark:border-gray-700 my-2"></div>

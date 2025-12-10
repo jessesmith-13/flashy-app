@@ -1,3 +1,4 @@
+import { useState, useEffect, useRef } from 'react'
 import { Button } from '../../ui/button'
 import { ArrowLeft, Star, Users, Plus, Flag, X, Check, Upload } from 'lucide-react'
 import { DeckRatingDisplay } from './DeckRatingDisplay'
@@ -5,12 +6,15 @@ import { DeckRating } from './DeckRating'
 import { DeckComments } from './DeckComments'
 import { DeckCardPreviewList } from './DeckCardPreviewList'
 import { AppLayout } from '../Layout/AppLayout'
+import { FlagDialog } from './FlagDialog'
+import { DeletionDialog } from './DeletionDialog'
 import { toast } from 'sonner'
-import { CommunityDeck, Deck } from '../../../store/useStore' 
+import { useStore } from '../../../store/useStore'
+import * as api from '../../../utils/api'
 
 interface CommunityDeckDetailProps {
-  deck: CommunityDeck
-  userDecks: Deck[]
+  deck: any
+  userDecks: any[]
   isSuperuser: boolean
   addingDeckId: string | null
   deletingDeckId: string | null
@@ -20,15 +24,19 @@ interface CommunityDeckDetailProps {
   flaggedDecks: Set<string>
   flaggedCards: Set<string>
   targetCommentId?: string | null
+  targetCardIndex?: number | null
   onBack: () => void
   onViewUser: (userId: string) => void
-  onAddDeck: (deck: CommunityDeck) => void
-  onUpdateDeck: (communityDeck: CommunityDeck, importedDeck: Deck) => void
+  onAddDeck: (deck: any) => void
+  onUpdateDeck: (communityDeck: any, importedDeck: any) => void
   onToggleFeatured: (deckId: string) => void
   onDeleteDeck: (deckId: string, deckName: string) => void
+  onDeleteCard?: (cardId: string, cardName: string, deckId: string) => void
   onFlagDeck: (deckId: string, deckName: string) => void
   onFlagCard: (cardId: string, cardName: string) => void
-  onStudyDeck: (deck: CommunityDeck) => void
+  onFlagComment: (commentId: string, commentText: string, deckId: string) => void
+  onFlagUser: (userId: string, userName: string) => void
+  onStudyDeck: (deck: any) => void
   onDeckDetailPageChange: (page: number) => void
   onRatingChange: () => void
 }
@@ -45,22 +53,118 @@ export function CommunityDeckDetail({
   flaggedDecks,
   flaggedCards,
   targetCommentId,
+  targetCardIndex,
   onBack,
   onViewUser,
   onAddDeck,
   onUpdateDeck,
   onToggleFeatured,
   onDeleteDeck,
+  onDeleteCard,
   onFlagDeck,
   onFlagCard,
+  onFlagComment,
+  onFlagUser,
   onStudyDeck,
   onDeckDetailPageChange,
   onRatingChange
 }: CommunityDeckDetailProps) {
+  const { accessToken, setTargetCardIndex } = useStore()
   const importedDeck = userDecks.find(d => d.sourceCommunityDeckId === deck.id)
   const isAdded = !!importedDeck
   const updateAvailable = importedDeck && (deck.version || 1) > (importedDeck.communityDeckVersion || 1)
   const hasCards = deck.cards && deck.cards.length > 0
+
+  // Local flag dialog state
+  const [flagDialogOpen, setFlagDialogOpen] = useState(false)
+  const [flagTarget, setFlagTarget] = useState<{ type: 'deck' | 'comment' | 'card', id: string, name: string, details?: any } | null>(null)
+
+  // Local deletion dialog state
+  const [deleteDeckDialogOpen, setDeleteDeckDialogOpen] = useState(false)
+  const [deleteCardDialogOpen, setDeleteCardDialogOpen] = useState(false)
+  const [deckToDelete, setDeckToDelete] = useState<{ id: string, name: string } | null>(null)
+  const [cardToDelete, setCardToDelete] = useState<{ id: string, name: string, deckId: string } | null>(null)
+
+  const flagDialogRef = useRef(null)
+  const hasNavigatedToCard = useRef(false)
+
+  // Handle navigating to a specific card from a flag
+  useEffect(() => {
+    if (targetCardIndex !== null && hasCards && !hasNavigatedToCard.current) {
+      // Calculate which page the card is on
+      const targetPage = Math.floor(targetCardIndex / cardsPerPage) + 1
+      console.log(`🎴 Navigating to card at index ${targetCardIndex}, page ${targetPage}, current page: ${deckDetailPage}`)
+      
+      // Change to the target page
+      onDeckDetailPageChange(targetPage)
+      hasNavigatedToCard.current = true
+      
+      // Clear the target after navigation and highlighting (longer delay to keep highlight visible)
+      setTimeout(() => {
+        console.log('🎴 Clearing targetCardIndex')
+        setTargetCardIndex(null)
+        hasNavigatedToCard.current = false
+      }, 2000) // Increased from 500ms to 2000ms so highlight stays visible
+    }
+  }, [targetCardIndex, hasCards, cardsPerPage, deckDetailPage, onDeckDetailPageChange, setTargetCardIndex])
+
+  const handleOpenFlagDialog = (type: 'deck' | 'card' | 'comment', id: string, name: string, details?: any) => {
+    console.log('🚩 Flag button clicked!', { type, id, name, details })
+    setFlagTarget({ 
+      type: type as 'deck' | 'comment' | 'card',
+      id, 
+      name,
+      details
+    })
+    setFlagDialogOpen(true)
+    console.log('🚩 Flag dialog state set to open')
+  }
+
+  const handleFlagComment = (commentId: string, commentText: string) => {
+    const commentPreview = commentText.length > 40 ? commentText.substring(0, 40) + '...' : commentText
+    handleOpenFlagDialog('comment', commentId, `Comment: \"${commentPreview}\"`, { 
+      deckId: deck.id,
+      commentText: commentText  // Store full comment text for moderator review
+    })
+  }
+
+  const handleDeleteCardLocal = (cardId: string, cardName: string, deckId: string) => {
+    setCardToDelete({ id: cardId, name: cardName, deckId })
+    setDeleteCardDialogOpen(true)
+  }
+
+  const confirmDeleteDeck = async (reason: string) => {
+    if (!accessToken) return
+    
+    try {
+      await api.deleteCommunityDeck(accessToken, deck.id, reason)
+      toast.success('Deck deleted successfully')
+      setDeleteDeckDialogOpen(false)
+      // Navigate back to community since the deck is deleted
+      onBack()
+    } catch (error: any) {
+      console.error('Failed to delete deck:', error)
+      toast.error(error.message || 'Failed to delete deck')
+    }
+  }
+
+  const confirmDeleteCard = async (reason: string) => {
+    if (!cardToDelete || !accessToken) return
+    
+    try {
+      await api.deleteCommunityCard(accessToken, deck.id, cardToDelete.id, reason)
+      toast.success('Card deleted successfully')
+      setDeleteCardDialogOpen(false)
+      setCardToDelete(null)
+      
+      // Reload the page or refresh the deck to show updated cards
+      // For now, just navigate back and let parent handle reload
+      onRatingChange() // This triggers a reload in the parent
+    } catch (error: any) {
+      console.error('Failed to delete card:', error)
+      toast.error(error.message || 'Failed to delete card')
+    }
+  }
 
   return (
     <AppLayout>
@@ -153,7 +257,7 @@ export function CommunityDeckDetail({
                     <Button
                       variant="outline"
                       size="icon"
-                      onClick={() => onDeleteDeck(deck.id, deck.name)}
+                      onClick={() => setDeleteDeckDialogOpen(true)}
                       disabled={deletingDeckId === deck.id}
                       className="border-red-300 dark:border-red-700 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 h-9 sm:h-10 w-9 sm:w-10"
                       title='Delete this deck'
@@ -165,7 +269,7 @@ export function CommunityDeckDetail({
                 <Button
                   variant="outline"
                   size="icon"
-                  onClick={() => onFlagDeck(deck.id, deck.name)}
+                  onClick={() => handleOpenFlagDialog('deck', deck.id, deck.name)}
                   className="border-orange-300 dark:border-orange-700 text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20 h-9 sm:h-10 w-9 sm:w-10"
                   title="Report this deck"
                 >
@@ -258,8 +362,14 @@ export function CommunityDeckDetail({
             currentPage={deckDetailPage}
             cardsPerPage={cardsPerPage}
             flaggedCards={flaggedCards}
+            targetCardIndex={targetCardIndex}
+            isSuperuser={isSuperuser}
             onPageChange={onDeckDetailPageChange}
-            onFlagCard={onFlagCard}
+            onFlagCard={(cardId, cardName, cardFront) => handleOpenFlagDialog('card', cardId, cardName, { 
+              deckId: deck.id,
+              front: cardFront
+            })}
+            onDeleteCard={handleDeleteCardLocal}
           />
           
           {/* Rating Section */}
@@ -273,9 +383,45 @@ export function CommunityDeckDetail({
             deckAuthorId={deck.authorId} 
             targetCommentId={targetCommentId}
             onViewUser={onViewUser}
+            onFlagComment={handleFlagComment}
           />
         </div>
       </div>
+
+      {/* Flag Dialog */}
+      {flagTarget && (
+        <FlagDialog
+          open={flagDialogOpen}
+          onOpenChange={setFlagDialogOpen}
+          targetType={flagTarget.type}
+          targetId={flagTarget.id}
+          targetName={flagTarget.name}
+          targetDetails={flagTarget.details}
+          accessToken={accessToken}
+        />
+      )}
+
+      {/* Deletion Dialog */}
+      {deleteDeckDialogOpen && (
+        <DeletionDialog
+          open={deleteDeckDialogOpen}
+          onOpenChange={setDeleteDeckDialogOpen}
+          targetType="deck"
+          targetId={deck.id}
+          targetName={deck.name}
+          onConfirm={confirmDeleteDeck}
+        />
+      )}
+      {deleteCardDialogOpen && cardToDelete && (
+        <DeletionDialog
+          open={deleteCardDialogOpen}
+          onOpenChange={setDeleteCardDialogOpen}
+          targetType="card"
+          targetId={cardToDelete.id}
+          targetName={cardToDelete.name}
+          onConfirm={confirmDeleteCard}
+        />
+      )}
     </AppLayout>
   )
 }
