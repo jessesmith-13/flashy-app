@@ -1,4 +1,4 @@
-import { Edit2, Flame, Trophy, Users, Camera } from 'lucide-react'
+import { Edit2, Flame, Trophy, Users, Camera, UserPlus } from 'lucide-react'
 
 interface ProfileHeaderProps {
   user: {
@@ -13,6 +13,7 @@ interface ProfileHeaderProps {
   uploading: boolean
   onAvatarClick: () => void
   onEditClick: () => void
+  onInviteClick: () => void
 }
 
 export function ProfileHeader({
@@ -24,6 +25,7 @@ export function ProfileHeader({
   uploading,
   onAvatarClick,
   onEditClick,
+  onInviteClick,
 }: ProfileHeaderProps) {
   return (
     <div className="bg-white dark:bg-gray-800 rounded-2xl p-8 shadow-sm mb-6">
@@ -75,6 +77,13 @@ export function ProfileHeader({
               <Users className="w-5 h-5 text-blue-500 dark:text-blue-400" />
               <span className="text-gray-900 dark:text-gray-100">{friendsCount} friends</span>
             </div>
+            <button
+              onClick={onInviteClick}
+              className="flex items-center gap-2 px-4 py-2 bg-emerald-50 dark:bg-emerald-900/30 rounded-lg hover:bg-emerald-100 dark:hover:bg-emerald-900/50 transition-colors cursor-pointer"
+            >
+              <UserPlus className="w-5 h-5 text-emerald-500 dark:text-emerald-400" />
+              <span className="text-gray-900 dark:text-gray-100">Invite friends</span>
+            </button>
           </div>
         </div>
       </div>

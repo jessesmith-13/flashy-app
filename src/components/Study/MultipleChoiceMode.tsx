@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'motion/react'
 import { Button } from '../../ui/button'
-import { ChevronRight, Check, X, Star, EyeOff } from 'lucide-react'
+import { ChevronRight, Check, X, Star, EyeOff, Volume2 } from 'lucide-react'
 import { Card, useStore } from '../../../store/useStore'
 import { toast } from 'sonner'
 import * as api from '../../../utils/api'
+import { speak } from '../../../utils/textToSpeech'
 
 interface MultipleChoiceModeProps {
   cards: Card[]
@@ -12,14 +13,16 @@ interface MultipleChoiceModeProps {
   currentIndex: number
   isLastCard: boolean
   isTemporaryStudy?: boolean
+  frontLanguage?: string
 }
 
-export function MultipleChoiceMode({ cards, onNext, currentIndex, isTemporaryStudy = false }: MultipleChoiceModeProps) {
+export function MultipleChoiceMode({ cards, onNext, currentIndex, isLastCard, isTemporaryStudy = false, frontLanguage }: MultipleChoiceModeProps) {
   const [options, setOptions] = useState<string[]>([])
   const [selectedAnswers, setSelectedAnswers] = useState<string[]>([])
   const [hasAnswered, setHasAnswered] = useState(false)
+  const [isSpeaking, setIsSpeaking] = useState(false)
 
-  const { updateCard, accessToken, selectedDeckId, cards: storeCards } = useStore()
+  const { updateCard, accessToken, selectedDeckId, cards: storeCards, ttsProvider } = useStore()
   
   // Get current card from store to ensure we have the latest state
   const currentCard = storeCards.find(c => c.id === cards[currentIndex]?.id) || cards[currentIndex]
@@ -33,6 +36,25 @@ export function MultipleChoiceMode({ cards, onNext, currentIndex, isTemporaryStu
       setHasAnswered(false)
     }
   }, [currentIndex, currentCard])
+
+  const handleSpeak = (text: string) => {
+    const result = speak({
+      text,
+      language: frontLanguage,
+      provider: ttsProvider,
+      accessToken: accessToken || undefined,
+      onStart: () => setIsSpeaking(true),
+      onEnd: () => setIsSpeaking(false),
+      onError: () => {
+        setIsSpeaking(false)
+        toast.error('Failed to speak text')
+      }
+    })
+
+    if (!result.success && result.error) {
+      toast.error(result.error)
+    }
+  }
 
   const generateOptions = () => {
     if (!currentCard) return
@@ -181,10 +203,44 @@ export function MultipleChoiceMode({ cards, onNext, currentIndex, isTemporaryStu
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
         >
-          <div className="text-xs text-blue-600 dark:text-blue-400 mb-4 sm:mb-6 uppercase tracking-wide text-center">
-            Multiple Choice {hasMultipleCorrect && `(Select ${correctAnswers.length})`}
+          <div className="flex items-center justify-center gap-3 mb-4 sm:mb-6">
+            <div className="text-xs text-blue-600 dark:text-blue-400 uppercase tracking-wide text-center">
+              Multiple Choice {hasMultipleCorrect && `(Select ${correctAnswers.length})`}
+            </div>
+            {currentCard.front && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => handleSpeak(currentCard.front)}
+                className="gap-1.5 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                title="Read question aloud"
+              >
+                <Volume2 className={`w-4 h-4 ${isSpeaking ? 'text-blue-600 animate-pulse' : 'text-gray-500'}`} />
+              </Button>
+            )}
           </div>
           <p className="text-2xl md:text-3xl text-center mb-6 sm:mb-8 md:mb-12 max-w-2xl mx-auto text-gray-900 dark:text-gray-100">{currentCard.front}</p>
+          
+          {currentCard.frontImageUrl && (
+            <div className="mb-6 rounded-lg overflow-hidden border max-w-2xl mx-auto">
+              <img 
+                src={currentCard.frontImageUrl} 
+                alt="Question" 
+                className="w-full h-auto object-contain bg-gray-50 dark:bg-gray-900"
+                style={{ maxHeight: '400px' }}
+              />
+            </div>
+          )}
+          
+          {currentCard.frontAudio && (
+            <div className="mb-6 w-full max-w-md mx-auto">
+              <audio controls className="w-full">
+                <source src={currentCard.frontAudio} type="audio/wav" />
+                <source src={currentCard.frontAudio} type="audio/mpeg" />
+                Your browser does not support the audio element.
+              </audio>
+            </div>
+          )}
           
           {hasMultipleCorrect && !hasAnswered && (
             <p className="text-sm text-center text-gray-600 dark:text-gray-400 mb-4">

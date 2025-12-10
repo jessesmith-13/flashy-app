@@ -16,6 +16,8 @@ const viewToRoute: Record<string, string> = {
   'upgrade': '/upgrade',
   'all-cards': '/all-cards',
   'settings': '/settings',
+  'superuser': '/superuser',
+  'moderator': '/moderator',
   'privacy': '/privacy',
   'terms': '/terms',
   'contact': '/contact',
@@ -24,7 +26,7 @@ const viewToRoute: Record<string, string> = {
 
 export function useNavigation() {
   const navigate = useNavigate()
-  const { selectedDeckId } = useStore()
+  const { selectedDeckId, temporaryStudyDeck, studyAllCards } = useStore()
 
   const navigateTo = (view: keyof typeof viewToRoute, options?: { skipDeckIdCheck?: boolean }) => {
     const route = viewToRoute[view]

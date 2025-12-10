@@ -2,11 +2,18 @@ import { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { useStore } from '../../../store/useStore'
 import { useNavigation } from '../../../hooks/useNavigation'
-import { Bell, X, Check, UserPlus, MessageCircle, Reply, FileText } from 'lucide-react'
-import { Button } from '../../ui/button'
 import * as api from '../../../utils/api'
 import { toast } from 'sonner'
-import { handleAuthError } from '../../../utils/authErrorHandler'
+import { Button } from '../../ui/button'
+import { Bell, X, UserPlus, Reply, FileText, MessageCircle, Check, Heart, AlertTriangle, Ticket } from 'lucide-react'
+
+// Helper to handle auth errors
+function handleAuthError(error: any) {
+  if (error.message?.includes('Invalid token') || error.message?.includes('JWT')) {
+    // Token is invalid, user needs to log in again
+    // This will be handled by the global error handler
+  }
+}
 
 export function NotificationCenter() {
   const { 
@@ -186,8 +193,59 @@ export function NotificationCenter() {
               ) : (
                 <>
                   <div className="space-y-2 max-h-96 overflow-y-auto">
-                    {/* Show all notifications (including friend requests and mentions) */}
-                    {mentionNotifications.slice(0, 5).map((notification) => {
+                    {/* Show all notifications */}
+                    {/* Sort by newest first */}
+                    {[...mentionNotifications].sort((a, b) => 
+                      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+                    ).slice(0, 5).map((notification) => {
+                      // Handle warning notifications
+                      if (notification.type === 'warning') {
+                        return (
+                          <div
+                            key={notification.id}
+                            className={`p-4 rounded-lg transition-colors ${
+                              !notification.read 
+                                ? 'bg-orange-50/70 dark:bg-orange-900/20' 
+                                : 'bg-gray-50 dark:bg-gray-700/50'
+                            }`}
+                          >
+                            <div className="flex items-start gap-3">
+                              {/* Warning Icon */}
+                              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center text-white flex-shrink-0">
+                                <AlertTriangle className="w-5 h-5" />
+                              </div>
+
+                              {/* Content */}
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-start justify-between gap-2 mb-2">
+                                  <div>
+                                    <p className="text-sm text-gray-900 dark:text-gray-100 font-medium">
+                                      ⚠️ Moderator Warning
+                                    </p>
+                                    <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">
+                                      You have received an official warning
+                                    </p>
+                                  </div>
+                                  <AlertTriangle className="w-4 h-4 text-orange-600 dark:text-orange-400 flex-shrink-0" />
+                                </div>
+
+                                {/* Warning Message */}
+                                <div className="bg-orange-100 dark:bg-orange-900/30 rounded px-2 py-2 mb-2">
+                                  <p className="text-xs text-gray-700 dark:text-gray-300">
+                                    {notification.text}
+                                  </p>
+                                </div>
+                                
+                                {/* Timestamp */}
+                                <p className="text-xs text-gray-500 dark:text-gray-400">
+                                  {new Date(notification.createdAt).toLocaleDateString()} at {new Date(notification.createdAt).toLocaleTimeString()}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        )
+                      }
+                      
                       if (notification.type === 'friend_request') {
                         return (
                           <div
@@ -254,138 +312,7 @@ export function NotificationCenter() {
                         )
                       }
                       
-                      // Handle reply notifications
-                      if (notification.type === 'reply') {
-                        return (
-                          <div
-                            key={notification.id}
-                            className={`p-4 rounded-lg transition-colors cursor-pointer ${
-                              !notification.read 
-                                ? 'bg-emerald-50/70 dark:bg-emerald-900/20 hover:bg-emerald-100/70 dark:hover:bg-emerald-900/30' 
-                                : 'bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700'
-                            }`}
-                            onClick={async () => {
-                              // Navigate to community tab and view deck
-                              setCurrentSection('community')
-                              navigateTo('community')
-                              setViewingCommunityDeckId(notification.deckId)
-                              setTargetCommentId(notification.parentCommentId) // Scroll to the parent comment
-                              setIsOpen(false)
-                              
-                              // Mark notification as read
-                              try {
-                                await api.markNotificationRead(accessToken!, notification.id)
-                                removeMentionNotification(notification.id)
-                              } catch (error) {
-                                console.error('Failed to mark notification as read:', error)
-                                handleAuthError(error)
-                              }
-                            }}
-                          >
-                            <div className="flex items-start gap-3">
-                              {/* User Avatar */}
-                              {notification.fromUserAvatar ? (
-                                <img
-                                  src={notification.fromUserAvatar}
-                                  alt={notification.fromUserName}
-                                  className="w-10 h-10 rounded-full object-cover flex-shrink-0"
-                                />
-                              ) : (
-                                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-400 to-blue-500 flex items-center justify-center text-white flex-shrink-0">
-                                  {notification.fromUserName.charAt(0).toUpperCase()}
-                                </div>
-                              )}
-
-                              {/* Content */}
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-start justify-between gap-2 mb-2">
-                                  <div>
-                                    <p className="text-sm text-gray-900 dark:text-gray-100 font-medium">
-                                      {notification.fromUserName}
-                                    </p>
-                                    <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">
-                                      replied to your comment
-                                    </p>
-                                  </div>
-                                  <Reply className="w-4 h-4 text-blue-600 dark:text-blue-400 flex-shrink-0" />
-                                </div>
-
-                                {/* Comment preview */}
-                                <p className="text-xs text-gray-700 dark:text-gray-300 line-clamp-2">
-                                  {notification.commentText}
-                                </p>
-                              </div>
-                            </div>
-                          </div>
-                        )
-                      }
-                      
-                      // Handle deck comment notifications
-                      if (notification.type === 'deck_comment') {
-                        return (
-                          <div
-                            key={notification.id}
-                            className={`p-4 rounded-lg transition-colors cursor-pointer ${
-                              !notification.read 
-                                ? 'bg-emerald-50/70 dark:bg-emerald-900/20 hover:bg-emerald-100/70 dark:hover:bg-emerald-900/30' 
-                                : 'bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700'
-                            }`}
-                            onClick={async () => {
-                              // Navigate to community tab and view deck
-                              setCurrentSection('community')
-                              navigateTo('community')
-                              setViewingCommunityDeckId(notification.deckId)
-                              setIsOpen(false)
-                              
-                              // Mark notification as read
-                              try {
-                                await api.markNotificationRead(accessToken!, notification.id)
-                                removeMentionNotification(notification.id)
-                              } catch (error) {
-                                console.error('Failed to mark notification as read:', error)
-                                handleAuthError(error)
-                              }
-                            }}
-                          >
-                            <div className="flex items-start gap-3">
-                              {/* User Avatar */}
-                              {notification.fromUserAvatar ? (
-                                <img
-                                  src={notification.fromUserAvatar}
-                                  alt={notification.fromUserName}
-                                  className="w-10 h-10 rounded-full object-cover flex-shrink-0"
-                                />
-                              ) : (
-                                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-400 to-blue-500 flex items-center justify-center text-white flex-shrink-0">
-                                  {notification.fromUserName.charAt(0).toUpperCase()}
-                                </div>
-                              )}
-
-                              {/* Content */}
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-start justify-between gap-2 mb-2">
-                                  <div>
-                                    <p className="text-sm text-gray-900 dark:text-gray-100 font-medium">
-                                      {notification.fromUserName}
-                                    </p>
-                                    <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">
-                                      commented on your deck "{notification.deckName}"
-                                    </p>
-                                  </div>
-                                  <FileText className="w-4 h-4 text-purple-600 dark:text-purple-400 flex-shrink-0" />
-                                </div>
-
-                                {/* Comment preview */}
-                                <p className="text-xs text-gray-700 dark:text-gray-300 line-clamp-2">
-                                  {notification.commentText}
-                                </p>
-                              </div>
-                            </div>
-                          </div>
-                        )
-                      }
-                      
-                      // Handle mention notifications (default)
+                      // For all other notification types, show a default view
                       return (
                         <div
                           key={notification.id}
@@ -394,57 +321,64 @@ export function NotificationCenter() {
                               ? 'bg-emerald-50/70 dark:bg-emerald-900/20 hover:bg-emerald-100/70 dark:hover:bg-emerald-900/30' 
                               : 'bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700'
                           }`}
-                          onClick={async () => {
-                            // Navigate to community tab
-                            navigateTo('community')
+                          onClick={() => {
                             setIsOpen(false)
-                            
-                            // Mark notification as read
-                            try {
-                              await api.markNotificationRead(accessToken!, notification.id)
-                              removeMentionNotification(notification.id)
-                            } catch (error) {
-                              console.error('Failed to mark notification as read:', error)
-                              handleAuthError(error)
-                            }
-                            
-                            // TODO: Navigate to the specific deck
-                            toast.info('Opening comment...')
+                            navigateTo('notifications')
                           }}
                         >
                           <div className="flex items-start gap-3">
-                            {/* User Avatar */}
-                            {notification.fromUserAvatar ? (
-                              <img
-                                src={notification.fromUserAvatar}
-                                alt={notification.fromUserName}
-                                className="w-10 h-10 rounded-full object-cover flex-shrink-0"
-                              />
-                            ) : (
-                              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-400 to-blue-500 flex items-center justify-center text-white flex-shrink-0">
-                                {notification.fromUserName.charAt(0).toUpperCase()}
-                              </div>
-                            )}
+                            {/* Icon based on notification type */}
+                            <div className="flex-shrink-0">
+                              {notification.type === 'reply' && <Reply className="w-5 h-5 text-blue-600 dark:text-blue-400" />}
+                              {notification.type === 'deck_comment' && <MessageCircle className="w-5 h-5 text-purple-600 dark:text-purple-400" />}
+                              {notification.type === 'mention' && <FileText className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />}
+                              {notification.type === 'comment_like' && <Heart className="w-5 h-5 text-red-600 dark:text-red-400" />}
+                              {['comment_deleted', 'deck_deleted', 'card_deleted'].includes(notification.type) && <X className="w-5 h-5 text-red-600 dark:text-red-400" />}
+                              {['comment_restored', 'deck_restored', 'card_restored'].includes(notification.type) && <Check className="w-5 h-5 text-green-600 dark:text-green-400" />}
+                              {['deck_flagged', 'card_flagged', 'comment_flagged'].includes(notification.type) && <AlertTriangle className="w-5 h-5 text-orange-600 dark:text-orange-400" />}
+                              {notification.type === 'premium_granted' && <Bell className="w-5 h-5 text-purple-600 dark:text-purple-400" />}
+                              {notification.type === 'premium_revoked' && <Bell className="w-5 h-5 text-gray-600 dark:text-gray-400" />}
+                              {notification.type === 'ticket_created' && <Ticket className="w-5 h-5 text-gray-600 dark:text-gray-400" />}
+                              {!['reply', 'deck_comment', 'mention', 'comment_like', 'comment_deleted', 'deck_deleted', 'card_deleted', 'comment_restored', 'deck_restored', 'card_restored', 'deck_flagged', 'card_flagged', 'comment_flagged', 'premium_granted', 'premium_revoked', 'ticket_created'].includes(notification.type) && (
+                                <Bell className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                              )}
+                            </div>
 
                             {/* Content */}
                             <div className="flex-1 min-w-0">
-                              <div className="flex items-start justify-between gap-2 mb-2">
-                                <div>
-                                  <p className="text-sm text-gray-900 dark:text-gray-100 font-medium">
-                                    {notification.fromUserName}
-                                  </p>
-                                  <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">
-                                    mentioned you in a comment
-                                  </p>
-                                </div>
-                                <MessageCircle className="w-4 h-4 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
-                              </div>
-
-                              {/* Comment preview */}
-                              <p className="text-xs text-gray-700 dark:text-gray-300 line-clamp-2">
-                                {notification.commentText}
+                              {/* Main message */}
+                              <p className="text-sm text-gray-900 dark:text-gray-100">
+                                {notification.message || notification.text || `New ${notification.type.replace(/_/g, ' ')}`}
+                              </p>
+                              
+                              {/* Additional info for specific types */}
+                              {notification.type === 'premium_granted' && notification.reason && (
+                                <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                                  Reason: {notification.reason}
+                                </p>
+                              )}
+                              
+                              {notification.fromUserName && (
+                                <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                                  From {notification.fromUserName}
+                                </p>
+                              )}
+                              
+                              {/* Timestamp */}
+                              <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
+                                {new Date(notification.createdAt).toLocaleDateString('en-US', {
+                                  month: 'short',
+                                  day: 'numeric',
+                                  hour: 'numeric',
+                                  minute: '2-digit'
+                                })}
                               </p>
                             </div>
+
+                            {/* Unread indicator */}
+                            {!notification.read && (
+                              <div className="w-2 h-2 bg-emerald-600 rounded-full flex-shrink-0 mt-1"></div>
+                            )}
                           </div>
                         </div>
                       )

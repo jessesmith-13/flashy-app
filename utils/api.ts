@@ -38,6 +38,25 @@ export const signIn = async (email: string, password: string) => {
     throw new Error(error.message)
   }
 
+  // Check if user is banned
+  if (data.user?.user_metadata?.isBanned === true) {
+    const banReason = data.user?.user_metadata?.banReason || ''
+    console.log('=== USER BANNED ===')
+    console.log('User attempted to sign in but account is banned')
+    console.log('Ban Reason:', banReason || 'No reason provided')
+    console.log('Please contact support for more information.')
+    console.log('==================')
+    
+    // Sign out immediately
+    await supabaseClient.auth.signOut()
+    
+    // Throw error with special prefix so UI can detect it
+    const error = new Error(`Your account has been banned. Please contact support for more information.`)
+    error.name = 'ACCOUNT_BANNED'
+    ;(error as any).banReason = banReason
+    throw error
+  }
+
   return data
 }
 
@@ -58,7 +77,19 @@ export const signInWithGoogle = async () => {
 
 export const resetPassword = async (email: string) => {
   const { data, error } = await supabaseClient.auth.resetPasswordForEmail(email, {
-    redirectTo: `${window.location.origin}/reset-password`,
+    redirectTo: `${window.location.origin}/#/reset-password`,
+  })
+
+  if (error) {
+    throw new Error(error.message)
+  }
+
+  return data
+}
+
+export const updatePassword = async (newPassword: string) => {
+  const { data, error } = await supabaseClient.auth.updateUser({
+    password: newPassword
   })
 
   if (error) {
@@ -148,7 +179,7 @@ export const fetchDecks = async (accessToken: string) => {
 
 export const createDeck = async (
   accessToken: string,
-  deck: { name: string; color?: string; emoji?: string; deckType?: string; category?: string; subtopic?: string; difficulty?: string }
+  deck: { name: string; color?: string; emoji?: string; deckType?: string; category?: string; subtopic?: string; difficulty?: string; frontLanguage?: string; backLanguage?: string }
 ) => {
   const response = await fetch(`${API_BASE}/decks`, {
     method: 'POST',
@@ -172,7 +203,7 @@ export const createDeck = async (
 export const updateDeck = async (
   accessToken: string,
   deckId: string,
-  updates: Partial<{ name: string; color: string; emoji: string; deckType: string; favorite: boolean; learned: boolean; category: string; subtopic: string; difficulty: string }>
+  updates: Partial<{ name: string; color: string; emoji: string; deckType: string; favorite: boolean; learned: boolean; category: string; subtopic: string; difficulty: string; frontLanguage: string; backLanguage: string }>
 ) => {
   const response = await fetch(`${API_BASE}/decks/${deckId}`, {
     method: 'PUT',
@@ -264,10 +295,14 @@ export const publishDeck = async (
   return data
 }
 
-export const deleteDeck = async (accessToken: string, deckId: string) => {
-  const response = await fetch(`${API_BASE}/decks/${deckId}`, {
-    method: 'DELETE',
+export const unpublishDeck = async (
+  accessToken: string,
+  communityDeckId: string
+) => {
+  const response = await fetch(`${API_BASE}/decks/${communityDeckId}/unpublish`, {
+    method: 'POST',
     headers: {
+      'Content-Type': 'application/json',
       Authorization: `Bearer ${accessToken}`,
     },
   })
@@ -275,8 +310,8 @@ export const deleteDeck = async (accessToken: string, deckId: string) => {
   const data = await response.json()
   
   if (!response.ok) {
-    console.error('Failed to delete deck:', data.error)
-    throw new Error(data.error || 'Failed to delete deck')
+    console.error('Failed to unpublish deck:', data.error)
+    throw new Error(data.error || 'Failed to unpublish deck')
   }
 
   return data
@@ -330,7 +365,7 @@ export const fetchCards = async (accessToken: string, deckId: string) => {
 export const createCard = async (
   accessToken: string,
   deckId: string,
-  card: { front: string; back: string; cardType: string; options?: string[]; acceptedAnswers?: string[]; frontImageUrl?: string; backImageUrl?: string }
+  card: { front: string; back: string; cardType: string; options?: string[]; acceptedAnswers?: string[]; frontImageUrl?: string; backImageUrl?: string; frontAudio?: string; backAudio?: string }
 ) => {
   const response = await fetch(`${API_BASE}/decks/${deckId}/cards`, {
     method: 'POST',
@@ -351,11 +386,35 @@ export const createCard = async (
   return data.card
 }
 
+export const createCardsBatch = async (
+  accessToken: string,
+  deckId: string,
+  cards: Array<{ front: string; back: string; cardType: string; options?: string[]; acceptedAnswers?: string[]; frontImageUrl?: string; backImageUrl?: string; frontAudio?: string; backAudio?: string }>
+) => {
+  const response = await fetch(`${API_BASE}/decks/${deckId}/cards/batch`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify({ cards }),
+  })
+
+  const data = await response.json()
+  
+  if (!response.ok) {
+    console.error('Failed to create cards batch:', data.error)
+    throw new Error(data.error || 'Failed to create cards')
+  }
+
+  return data.cards
+}
+
 export const updateCard = async (
   accessToken: string,
   deckId: string,
   cardId: string,
-  updates: Partial<{ front: string; back: string; cardType: string; options?: string[]; acceptedAnswers?: string[]; favorite?: boolean; ignored?: boolean; frontImageUrl?: string; backImageUrl?: string }>
+  updates: Partial<{ front: string; back: string; cardType: string; options?: string[]; acceptedAnswers?: string[]; favorite?: boolean; ignored?: boolean; frontImageUrl?: string; backImageUrl?: string; frontAudio?: string; backAudio?: string }>
 ) => {
   const response = await fetch(`${API_BASE}/decks/${deckId}/cards/${cardId}`, {
     method: 'PUT',
@@ -376,32 +435,10 @@ export const updateCard = async (
   return data.card
 }
 
-export const deleteCard = async (
-  accessToken: string,
-  deckId: string,
-  cardId: string
-) => {
-  const response = await fetch(`${API_BASE}/decks/${deckId}/cards/${cardId}`, {
-    method: 'DELETE',
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-    },
-  })
-
-  const data = await response.json()
-  
-  if (!response.ok) {
-    console.error('Failed to delete card:', data.error)
-    throw new Error(data.error || 'Failed to delete card')
-  }
-
-  return data
-}
-
 // User Profile API
 export const updateProfile = async (
   accessToken: string,
-  updates: { displayName?: string; avatarUrl?: string; decksPublic?: boolean; subscriptionTier?: string; subscriptionExpiry?: string }
+  updates: { displayName?: string; avatarUrl?: string; decksPublic?: boolean; subscriptionTier?: string; subscriptionExpiry?: string; isSuperuser?: boolean }
 ) => {
   const response = await fetch(`${API_BASE}/profile`, {
     method: 'PUT',
@@ -420,6 +457,29 @@ export const updateProfile = async (
   }
 
   return data.user
+}
+
+export const recordTermsAcceptance = async (
+  accessToken: string,
+  termsAcceptedAt: string
+) => {
+  const response = await fetch(`${API_BASE}/record-terms-acceptance`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify({ termsAcceptedAt }),
+  })
+
+  const data = await response.json()
+  
+  if (!response.ok) {
+    console.error('Failed to record terms acceptance:', data.error)
+    throw new Error(data.error || 'Failed to record terms acceptance')
+  }
+
+  return data
 }
 
 export const uploadAvatar = async (
@@ -467,6 +527,34 @@ export const uploadCardImage = async (
   if (!response.ok) {
     console.error('Failed to upload card image:', data.error)
     throw new Error(data.error || 'Failed to upload card image')
+  }
+
+  return data.url
+}
+
+export const uploadCardAudio = async (file: File) => {
+  const { data: { session } } = await supabaseClient.auth.getSession()
+  
+  if (!session?.access_token) {
+    throw new Error('Not authenticated')
+  }
+
+  const formData = new FormData()
+  formData.append('file', file)
+
+  const response = await fetch(`${API_BASE}/upload-card-audio`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${session.access_token}`,
+    },
+    body: formData,
+  })
+
+  const data = await response.json()
+  
+  if (!response.ok) {
+    console.error('Failed to upload card audio:', data.error)
+    throw new Error(data.error || 'Failed to upload card audio')
   }
 
   return data.url
@@ -587,6 +675,29 @@ export const removeFriend = async (accessToken: string, friendId: string) => {
   return data
 }
 
+// Study Sessions API
+export const fetchStudySessions = async (accessToken: string) => {
+  try {
+    const response = await fetch(`${API_BASE}/study-sessions`, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    })
+
+    const data = await response.json()
+    
+    if (!response.ok) {
+      console.error('Failed to fetch study sessions:', data.error)
+      throw new Error(data.error || 'Failed to fetch study sessions')
+    }
+
+    return data.sessions || []
+  } catch (error) {
+    console.error('Error fetching study sessions:', error)
+    throw error
+  }
+}
+
 export const getFriendRequests = async (accessToken: string) => {
   const response = await fetch(`${API_BASE}/friends/requests`, {
     headers: {
@@ -637,15 +748,15 @@ export const getFriends = async (accessToken: string) => {
   return data.friends
 }
 
-// Ban/Unban user (Superuser only)
-export const banUser = async (accessToken: string, userId: string, banned: boolean) => {
+// Ban/unban a user (Superuser only)
+export const banUser = async (accessToken: string, userId: string, banned: boolean, reason?: string) => {
   const response = await fetch(`${API_BASE}/users/${userId}/ban`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${accessToken}`,
     },
-    body: JSON.stringify({ banned }),
+    body: JSON.stringify({ isBanned: banned, reason }),
   })
 
   const data = await response.json()
@@ -653,6 +764,104 @@ export const banUser = async (accessToken: string, userId: string, banned: boole
   if (!response.ok) {
     console.error('Failed to ban/unban user:', data.error)
     throw new Error(data.error || 'Failed to ban/unban user')
+  }
+
+  return data
+}
+
+// Toggle moderator status (Superuser only)
+export const toggleModeratorStatus = async (accessToken: string, userId: string, isModerator: boolean) => {
+  const response = await fetch(`${API_BASE}/users/${userId}/role`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify({ isModerator }),
+  })
+
+  const data = await response.json()
+  
+  if (!response.ok) {
+    console.error('Failed to toggle moderator status:', data.error)
+    throw new Error(data.error || 'Failed to toggle moderator status')
+  }
+
+  return data
+}
+
+// Manual premium upgrade (Superuser only)
+export const grantPremium = async (accessToken: string, userId: string, reason: string, tier: string, customReason?: string) => {
+  const response = await fetch(`${API_BASE}/users/${userId}/premium`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify({ reason, tier, customReason }),
+  })
+
+  const data = await response.json()
+  
+  if (!response.ok) {
+    console.error('Failed to grant premium:', data.error)
+    throw new Error(data.error || 'Failed to grant premium')
+  }
+
+  return data
+}
+
+// Demote premium user to free (Superuser only)
+export const demotePremium = async (accessToken: string, userId: string) => {
+  const response = await fetch(`${API_BASE}/users/${userId}/demote`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${accessToken}`,
+    },
+  })
+
+  const data = await response.json()
+  
+  if (!response.ok) {
+    console.error('Failed to demote user:', data.error)
+    throw new Error(data.error || 'Failed to demote user')
+  }
+
+  return data
+}
+
+// Get all users (Superuser only)
+export const getAllUsers = async (accessToken: string) => {
+  const response = await fetch(`${API_BASE}/users`, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  })
+
+  const data = await response.json()
+  
+  if (!response.ok) {
+    console.error('Failed to get all users:', data.error)
+    throw new Error(data.error || 'Failed to get all users')
+  }
+
+  return data.users
+}
+
+// Get user activity history (Superuser only)
+export const getUserActivity = async (accessToken: string, userId: string) => {
+  const response = await fetch(`${API_BASE}/users/${userId}/activity`, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  })
+
+  const data = await response.json()
+  
+  if (!response.ok) {
+    console.error('Failed to get user activity:', data.error)
+    throw new Error(data.error || 'Failed to get user activity')
   }
 
   return data
@@ -754,7 +963,8 @@ export const updateCommunityDeck = async (
 
 export const deleteCommunityDeck = async (
   accessToken: string,
-  communityDeckId: string
+  communityDeckId: string,
+  reason: string
 ) => {
   const response = await fetch(`${API_BASE}/community/decks/${communityDeckId}`, {
     method: 'DELETE',
@@ -762,6 +972,7 @@ export const deleteCommunityDeck = async (
       'Content-Type': 'application/json',
       Authorization: `Bearer ${accessToken}`,
     },
+    body: JSON.stringify({ reason }),
   })
 
   const data = await response.json()
@@ -769,6 +980,31 @@ export const deleteCommunityDeck = async (
   if (!response.ok) {
     console.error('Failed to delete community deck:', data.error)
     throw new Error(data.error || 'Failed to delete community deck')
+  }
+
+  return data
+}
+
+export const deleteCommunityCard = async (
+  accessToken: string,
+  communityDeckId: string,
+  cardId: string,
+  reason: string
+) => {
+  const response = await fetch(`${API_BASE}/community/decks/${communityDeckId}/cards/${cardId}`, {
+    method: 'DELETE',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify({ reason }),
+  })
+
+  const data = await response.json()
+  
+  if (!response.ok) {
+    console.error('Failed to delete community card:', data.error)
+    throw new Error(data.error || 'Failed to delete community card')
   }
 
   return data
@@ -993,6 +1229,153 @@ export const postDeckComment = async (
   return data.comment
 }
 
+// Delete a comment (Moderator/Superuser only)
+export const deleteDeckComment = async (
+  accessToken: string,
+  deckId: string,
+  commentId: string,
+  reason: string
+) => {
+  const response = await fetch(`${API_BASE}/decks/${deckId}/comments/${commentId}`, {
+    method: 'DELETE',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify({ reason }),
+  })
+
+  const data = await response.json()
+  
+  if (!response.ok) {
+    console.error('Failed to delete comment:', data.error)
+    throw new Error(data.error || 'Failed to delete comment')
+  }
+
+  return data
+}
+
+// Like/unlike a comment
+export const likeComment = async (
+  accessToken: string,
+  deckId: string,
+  commentId: string
+) => {
+  const response = await fetch(`${API_BASE}/decks/${deckId}/comments/${commentId}/like`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  })
+
+  const data = await response.json()
+  
+  if (!response.ok) {
+    console.error('Failed to like comment:', data.error)
+    throw new Error(data.error || 'Failed to like comment')
+  }
+
+  return data
+}
+
+// Delete a deck (Superuser only)
+export const deleteDeck = async (
+  accessToken: string,
+  deckId: string,
+  reason?: string
+) => {
+  const body = reason ? { reason } : undefined
+  
+  const response = await fetch(`${API_BASE}/decks/${deckId}`, {
+    method: 'DELETE',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${accessToken}`,
+    },
+    ...(body && { body: JSON.stringify(body) }),
+  })
+
+  const data = await response.json()
+  
+  if (!response.ok) {
+    console.error('Failed to delete deck:', data.error)
+    throw new Error(data.error || 'Failed to delete deck')
+  }
+
+  return data
+}
+
+// Delete a card (Superuser only)
+export const deleteCard = async (
+  accessToken: string,
+  deckId: string,
+  cardId: string,
+  reason?: string
+) => {
+  const body = reason ? { reason } : undefined
+  
+  const response = await fetch(`${API_BASE}/decks/${deckId}/cards/${cardId}`, {
+    method: 'DELETE',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${accessToken}`,
+    },
+    ...(body && { body: JSON.stringify(body) }),
+  })
+
+  const data = await response.json()
+  
+  if (!response.ok) {
+    console.error('Failed to delete card:', data.error)
+    throw new Error(data.error || 'Failed to delete card')
+  }
+
+  return data
+}
+
+// Get deleted items (Superuser only)
+export const getDeletedItems = async (accessToken: string) => {
+  const response = await fetch(`${API_BASE}/deleted-items`, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  })
+
+  const data = await response.json()
+  
+  if (!response.ok) {
+    console.error('Failed to fetch deleted items:', data.error)
+    throw new Error(data.error || 'Failed to fetch deleted items')
+  }
+
+  return data
+}
+
+// Restore a deleted item (Superuser only)
+export const restoreDeletedItem = async (
+  accessToken: string,
+  itemId: string,
+  itemType: 'comment' | 'deck' | 'card'
+) => {
+  const response = await fetch(`${API_BASE}/deleted-items/restore`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify({ itemId, itemType }),
+  })
+
+  const data = await response.json()
+  
+  if (!response.ok) {
+    console.error('Failed to restore item:', data.error)
+    throw new Error(data.error || 'Failed to restore item')
+  }
+
+  return data
+}
+
 // Notifications API
 export const getNotifications = async (accessToken: string) => {
   try {
@@ -1123,6 +1506,159 @@ export const getSharedDeck = async (shareId: string) => {
 }
 
 // Flag/Report API
+export const createFlag = async (
+  accessToken: string,
+  flagData: {
+    targetType: 'deck' | 'user' | 'comment' | 'card'
+    targetId: string
+    reason: 'inappropriate' | 'spam' | 'harassment' | 'misinformation' | 'copyright' | 'other'
+    notes?: string
+    targetDetails?: any // Additional context like deckId for cards/comments
+  }
+) => {
+  const response = await fetch(`${API_BASE}/flags`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify(flagData)
+  })
+
+  const data = await response.json()
+  
+  if (!response.ok) {
+    console.error('Failed to create flag:', data.error)
+    throw new Error(data.error || 'Failed to create flag')
+  }
+
+  return data
+}
+
+export const getFlags = async (
+  accessToken: string,
+  filters?: {
+    status?: 'open' | 'reviewing' | 'resolved'
+    targetType?: 'deck' | 'user' | 'comment' | 'card'
+    flashy?: boolean
+    isEscalated?: boolean
+  }
+) => {
+  const params = new URLSearchParams()
+  if (filters?.status) params.append('status', filters.status)
+  if (filters?.targetType) params.append('targetType', filters.targetType)
+  if (filters?.flashy) params.append('flashy', 'true')
+  if (filters?.isEscalated) params.append('escalated', 'true')
+  
+  const response = await fetch(`${API_BASE}/flags?${params.toString()}`, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  })
+
+  const data = await response.json()
+  
+  if (!response.ok) {
+    console.error('Failed to fetch flags:', data.error)
+    throw new Error(data.error || 'Failed to fetch flags')
+  }
+
+  return data.flags || []
+}
+
+export const updateFlagStatus = async (
+  accessToken: string,
+  flagId: string,
+  status: 'open' | 'reviewing' | 'resolved',
+  resolutionReason?: 'approved' | 'rejected' | 'removed',
+  moderatorNotes?: string
+) => {
+  const response = await fetch(`${API_BASE}/flags/${flagId}`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify({ status, resolutionReason, moderatorNotes })
+  })
+
+  const data = await response.json()
+  
+  if (!response.ok) {
+    console.error('Failed to update flag:', data.error)
+    throw new Error(data.error || 'Failed to update flag')
+  }
+
+  return data
+}
+
+export const escalateFlag = async (
+  accessToken: string,
+  flagId: string,
+  reason: string
+) => {
+  const response = await fetch(`${API_BASE}/flags/${flagId}/escalate`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify({ escalationReason: reason })
+  })
+
+  const data = await response.json()
+  
+  if (!response.ok) {
+    console.error('Failed to escalate flag:', data.error)
+    throw new Error(data.error || 'Failed to escalate flag')
+  }
+
+  return data
+}
+
+export const warnUser = async (
+  accessToken: string,
+  flagId: string,
+  warning: {
+    reason: string
+    customReason?: string
+    message?: string
+    timeToResolve: string
+    customTime?: string
+  }
+) => {
+  const response = await fetch(`${API_BASE}/warnings`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify({
+      flagId,
+      ...warning
+    })
+  })
+
+  const data = await response.json()
+  
+  if (!response.ok) {
+    console.error('Failed to warn user:', data.error)
+    throw new Error(data.error || 'Failed to warn user')
+  }
+
+  return data
+}
+
+export const resolveFlag = async (
+  accessToken: string,
+  flagId: string,
+  resolutionReason: 'approved' | 'rejected' | 'removed',
+  moderatorNotes: string
+) => {
+  return updateFlagStatus(accessToken, flagId, 'resolved', resolutionReason, moderatorNotes)
+}
+
+// Legacy flag function - kept for backwards compatibility but not recommended
 export const flagCommunityItem = async (
   accessToken: string | null,
   flagData: {
@@ -1132,20 +1668,157 @@ export const flagCommunityItem = async (
     details: string
   }
 ) => {
-  const response = await fetch(`${API_BASE}/community/flag`, {
-    method: 'POST',
+  // Map old format to new format
+  return createFlag(accessToken!, {
+    targetType: flagData.itemType === 'deck' ? 'deck' : 'deck', // cards map to decks
+    targetId: flagData.itemId,
+    reason: 'other',
+    notes: `${flagData.reason}: ${flagData.details}`
+  })
+}
+
+// Ticket System API (for Flag Management)
+export const getTicketDetails = async (accessToken: string, ticketId: string) => {
+  const response = await fetch(`${API_BASE}/tickets/${ticketId}`, {
     headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${accessToken || publicAnonKey}`,
+      Authorization: `Bearer ${accessToken}`,
     },
-    body: JSON.stringify(flagData)
   })
 
   const data = await response.json()
   
   if (!response.ok) {
-    console.error('Failed to flag item:', data.error)
-    throw new Error(data.error || 'Failed to flag item')
+    console.error('Failed to get ticket details:', data.error)
+    throw new Error(data.error || 'Failed to get ticket details')
+  }
+
+  return data
+}
+
+export const getTicketComments = async (accessToken: string, ticketId: string) => {
+  const response = await fetch(`${API_BASE}/tickets/${ticketId}/comments`, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  })
+
+  const data = await response.json()
+  
+  if (!response.ok) {
+    console.error('Failed to get ticket comments:', data.error)
+    throw new Error(data.error || 'Failed to get ticket comments')
+  }
+
+  return data
+}
+
+export const addTicketComment = async (
+  accessToken: string,
+  ticketId: string,
+  commentData: {
+    content: string
+    mentions: string[]
+  }
+) => {
+  const response = await fetch(`${API_BASE}/tickets/${ticketId}/comments`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify(commentData),
+  })
+
+  const data = await response.json()
+  
+  if (!response.ok) {
+    console.error('Failed to add ticket comment:', data.error)
+    throw new Error(data.error || 'Failed to add ticket comment')
+  }
+
+  return data
+}
+
+export const getTicketActions = async (accessToken: string, ticketId: string) => {
+  const response = await fetch(`${API_BASE}/tickets/${ticketId}/actions`, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  })
+
+  const data = await response.json()
+  
+  if (!response.ok) {
+    console.error('Failed to get ticket actions:', data.error)
+    throw new Error(data.error || 'Failed to get ticket actions')
+  }
+
+  return data
+}
+
+export const updateTicketStatus = async (
+  accessToken: string,
+  ticketId: string,
+  statusData: {
+    status: 'pending' | 'under_review' | 'resolved' | 'dismissed'
+    resolutionNote?: string
+  }
+) => {
+  const response = await fetch(`${API_BASE}/tickets/${ticketId}/status`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify(statusData),
+  })
+
+  const data = await response.json()
+  
+  if (!response.ok) {
+    console.error('Failed to update ticket status:', data.error)
+    throw new Error(data.error || 'Failed to update ticket status')
+  }
+
+  return data
+}
+
+export const assignTicket = async (
+  accessToken: string,
+  ticketId: string,
+  moderatorId: string
+) => {
+  const response = await fetch(`${API_BASE}/tickets/${ticketId}/assign`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify({ moderatorId }),
+  })
+
+  const data = await response.json()
+  
+  if (!response.ok) {
+    console.error('Failed to assign ticket:', data.error)
+    throw new Error(data.error || 'Failed to assign ticket')
+  }
+
+  return data
+}
+
+export const getModerators = async (accessToken: string) => {
+  const response = await fetch(`${API_BASE}/moderators`, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  })
+
+  const data = await response.json()
+  
+  if (!response.ok) {
+    console.error('Failed to get moderators:', data.error)
+    throw new Error(data.error || 'Failed to get moderators')
   }
 
   return data
@@ -1157,7 +1830,9 @@ export const generateCardsWithAI = async (
   numCards: number, 
   cardTypes: { classicFlip: boolean, multipleChoice: boolean, typeAnswer: boolean } = { classicFlip: true, multipleChoice: false, typeAnswer: false }, 
   includeImages: boolean = false, 
-  difficulty: string = 'mixed'
+  difficulty: string = 'mixed',
+  frontLanguage: string = '',
+  backLanguage: string = ''
 ) => {
   const { data: { session } } = await supabaseClient.auth.getSession()
   
@@ -1171,7 +1846,7 @@ export const generateCardsWithAI = async (
       'Content-Type': 'application/json',
       Authorization: `Bearer ${session.access_token}`,
     },
-    body: JSON.stringify({ topic, numCards: numCards.toString(), cardTypes, includeImages, difficulty }),
+    body: JSON.stringify({ topic, numCards: numCards.toString(), cardTypes, includeImages, difficulty, frontLanguage, backLanguage }),
   })
 
   const data = await response.json()
@@ -1183,34 +1858,40 @@ export const generateCardsWithAI = async (
   return data
 }
 
-export const importCardsFromCSV = async (file: File) => {
-  const { data: { session } } = await supabaseClient.auth.getSession()
-  
-  if (!session?.access_token) {
-    throw new Error('Not authenticated')
-  }
-
+export const generateCardsFromCSV = async (
+  accessToken: string,
+  file: File
+): Promise<{ cards: GeneratedCard[] }> => {
   const formData = new FormData()
   formData.append('file', file)
 
-  const response = await fetch(`${API_BASE}/ai-generate-csv`, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${session.access_token}`,
-    },
-    body: formData,
-  })
+  const response = await fetch(
+    `${API_BASE}/ai-generate-csv`,
+    {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: formData,
+    }
+  )
 
-  const data = await response.json()
-  
   if (!response.ok) {
-    throw new Error(data.error || 'Failed to import CSV')
+    const errorData = await response.json()
+    throw new Error(errorData.error || 'Failed to import CSV')
   }
 
-  return data
+  return response.json()
 }
 
-export const generateCardsFromPDF = async (file: File, numCards: number) => {
+export const generateCardsFromPDF = async (
+  file: File, 
+  numCards: number,
+  customInstructions?: string,
+  cardTypes?: { classicFlip: boolean; multipleChoice: boolean; typeAnswer: boolean },
+  frontLanguage?: string,
+  backLanguage?: string
+) => {
   const { data: { session } } = await supabaseClient.auth.getSession()
   
   if (!session?.access_token) {
@@ -1220,6 +1901,22 @@ export const generateCardsFromPDF = async (file: File, numCards: number) => {
   const formData = new FormData()
   formData.append('file', file)
   formData.append('numCards', numCards.toString())
+  
+  if (customInstructions) {
+    formData.append('customInstructions', customInstructions)
+  }
+  
+  if (cardTypes) {
+    formData.append('cardTypes', JSON.stringify(cardTypes))
+  }
+  
+  if (frontLanguage) {
+    formData.append('frontLanguage', frontLanguage)
+  }
+  
+  if (backLanguage) {
+    formData.append('backLanguage', backLanguage)
+  }
 
   const response = await fetch(`${API_BASE}/ai-generate-pdf`, {
     method: 'POST',
@@ -1241,6 +1938,126 @@ export const generateCardsFromPDF = async (file: File, numCards: number) => {
   }
 
   return data
+}
+
+export const translateText = async (
+  accessToken: string,
+  text: string,
+  targetLanguage: string
+): Promise<{ translatedText: string }> => {
+  const response = await fetch(
+    `${API_BASE}/ai-translate`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify({ text, targetLanguage }),
+    }
+  )
+
+  if (!response.ok) {
+    const errorData = await response.json()
+    throw new Error(errorData.error || 'Failed to translate text')
+  }
+
+  return response.json()
+}
+
+export const generateTextToSpeech = async (
+  accessToken: string,
+  text: string,
+  language?: string
+): Promise<{ audioData: string; format: string }> => {
+  const response = await fetch(
+    `${API_BASE}/tts`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify({ text, language }),
+    }
+  )
+
+  if (!response.ok) {
+    const errorData = await response.json()
+    throw new Error(errorData.error || 'Failed to generate speech')
+  }
+
+  return response.json()
+}
+
+// ==================== REFERRAL API ====================
+
+export const sendReferralInvite = async (
+  accessToken: string,
+  email: string
+): Promise<{ message: string; referralCode: string; referralLink: string; note: string }> => {
+  const response = await fetch(
+    `${API_BASE}/referrals/invite`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify({ email }),
+    }
+  )
+
+  if (!response.ok) {
+    const errorData = await response.json()
+    throw new Error(errorData.error || 'Failed to send referral invite')
+  }
+
+  return response.json()
+}
+
+export const getReferralStats = async (
+  accessToken: string
+): Promise<{ totalInvites: number; completedReferrals: number; pendingReferrals: number; invites: any[] }> => {
+  const response = await fetch(
+    `${API_BASE}/referrals/stats`,
+    {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    }
+  )
+
+  if (!response.ok) {
+    const errorData = await response.json()
+    throw new Error(errorData.error || 'Failed to get referral stats')
+  }
+
+  return response.json()
+}
+
+export const applyReferralCode = async (
+  referralCode: string,
+  newUserId: string
+): Promise<{ success: boolean; message: string }> => {
+  const response = await fetch(
+    `${API_BASE}/referrals/apply`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${publicAnonKey}`,
+      },
+      body: JSON.stringify({ referralCode, newUserId }),
+    }
+  )
+
+  if (!response.ok) {
+    const errorData = await response.json()
+    throw new Error(errorData.error || 'Failed to apply referral code')
+  }
+
+  return response.json()
 }
 
 // ==================== STRIPE PAYMENT API ====================
@@ -1320,6 +2137,27 @@ export const cancelSubscription = async (accessToken: string) => {
   if (!response.ok) {
     console.error('Failed to cancel subscription:', data.error)
     throw new Error(data.error || 'Failed to cancel subscription')
+  }
+
+  return data
+}
+
+// Change subscription plan
+export const changeSubscriptionPlan = async (accessToken: string, newPlan: 'monthly' | 'annual' | 'lifetime') => {
+  const response = await fetch(`${API_BASE}/change-subscription-plan`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify({ newPlan }),
+  })
+
+  const data = await response.json()
+  
+  if (!response.ok) {
+    console.error('Failed to change subscription plan:', data.error)
+    throw new Error(data.error || 'Failed to change subscription plan')
   }
 
   return data

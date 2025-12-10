@@ -5,6 +5,7 @@ import { Label } from '../../../ui/label'
 import { Button } from '../../../ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../ui/select'
 import { DECK_CATEGORIES } from '../../../../utils/categories'
+import { DECK_LANGUAGES } from '../../../../utils/languages'
 import { ColorPicker } from '../../ColorPicker'
 import { EmojiPicker } from '../../EmojiPicker'
 import { Deck } from '../../../../store/useStore'
@@ -20,6 +21,8 @@ interface EditDeckDialogProps {
     category?: string
     subtopic?: string
     difficulty?: string
+    frontLanguage?: string
+    backLanguage?: string
   }) => Promise<void>
 }
 
@@ -30,6 +33,8 @@ export function EditDeckDialog({ open, onOpenChange, deck, onUpdateDeck }: EditD
   const [editCategory, setEditCategory] = useState('')
   const [editSubtopic, setEditSubtopic] = useState('')
   const [editDifficulty, setEditDifficulty] = useState<string>('')
+  const [editFrontLanguage, setEditFrontLanguage] = useState<string>('')
+  const [editBackLanguage, setEditBackLanguage] = useState<string>('')
   const [updating, setUpdating] = useState(false)
 
   // Update form values when deck changes
@@ -41,6 +46,8 @@ export function EditDeckDialog({ open, onOpenChange, deck, onUpdateDeck }: EditD
       setEditCategory(deck.category || '')
       setEditSubtopic(deck.subtopic || '')
       setEditDifficulty(deck.difficulty || '')
+      setEditFrontLanguage(deck.frontLanguage || '')
+      setEditBackLanguage(deck.backLanguage || '')
     }
   }, [deck])
 
@@ -57,6 +64,8 @@ export function EditDeckDialog({ open, onOpenChange, deck, onUpdateDeck }: EditD
         category: editCategory || undefined,
         subtopic: editSubtopic || undefined,
         difficulty: editDifficulty || undefined,
+        frontLanguage: editFrontLanguage || undefined,
+        backLanguage: editBackLanguage || undefined,
       })
 
       onOpenChange(false)
@@ -69,14 +78,14 @@ export function EditDeckDialog({ open, onOpenChange, deck, onUpdateDeck }: EditD
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Edit Deck</DialogTitle>
           <DialogDescription>
-            Update your deck's name, emoji, color, and category.
+            Update your deck's name, emoji, color, category, and languages.
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4 mt-4">
+        <form onSubmit={handleSubmit} className="space-y-4 mt-4 pb-4">{/* Added pb-4 for bottom padding */}
           <div>
             <Label htmlFor="editDeckName">Deck Name</Label>
             <Input
@@ -151,6 +160,40 @@ export function EditDeckDialog({ open, onOpenChange, deck, onUpdateDeck }: EditD
                 <SelectItem value="advanced">🟠 Advanced</SelectItem>
                 <SelectItem value="expert">🔴 Expert</SelectItem>
                 <SelectItem value="mixed">🌈 Mixed</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
+            <Label htmlFor="editFrontLanguage">Front Language (Optional)</Label>
+            <Select value={editFrontLanguage || 'none'} onValueChange={(value) => setEditFrontLanguage(value === 'none' ? '' : value)}>
+              <SelectTrigger className="mt-1">
+                <SelectValue placeholder="Select a language..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">None</SelectItem>
+                {DECK_LANGUAGES.map(lang => (
+                  <SelectItem key={lang.code} value={lang.name}>
+                    {lang.flag} {lang.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
+            <Label htmlFor="editBackLanguage">Back Language (Optional)</Label>
+            <Select value={editBackLanguage || 'none'} onValueChange={(value) => setEditBackLanguage(value === 'none' ? '' : value)}>
+              <SelectTrigger className="mt-1">
+                <SelectValue placeholder="Select a language..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">None</SelectItem>
+                {DECK_LANGUAGES.map(lang => (
+                  <SelectItem key={lang.code} value={lang.name}>
+                    {lang.flag} {lang.name}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>

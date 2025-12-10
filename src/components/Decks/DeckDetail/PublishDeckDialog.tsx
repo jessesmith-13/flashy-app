@@ -22,6 +22,7 @@ export function PublishDeckDialog({
   onOpenSettings
 }: PublishDeckDialogProps) {
   const hasRequiredSettings = deck.category && deck.subtopic
+  const cannotRepublish = deck.cannotRepublish === true
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -33,7 +34,19 @@ export function PublishDeckDialog({
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4 py-4">
-          {hasRequiredSettings ? (
+          {cannotRepublish ? (
+            <div className="bg-red-50 dark:bg-red-900/20 rounded-lg p-4 border border-red-200 dark:border-red-700">
+              <h3 className="text-red-900 dark:text-red-100 mb-2">Cannot Republish Deck</h3>
+              <p className="text-sm text-red-700 dark:text-red-300">
+                This deck was removed from the community by a moderator and cannot be republished.
+              </p>
+              {deck.cannotRepublishReason && (
+                <p className="text-sm text-red-700 dark:text-red-300 mt-2">
+                  <span className="font-medium">Reason:</span> {deck.cannotRepublishReason}
+                </p>
+              )}
+            </div>
+          ) : hasRequiredSettings ? (
             <>
               <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 space-y-2">
                 <div className="flex items-center gap-2">

@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react'
 import { useStore } from '../../../store/useStore'
 import { useNavigation } from '../../../hooks/useNavigation'
-import { ArrowLeft, Bell, Check, X, UserPlus, Reply, FileText, Trash2 } from 'lucide-react'
-import { Button } from '../../ui/button'
 import * as api from '../../../utils/api'
+import { ArrowLeft, Bell, UserPlus, Check, X, Trash2, Reply, FileText, MessageCircle, Shield, Heart, AlertTriangle, ShieldCheck, ShieldOff, Ticket, AlertCircle } from 'lucide-react'
+import { Button } from '../../ui/button'
 import { toast } from 'sonner'
 
 export function NotificationsScreen() {
@@ -15,11 +15,12 @@ export function NotificationsScreen() {
     setMentionNotifications,
     removeMentionNotification,
     setViewingCommunityDeckId,
-    setTargetCommentId
+    setTargetCommentId,
+    setViewingTicketId
   } = useStore()
   const { navigateTo } = useNavigation()
   const [loading, setLoading] = useState<string | null>(null)
-  const [filter, setFilter] = useState<'all' | 'friend_requests' | 'comments' | 'replies'>('all')
+  const [filter, setFilter] = useState<'all' | 'friend_requests' | 'comments' | 'replies' | 'moderation'>('all')
 
   // Load notifications when component mounts
   useEffect(() => {
@@ -31,6 +32,7 @@ export function NotificationsScreen() {
     
     try {
       const notifications = await api.getNotifications(accessToken)
+      console.log('Loaded notifications:', notifications)
       setMentionNotifications(notifications)
       
       // Mark all as seen when viewing this page
@@ -120,9 +122,10 @@ export function NotificationsScreen() {
   const filteredNotifications = mentionNotifications.filter(notification => {
     if (filter === 'all') return true
     if (filter === 'friend_requests') return notification.type === 'friend_request'
-    if (filter === 'comments') return notification.type === 'deck_comment'
+    if (filter === 'comments') return ['deck_comment', 'mention', 'comment_like', 'ticket_mention', 'ticket_comment'].includes(notification.type)
     if (filter === 'replies') return notification.type === 'reply'
-    return true
+    if (filter === 'moderation') return ['comment_deleted', 'comment_restored', 'deck_deleted', 'card_deleted', 'deck_restored', 'card_restored', 'deck_flagged', 'card_flagged', 'comment_flagged', 'warning', 'ticket_mention', 'ticket_comment', 'ticket_assigned'].includes(notification.type)
+    return false
   })
 
   return (
@@ -189,7 +192,7 @@ export function NotificationsScreen() {
                 : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
             }`}
           >
-            Comments ({mentionNotifications.filter(n => n.type === 'deck_comment').length})
+            Comments ({mentionNotifications.filter(n => ['deck_comment', 'mention', 'comment_like'].includes(n.type)).length})
           </button>
           <button
             onClick={() => setFilter('replies')}
@@ -200,6 +203,16 @@ export function NotificationsScreen() {
             }`}
           >
             Replies ({mentionNotifications.filter(n => n.type === 'reply').length})
+          </button>
+          <button
+            onClick={() => setFilter('moderation')}
+            className={`px-4 py-2 rounded-lg transition-colors whitespace-nowrap ${
+              filter === 'moderation'
+                ? 'bg-emerald-600 text-white'
+                : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+            }`}
+          >
+            Moderation ({mentionNotifications.filter(n => ['comment_deleted', 'comment_restored', 'deck_deleted', 'card_deleted', 'deck_restored', 'card_restored', 'deck_flagged', 'card_flagged', 'comment_flagged', 'warning', 'ticket_mention', 'ticket_comment', 'ticket_assigned'].includes(n.type)).length})
           </button>
         </div>
 
@@ -218,7 +231,10 @@ export function NotificationsScreen() {
           </div>
         ) : (
           <div className="space-y-3">
-            {filteredNotifications.map((notification) => {
+            {/* Sort by newest first */}
+            {[...filteredNotifications].sort((a, b) => 
+              new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+            ).map((notification) => {
               // Friend Request Notification
               if (notification.type === 'friend_request') {
                 return (
@@ -276,6 +292,10 @@ export function NotificationsScreen() {
                             Decline
                           </Button>
                         </div>
+                        
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                          {new Date(notification.createdAt).toLocaleString()}
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -346,6 +366,10 @@ export function NotificationsScreen() {
                         <p className="text-sm text-gray-700 dark:text-gray-300 line-clamp-2">
                           {notification.commentText}
                         </p>
+                        
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                          {new Date(notification.createdAt).toLocaleString()}
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -415,13 +439,1092 @@ export function NotificationsScreen() {
                         <p className="text-sm text-gray-700 dark:text-gray-300 line-clamp-2">
                           {notification.commentText}
                         </p>
+                        
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                          {new Date(notification.createdAt).toLocaleString()}
+                        </p>
                       </div>
                     </div>
                   </div>
                 )
               }
               
-              return null
+              // Mention Notification
+              if (notification.type === 'mention') {
+                return (
+                  <div
+                    key={notification.id}
+                    className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow cursor-pointer relative group"
+                    onClick={async () => {
+                      navigateTo('community')
+                      setViewingCommunityDeckId(notification.deckId)
+                      
+                      try {
+                        await api.markNotificationRead(accessToken!, notification.id)
+                        removeMentionNotification(notification.id)
+                      } catch (error) {
+                        console.error('Failed to mark notification as read:', error)
+                      }
+                    }}
+                  >
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleDeleteNotification(notification.id)
+                      }}
+                      className="absolute top-4 right-4 p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <Trash2 className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                    </button>
+
+                    <div className="flex items-start gap-3">
+                      {notification.fromUserAvatar ? (
+                        <img
+                          src={notification.fromUserAvatar}
+                          alt={notification.fromUserName || 'User'}
+                          className="w-12 h-12 rounded-full object-cover flex-shrink-0"
+                        />
+                      ) : (
+                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-emerald-400 to-blue-500 flex items-center justify-center text-white flex-shrink-0">
+                          {(notification.fromUserName || '?').charAt(0).toUpperCase()}
+                        </div>
+                      )}
+
+                      <div className="flex-1 min-w-0 pr-8">
+                        <div className="flex items-start justify-between gap-2 mb-2">
+                          <div>
+                            <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                              {notification.fromUserName}
+                            </p>
+                            <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">
+                              mentioned you in a comment
+                            </p>
+                          </div>
+                          <MessageCircle className="w-5 h-5 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
+                        </div>
+
+                        <p className="text-sm text-gray-700 dark:text-gray-300 line-clamp-2">
+                          {notification.commentText}
+                        </p>
+
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                          {new Date(notification.createdAt).toLocaleString()}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )
+              }
+              
+              // Comment Like Notification
+              if (notification.type === 'comment_like') {
+                return (
+                  <div
+                    key={notification.id}
+                    className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow cursor-pointer relative group"
+                    onClick={async () => {
+                      navigateTo('community')
+                      setViewingCommunityDeckId(notification.deckId)
+                      setTargetCommentId(notification.commentId)
+                      
+                      try {
+                        await api.markNotificationRead(accessToken!, notification.id)
+                        removeMentionNotification(notification.id)
+                      } catch (error) {
+                        console.error('Failed to mark notification as read:', error)
+                      }
+                    }}
+                  >
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleDeleteNotification(notification.id)
+                      }}
+                      className="absolute top-4 right-4 p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <Trash2 className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                    </button>
+
+                    <div className="flex items-start gap-3">
+                      {notification.fromUserAvatar ? (
+                        <img
+                          src={notification.fromUserAvatar}
+                          alt={notification.fromUserName || 'User'}
+                          className="w-12 h-12 rounded-full object-cover flex-shrink-0"
+                        />
+                      ) : (
+                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-emerald-400 to-blue-500 flex items-center justify-center text-white flex-shrink-0">
+                          {(notification.fromUserName || '?').charAt(0).toUpperCase()}
+                        </div>
+                      )}
+
+                      <div className="flex-1 min-w-0 pr-8">
+                        <div className="flex items-start justify-between gap-2 mb-2">
+                          <div>
+                            <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                              {notification.fromUserName}
+                            </p>
+                            <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">
+                              liked your comment on "{notification.deckName}"
+                            </p>
+                          </div>
+                          <Heart className="w-5 h-5 text-red-500 dark:text-red-400 flex-shrink-0 fill-current" />
+                        </div>
+
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                          {new Date(notification.createdAt).toLocaleString()}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )
+              }
+              
+              // Comment Deleted Notification
+              if (notification.type === 'comment_deleted') {
+                return (
+                  <div
+                    key={notification.id}
+                    className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border-l-4 border-red-500 relative group"
+                  >
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleDeleteNotification(notification.id)
+                      }}
+                      className="absolute top-4 right-4 p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <Trash2 className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                    </button>
+
+                    <div className="flex items-start gap-3">
+                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-red-500 to-orange-500 flex items-center justify-center text-white flex-shrink-0 text-xl">
+                        🛡️
+                      </div>
+
+                      <div className="flex-1 min-w-0 pr-8">
+                        <div className="flex items-start justify-between gap-2 mb-3">
+                          <div>
+                            <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                              {notification.moderatorName || 'Moderator'}
+                            </p>
+                            <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">
+                              deleted your comment
+                            </p>
+                          </div>
+                          <X className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0" />
+                        </div>
+
+                        <div className="mb-3 bg-red-50 dark:bg-red-900/20 rounded-lg p-3">
+                          <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                            Reason:
+                          </p>
+                          <p className="text-sm text-gray-900 dark:text-gray-100">
+                            {notification.reason}
+                          </p>
+                        </div>
+
+                        <div className="bg-gray-100 dark:bg-gray-700 rounded-lg p-3 mb-3">
+                          <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">
+                            Your comment:
+                          </p>
+                          <p className="text-sm text-gray-700 dark:text-gray-300 italic line-clamp-2">
+                            "{notification.commentText}"
+                          </p>
+                        </div>
+
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                          {new Date(notification.createdAt).toLocaleString()}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )
+              }
+              
+              // Deck Deleted Notification
+              if (notification.type === 'deck_deleted') {
+                return (
+                  <div
+                    key={notification.id}
+                    className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border-l-4 border-red-500 relative group"
+                  >
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleDeleteNotification(notification.id)
+                      }}
+                      className="absolute top-4 right-4 p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <Trash2 className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                    </button>
+
+                    <div className="flex items-start gap-3">
+                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-red-500 to-orange-500 flex items-center justify-center text-white flex-shrink-0 text-xl">
+                        🛡️
+                      </div>
+
+                      <div className="flex-1 min-w-0 pr-8">
+                        <div className="flex items-start justify-between gap-2 mb-3">
+                          <div>
+                            <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                              Moderator Team
+                            </p>
+                            <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">
+                              {notification.message}
+                            </p>
+                          </div>
+                          <X className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0" />
+                        </div>
+
+                        <div className="mb-3 bg-red-50 dark:bg-red-900/20 rounded-lg p-3">
+                          <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                            Reason:
+                          </p>
+                          <p className="text-sm text-gray-900 dark:text-gray-100">
+                            {notification.reason}
+                          </p>
+                        </div>
+
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                          {new Date(notification.createdAt).toLocaleString()}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )
+              }
+              
+              // Card Deleted Notification
+              if (notification.type === 'card_deleted') {
+                return (
+                  <div
+                    key={notification.id}
+                    className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border-l-4 border-red-500 relative group"
+                  >
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleDeleteNotification(notification.id)
+                      }}
+                      className="absolute top-4 right-4 p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <Trash2 className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                    </button>
+
+                    <div className="flex items-start gap-3">
+                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-red-500 to-orange-500 flex items-center justify-center text-white flex-shrink-0 text-xl">
+                        🛡️
+                      </div>
+
+                      <div className="flex-1 min-w-0 pr-8">
+                        <div className="flex items-start justify-between gap-2 mb-3">
+                          <div>
+                            <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                              Moderator Team
+                            </p>
+                            <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">
+                              {notification.message}
+                            </p>
+                          </div>
+                          <X className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0" />
+                        </div>
+
+                        <div className="mb-3 bg-red-50 dark:bg-red-900/20 rounded-lg p-3">
+                          <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                            Reason:
+                          </p>
+                          <p className="text-sm text-gray-900 dark:text-gray-100">
+                            {notification.reason}
+                          </p>
+                        </div>
+
+                        {notification.cardFront && (
+                          <div className="bg-gray-100 dark:bg-gray-700 rounded-lg p-3 mb-3">
+                            <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">
+                              Deleted card:
+                            </p>
+                            <p className="text-sm text-gray-700 dark:text-gray-300">
+                              {notification.cardFront}
+                            </p>
+                          </div>
+                        )}
+
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                          {new Date(notification.createdAt).toLocaleString()}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )
+              }
+              
+              // Comment Restored Notification
+              if (notification.type === 'comment_restored') {
+                return (
+                  <div
+                    key={notification.id}
+                    className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border-l-4 border-green-500 relative group"
+                  >
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleDeleteNotification(notification.id)
+                      }}
+                      className="absolute top-4 right-4 p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <Trash2 className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                    </button>
+
+                    <div className="flex items-start gap-3">
+                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center text-white flex-shrink-0 text-xl">
+                        ✅
+                      </div>
+
+                      <div className="flex-1 min-w-0 pr-8">
+                        <div className="flex items-start justify-between gap-2 mb-3">
+                          <div>
+                            <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                              {notification.restoredBy}
+                            </p>
+                            <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">
+                              {notification.message}
+                            </p>
+                          </div>
+                          <Check className="w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0" />
+                        </div>
+
+                        {notification.commentText && (
+                          <div className="bg-gray-100 dark:bg-gray-700 rounded-lg p-3 mb-3">
+                            <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">
+                              Your comment:
+                            </p>
+                            <p className="text-sm text-gray-700 dark:text-gray-300 italic line-clamp-2">
+                              "{notification.commentText}"
+                            </p>
+                          </div>
+                        )}
+
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                          {new Date(notification.createdAt).toLocaleString()}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )
+              }
+              
+              // Deck Restored Notification
+              if (notification.type === 'deck_restored') {
+                return (
+                  <div
+                    key={notification.id}
+                    className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border-l-4 border-green-500 relative group"
+                  >
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleDeleteNotification(notification.id)
+                      }}
+                      className="absolute top-4 right-4 p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <Trash2 className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                    </button>
+
+                    <div className="flex items-start gap-3">
+                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center text-white flex-shrink-0 text-xl">
+                        ✅
+                      </div>
+
+                      <div className="flex-1 min-w-0 pr-8">
+                        <div className="flex items-start justify-between gap-2 mb-3">
+                          <div>
+                            <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                              {notification.restoredBy}
+                            </p>
+                            <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">
+                              {notification.message}
+                            </p>
+                          </div>
+                          <Check className="w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0" />
+                        </div>
+
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                          {new Date(notification.createdAt).toLocaleString()}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )
+              }
+              
+              // Card Restored Notification
+              if (notification.type === 'card_restored') {
+                return (
+                  <div
+                    key={notification.id}
+                    className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border-l-4 border-green-500 relative group"
+                  >
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleDeleteNotification(notification.id)
+                      }}
+                      className="absolute top-4 right-4 p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <Trash2 className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                    </button>
+
+                    <div className="flex items-start gap-3">
+                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center text-white flex-shrink-0 text-xl">
+                        ✅
+                      </div>
+
+                      <div className="flex-1 min-w-0 pr-8">
+                        <div className="flex items-start justify-between gap-2 mb-3">
+                          <div>
+                            <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                              {notification.restoredBy}
+                            </p>
+                            <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">
+                              {notification.message}
+                            </p>
+                          </div>
+                          <Check className="w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0" />
+                        </div>
+
+                        {notification.cardFront && (
+                          <div className="bg-gray-100 dark:bg-gray-700 rounded-lg p-3 mb-3">
+                            <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">
+                              Restored card:
+                            </p>
+                            <p className="text-sm text-gray-700 dark:text-gray-300">
+                              {notification.cardFront}
+                            </p>
+                          </div>
+                        )}
+
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                          {new Date(notification.createdAt).toLocaleString()}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )
+              }
+              
+              // Deck Flagged Notification
+              if (notification.type === 'deck_flagged') {
+                return (
+                  <div
+                    key={notification.id}
+                    className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border-l-4 border-orange-500 relative group"
+                  >
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleDeleteNotification(notification.id)
+                      }}
+                      className="absolute top-4 right-4 p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <Trash2 className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                    </button>
+
+                    <div className="flex items-start gap-3">
+                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-orange-500 to-yellow-500 flex items-center justify-center text-white flex-shrink-0 text-xl">
+                        ⚠️
+                      </div>
+
+                      <div className="flex-1 min-w-0 pr-8">
+                        <div className="flex items-start justify-between gap-2 mb-3">
+                          <div>
+                            <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                              Content Flagged
+                            </p>
+                            <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">
+                              Your deck "{notification.deckName}" was reported
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="mb-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg p-3">
+                          <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                            Reason:
+                          </p>
+                          <p className="text-sm text-gray-900 dark:text-gray-100">
+                            {notification.reason}
+                            {notification.notes && ` - ${notification.notes}`}
+                          </p>
+                        </div>
+
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                          {new Date(notification.createdAt).toLocaleString()}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )
+              }
+              
+              // Card Flagged Notification
+              if (notification.type === 'card_flagged') {
+                return (
+                  <div
+                    key={notification.id}
+                    className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border-l-4 border-orange-500 relative group"
+                  >
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleDeleteNotification(notification.id)
+                      }}
+                      className="absolute top-4 right-4 p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <Trash2 className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                    </button>
+
+                    <div className="flex items-start gap-3">
+                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-orange-500 to-yellow-500 flex items-center justify-center text-white flex-shrink-0 text-xl">
+                        ⚠️
+                      </div>
+
+                      <div className="flex-1 min-w-0 pr-8">
+                        <div className="flex items-start justify-between gap-2 mb-3">
+                          <div>
+                            <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                              Content Flagged
+                            </p>
+                            <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">
+                              A card in "{notification.deckName}" was reported
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="mb-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg p-3">
+                          <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                            Reason:
+                          </p>
+                          <p className="text-sm text-gray-900 dark:text-gray-100">
+                            {notification.reason}
+                            {notification.notes && ` - ${notification.notes}`}
+                          </p>
+                        </div>
+
+                        {notification.cardFront && (
+                          <div className="bg-gray-100 dark:bg-gray-700 rounded-lg p-3 mb-3">
+                            <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">
+                              Flagged card:
+                            </p>
+                            <p className="text-sm text-gray-700 dark:text-gray-300">
+                              {notification.cardFront}
+                            </p>
+                          </div>
+                        )}
+
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                          {new Date(notification.createdAt).toLocaleString()}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )
+              }
+              
+              // Comment Flagged Notification
+              if (notification.type === 'comment_flagged') {
+                return (
+                  <div
+                    key={notification.id}
+                    className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border-l-4 border-orange-500 relative group"
+                  >
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleDeleteNotification(notification.id)
+                      }}
+                      className="absolute top-4 right-4 p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <Trash2 className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                    </button>
+
+                    <div className="flex items-start gap-3">
+                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-orange-500 to-yellow-500 flex items-center justify-center text-white flex-shrink-0 text-xl">
+                        ⚠️
+                      </div>
+
+                      <div className="flex-1 min-w-0 pr-8">
+                        <div className="flex items-start justify-between gap-2 mb-3">
+                          <div>
+                            <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                              Content Flagged
+                            </p>
+                            <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">
+                              Your comment was reported
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="mb-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg p-3">
+                          <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                            Reason:
+                          </p>
+                          <p className="text-sm text-gray-900 dark:text-gray-100">
+                            {notification.reason}
+                            {notification.notes && ` - ${notification.notes}`}
+                          </p>
+                        </div>
+
+                        <div className="bg-gray-100 dark:bg-gray-700 rounded-lg p-3 mb-3">
+                          <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">
+                            Your comment:
+                          </p>
+                          <p className="text-sm text-gray-700 dark:text-gray-300 italic line-clamp-2">
+                            "{notification.commentText}"
+                          </p>
+                        </div>
+
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                          {new Date(notification.createdAt).toLocaleString()}\n                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )
+              }
+              
+              // Warning Notification
+              if (notification.type === 'warning') {
+                console.log('Warning notification data:', notification)
+                
+                // Parse old notifications that have data in text field
+                let parsedReason = notification.reason
+                let parsedMessage = notification.message
+                let parsedTimeToResolve = notification.timeToResolve
+                
+                if (!parsedReason && notification.text) {
+                  const reasonMatch = notification.text.match(/Reason: ([^.]+)/)
+                  if (reasonMatch) parsedReason = reasonMatch[1]
+                }
+                
+                if (!parsedMessage && notification.text) {
+                  const messageMatch = notification.text.match(/Message: ([^.]+)/)
+                  if (messageMatch) parsedMessage = messageMatch[1]
+                }
+                
+                if (!parsedTimeToResolve && notification.text) {
+                  const timeMatch = notification.text.match(/within (\d+) hours/)
+                  if (timeMatch) parsedTimeToResolve = parseInt(timeMatch[1])
+                }
+                
+                return (
+                  <div
+                    key={notification.id}
+                    className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border-l-4 border-orange-600 relative group"
+                  >
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleDeleteNotification(notification.id)
+                      }}
+                      className="absolute top-4 right-4 p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <Trash2 className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                    </button>
+
+                    <div className="flex items-start gap-3">
+                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-orange-600 to-red-600 flex items-center justify-center flex-shrink-0">
+                        <AlertTriangle className="w-6 h-6 text-white" />
+                      </div>
+
+                      <div className="flex-1 min-w-0 pr-8">
+                        <div className="flex items-start justify-between gap-2 mb-3">
+                          <div>
+                            <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                              ⚠️ Moderator Warning
+                            </p>
+                            <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">
+                              You have received an official warning
+                            </p>
+                          </div>
+                          <AlertTriangle className="w-5 h-5 text-orange-600 dark:text-orange-400 flex-shrink-0" />
+                        </div>
+
+                        {/* Warning regarding */}
+                        {notification.targetType && notification.targetName ? (
+                          <div className="mb-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg p-3">
+                            <p className="text-sm text-gray-900 dark:text-gray-100">
+                              You have received a warning from a moderator regarding your <span className="font-semibold">{notification.targetType}</span>: "{notification.targetName}"
+                            </p>
+                          </div>
+                        ) : (
+                          <div className="mb-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg p-3">
+                            <p className="text-sm text-gray-900 dark:text-gray-100">
+                              {notification.text}
+                            </p>
+                          </div>
+                        )}
+
+                        {/* Reason */}
+                        {parsedReason && (
+                          <div className="mb-3">
+                            <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                              Reason:
+                            </p>
+                            <p className="text-sm text-gray-900 dark:text-gray-100">
+                              {parsedReason}
+                            </p>
+                          </div>
+                        )}
+
+                        {/* Message (if provided) */}
+                        {parsedMessage && (
+                          <div className="mb-3">
+                            <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                              Message:
+                            </p>
+                            <p className="text-sm text-gray-900 dark:text-gray-100">
+                              {parsedMessage}
+                            </p>
+                          </div>
+                        )}
+
+                        {/* Time to resolve */}
+                        {(notification.timeToResolve || parsedTimeToResolve) && notification.deadline ? (
+                          <div className="mb-3 bg-red-50 dark:bg-red-900/20 rounded-lg p-3">
+                            <p className="text-sm font-semibold text-red-700 dark:text-red-300">
+                              Please address this within {notification.timeToResolve || parsedTimeToResolve} hours
+                            </p>
+                            <p className="text-xs text-red-600 dark:text-red-400 mt-1">
+                              Deadline: {new Date(notification.deadline).toLocaleString()}
+                            </p>
+                          </div>
+                        ) : parsedTimeToResolve ? (
+                          <div className="mb-3 bg-red-50 dark:bg-red-900/20 rounded-lg p-3">
+                            <p className="text-sm font-semibold text-red-700 dark:text-red-300">
+                              Please address this within {parsedTimeToResolve} hours
+                            </p>
+                          </div>
+                        ) : null}
+
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          {new Date(notification.createdAt).toLocaleString()}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )
+              }
+              
+              // Ticket Mention Notification
+              if (notification.type === 'ticket_mention') {
+                return (
+                  <div
+                    key={notification.id}
+                    className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow cursor-pointer relative group"
+                    onClick={async () => {
+                      console.log('🎯 Ticket mention notification clicked:', notification)
+                      console.log('🎯 Ticket ID:', notification.ticketId)
+                      setViewingTicketId(notification.ticketId)
+                      navigateTo('moderator')
+                      
+                      try {
+                        await api.markNotificationRead(accessToken!, notification.id)
+                        removeMentionNotification(notification.id)
+                      } catch (error) {
+                        console.error('Failed to mark notification as read:', error)
+                      }
+                    }}
+                  >
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleDeleteNotification(notification.id)
+                      }}
+                      className="absolute top-4 right-4 p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <Trash2 className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                    </button>
+
+                    <div className="flex items-start gap-3">
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white flex-shrink-0">
+                        <Ticket className="w-5 h-5" />
+                      </div>
+
+                      <div className="flex-1 min-w-0 pr-8">
+                        <div className="flex items-start justify-between gap-2 mb-2">
+                          <div>
+                            <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                              {notification.fromUserName} mentioned you in a ticket
+                            </p>
+                            <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">
+                              Click to view ticket
+                            </p>
+                          </div>
+                          <FileText className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0" />
+                        </div>
+
+                        {/* Comment preview */}
+                        <p className="text-sm text-gray-700 dark:text-gray-300 line-clamp-2">
+                          {notification.commentText}
+                        </p>
+                        
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                          {new Date(notification.createdAt).toLocaleString()}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )
+              }
+              
+              // Ticket Comment Notification (for assigned moderators)
+              if (notification.type === 'ticket_comment') {
+                return (
+                  <div
+                    key={notification.id}
+                    className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow cursor-pointer relative group"
+                    onClick={async () => {
+                      console.log('🎯 Ticket comment notification clicked:', notification)
+                      console.log('🎯 Ticket ID:', notification.ticketId)
+                      setViewingTicketId(notification.ticketId)
+                      navigateTo('moderator')
+                      
+                      try {
+                        await api.markNotificationRead(accessToken!, notification.id)
+                        removeMentionNotification(notification.id)
+                      } catch (error) {
+                        console.error('Failed to mark notification as read:', error)
+                      }
+                    }}
+                  >
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleDeleteNotification(notification.id)
+                      }}
+                      className="absolute top-4 right-4 p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <Trash2 className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                    </button>
+
+                    <div className="flex items-start gap-3">
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-blue-500 flex items-center justify-center text-white flex-shrink-0">
+                        <MessageCircle className="w-5 h-5" />
+                      </div>
+
+                      <div className="flex-1 min-w-0 pr-8">
+                        <div className="flex items-start justify-between gap-2 mb-2">
+                          <div>
+                            <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                              {notification.fromUserName} commented on your assigned ticket
+                            </p>
+                            <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">
+                              Click to view ticket
+                            </p>
+                          </div>
+                          <Ticket className="w-5 h-5 text-indigo-600 dark:text-indigo-400 flex-shrink-0" />
+                        </div>
+
+                        {/* Comment preview */}
+                        <p className="text-sm text-gray-700 dark:text-gray-300 line-clamp-2">
+                          {notification.commentText}
+                        </p>
+                        
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                          {new Date(notification.createdAt).toLocaleString()}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )
+              }
+              
+              // Ticket Assigned Notification
+              if (notification.type === 'ticket_assigned') {
+                return (
+                  <div
+                    key={notification.id}
+                    className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow cursor-pointer relative group"
+                    onClick={async () => {
+                      console.log('🎯 Ticket assigned notification clicked:', notification)
+                      console.log('🎯 Ticket ID:', notification.ticketId)
+                      setViewingTicketId(notification.ticketId)
+                      navigateTo('moderator')
+                      
+                      try {
+                        await api.markNotificationRead(accessToken!, notification.id)
+                        removeMentionNotification(notification.id)
+                      } catch (error) {
+                        console.error('Failed to mark notification as read:', error)
+                      }
+                    }}
+                  >
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleDeleteNotification(notification.id)
+                      }}
+                      className="absolute top-4 right-4 p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <Trash2 className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                    </button>
+
+                    <div className="flex items-start gap-3">
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center text-white flex-shrink-0">
+                        <Ticket className="w-5 h-5" />
+                      </div>
+
+                      <div className="flex-1 min-w-0 pr-8">
+                        <div className="flex items-start justify-between gap-2 mb-2">
+                          <div>
+                            <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                              {notification.isReassignment 
+                                ? `${notification.fromUserName} reassigned a ticket to you`
+                                : `${notification.fromUserName} assigned a ticket to you`
+                              }
+                            </p>
+                            <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">
+                              Click to view and handle ticket
+                            </p>
+                          </div>
+                          <AlertCircle className="w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0" />
+                        </div>
+
+                        {/* Ticket info */}
+                        <div className="text-sm text-gray-700 dark:text-gray-300">
+                          <p className="font-medium">{notification.ticketItemType}: {notification.ticketItemName}</p>
+                          <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">Reason: {notification.ticketReason}</p>
+                        </div>
+                        
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                          {new Date(notification.createdAt).toLocaleString()}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )
+              }
+              
+              // Default fallback for other notification types (premium_granted, premium_revoked, etc.)
+              return (
+                <div
+                  key={notification.id}
+                  className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow relative group"
+                >
+                  <div className="flex items-start gap-3">
+                    {/* Icon based on notification type */}
+                    <div className="flex-shrink-0">
+                      {notification.type === 'premium_granted' && (
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white">
+                          <Bell className="w-5 h-5" />
+                        </div>
+                      )}
+                      {notification.type === 'premium_revoked' && (
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-gray-500 to-gray-600 flex items-center justify-center text-white">
+                          <Bell className="w-5 h-5" />
+                        </div>
+                      )}
+                      {notification.type === 'moderator_promoted' && (
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white">
+                          <ShieldCheck className="w-5 h-5" />
+                        </div>
+                      )}
+                      {notification.type === 'moderator_removed' && (
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-gray-500 to-gray-600 flex items-center justify-center text-white">
+                          <ShieldOff className="w-5 h-5" />
+                        </div>
+                      )}
+                      {!['premium_granted', 'premium_revoked', 'moderator_promoted', 'moderator_removed'].includes(notification.type) && (
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-400 to-blue-500 flex items-center justify-center text-white">
+                          <Bell className="w-5 h-5" />
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Content */}
+                    <div className="flex-1 min-w-0">
+                      {/* Main message */}
+                      <p className="text-sm text-gray-900 dark:text-gray-100 font-medium mb-2">
+                        {notification.message || notification.text || `New ${notification.type.replace(/_/g, ' ')}`}
+                      </p>
+                      
+                      {/* Additional info for premium_granted */}
+                      {notification.type === 'premium_granted' && (
+                        <div className="space-y-2 mb-3">
+                          {notification.tier && (
+                            <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-3">
+                              <p className="text-sm text-gray-900 dark:text-gray-100">
+                                <span className="font-semibold">Tier:</span> {notification.tier.charAt(0).toUpperCase() + notification.tier.slice(1)}
+                              </p>
+                              {notification.expiryDate && (
+                                <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                                  Expires: {new Date(notification.expiryDate).toLocaleDateString()}
+                                </p>
+                              )}
+                              {!notification.expiryDate && notification.tier === 'lifetime' && (
+                                <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                                  No expiration
+                                </p>
+                              )}
+                            </div>
+                          )}
+                          
+                          {notification.reason && (
+                            <div>
+                              <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                                Reason:
+                              </p>
+                              <p className="text-sm text-gray-900 dark:text-gray-100">
+                                {notification.reason}
+                              </p>
+                            </div>
+                          )}
+                          
+                          {notification.grantedBy && (
+                            <p className="text-xs text-gray-600 dark:text-gray-400">
+                              Granted by: {notification.grantedBy}
+                            </p>
+                          )}
+                        </div>
+                      )}
+                      
+                      {/* Additional info for premium_revoked */}
+                      {notification.type === 'premium_revoked' && notification.revokedBy && (
+                        <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">
+                          Revoked by: {notification.revokedBy}
+                        </p>
+                      )}
+                      
+                      {/* Show fromUserName if available and not already shown */}
+                      {notification.fromUserName && !['premium_granted', 'premium_revoked'].includes(notification.type) && (
+                        <p className="text-xs text-gray-600 dark:text-gray-400 mb-2">
+                          From: {notification.fromUserName}
+                        </p>
+                      )}
+                      
+                      {/* Timestamp */}
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        {new Date(notification.createdAt).toLocaleString()}
+                      </p>
+                    </div>
+
+                    {/* Mark as read/unread button */}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleMarkAsRead(notification.id)
+                      }}
+                      className="opacity-0 group-hover:opacity-100 transition-opacity p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
+                      title={notification.read ? 'Mark as unread' : 'Mark as read'}
+                    >
+                      {notification.read ? (
+                        <X className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                      ) : (
+                        <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                      )}
+                    </button>
+                  </div>
+                </div>
+              )
             })}
           </div>
         )}

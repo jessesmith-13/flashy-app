@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { AppLayout } from '../Layout/AppLayout'
-import { Flame, Trophy, Target, ArrowLeft, UserPlus, UserMinus, Lock, CheckCircle2, ShieldOff, Shield, Users } from 'lucide-react'
+import { Flame, Trophy, Target, ArrowLeft, UserPlus, UserMinus, Lock, CheckCircle2, ShieldOff, Shield, Users, Flag } from 'lucide-react'
 import { Button } from '../../ui/button'
 import * as api from '../../../utils/api'
 import { toast } from 'sonner'
@@ -23,15 +23,18 @@ interface UserProfileViewProps {
   onBack: () => void
   onViewDeck?: (deckId: string, userId: string) => void
   onViewUser?: (userId: string) => void
+  onFlagUser?: (userId: string, userName: string) => void
 }
 
-export function UserProfileView({ userId, onBack, onViewDeck, onViewUser }: UserProfileViewProps) {
+export function UserProfileView({ userId, onBack, onViewDeck, onViewUser, onFlagUser }: UserProfileViewProps) {
   const { accessToken, friends, pendingFriendRequests, addFriend: addFriendToStore, removeFriend: removeFriendFromStore, addPendingFriendRequest, user } = useStore()
   const [profileUser, setProfileUser] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [actionLoading, setActionLoading] = useState(false)
   const [showBanDialog, setShowBanDialog] = useState(false)
   const [banLoading, setBanLoading] = useState(false)
+  const [showModeratorDialog, setShowModeratorDialog] = useState(false)
+  const [moderatorLoading, setModeratorLoading] = useState(false)
   const [userFriends, setUserFriends] = useState<any[]>([])
   const [friendsLoading, setFriendsLoading] = useState(false)
 
@@ -142,6 +145,30 @@ export function UserProfileView({ userId, onBack, onViewDeck, onViewUser }: User
     }
   }
 
+  const handleToggleModerator = async () => {
+    if (!accessToken || !isSuperuser) return
+    
+    setModeratorLoading(true)
+    try {
+      const newModeratorStatus = !profileUser.isModerator
+      await api.toggleModeratorStatus(accessToken, userId, newModeratorStatus)
+      
+      // Update local state
+      setProfileUser((prev: any) => ({
+        ...prev,
+        isModerator: newModeratorStatus
+      }))
+      
+      toast.success(newModeratorStatus ? 'User promoted to moderator' : 'User removed from moderator role')
+      setShowModeratorDialog(false)
+    } catch (error) {
+      console.error('Failed to toggle moderator status:', error)
+      toast.error('Failed to toggle moderator status')
+    } finally {
+      setModeratorLoading(false)
+    }
+  }
+
   const loadUserFriends = async () => {
     if (!accessToken) return
     
@@ -236,6 +263,11 @@ export function UserProfileView({ userId, onBack, onViewDeck, onViewUser }: User
                       Banned
                     </span>
                   )}
+                  {profileUser.isModerator && (
+                    <span className="px-3 py-1 bg-gradient-to-r from-blue-600 to-cyan-600 text-white text-sm rounded-full shadow-sm">
+                      🛡️ Moderator
+                    </span>
+                  )}
                 </div>
                 
                 <div className="flex flex-wrap gap-4 justify-center md:justify-start mb-4">
@@ -289,25 +321,60 @@ export function UserProfileView({ userId, onBack, onViewDeck, onViewUser }: User
                     
                     {/* Superuser Ban/Unban Button */}
                     {isSuperuser && (
+                      <>
+                        <Button
+                          onClick={() => setShowBanDialog(true)}
+                          variant="outline"
+                          className={isUserBanned 
+                            ? "border-emerald-300 dark:border-emerald-700 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
+                            : "border-red-300 dark:border-red-700 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
+                          }
+                        >
+                          {isUserBanned ? (
+                            <>
+                              <Shield className="w-4 h-4 mr-2" />
+                              Unban User
+                            </>
+                          ) : (
+                            <>
+                              <ShieldOff className="w-4 h-4 mr-2" />
+                              Ban User
+                            </>
+                          )}
+                        </Button>
+                        
+                        <Button
+                          onClick={() => setShowModeratorDialog(true)}
+                          variant="outline"
+                          className={profileUser.isModerator 
+                            ? "border-orange-300 dark:border-orange-700 text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20"
+                            : "border-blue-300 dark:border-blue-700 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                          }
+                        >
+                          {profileUser.isModerator ? (
+                            <>
+                              <ShieldOff className="w-4 h-4 mr-2" />
+                              Remove Moderator
+                            </>
+                          ) : (
+                            <>
+                              <Shield className="w-4 h-4 mr-2" />
+                              Make Moderator
+                            </>
+                          )}
+                        </Button>
+                      </>
+                    )}
+                    
+                    {/* Flag User Button */}
+                    {onFlagUser && (
                       <Button
-                        onClick={() => setShowBanDialog(true)}
+                        onClick={() => onFlagUser(userId, profileUser.displayName || profileUser.name)}
                         variant="outline"
-                        className={isUserBanned 
-                          ? "border-emerald-300 dark:border-emerald-700 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
-                          : "border-red-300 dark:border-red-700 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
-                        }
+                        className="border-red-300 dark:border-red-600 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
                       >
-                        {isUserBanned ? (
-                          <>
-                            <Shield className="w-4 h-4 mr-2" />
-                            Unban User
-                          </>
-                        ) : (
-                          <>
-                            <ShieldOff className="w-4 h-4 mr-2" />
-                            Ban User
-                          </>
-                        )}
+                        <Flag className="w-4 h-4 mr-2" />
+                        Flag User
                       </Button>
                     )}
                   </div>
@@ -512,6 +579,43 @@ export function UserProfileView({ userId, onBack, onViewDeck, onViewUser }: User
               disabled={banLoading}
             >
               {banLoading ? 'Processing...' : (isUserBanned ? 'Unban User' : 'Ban User')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Moderator Toggle Confirmation Dialog */}
+      <AlertDialog open={showModeratorDialog} onOpenChange={setShowModeratorDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {profileUser.isModerator ? 'Remove Moderator Role?' : 'Make Moderator?'}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {profileUser.isModerator ? (
+                <>
+                  Are you sure you want to remove <strong>{profileUser.displayName || profileUser.name}</strong> from the moderator role? 
+                  They will lose access to all moderator tools and privileges.
+                </>
+              ) : (
+                <>
+                  Are you sure you want to promote <strong>{profileUser.displayName || profileUser.name}</strong> to moderator? 
+                  They will gain access to flag management, content moderation, and all premium features.
+                </>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={moderatorLoading}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleToggleModerator}
+              className={profileUser.isModerator 
+                ? "bg-orange-600 hover:bg-orange-700" 
+                : "bg-blue-600 hover:bg-blue-700"
+              }
+              disabled={moderatorLoading}
+            >
+              {moderatorLoading ? 'Processing...' : (profileUser.isModerator ? 'Remove Moderator' : 'Make Moderator')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

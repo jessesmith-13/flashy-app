@@ -51,6 +51,9 @@ const EMOJI_CATEGORIES = {
 export function EmojiPicker({ emoji, onChange, label = 'Choose an Emoji' }: EmojiPickerProps) {
   const [open, setOpen] = useState(false)
   const [activeTab, setActiveTab] = useState('education')
+  
+  // Check if the selected emoji is in the preset list
+  const isPresetEmoji = PRESET_EMOJIS.includes(emoji)
 
   return (
     <div className="space-y-2">
@@ -79,10 +82,23 @@ export function EmojiPicker({ emoji, onChange, label = 'Choose an Emoji' }: Emoj
         <PopoverTrigger asChild>
           <button
             type="button"
-            className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg border-2 border-gray-200 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-400 transition-all text-sm text-gray-700 dark:text-gray-300"
+            className={`w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg border-2 transition-all ${
+              !isPresetEmoji && emoji
+                ? 'border-emerald-600 bg-emerald-50 dark:bg-emerald-900/30'
+                : 'border-gray-200 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-400'
+            }`}
           >
-            <Smile className="w-4 h-4" />
-            <span>More Emojis</span>
+            {!isPresetEmoji && emoji ? (
+              <>
+                <span className="text-2xl">{emoji}</span>
+                <span className="text-sm text-gray-700 dark:text-gray-300">Change Emoji</span>
+              </>
+            ) : (
+              <>
+                <Smile className="w-4 h-4" />
+                <span className="text-sm text-gray-700 dark:text-gray-300">More Emojis</span>
+              </>
+            )}
           </button>
         </PopoverTrigger>
         <PopoverContent className="w-80 p-0" align="start">

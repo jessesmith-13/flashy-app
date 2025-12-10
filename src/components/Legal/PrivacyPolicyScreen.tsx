@@ -2,9 +2,27 @@ import { useNavigation } from '../../../hooks/useNavigation'
 import { AppLayout } from '../Layout/AppLayout'
 import { Button } from '../../ui/button'
 import { ArrowLeft } from 'lucide-react'
+import { useStore } from '../../../store/useStore'
 
 export function PrivacyPolicyScreen() {
   const { navigateTo } = useNavigation()
+  const { user } = useStore()
+
+  const handleBack = () => {
+    // Check if user came from signup (stored in sessionStorage)
+    const fromSignup = sessionStorage.getItem('viewingPolicyFromSignup')
+    
+    if (fromSignup === 'true') {
+      sessionStorage.removeItem('viewingPolicyFromSignup')
+      navigateTo('signup')
+    } else if (user) {
+      // User is logged in, go back to decks
+      navigateTo('decks')
+    } else {
+      // Not logged in and didn't come from signup, go to landing
+      navigateTo('landing')
+    }
+  }
 
   return (
     <AppLayout>
@@ -14,7 +32,7 @@ export function PrivacyPolicyScreen() {
           <div className="mb-6">
             <Button
               variant="ghost"
-              onClick={() => navigateTo('decks')}
+              onClick={handleBack}
               className="mb-4 -ml-2"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />

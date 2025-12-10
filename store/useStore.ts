@@ -17,6 +17,8 @@ export interface Card {
   ignored?: boolean   // Mark card as ignored
   frontImageUrl?: string  // Optional image for the question (premium feature)
   backImageUrl?: string  // Optional image for the answer (premium feature, classic-flip only)
+  frontAudioUrl?: string  // Optional audio for the question (premium feature)
+  backAudioUrl?: string  // Optional audio for the answer (premium feature)
   // For multiple-choice card type
   options?: string[]  // Array of incorrect options
   correctAnswers?: string[]  // Array of correct answers for multiple choice (if undefined, 'back' is the single correct answer)
@@ -42,9 +44,13 @@ export interface Deck {
   category?: string   // Deck category
   subtopic?: string   // Deck subtopic
   difficulty?: DifficultyLevel  // Deck difficulty level
+  frontLanguage?: string   // Language of the question/front (e.g., "English")
+  backLanguage?: string    // Language of the answer/back (e.g., "Spanish")
   sourceCommunityDeckId?: string  // Track which community deck this was imported from
   communityPublishedId?: string   // Track which community deck ID this deck was published as
   communityDeckVersion?: number   // Track version of imported community deck
+  cannotRepublish?: boolean  // Flag if deck cannot be republished (set by superuser)
+  cannotRepublishReason?: string  // Reason why deck cannot be republished
 }
 
 // CommunityDeck extends Deck and adds community-specific fields
@@ -176,7 +182,8 @@ interface User {
   subscriptionTier?: SubscriptionTier
   subscriptionExpiry?: string // For monthly/annual subscriptions
   subscriptionCancelledAtPeriodEnd?: boolean // If subscription is set to cancel at period end
-  isSuperuser?: boolean // Superuser role for "Flashy" admin account
+  isSuperuser?: boolean // Superuser role for "Flashy" admin account (full admin privileges)
+  isModerator?: boolean // Moderator role (can manage flags, has premium features)
   isBanned?: boolean // User ban status (managed by superuser)
 }
 
@@ -214,6 +221,10 @@ interface AppState {
   addDeck: (deck: Deck) => void
   updateDeck: (deckId: string, updates: Partial<Deck>) => void
   removeDeck: (deckId: string) => void
+  decksLastLoaded: number | null // Timestamp when decks were last loaded
+  decksCacheInvalidated: boolean // Flag to force reload
+  invalidateDecksCache: () => void // Manually invalidate cache
+  shouldReloadDecks: () => boolean // Check if decks need reloading
 
   // Card state
   cards: Card[]
@@ -243,14 +254,17 @@ interface AppState {
   studyOptions: StudyOptions
   studyAllCards: boolean
   darkMode: boolean
+  ttsProvider: 'browser' | 'openai'
   temporaryStudyDeck: TemporaryStudyDeck | null // For studying community decks without adding them
   returnToCommunityDeck: CommunityDeck | null // Track which community deck to return to after studying
   returnToUserDeck: { deck: any; cards: any[]; ownerId: string } | null // Track which user deck to return to after studying
   returnToSharedDeckId: string | null // Track which shared deck to return to after studying
   viewingCommunityDeckId: string | null // Track which community deck to view (for notifications)
   targetCommentId: string | null // Track which comment to scroll to (for notifications)
+  targetCardIndex: number | null // Track which card to scroll to (for flags)
   viewingUserId: string | null // Track which user profile to view
-  userProfileReturnView: 'community' | 'profile' | null // Track where to return after viewing a user profile
+  viewingTicketId: string | null // Track which ticket to view (for notifications)
+  userProfileReturnView: 'community' | 'profile' | 'superuser' | null // Track where to return after viewing a user profile
   setCurrentView: (view: 'landing' | 'login' | 'signup' | 'decks' | 'deck-detail' | 'study' | 'study-options' | 'community' | 'profile' | 'ai-generate' | 'upgrade' | 'all-cards' | 'settings' | 'privacy' | 'terms' | 'contact' | 'notifications') => void
   setCurrentSection: (section: 'flashcards' | 'community' | 'profile') => void
   setSelectedDeckId: (deckId: string | null) => void
@@ -258,25 +272,47 @@ interface AppState {
   setStudyAllCards: (studyAll: boolean) => void
   setDarkMode: (darkMode: boolean) => void
   toggleDarkMode: () => void
+  setTTSProvider: (provider: 'browser' | 'openai') => void
   setTemporaryStudyDeck: (deck: TemporaryStudyDeck | null) => void
   setReturnToCommunityDeck: (deck: CommunityDeck | null) => void
   setReturnToUserDeck: (userDeck: { deck: any; cards: any[]; ownerId: string } | null) => void
   setReturnToSharedDeckId: (deckId: string | null) => void
   setViewingCommunityDeckId: (deckId: string | null) => void
   setTargetCommentId: (commentId: string | null) => void
+  setTargetCardIndex: (cardIndex: number | null) => void
   setViewingUserId: (userId: string | null) => void
-  setUserProfileReturnView: (view: 'community' | 'profile' | null) => void
+  setViewingTicketId: (ticketId: string | null) => void
+  setUserProfileReturnView: (view: 'community' | 'profile' | 'superuser' | null) => void
 }
 
 export const useStore = create<AppState>((set, get) => ({
   // Auth state
   user: null,
   accessToken: null,
-  setAuth: (user, accessToken) => set({ user, accessToken }),
+  setAuth: (user, accessToken) => {
+    // Invalidate decks cache when setting auth (login)
+    // This ensures decks reload when switching users
+    set({ 
+      user, 
+      accessToken, 
+      decksCacheInvalidated: true,
+      decksLastLoaded: null 
+    })
+  },
   updateUser: (updates) => set((state) => ({
     user: state.user ? { ...state.user, ...updates } : null
   })),
-  logout: () => set({ user: null, accessToken: null, decks: [], cards: [], currentView: 'landing', currentSection: 'flashcards', friends: [] }),
+  logout: () => set({ 
+    user: null, 
+    accessToken: null, 
+    decks: [], 
+    cards: [], 
+    currentView: 'landing', 
+    currentSection: 'flashcards', 
+    friends: [],
+    decksCacheInvalidated: false,
+    decksLastLoaded: null  // Reset cache timestamp on logout
+  }),
   
   // Friends state
   friends: [],
@@ -310,18 +346,37 @@ export const useStore = create<AppState>((set, get) => ({
 
   // Deck state
   decks: [],
-  setDecks: (decks) => set({ decks }),
-  addDeck: (deck) => set((state) => ({ decks: [...state.decks, deck] })),
+  setDecks: (decks) => set({ decks, decksLastLoaded: Date.now(), decksCacheInvalidated: false }),
+  addDeck: (deck) => set((state) => ({ decks: [...state.decks, deck], decksCacheInvalidated: true })),
   updateDeck: (deckId, updates) =>
     set((state) => ({
       decks: state.decks.map((deck) =>
         deck.id === deckId ? { ...deck, ...updates } : deck
       ),
+      decksCacheInvalidated: true
     })),
   removeDeck: (deckId) =>
     set((state) => ({
       decks: state.decks.filter((deck) => deck.id !== deckId),
+      decksCacheInvalidated: true
     })),
+  decksLastLoaded: null,
+  decksCacheInvalidated: false,
+  invalidateDecksCache: () => set({ decksCacheInvalidated: true }),
+  shouldReloadDecks: () => {
+    const state = get()
+    // Force reload if cache was invalidated
+    if (state.decksCacheInvalidated) {
+      return true
+    }
+    // Reload if never loaded
+    if (!state.decksLastLoaded) {
+      return true
+    }
+    // Reload if cache is older than 5 minutes (300000ms)
+    const cacheAge = Date.now() - state.decksLastLoaded
+    return cacheAge > 300000
+  },
 
   // Card state
   cards: [],
@@ -341,7 +396,30 @@ export const useStore = create<AppState>((set, get) => ({
   // Study sessions
   studySessions: [],
   setStudySessions: (sessions) => set({ studySessions: sessions }),
-  addStudySession: (session) => set((state) => ({ studySessions: [...state.studySessions, session] })),
+  addStudySession: (session) => {
+    set((state) => ({ studySessions: [...state.studySessions, session] }))
+    
+    // Persist to backend
+    const state = get()
+    if (state.accessToken) {
+      fetch(`https://${projectId}.supabase.co/functions/v1/make-server-8a1502a9/study-sessions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${state.accessToken}`,
+        },
+        body: JSON.stringify({ session }),
+      })
+        .then(response => {
+          if (!response.ok) {
+            console.error('Failed to save study session to backend')
+          }
+        })
+        .catch(error => {
+          console.error('Error saving study session:', error)
+        })
+    }
+  },
 
   // User stats
   userStats: null,
@@ -394,28 +472,41 @@ export const useStore = create<AppState>((set, get) => ({
     favoritesOnly: false,
   },
   studyAllCards: false,
-  darkMode: false,
+  darkMode: typeof window !== 'undefined' && localStorage.getItem('flashy-darkMode') === 'true',
+  ttsProvider: 'browser', // Default to browser TTS
   temporaryStudyDeck: null,
   returnToCommunityDeck: null,
   returnToUserDeck: null,
   returnToSharedDeckId: null,
   viewingCommunityDeckId: null,
   targetCommentId: null,
+  targetCardIndex: null,
   viewingUserId: null,
+  viewingTicketId: null,
   userProfileReturnView: null,
   setCurrentView: (view) => set({ currentView: view }),
   setCurrentSection: (section) => set({ currentSection: section }),
   setSelectedDeckId: (deckId) => set({ selectedDeckId: deckId }),
   setStudyOptions: (options) => set({ studyOptions: options }),
   setStudyAllCards: (studyAll) => set({ studyAllCards: studyAll }),
-  setDarkMode: (darkMode) => set({ darkMode }),
-  toggleDarkMode: () => set((state) => ({ darkMode: !state.darkMode })),
+  setDarkMode: (darkMode) => {
+    localStorage.setItem('flashy-darkMode', String(darkMode))
+    set({ darkMode })
+  },
+  toggleDarkMode: () => set((state) => {
+    const newDarkMode = !state.darkMode
+    localStorage.setItem('flashy-darkMode', String(newDarkMode))
+    return { darkMode: newDarkMode }
+  }),
+  setTTSProvider: (provider) => set({ ttsProvider: provider }),
   setTemporaryStudyDeck: (deck) => set({ temporaryStudyDeck: deck }),
   setReturnToCommunityDeck: (deck) => set({ returnToCommunityDeck: deck }),
   setReturnToUserDeck: (userDeck) => set({ returnToUserDeck: userDeck }),
   setReturnToSharedDeckId: (deckId) => set({ returnToSharedDeckId: deckId }),
   setViewingCommunityDeckId: (deckId) => set({ viewingCommunityDeckId: deckId }),
   setTargetCommentId: (commentId) => set({ targetCommentId: commentId }),
+  setTargetCardIndex: (cardIndex) => set({ targetCardIndex: cardIndex }),
   setViewingUserId: (userId) => set({ viewingUserId: userId }),
+  setViewingTicketId: (ticketId) => set({ viewingTicketId: ticketId }),
   setUserProfileReturnView: (view) => set({ userProfileReturnView: view }),
 }))

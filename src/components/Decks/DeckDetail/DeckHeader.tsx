@@ -1,5 +1,5 @@
 import { Button } from '../../../ui/button'
-import { ArrowLeft, FileEdit, Upload, Trash2, Play, Plus, Crown, Users, Sparkles } from 'lucide-react'
+import { ArrowLeft, FileEdit, Upload, Trash2, Play, Plus, Crown, Users, Sparkles, BarChart3, Target, LayoutGrid, UploadCloud } from 'lucide-react'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../../../ui/alert-dialog'
 import type { Deck } from '../../../../store/useStore'
 
@@ -9,13 +9,18 @@ interface DeckHeaderProps {
   onBack: () => void
   onOpenSettings: () => void
   onOpenPublish: () => void
+  onUnpublish?: () => void
   onDelete: () => void
   onStartStudy: () => void
   onAddCard: () => void
+  onBulkAddCards: () => void
   onAIGenerate: () => void
   deleting: boolean
+  unpublishing?: boolean
   canPublish: boolean
   communityDeckAuthor?: { id: string; name: string } | null
+  studyCount?: number
+  averageScore?: number
 }
 
 export function DeckHeader({
@@ -24,13 +29,18 @@ export function DeckHeader({
   onBack,
   onOpenSettings,
   onOpenPublish,
+  onUnpublish,
   onDelete,
   onStartStudy,
   onAddCard,
+  onBulkAddCards,
   onAIGenerate,
   deleting,
+  unpublishing,
   canPublish,
-  communityDeckAuthor
+  communityDeckAuthor,
+  studyCount,
+  averageScore
 }: DeckHeaderProps) {
   return (
     <>
@@ -55,6 +65,40 @@ export function DeckHeader({
             >
               <Upload className="w-5 h-5" />
             </Button>
+          )}
+
+          {/* Show unpublish button for published decks created by the user */}
+          {!deck.sourceCommunityDeckId && deck.communityPublishedId && onUnpublish && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="text-red-600 hover:text-red-700"
+                  disabled={unpublishing}
+                >
+                  <UploadCloud className="w-5 h-5 rotate-180" />
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Unpublish Deck?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This will remove your deck from the community. Users who have added it to their collection will keep their copies, but new users won&apos;t be able to discover it.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={onUnpublish}
+                    disabled={unpublishing}
+                    className="bg-red-600 hover:bg-red-700"
+                  >
+                    {unpublishing ? 'Unpublishing...' : 'Unpublish'}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           )}
 
           <AlertDialog>
@@ -150,6 +194,20 @@ export function DeckHeader({
                   Originally created by {communityDeckAuthor.name}
                 </p>
               )}
+              {studyCount !== undefined && studyCount > 0 && (
+                <div className="flex items-center gap-4 mt-3">
+                  <div className="flex items-center gap-1.5 text-sm text-gray-600 dark:text-gray-400">
+                    <BarChart3 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                    <span className="font-medium">{studyCount}</span> {studyCount === 1 ? 'study session' : 'study sessions'}
+                  </div>
+                  {averageScore !== undefined && (
+                    <div className="flex items-center gap-1.5 text-sm text-gray-600 dark:text-gray-400">
+                      <Target className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                      <span className="font-medium">{averageScore.toFixed(1)}%</span> avg score
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
           <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
@@ -159,6 +217,13 @@ export function DeckHeader({
             >
               <Plus className="w-4 h-4 mr-2" />
               Add Card
+            </Button>
+            <Button
+              onClick={onBulkAddCards}
+              className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white"
+            >
+              <LayoutGrid className="w-4 h-4 mr-2" />
+              Bulk Add
             </Button>
             <div className="flex gap-2">
               <Button

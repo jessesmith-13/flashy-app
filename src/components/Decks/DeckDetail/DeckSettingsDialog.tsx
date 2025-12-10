@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { ColorPicker } from '../../ColorPicker'
 import { EmojiPicker } from '../../EmojiPicker'
 import { DECK_CATEGORIES } from '../../../../utils/categories'
+import { DECK_LANGUAGES } from '../../../../utils/languages'
 
 interface DeckSettingsDialogProps {
   open: boolean
@@ -16,12 +17,16 @@ interface DeckSettingsDialogProps {
   category: string
   subtopic: string
   difficulty: string
+  frontLanguage?: string
+  backLanguage?: string
   onNameChange: (name: string) => void
   onEmojiChange: (emoji: string) => void
   onColorChange: (color: string) => void
   onCategoryChange: (category: string) => void
   onSubtopicChange: (subtopic: string) => void
   onDifficultyChange: (difficulty: string) => void
+  onFrontLanguageChange?: (language: string) => void
+  onBackLanguageChange?: (language: string) => void
   onSubmit: (e: React.FormEvent) => void
 }
 
@@ -34,12 +39,16 @@ export function DeckSettingsDialog({
   category,
   subtopic,
   difficulty,
+  frontLanguage,
+  backLanguage,
   onNameChange,
   onEmojiChange,
   onColorChange,
   onCategoryChange,
   onSubtopicChange,
   onDifficultyChange,
+  onFrontLanguageChange,
+  onBackLanguageChange,
   onSubmit
 }: DeckSettingsDialogProps) {
   const handleCategoryChange = (value: string) => {
@@ -49,14 +58,14 @@ export function DeckSettingsDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Edit Deck</DialogTitle>
           <DialogDescription>
-            Update your deck's name, emoji, or color theme.
+            Update your deck's name, emoji, color, category, and languages.
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={onSubmit} className="space-y-4 mt-4">
+        <form onSubmit={onSubmit} className="space-y-4 mt-4 pb-4">{/* Added scrolling and bottom padding */}
           <div>
             <Label htmlFor="editName">Deck Name</Label>
             <Input
@@ -85,7 +94,7 @@ export function DeckSettingsDialog({
                 <SelectValue placeholder="Choose a category..." />
               </SelectTrigger>
               <SelectContent>
-                {DECK_CATEGORIES.map(cat => (
+                {[...DECK_CATEGORIES].sort((a, b) => a.category.localeCompare(b.category)).map(cat => (
                   <SelectItem key={cat.category} value={cat.category}>
                     {cat.category}
                   </SelectItem>
@@ -102,7 +111,7 @@ export function DeckSettingsDialog({
                   <SelectValue placeholder="Choose a subtopic..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {DECK_CATEGORIES.find(c => c.category === category)?.subtopics.map(subtopic => (
+                  {[...(DECK_CATEGORIES.find(c => c.category === category)?.subtopics || [])].sort((a, b) => a.localeCompare(b)).map(subtopic => (
                     <SelectItem key={subtopic} value={subtopic}>
                       {subtopic}
                     </SelectItem>
@@ -125,6 +134,40 @@ export function DeckSettingsDialog({
                 <SelectItem value="advanced">🟠 Advanced</SelectItem>
                 <SelectItem value="expert">🔴 Expert</SelectItem>
                 <SelectItem value="mixed">🌈 Mixed</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
+            <Label htmlFor="editFrontLanguage">Front Language (Optional)</Label>
+            <Select value={frontLanguage || 'none'} onValueChange={(value) => onFrontLanguageChange?.(value === 'none' ? '' : value)}>
+              <SelectTrigger className="mt-1">
+                <SelectValue placeholder="Select a language..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">None</SelectItem>
+                {DECK_LANGUAGES.map(lang => (
+                  <SelectItem key={lang.code} value={lang.name}>
+                    {lang.flag} {lang.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
+            <Label htmlFor="editBackLanguage">Back Language (Optional)</Label>
+            <Select value={backLanguage || 'none'} onValueChange={(value) => onBackLanguageChange?.(value === 'none' ? '' : value)}>
+              <SelectTrigger className="mt-1">
+                <SelectValue placeholder="Select a language..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">None</SelectItem>
+                {DECK_LANGUAGES.map(lang => (
+                  <SelectItem key={lang.code} value={lang.name}>
+                    {lang.flag} {lang.name}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>

@@ -1,12 +1,12 @@
 import { useState } from 'react'
 import { useStore } from '../../../../store/useStore'
-import * as api from '../../../../utils/api'
 import { useNavigation } from '../../../../hooks/useNavigation'
+import * as api from '../../../../utils/api'
 import { AuthHeader } from './AuthHeader'
 import { LoginForm } from './LoginForm'
 import { ForgotPasswordForm } from './ForgotPasswordForm'
 import { GoogleLoginButton } from './GoogleLoginButton'
-import { TestLoginButtons } from './TestLoginButtons'
+import { toast } from 'sonner'
 
 export function LoginScreen() {
   const [loading, setLoading] = useState(false)
@@ -29,8 +29,9 @@ export function LoginScreen() {
       console.log('User data:', user)
       
       if (session && user) {
-        // Check if user is the Flashy superuser
-        const isSuperuser = user.email === 'flashy@flashy.app'
+        // Check if user is a superuser or moderator
+        const isSuperuser = user.user_metadata?.isSuperuser === true
+        const isModerator = user.user_metadata?.isModerator === true
         
         setAuth(
           { 
@@ -39,10 +40,11 @@ export function LoginScreen() {
             name: user.user_metadata?.name || '',
             displayName: user.user_metadata?.displayName || user.user_metadata?.name || '',
             avatarUrl: user.user_metadata?.avatarUrl,
-            decksPublic: user.user_metadata?.decksPublic ?? true,
+            decksPublic: user.user_metadata?.decksPublic ?? false,
             subscriptionTier: user.user_metadata?.subscriptionTier || 'free',
             subscriptionExpiry: user.user_metadata?.subscriptionExpiry,
             isSuperuser,
+            isModerator,
           },
           session.access_token
         )
@@ -73,8 +75,23 @@ export function LoginScreen() {
     } catch (err: any) {
       console.error('Login error:', err)
       console.error('Error message:', err.message)
+      console.error('Error name:', err.name)
+      
       const errorMessage = err.message || 'Failed to login'
-      if (errorMessage.includes('Invalid login credentials')) {
+      
+      // Check if the error is due to a banned account
+      if (err.name === 'ACCOUNT_BANNED') {
+        const banReason = err.banReason || ''
+        const description = banReason 
+          ? `Your account has been banned. Reason: ${banReason}` 
+          : 'Your account has been banned. Please contact support for more information.'
+        
+        toast.error('Account Banned', {
+          description,
+          duration: 8000,
+        })
+        setError(errorMessage)
+      } else if (errorMessage.includes('Invalid login credentials')) {
         setError('Invalid email or password. Please check your credentials or create a new account below.')
       } else {
         setError(errorMessage)
@@ -111,111 +128,6 @@ export function LoginScreen() {
     } catch (err: any) {
       console.error('Password reset error:', err)
       setError(err.message || 'Failed to send password reset email')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleTestLogin = async (accountType: 'free' | 'premium' | 'superuser' = 'free') => {
-    setError('')
-    setLoading(true)
-
-    try {
-      // Determine account details based on type
-      let testEmail: string
-      let testPassword: string
-      let testName: string
-      
-      if (accountType === 'superuser') {
-        testEmail = 'flashy@flashy.app'
-        testPassword = 'flashy123456'
-        testName = 'Flashy'
-      } else {
-        testEmail = accountType === 'premium' ? 'premium@flashy.app' : 'free@flashy.app'
-        testPassword = 'test123456'
-        testName = accountType === 'premium' ? 'Premium User' : 'Free User'
-      }
-
-      console.log(`Attempting to login as ${accountType} test user...`)
-      
-      // Try to create account first (only if it doesn't exist)
-      try {
-        await api.signUp(testEmail, testPassword, testName)
-        console.log('Test account created successfully')
-      } catch (signupErr: any) {
-        // Account already exists, which is fine - we'll just login
-        const errorMsg = signupErr.message || ''
-        if (errorMsg.toLowerCase().includes('already') || errorMsg.toLowerCase().includes('registered')) {
-          console.log('Test account already exists, proceeding to login')
-        } else {
-          console.log('Signup error (non-critical):', errorMsg)
-        }
-        // Don't throw - continue to login regardless
-      }
-
-      // Now login with test account
-      console.log('Logging in with test account...')
-      const { session, user } = await api.signIn(testEmail, testPassword)
-      
-      if (session && user) {
-        // If premium or superuser, update their subscription tier
-        if ((accountType === 'premium' || accountType === 'superuser') && user.user_metadata?.subscriptionTier !== 'lifetime') {
-          try {
-            await api.updateProfile(session.access_token, {
-              subscriptionTier: 'lifetime'
-            })
-            user.user_metadata.subscriptionTier = 'lifetime'
-          } catch (updateErr) {
-            console.log('Could not update subscription tier:', updateErr)
-          }
-        }
-        
-        // Check if user is the Flashy superuser
-        const isSuperuser = user.email === 'flashy@flashy.app'
-        
-        setAuth(
-          { 
-            id: user.id, 
-            email: user.email || '', 
-            name: user.user_metadata?.name || '',
-            displayName: user.user_metadata?.displayName || user.user_metadata?.name || '',
-            avatarUrl: user.user_metadata?.avatarUrl,
-            decksPublic: user.user_metadata?.decksPublic ?? true,
-            subscriptionTier: user.user_metadata?.subscriptionTier || 'free',
-            subscriptionExpiry: user.user_metadata?.subscriptionExpiry,
-            isSuperuser,
-          },
-          session.access_token
-        )
-        
-        // Load friend data
-        try {
-          const friends = await api.getFriends(session.access_token)
-          console.log('LoginScreen (Google) - getFriends returned:', friends)
-          console.log('LoginScreen (Google) - Extracting IDs:', friends.map(f => f.id))
-          setFriends(friends.map(f => f.id)) // Extract just the IDs
-          
-          const requests = await api.getFriendRequests(session.access_token)
-          setFriendRequests(requests)
-        } catch (error) {
-          console.error('Failed to load friends data:', error)
-        }
-        
-        // Check if user was viewing a shared deck before logging in
-        const returnToSharedDeck = sessionStorage.getItem('returnToSharedDeck')
-        if (returnToSharedDeck) {
-          console.log('LoginScreen (Test) - Returning to shared deck after login:', returnToSharedDeck)
-          sessionStorage.removeItem('returnToSharedDeck')
-          // Set the hash so App.tsx will pick it up
-          window.location.hash = `#/shared/${returnToSharedDeck}`
-          // Don't set a view - let App.tsx handle it
-        } else {
-          navigateTo('decks')
-        }
-      }
-    } catch (err: any) {
-      console.error('Test login error:', err)
-      setError('Failed to create/login test account: ' + err.message)
     } finally {
       setLoading(false)
     }
@@ -258,11 +170,14 @@ export function LoginScreen() {
           </>
         )}
 
-        <TestLoginButtons
-          onTestLogin={handleTestLogin}
-          onCreateAccount={() => navigateTo('signup')}
-          loading={loading}
-        />
+        <div className="mt-6 text-center">
+          <button
+            onClick={() => navigateTo('signup')}
+            className="text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 text-sm"
+          >
+            Don't have an account? <span className="underline">Sign up here</span>
+          </button>
+        </div>
       </div>
     </div>
   )

@@ -20,7 +20,8 @@ export function DeckRating({ deckId, onRatingChange }: DeckRatingProps) {
   const [submitting, setSubmitting] = useState(false)
   const [upgradeModalOpen, setUpgradeModalOpen] = useState(false)
 
-  const isPremium = user?.subscriptionTier && user.subscriptionTier !== 'free'
+  // Check if user has premium features (includes moderators and superusers)
+  const isPremium = user?.isSuperuser || user?.isModerator || (user?.subscriptionTier && user.subscriptionTier !== 'free')
 
   useEffect(() => {
     loadRatings()
@@ -65,14 +66,12 @@ export function DeckRating({ deckId, onRatingChange }: DeckRatingProps) {
       if (onRatingChange) {
         onRatingChange()
       }
-    } catch (error: unknown) {
+    } catch (error: any) {
       console.error('Failed to rate deck:', error)
-      if (error instanceof Error) {
-        if (error.message.includes('Premium feature')) {
-          setUpgradeModalOpen(true)
-        } else {
-          toast.error('Failed to submit rating')
-        }
+      if (error.message.includes('Premium feature')) {
+        setUpgradeModalOpen(true)
+      } else {
+        toast.error('Failed to submit rating')
       }
     } finally {
       setSubmitting(false)
@@ -193,8 +192,8 @@ export function DeckRating({ deckId, onRatingChange }: DeckRatingProps) {
       </div>
 
       <UpgradeModal 
-        open={upgradeModalOpen}
-        onOpenChange={setUpgradeModalOpen}
+        isOpen={upgradeModalOpen}
+        onClose={() => setUpgradeModalOpen(false)}
         feature="rating decks"
       />
     </>

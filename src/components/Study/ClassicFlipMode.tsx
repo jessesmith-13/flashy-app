@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { motion } from 'motion/react'
 import { Button } from '../../ui/button'
-import { ChevronLeft, X, Check, Star, EyeOff } from 'lucide-react'
+import { ChevronLeft, ChevronRight, X, Check, Star, EyeOff, Volume2, Music } from 'lucide-react'
 import { Card, useStore } from '../../../store/useStore'
 import { toast } from 'sonner'
 import * as api from '../../../utils/api'
+import { speak, stopSpeaking } from '../../../utils/textToSpeech'
 
 interface ClassicFlipModeProps {
   cards: Card[]
@@ -13,17 +14,43 @@ interface ClassicFlipModeProps {
   currentIndex: number
   isLastCard: boolean
   isTemporaryStudy?: boolean
+  frontLanguage?: string
+  backLanguage?: string
 }
 
-export function ClassicFlipMode({ cards, onNext, onPrevious, currentIndex, isTemporaryStudy = false }: ClassicFlipModeProps) {
+export function ClassicFlipMode({ cards, onNext, onPrevious, currentIndex, isLastCard, isTemporaryStudy = false, frontLanguage, backLanguage }: ClassicFlipModeProps) {
   const [isFlipped, setIsFlipped] = useState(false)
-  const { updateCard, accessToken, selectedDeckId, cards: storeCards } = useStore()
+  const [isSpeaking, setIsSpeaking] = useState(false)
+  const { updateCard, accessToken, selectedDeckId, cards: storeCards, ttsProvider } = useStore()
   
   // Get current card from store to ensure we have the latest state
   const currentCard = storeCards.find(c => c.id === cards[currentIndex]?.id) || cards[currentIndex]
 
   const handleFlip = () => {
     setIsFlipped(!isFlipped)
+  }
+
+  const handleSpeak = (text: string, language: string | undefined, e?: React.MouseEvent) => {
+    if (e) {
+      e.stopPropagation() // Prevent card flip when clicking speaker button
+    }
+
+    const result = speak({
+      text,
+      language,
+      provider: ttsProvider,
+      accessToken: accessToken || undefined,
+      onStart: () => setIsSpeaking(true),
+      onEnd: () => setIsSpeaking(false),
+      onError: () => {
+        setIsSpeaking(false)
+        toast.error('Failed to speak text')
+      }
+    })
+
+    if (!result.success && result.error) {
+      toast.error(result.error)
+    }
   }
 
   const handleRating = (correct: boolean) => {
@@ -132,7 +159,20 @@ export function ClassicFlipMode({ cards, onNext, onPrevious, currentIndex, isTem
                 width: '100%',
               }}
             >
-              <div className="text-xs text-emerald-600 dark:text-emerald-400 mb-6 uppercase tracking-wide">Question</div>
+              <div className="w-full flex items-center justify-between mb-6">
+                <div className="text-xs text-emerald-600 dark:text-emerald-400 uppercase tracking-wide">Question</div>
+                {currentCard.front && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={(e) => handleSpeak(currentCard.front, frontLanguage, e)}
+                    className="gap-1.5 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
+                    title="Read question aloud"
+                  >
+                    <Volume2 className={`w-4 h-4 ${isSpeaking ? 'text-emerald-600 animate-pulse' : 'text-gray-500'}`} />
+                  </Button>
+                )}
+              </div>
               {currentCard.front && <p className="text-2xl md:text-3xl text-center max-w-2xl text-gray-900 dark:text-gray-100 mb-4">{currentCard.front}</p>}
               {currentCard.frontImageUrl && (
                 <div className="mt-4 rounded-lg overflow-hidden border max-w-2xl w-full mx-auto">
@@ -142,6 +182,15 @@ export function ClassicFlipMode({ cards, onNext, onPrevious, currentIndex, isTem
                     className="w-full h-auto object-contain bg-gray-50 dark:bg-gray-900"
                     style={{ maxHeight: '500px' }}
                   />
+                </div>
+              )}
+              {currentCard.frontAudio && (
+                <div className="mt-4 w-full max-w-md">
+                  <audio controls className="w-full" onClick={(e) => e.stopPropagation()}>
+                    <source src={currentCard.frontAudio} type="audio/wav" />
+                    <source src={currentCard.frontAudio} type="audio/mpeg" />
+                    Your browser does not support the audio element.
+                  </audio>
                 </div>
               )}
               <div className="mt-6 text-sm text-gray-400 dark:text-gray-500">Click to flip</div>
@@ -158,7 +207,20 @@ export function ClassicFlipMode({ cards, onNext, onPrevious, currentIndex, isTem
                 width: '100%',
               }}
             >
-              <div className="text-xs text-emerald-200 dark:text-emerald-300 mb-6 uppercase tracking-wide">Answer</div>
+              <div className="w-full flex items-center justify-between mb-6">
+                <div className="text-xs text-emerald-200 dark:text-emerald-300 uppercase tracking-wide">Answer</div>
+                {currentCard.back && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={(e) => handleSpeak(currentCard.back, backLanguage, e)}
+                    className="gap-1.5 hover:bg-emerald-500/20"
+                    title="Read answer aloud"
+                  >
+                    <Volume2 className={`w-4 h-4 ${isSpeaking ? 'text-white animate-pulse' : 'text-emerald-200'}`} />
+                  </Button>
+                )}
+              </div>
               {currentCard.back && <p className="text-2xl md:text-3xl text-center max-w-2xl mb-4">{currentCard.back}</p>}
               {currentCard.backImageUrl && (
                 <div className="mt-4 rounded-lg overflow-hidden border border-emerald-400 max-w-2xl w-full mx-auto">
@@ -168,6 +230,15 @@ export function ClassicFlipMode({ cards, onNext, onPrevious, currentIndex, isTem
                     className="w-full h-auto object-contain bg-white/10"
                     style={{ maxHeight: '500px' }}
                   />
+                </div>
+              )}
+              {currentCard.backAudio && (
+                <div className="mt-4 w-full max-w-md">
+                  <audio controls className="w-full" onClick={(e) => e.stopPropagation()}>
+                    <source src={currentCard.backAudio} type="audio/wav" />
+                    <source src={currentCard.backAudio} type="audio/mpeg" />
+                    Your browser does not support the audio element.
+                  </audio>
                 </div>
               )}
               <div className="mt-6 text-sm text-emerald-200 dark:text-emerald-300">Rate your answer below</div>

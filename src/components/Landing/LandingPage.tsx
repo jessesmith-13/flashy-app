@@ -3,13 +3,13 @@ import { useStore } from '../../../store/useStore'
 import { useNavigation } from '../../../hooks/useNavigation'
 import { Zap, Brain, Users, Trophy, Sparkles, ArrowRight, Check, Moon, Sun } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import flashcardImage from 'figma:asset/e73c8dfe5e26842fe3139a3d5e1c9d5176ac2592.png'
 
-export default function LandingPage() {
-  const logoLight="../../public/logoLight.png"
-  const logoDark="../../public/logoDark.png"
-   const { darkMode, toggleDarkMode } = useStore()
+export function LandingPage() {
+  const { darkMode, toggleDarkMode } = useStore()
   const { navigateTo } = useNavigation()
   const [isDarkMode, setIsDarkMode] = useState(false)
+  const [isFlipped, setIsFlipped] = useState(false)
 
   useEffect(() => {
     setIsDarkMode(darkMode)
@@ -55,7 +55,7 @@ export default function LandingPage() {
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-2">
               <img 
-                src={isDarkMode ? logoDark : logoLight} 
+                src={isDarkMode ? "../../../public/logoDark.png" : "../../../public/logoLight.png"}
                 alt="Flashy Logo" 
                 className="w-8 h-8"
               />
@@ -100,7 +100,7 @@ export default function LandingPage() {
               <h1 className="text-5xl lg:text-6xl mb-6 text-gray-900 dark:text-gray-100">
                 Learn Anything,{' '}
                 <span className="bg-gradient-to-r from-emerald-600 to-blue-600 bg-clip-text text-transparent">
-                  Fast
+                  in a Flash
                 </span>
               </h1>
               <p className="text-xl text-gray-600 dark:text-gray-400 mb-8 leading-relaxed">
@@ -131,11 +131,75 @@ export default function LandingPage() {
             </div>
             <div className="relative">
               <div className="absolute inset-0 bg-gradient-to-r from-emerald-400 to-blue-500 rounded-3xl blur-3xl opacity-20"></div>
-              <img
-                src="public/my_decks.png"
-                alt="Student learning"
-                className="relative rounded-3xl shadow-2xl w-full h-[500px] object-cover"
-              />
+              
+              {/* App Screenshots Showcase */}
+              <div className="relative grid grid-cols-2 gap-4">
+                {/* Main large screenshot */}
+                <div className="col-span-2 rounded-3xl shadow-2xl overflow-hidden bg-white dark:bg-gray-800 border-4 border-gray-200 dark:border-gray-700">
+                  <div className="bg-gradient-to-br from-emerald-500 to-blue-600 p-8 text-white">
+                    <div className="flex items-center gap-2 mb-4">
+                      <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur flex items-center justify-center">
+                        <Brain className="w-6 h-6" />
+                      </div>
+                      <span className="text-xl">Study Mode</span>
+                    </div>
+                    <div className="bg-white rounded-2xl p-8 text-gray-900 min-h-[200px] flex items-center justify-center shadow-xl">
+                      <div className="text-center">
+                        <h3 className="text-3xl mb-2">What is React?</h3>
+                        <p className="text-gray-500">Click to reveal answer</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Two smaller screenshots side by side */}
+                <div className="rounded-2xl shadow-xl overflow-hidden bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700">
+                  <div className="bg-gradient-to-br from-purple-500 to-pink-500 p-4 text-white">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Trophy className="w-5 h-5" />
+                      <span className="text-sm">Achievements</span>
+                    </div>
+                  </div>
+                  <div className="p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-8 h-8 rounded-full bg-yellow-400 flex items-center justify-center">
+                        🏆
+                      </div>
+                      <div className="flex-1">
+                        <div className="text-sm">Quick Learner</div>
+                        <div className="text-xs text-gray-500">Complete 10 cards</div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-full bg-emerald-400 flex items-center justify-center">
+                        ✨
+                      </div>
+                      <div className="flex-1">
+                        <div className="text-sm">Study Streak</div>
+                        <div className="text-xs text-gray-500">7 days in a row</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="rounded-2xl shadow-xl overflow-hidden bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700">
+                  <div className="bg-gradient-to-br from-blue-500 to-cyan-500 p-4 text-white">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Sparkles className="w-5 h-5" />
+                      <span className="text-sm">AI Generate</span>
+                    </div>
+                  </div>
+                  <div className="p-4">
+                    <div className="text-xs text-gray-500 mb-2">Topic</div>
+                    <div className="bg-gray-100 dark:bg-gray-700 rounded-lg p-2 mb-2 text-sm">
+                      World History
+                    </div>
+                    <div className="bg-emerald-500 text-white rounded-lg p-2 text-center text-sm">
+                      Generate Cards
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -173,35 +237,81 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Benefits Section */}
+       {/* Benefits Section - Interactive Flip Flashcard */}
       <section className="py-20 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
-            <div>
-              <img
-                src="https://images.unsplash.com/photo-1759159482847-78aadfcbeb85?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxicmFpbiUyMGtub3dsZWRnZSUyMGVkdWNhdGlvbnxlbnwxfHx8fDE3NjI4MDU0NTd8MA&ixlib=rb-4.1.0&q=80&w=1080"
-                alt="Brain and learning"
-                className="rounded-3xl shadow-2xl w-full h-[400px] object-cover"
-              />
-            </div>
-            <div>
-              <h2 className="text-4xl mb-6 text-gray-900 dark:text-gray-100">
-                Why Choose Flashy?
-              </h2>
-              <p className="text-lg text-gray-600 dark:text-gray-400 mb-8">
-                Join thousands of learners who are mastering new subjects every day with our comprehensive platform.
-              </p>
-              <div className="space-y-4">
-                {benefits.map((benefit, index) => (
-                  <div key={index} className="flex items-start gap-3">
-                    <div className="w-6 h-6 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                    </div>
-                    <span className="text-gray-700 dark:text-gray-300">
-                      {benefit}
-                    </span>
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-12">
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
+              Click to flip the card and see why thousands choose Flashy
+            </p>
+          </div>
+          
+          {/* Flip Card Container */}
+          <div 
+            className="cursor-pointer"
+            style={{ perspective: '1000px' }}
+            onClick={() => setIsFlipped(!isFlipped)}
+          >
+            <div 
+              className="relative w-full h-[500px] sm:h-[500px] transition-all duration-700"
+              style={{ 
+                transformStyle: 'preserve-3d',
+                transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)'
+              }}
+            >
+              {/* Front of Card */}
+              <div 
+                className="absolute inset-0 rounded-3xl shadow-2xl"
+                style={{ backfaceVisibility: 'hidden' }}
+              >
+                <div className="h-full bg-white dark:bg-gray-800 border-4 border-emerald-500 dark:border-emerald-600 rounded-3xl p-6 sm:p-12 flex flex-col items-center justify-center">
+                  <div className="w-16 h-16 sm:w-24 sm:h-24 rounded-full bg-gradient-to-br from-emerald-400 to-blue-500 flex items-center justify-center mb-6 sm:mb-8">
+                    <Sparkles className="w-8 h-8 sm:w-12 sm:h-12 text-white" />
                   </div>
-                ))}
+                  <h2 className="text-3xl sm:text-5xl text-center text-gray-900 dark:text-gray-100 mb-4">
+                    Why Choose Flashy?
+                  </h2>
+                  <p className="text-lg sm:text-xl text-gray-500 dark:text-gray-400 text-center">
+                    Tap to reveal
+                  </p>
+                  <div className="absolute bottom-6 right-6 sm:bottom-8 sm:right-8">
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
+                      <ArrowRight className="w-5 h-5 sm:w-6 sm:h-6 text-emerald-600 dark:text-emerald-400 animate-pulse" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Back of Card */}
+              <div 
+                className="absolute inset-0 rounded-3xl shadow-2xl"
+                style={{ 
+                  backfaceVisibility: 'hidden',
+                  transform: 'rotateY(180deg)'
+                }}
+              >
+                <div className="h-full bg-gradient-to-br from-emerald-50 to-blue-50 dark:from-gray-800 dark:to-gray-900 border-4 border-emerald-500 dark:border-emerald-600 rounded-3xl p-6 sm:p-12 flex flex-col justify-center overflow-y-auto">
+                  <h3 className="text-xl sm:text-3xl text-gray-900 dark:text-gray-100 mb-6 sm:mb-8 text-center">
+                    Join thousands of learners who are mastering new subjects every day
+                  </h3>
+                  <div className="space-y-3 sm:space-y-4">
+                    {benefits.map((benefit, index) => (
+                      <div key={index} className="flex items-start gap-2 sm:gap-3">
+                        <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-emerald-500 dark:bg-emerald-600 flex items-center justify-center flex-shrink-0 mt-0.5">
+                          <Check className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+                        </div>
+                        <span className="text-sm sm:text-lg text-gray-700 dark:text-gray-300">
+                          {benefit}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="absolute bottom-6 left-6 sm:bottom-8 sm:left-8">
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-emerald-500 dark:bg-emerald-600 flex items-center justify-center">
+                      <ArrowRight className="w-5 h-5 sm:w-6 sm:h-6 text-white rotate-180 animate-pulse" />
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -235,7 +345,7 @@ export default function LandingPage() {
             <div>
               <div className="flex items-center gap-2 mb-4">
                 <img 
-                  src={isDarkMode ? logoDark : logoLight} 
+                  src={isDarkMode ? '../../../public/logoDark.png' : '../../../public/logoLight.png'} 
                   alt="Flashy Logo" 
                   className="w-8 h-8"
                 />

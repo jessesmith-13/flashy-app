@@ -18,6 +18,9 @@ interface CardItemProps {
   onDragStart: (cardId: string) => void
   onDragOver: (e: React.DragEvent) => void
   onDrop: (cardId: string) => void
+  selectionMode?: boolean
+  onToggleCardSelection?: (cardId: string) => void
+  selected?: boolean
 }
 
 export function CardItem({
@@ -28,24 +31,55 @@ export function CardItem({
   onToggleIgnored,
   onDragStart,
   onDragOver,
-  onDrop
+  onDrop,
+  selectionMode = false,
+  onToggleCardSelection,
+  selected = false
 }: CardItemProps) {
   const cardTypeInfo = CARD_TYPES.find(t => t.value === card.cardType)
   const TypeIcon = cardTypeInfo?.icon || FlipVertical
 
+  const handleCardClick = () => {
+    if (selectionMode && onToggleCardSelection) {
+      onToggleCardSelection(card.id)
+    }
+  }
+
   return (
     <div
-      draggable
-      onDragStart={() => onDragStart(card.id)}
+      draggable={!selectionMode}
+      onDragStart={() => !selectionMode && onDragStart(card.id)}
       onDragOver={onDragOver}
-      onDrop={() => onDrop(card.id)}
-      className="bg-white dark:bg-gray-800 rounded-xl p-4 sm:p-5 shadow-md hover:shadow-lg transition-shadow cursor-move relative group"
+      onDrop={() => !selectionMode && onDrop(card.id)}
+      onClick={handleCardClick}
+      className={`bg-white dark:bg-gray-800 rounded-xl p-4 sm:p-5 shadow-md hover:shadow-lg transition-all relative group ${
+        selectionMode ? 'cursor-pointer' : 'cursor-move'
+      } ${
+        selected ? 'ring-2 ring-purple-500 bg-purple-50 dark:bg-purple-900/20' : ''
+      }`}
     >
-      <div className="absolute top-2 sm:top-3 right-2 sm:right-3 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-        <GripVertical className="w-5 h-5 text-gray-400 dark:text-gray-500" />
-      </div>
+      {selectionMode && (
+        <div className="absolute top-4 left-4 z-10">
+          <div className={`w-6 h-6 rounded border-2 flex items-center justify-center transition-all ${
+            selected 
+              ? 'bg-purple-600 border-purple-600' 
+              : 'bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600'
+          }`}>
+            {selected && (
+              <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            )}
+          </div>
+        </div>
+      )}
+      {!selectionMode && (
+        <div className="absolute top-2 sm:top-3 right-2 sm:right-3 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          <GripVertical className="w-5 h-5 text-gray-400 dark:text-gray-500" />
+        </div>
+      )}
       <div className="flex items-start justify-between gap-4">
-        <div className="flex-1 space-y-2 sm:space-y-3 pr-12 sm:pr-16">
+        <div className={`flex-1 space-y-2 sm:space-y-3 ${selectionMode ? 'pl-10' : 'pr-12 sm:pr-16'}`}>
           <div className="flex items-center gap-2 mb-2">
             <TypeIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-600 dark:text-emerald-400" />
             <span className="text-xs text-emerald-600 dark:text-emerald-400">{cardTypeInfo?.label}</span>
@@ -111,56 +145,60 @@ export function CardItem({
           )}
         </div>
         <div className="flex flex-col gap-0.5 sm:gap-1 flex-shrink-0">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => onToggleFavorite(card.id)}
-            className={`h-7 w-7 sm:h-8 sm:w-8 ${card.favorite ? 'text-yellow-500 hover:text-yellow-600' : 'text-gray-400 hover:text-yellow-500'}`}
-            title={card.favorite ? 'Remove from favorites' : 'Add to favorites'}
-          >
-            <Star className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${card.favorite ? 'fill-yellow-500' : ''}`} />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => onToggleIgnored(card.id)}
-            className={`h-7 w-7 sm:h-8 sm:w-8 ${card.ignored ? 'text-gray-600 hover:text-gray-700' : 'text-gray-400 hover:text-gray-600'}`}
-            title={card.ignored ? 'Unignore card' : 'Ignore card'}
-          >
-            <EyeOff className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => onEdit(card.id)}
-            className="h-7 w-7 sm:h-8 sm:w-8 text-blue-600 hover:text-blue-700"
-          >
-            <Edit className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-          </Button>
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-7 w-7 sm:h-8 sm:w-8 text-red-600 hover:text-red-700">
-                <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+          {!selectionMode && (
+            <>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => onToggleFavorite(card.id)}
+                className={`h-7 w-7 sm:h-8 sm:w-8 ${card.favorite ? 'text-yellow-500 hover:text-yellow-600' : 'text-gray-400 hover:text-yellow-500'}`}
+                title={card.favorite ? 'Remove from favorites' : 'Add to favorites'}
+              >
+                <Star className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${card.favorite ? 'fill-yellow-500' : ''}`} />
               </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Delete Card?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  This will permanently delete this card. This action cannot be undone.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={() => onDelete(card.id)}
-                  className="bg-red-600 hover:bg-red-700"
-                >
-                  Delete
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => onToggleIgnored(card.id)}
+                className={`h-7 w-7 sm:h-8 sm:w-8 ${card.ignored ? 'text-gray-600 hover:text-gray-700' : 'text-gray-400 hover:text-gray-600'}`}
+                title={card.ignored ? 'Unignore card' : 'Ignore card'}
+              >
+                <EyeOff className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => onEdit(card.id)}
+                className="h-7 w-7 sm:h-8 sm:w-8 text-blue-600 hover:text-blue-700"
+              >
+                <Edit className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              </Button>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-7 w-7 sm:h-8 sm:w-8 text-red-600 hover:text-red-700">
+                    <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete Card?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This will permanently delete this card. This action cannot be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={() => onDelete(card.id)}
+                      className="bg-red-600 hover:bg-red-700"
+                    >
+                      Delete
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </>
+          )}
         </div>
       </div>
     </div>

@@ -2,9 +2,10 @@ import { useEffect, useState } from 'react'
 import { HashRouter, Routes, Route, Navigate, useNavigate, useParams } from 'react-router-dom'
 import { useStore } from '../store/useStore'
 import * as api from '../utils/api'
-import LandingPage from './components/Landing/LandingPage'
+import { LandingPage } from './components/Landing/LandingPage'
 import { LoginScreen } from './components/Auth/Login/LoginScreen'
 import { SignUpScreen } from './components/Auth/Signup/SignupScreen'
+import { ResetPasswordScreen } from './components/Auth/Login/ResetPasswordScreen'
 import { DecksScreen } from './components/Decks/DecksScreen'
 import { DeckDetailScreen } from './components/Decks/DeckDetail/DeckDetailScreen'
 import { StudyOptionsScreen } from './components/Study/StudyOptionsScreen'
@@ -16,14 +17,17 @@ import { UpgradeModal } from './components/UpgradeModal'
 import { PaymentSuccessScreen } from './components/PaymentSuccessScreen'
 import { AllCardsScreen } from './components/AllCardsScreen'
 import { SettingsScreen } from './components/Settings/SettingsScreen'
+import { SuperuserScreen } from './components/Superuser/SuperuserScreen'
+import { ModeratorScreen } from './components/Moderation/ModeratorScreen'
 import { PrivacyPolicyScreen } from './components/Legal/PrivacyPolicyScreen'
 import { TermsScreen } from './components/Legal/TermsScreen'
 import { ContactScreen } from './components/Contact/ContactScreen'
 import { SharedDeckView } from './components/SharedDeckView'
 import { NotificationsScreen } from './components/Notifications/NotificationsScreen'
-import  ProtectedRoute from './components/ProtectedRoute'
+import ProtectedRoute from './components/ProtectedRoute'
 import { Toaster } from './ui/sonner'
 import { useAchievementTracking } from '../hooks/useAchievements'
+import { toast } from 'sonner'
 
 // Suppress Supabase auth errors from console
 const originalConsoleError = console.error
@@ -59,7 +63,7 @@ function SharedDeckRoute() {
 
 // Main app component that handles session checking
 function AppContent() {
-  const { setAuth, setFriends, setFriendRequests, darkMode, user } = useStore()
+  const { setAuth, setFriends, setFriendRequests, darkMode, user, setDarkMode } = useStore()
   const [checkingSession, setCheckingSession] = useState(true)
   const navigate = useNavigate()
 
@@ -91,6 +95,25 @@ function AppContent() {
           // Token was refreshed, update the store
           console.log('Token refreshed successfully')
           
+          // Check if user is banned
+          if (session.user.user_metadata?.isBanned === true) {
+            console.log('Token refresh - User is banned, signing out')
+            const banReason = session.user.user_metadata?.banReason || ''
+            
+            const description = banReason 
+              ? `Your account has been banned. Reason: ${banReason}` 
+              : 'Your account has been banned. Please contact support for more information.'
+            
+            toast.error('Account Banned', {
+              description,
+              duration: 6000,
+            })
+            await api.signOut()
+            useStore.getState().logout()
+            navigate('/')
+            return
+          }
+          
           try {
             // Fetch updated friends and friend requests with new token
             const friends = await api.getFriends(session.access_token)
@@ -99,8 +122,9 @@ function AppContent() {
             const requests = await api.getFriendRequests(session.access_token)
             setFriendRequests(requests)
             
-            // Check if user is the Flashy superuser
-            const isSuperuser = session.user.email === 'flashy@flashy.app'
+            // Check if user is a superuser or moderator
+            const isSuperuser = session.user.user_metadata?.isSuperuser === true
+            const isModerator = session.user.user_metadata?.isModerator === true
             
             // Update auth with refreshed token
             setAuth(
@@ -110,10 +134,11 @@ function AppContent() {
                 name: session.user.user_metadata?.name || '',
                 displayName: session.user.user_metadata?.displayName || session.user.user_metadata?.name || '',
                 avatarUrl: session.user.user_metadata?.avatarUrl,
-                decksPublic: session.user.user_metadata?.decksPublic ?? true,
+                decksPublic: session.user.user_metadata?.decksPublic ?? false,
                 subscriptionTier: session.user.user_metadata?.subscriptionTier || 'free',
                 subscriptionExpiry: session.user.user_metadata?.subscriptionExpiry,
                 isSuperuser,
+                isModerator,
               },
               session.access_token
             )
@@ -147,21 +172,56 @@ function AppContent() {
       const session = await api.getSession()
       
       if (session && session.user && session.access_token) {
+        // Check if user is banned
+        if (session.user.user_metadata?.isBanned === true) {
+          const banReason = session.user.user_metadata?.banReason || ''
+          console.log('=== USER BANNED ===')
+          console.log('Banned user session detected during app load')
+          console.log('Ban Reason:', banReason || 'No reason provided')
+          console.log('User will be signed out automatically.')
+          console.log('Please contact support for more information.')
+          console.log('==================')
+          
+          const description = banReason 
+            ? `Your account has been banned. Reason: ${banReason}` 
+            : 'Your account has been banned. Please contact support for more information.'
+          
+          toast.error('Account Banned', {
+            description,
+            duration: 8000,
+          })
+          
+          await api.signOut()
+          setAuth(null, null)
+          navigate('/')
+          return
+        }
+
         // Verify the token works by trying to fetch friends
         // If it fails, we'll clear the session
         try {
-          const friends = await api.getFriends(session.access_token)
+          // Fetch friends and requests in parallel
+          const [friends, requests] = await Promise.all([
+            api.getFriends(session.access_token).catch(err => {
+              console.log('Failed to fetch friends during session check:', err)
+              return [] // Return empty array on error
+            }),
+            api.getFriendRequests(session.access_token).catch(err => {
+              console.log('Failed to fetch friend requests during session check:', err)
+              return [] // Return empty array on error
+            })
+          ])
+          
           console.log('App.tsx - getFriends returned:', friends)
           console.log('App.tsx - Extracting IDs:', friends.map((f: { id: string }) => f.id))
           setFriends(friends.map((f: { id: string }) => f.id)) // Extract just the IDs
           
-          console.log('checkSession - Fetching friend requests...')
-          const requests = await api.getFriendRequests(session.access_token)
           console.log('checkSession - Friend requests fetched:', requests)
           setFriendRequests(requests)
           
-          // Check if user is the Flashy superuser
-          const isSuperuser = session.user.email === 'flashy@flashy.app'
+          // Check if user is a superuser or moderator
+          const isSuperuser = session.user.user_metadata?.isSuperuser === true
+          const isModerator = session.user.user_metadata?.isModerator === true
           
           // Token is valid, set auth
           setAuth(
@@ -171,13 +231,30 @@ function AppContent() {
               name: session.user.user_metadata?.name || '',
               displayName: session.user.user_metadata?.displayName || session.user.user_metadata?.name || '',
               avatarUrl: session.user.user_metadata?.avatarUrl,
-              decksPublic: session.user.user_metadata?.decksPublic ?? true,
+              decksPublic: session.user.user_metadata?.decksPublic ?? false,
               subscriptionTier: session.user.user_metadata?.subscriptionTier || 'free',
               subscriptionExpiry: session.user.user_metadata?.subscriptionExpiry,
               isSuperuser,
+              isModerator,
             },
             session.access_token
           )
+
+          // Check if we need to record terms acceptance (for Google OAuth users)
+          const termsAccepted = sessionStorage.getItem('termsAccepted')
+          const termsAcceptedAt = sessionStorage.getItem('termsAcceptedAt')
+          if (termsAccepted === 'true' && termsAcceptedAt && !session.user.user_metadata?.termsAcceptedAt) {
+            console.log('Recording terms acceptance for Google OAuth user')
+            try {
+              await api.recordTermsAcceptance(session.access_token, termsAcceptedAt)
+              console.log('Terms acceptance recorded successfully')
+            } catch (error) {
+              console.error('Failed to record terms acceptance:', error)
+            }
+            // Clear the flags
+            sessionStorage.removeItem('termsAccepted')
+            sessionStorage.removeItem('termsAcceptedAt')
+          }
 
           // Check if user was viewing a shared deck before logging in
           const returnToSharedDeck = sessionStorage.getItem('returnToSharedDeck')
@@ -259,6 +336,7 @@ function AppContent() {
             <Route path="/" element={<LandingPage />} />
             <Route path="/login" element={<LoginScreen />} />
             <Route path="/signup" element={<SignUpScreen />} />
+            <Route path="/reset-password" element={<ResetPasswordScreen />} />
             <Route path="/decks" element={<ProtectedRoute><DecksScreen /></ProtectedRoute>} />
             <Route path="/deck-detail/:deckId" element={<ProtectedRoute><DeckDetailScreen /></ProtectedRoute>} />
             <Route path="/study-options/:deckId" element={<ProtectedRoute><StudyOptionsScreen /></ProtectedRoute>} />
@@ -273,6 +351,8 @@ function AppContent() {
             <Route path="/payment-success" element={<PaymentSuccessScreen />} />
             <Route path="/all-cards" element={<ProtectedRoute><AllCardsScreen /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><SettingsScreen /></ProtectedRoute>} />
+            <Route path="/superuser" element={<ProtectedRoute><SuperuserScreen /></ProtectedRoute>} />
+            <Route path="/moderator" element={<ProtectedRoute><ModeratorScreen /></ProtectedRoute>} />
             <Route path="/privacy" element={<PrivacyPolicyScreen />} />
             <Route path="/terms" element={<TermsScreen />} />
             <Route path="/contact" element={<ContactScreen />} />

@@ -1,32 +1,89 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useStore } from '../../../store/useStore'
 import { useNavigation } from '../../../hooks/useNavigation'
+import * as api from '../../../utils/api'
+import { toast } from 'sonner'
 import { AppLayout } from '../Layout/AppLayout'
 import { Button } from '../../ui/button'
-import { ArrowLeft, Crown } from 'lucide-react'
-import { toast } from 'sonner'
-import * as api from '../../../utils/api'
+import { ArrowLeft, Crown, Download, AlertCircle } from 'lucide-react'
 import { SubscriptionSection } from './SubscriptionSection'
 import { NotificationsSection } from './NotificationsSection'
 import { AppearanceSection } from './AppearanceSection'
 import { DataPrivacySection } from './DataPrivacySection'
 import { DangerZoneSection } from './DangerZoneSection'
 import { CancelSubscriptionDialog } from './CancelSubscriptionDialog'
+import { ChangePlanDialog } from './ChangePlanDialog'
+import { PlanSelectionDialog } from './PlanSelectionDialog'
 import { DeleteAccountDialog } from './DeleteAccountDialog'
+import { useIsSuperuser } from '../../../utils/userUtils'
+import { projectId } from '../../../utils/supabase/info'
 
 export function SettingsScreen() {
-  const { darkMode, setDarkMode, userAchievements, setUserAchievements, user, accessToken, updateUser } = useStore()
-  const { navigateTo } = useNavigation()
+  const { darkMode, setDarkMode, userAchievements, setUserAchievements, user, accessToken, updateUser, setAuth, ttsProvider, setTTSProvider } = useStore()
+  const { navigate } = useNavigation()
+  const isSuperuser = useIsSuperuser()
+  
+  // Debug logging
+  console.log('🔐 Settings - User:', user)
+  console.log('🔐 Settings - Subscription Tier:', user?.subscriptionTier)
+  console.log('🔐 Settings - Subscription Expiry:', user?.subscriptionExpiry)
+  console.log('🔐 Settings - Is Superuser:', user?.isSuperuser)
+  console.log('🔐 Settings - Is Moderator:', user?.isModerator)
+  console.log('🔐 Settings - accessToken:', accessToken ? 'exists' : 'missing')
+  
   const [emailNotifications, setEmailNotifications] = useState(true)
   const [emailOffers, setEmailOffers] = useState(true)
   const [emailCommentReplies, setEmailCommentReplies] = useState(true)
   const [emailFriendRequests, setEmailFriendRequests] = useState(true)
-  const [autoBackup, setAutoBackup] = useState(true)
-  // Initialize from user data, default to true if undefined
-  const [decksPublic, setDecksPublic] = useState(user?.decksPublic ?? true)
+  // Initialize from user data, default to false if undefined
+  const [decksPublic, setDecksPublic] = useState(user?.decksPublic ?? false)
   const [showCancelDialog, setShowCancelDialog] = useState(false)
+  const [showChangePlanDialog, setShowChangePlanDialog] = useState(false)
+  const [showPlanSelectionDialog, setShowPlanSelectionDialog] = useState(false)
+  const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'annual' | 'lifetime'>('monthly')
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [cancelling, setCancelling] = useState(false)
+  const [changingPlan, setChangingPlan] = useState(false)
+  const [settingUpSuperuser, setSettingUpSuperuser] = useState(false)
+  const [exporting, setExporting] = useState(false)
+  const [fixingTier, setFixingTier] = useState(false)
+
+  // Handle superuser setup (one-time)
+  const handleSetupSuperuser = async () => {
+    if (!accessToken) {
+      toast.error('No access token available')
+      return
+    }
+    
+    setSettingUpSuperuser(true)
+    try {
+      console.log('🔐 Step 1: Setting isSuperuser=true via updateProfile...')
+      
+      // Use the existing updateProfile API which now supports isSuperuser for flashy@flashy.app
+      const updatedUserData = await api.updateProfile(accessToken, { isSuperuser: true } as any)
+      
+      console.log('✅ Step 2: Profile updated with isSuperuser=true', updatedUserData)
+      
+      // Update local state immediately
+      const updatedUser = {
+        ...user!,
+        isSuperuser: true,
+      }
+      
+      // Update store
+      setAuth(updatedUser, accessToken)
+      
+      toast.success('Superuser privileges granted! Please refresh the page to see changes.')
+      
+      // Don't force reload - let user manually refresh when ready
+      // The state has been updated so UI should reflect isSuperuser=true now
+    } catch (error: any) {
+      console.error('❌ Setup superuser error:', error)
+      toast.error(error.message || 'Failed to setup superuser')
+    } finally {
+      setSettingUpSuperuser(false)
+    }
+  }
 
   const handleDarkModeToggle = (enabled: boolean) => {
     setDarkMode(enabled)
@@ -64,16 +121,131 @@ export function SettingsScreen() {
     }
   }
 
-  const handleExportData = () => {
-    toast.success('Data export feature coming soon!')
+  const handleExportData = async () => {
+    if (!accessToken) {
+      toast.error('Not authenticated')
+      return
+    }
+
+    setExporting(true)
+    toast.loading('Preparing your data export...', { id: 'export' })
+
+    try {
+      const response = await fetch(
+        `https://${projectId}.supabase.co/functions/v1/make-server-8a1502a9/export-data`,
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      )
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to export data')
+      }
+
+      const data = await response.json()
+
+      // Create a formatted JSON string
+      const jsonString = JSON.stringify(data, null, 2)
+      
+      // Create a blob and download it
+      const blob = new Blob([jsonString], { type: 'application/json' })
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      
+      // Create filename with current date
+      const date = new Date().toISOString().split('T')[0]
+      a.download = `flashy-data-export-${date}.json`
+      
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      window.URL.revokeObjectURL(url)
+
+      toast.success('Your data has been exported successfully!', { id: 'export' })
+      
+      // Show summary
+      if (data.metadata) {
+        toast.info(
+          `Exported: ${data.metadata.totalDecks} decks, ${data.metadata.totalCards} cards, ${data.metadata.totalStudySessions} study sessions`,
+          { duration: 5000 }
+        )
+      }
+    } catch (error: any) {
+      console.error('Failed to export data:', error)
+      toast.error(error.message || 'Failed to export data', { id: 'export' })
+    } finally {
+      setExporting(false)
+    }
   }
 
   const handleDeleteAccount = () => {
     toast.error('Please contact support to delete your account')
   }
+  
+  const handleFixSubscriptionTier = async () => {
+    if (!accessToken) {
+      toast.error('Not authenticated')
+      return
+    }
+
+    setFixingTier(true)
+    toast.loading('Fixing subscription tier...', { id: 'fix-tier' })
+
+    try {
+      const response = await fetch(
+        `https://${projectId}.supabase.co/functions/v1/make-server-8a1502a9/fix-subscription-tier`,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      )
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to fix subscription tier')
+      }
+
+      const data = await response.json()
+      
+      // Refresh session to get updated metadata
+      const { data: { session }, error } = await api.supabaseClient.auth.refreshSession()
+      
+      if (error) {
+        console.error('Error refreshing session after fix:', error)
+      }
+      
+      if (session?.user) {
+        // Update local state with the new metadata
+        updateUser({
+          subscriptionTier: session.user.user_metadata?.subscriptionTier
+        })
+      }
+
+      toast.success(data.message, { id: 'fix-tier' })
+      
+      // Reload the page to ensure clean state
+      setTimeout(() => {
+        window.location.reload()
+      }, 1500)
+    } catch (error: any) {
+      console.error('Failed to fix subscription tier:', error)
+      toast.error(error.message || 'Failed to fix subscription tier', { id: 'fix-tier' })
+    } finally {
+      setFixingTier(false)
+    }
+  }
 
   const getSubscriptionDisplay = () => {
-    if (!user?.subscriptionTier) return { name: 'Free', color: 'gray', icon: Crown }
+    // Show actual subscription tier, not role-based display
+    if (!user?.subscriptionTier || user?.subscriptionTier === 'free') {
+      return { name: 'Free', color: 'gray', icon: Crown }
+    }
     
     switch (user.subscriptionTier) {
       case 'lifetime':
@@ -83,6 +255,8 @@ export function SettingsScreen() {
       case 'monthly':
         return { name: 'Monthly Premium', color: 'blue', icon: Crown }
       default:
+        // Handle invalid tier (like old "premium" value)
+        console.warn('Invalid subscription tier:', user.subscriptionTier)
         return { name: 'Free', color: 'gray', icon: Crown }
     }
   }
@@ -121,9 +295,59 @@ export function SettingsScreen() {
     }
   }
 
+  const handleChangePlan = async () => {
+    if (!accessToken) return
+    
+    setChangingPlan(true)
+    try {
+      // Change subscription via Stripe API
+      const result = await api.changeSubscriptionPlan(accessToken, selectedPlan)
+      
+      console.log('Subscription changed:', result)
+      
+      // Refresh session to get updated metadata
+      const { data: { session }, error } = await api.supabaseClient.auth.refreshSession()
+      
+      if (error) {
+        console.error('Error refreshing session after change:', error)
+      }
+      
+      if (session?.user) {
+        // Update local state with the new metadata
+        updateUser({
+          subscriptionTier: session.user.user_metadata?.subscriptionTier,
+          subscriptionExpiry: session.user.user_metadata?.subscriptionExpiry,
+          subscriptionCancelledAtPeriodEnd: false
+        })
+      }
+      
+      const planNames = { monthly: 'Monthly', annual: 'Annual', lifetime: 'Lifetime' }
+      toast.success(`Successfully changed to ${planNames[selectedPlan]} Premium!`)
+      setShowChangePlanDialog(false)
+      setShowPlanSelectionDialog(false)
+    } catch (error: any) {
+      console.error('Failed to change subscription:', error)
+      toast.error(error.message || 'Failed to change subscription. Please try again.')
+    } finally {
+      setChangingPlan(false)
+    }
+  }
+
+  const handleSelectPlan = (plan: 'monthly' | 'annual' | 'lifetime') => {
+    setSelectedPlan(plan)
+    setShowPlanSelectionDialog(false)
+    setShowChangePlanDialog(true)
+  }
+
   const isPremiumSubscription = user?.subscriptionTier && ['monthly', 'annual', 'lifetime'].includes(user.subscriptionTier)
   const canCancelSubscription = user?.subscriptionTier && ['monthly', 'annual'].includes(user.subscriptionTier)
   const subscriptionInfo = getSubscriptionDisplay()
+  
+  // Superusers and moderators should also be considered premium
+  const effectiveIsPremium = isPremiumSubscription || user?.isSuperuser || user?.isModerator
+  
+  // Check if subscription tier is invalid
+  const hasInvalidTier = user?.subscriptionTier && !['free', 'monthly', 'annual', 'lifetime'].includes(user.subscriptionTier)
 
   return (
     <AppLayout>
@@ -133,7 +357,7 @@ export function SettingsScreen() {
           <div className="mb-6">
             <Button
               variant="ghost"
-              onClick={() => navigateTo('decks')}
+              onClick={() => navigate(-1)}
               className="mb-4 -ml-2"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
@@ -143,6 +367,33 @@ export function SettingsScreen() {
             <p className="text-gray-600 dark:text-gray-400 mt-2">Manage your app preferences</p>
           </div>
 
+          {/* Invalid Subscription Tier Warning */}
+          {hasInvalidTier && (
+            <div className="bg-red-50 dark:bg-red-900/20 border border-red-300 dark:border-red-700 rounded-lg p-4 mb-6">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <p className="text-sm text-red-900 dark:text-red-200">
+                    <span className="font-medium">Invalid Subscription Tier Detected:</span> Your subscription tier is set to "{user?.subscriptionTier}" which is not valid.
+                  </p>
+                  <p className="text-xs text-red-700 dark:text-red-300 mt-1">
+                    {user?.isModerator || user?.isSuperuser 
+                      ? "Don't worry - you still have all premium features through your moderator/superuser role. Click below to clean up your account data."
+                      : "This needs to be fixed. Click below to correct your subscription tier."}
+                  </p>
+                  <Button
+                    onClick={handleFixSubscriptionTier}
+                    disabled={fixingTier}
+                    className="mt-3 bg-red-600 hover:bg-red-700 text-white"
+                    size="sm"
+                  >
+                    {fixingTier ? 'Fixing...' : 'Fix Subscription Tier'}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Settings Sections */}
           <div className="space-y-6">
             <SubscriptionSection
@@ -150,8 +401,9 @@ export function SettingsScreen() {
               isPremiumSubscription={isPremiumSubscription}
               canCancelSubscription={canCancelSubscription}
               subscriptionInfo={subscriptionInfo}
-              onUpgrade={() => navigateTo('upgrade')}
+              onUpgrade={() => navigate('upgrade')}
               onCancelSubscription={() => setShowCancelDialog(true)}
+              onChangePlan={() => setShowPlanSelectionDialog(true)}
             />
 
             <NotificationsSection
@@ -169,12 +421,13 @@ export function SettingsScreen() {
             <AppearanceSection
               darkMode={darkMode}
               onDarkModeChange={handleDarkModeToggle}
+              ttsProvider={ttsProvider}
+              onTTSProviderChange={setTTSProvider}
+              isPremium={effectiveIsPremium}
             />
 
             <DataPrivacySection
-              autoBackup={autoBackup}
               decksPublic={decksPublic}
-              onAutoBackupChange={setAutoBackup}
               onDecksPublicChange={handleDecksPublicToggle}
               onExportData={handleExportData}
             />
@@ -192,6 +445,22 @@ export function SettingsScreen() {
         subscriptionName={subscriptionInfo.name}
         cancelling={cancelling}
         onConfirm={handleCancelSubscription}
+      />
+
+      <ChangePlanDialog
+        open={showChangePlanDialog}
+        onOpenChange={setShowChangePlanDialog}
+        currentPlan={user?.subscriptionTier || 'monthly'}
+        newPlan={selectedPlan}
+        changing={changingPlan}
+        onConfirm={handleChangePlan}
+      />
+
+      <PlanSelectionDialog
+        open={showPlanSelectionDialog}
+        onOpenChange={setShowPlanSelectionDialog}
+        currentPlan={user?.subscriptionTier || 'monthly'}
+        onSelectPlan={handleSelectPlan}
       />
 
       <DeleteAccountDialog
