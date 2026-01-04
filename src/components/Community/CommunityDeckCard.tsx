@@ -2,10 +2,12 @@ import { Button } from '../../ui/button'
 import { Star, Users, Plus, Check, Upload, X, MessageCircle, EyeOff } from 'lucide-react'
 import { DeckRatingDisplay } from './DeckRatingDisplay'
 import { toast } from 'sonner'
+import type { CommunityDeck, Deck } from '../../../store/useStore'
 
 interface CommunityDeckCardProps {
-  deck: any
+  deck: CommunityDeck
   isAdded: boolean
+  isDeleted: boolean
   updateAvailable: boolean
   isSuperuser: boolean
   isOwnDeck: boolean
@@ -13,20 +15,21 @@ interface CommunityDeckCardProps {
   deletingDeckId: string | null
   featuringDeckId: string | null
   unpublishingDeckId: string | null
-  onViewDeck: (deck: any) => void
+  onViewDeck: (deck: CommunityDeck) => void
   onViewUser: (userId: string) => void
-  onAddDeck: (deck: any) => void
-  onUpdateDeck: (communityDeck: any, importedDeck: any) => void
+  onAddDeck: (deck: CommunityDeck) => void
+  onUpdateDeck: (communityDeck: CommunityDeck, importedDeck: Deck) => void
   onToggleFeatured: (deckId: string) => void
   onDeleteDeck: (deckId: string, deckName: string) => void
   onUnpublishDeck: (deckId: string, deckName: string) => void
-  importedDeck?: any
+  importedDeck?: Deck
   isFeatured?: boolean
 }
 
 export function CommunityDeckCard({
   deck,
   isAdded,
+  isDeleted,
   updateAvailable,
   isSuperuser,
   isOwnDeck,
@@ -48,6 +51,80 @@ export function CommunityDeckCard({
     ? "bg-gradient-to-br from-purple-50 to-white dark:from-purple-900/20 dark:to-gray-800 rounded-xl p-4 sm:p-6 shadow-md hover:shadow-lg transition-all border-2 border-purple-200 dark:border-purple-700 hover:border-purple-400 dark:hover:border-purple-500"
     : "bg-white dark:bg-gray-800 rounded-xl p-4 sm:p-6 shadow-sm hover:shadow-md transition-all border border-gray-200 dark:border-gray-700 hover:border-emerald-400 dark:hover:border-emerald-500"
 
+  const getDifficultyEmoji = (difficulty?: string): string => {
+    switch (difficulty) {
+      case 'beginner': return '🟢'
+      case 'intermediate': return '🟡'
+      case 'advanced': return '🟠'
+      case 'expert': return '🔴'
+      default: return '🌈'
+    }
+  }
+
+  const getDifficultyLabel = (difficulty?: string): string => {
+    if (!difficulty) return ''
+    return difficulty.charAt(0).toUpperCase() + difficulty.slice(1)
+  }
+
+  const getDifficultyClassName = (difficulty?: string): string => {
+    switch (difficulty) {
+      case 'beginner':
+        return 'bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400'
+      case 'intermediate':
+        return 'bg-yellow-50 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400'
+      case 'advanced':
+        return 'bg-orange-50 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400'
+      case 'expert':
+        return 'bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400'
+      default:
+        return 'bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/30 dark:to-pink-900/30 text-purple-700 dark:text-purple-400'
+    }
+  }
+
+  // Determine button state based on ownership and deck status
+  const getButtonState = () => {
+    console.log('🔍 Button State Debug:', {
+      deckId: deck.id,
+      deckName: deck.name,
+      isOwnDeck,
+      isAdded,
+      updateAvailable,
+      hasImportedDeck: !!importedDeck
+    })
+
+    // Priority 1: Update available (for imported decks only)
+    console.log (`Update available?`, updateAvailable)
+    console.log (`ImportedDeck?`, importedDeck)
+    console.log (`isOwnDeck?`, isOwnDeck)
+    console.log (`isAdded?`, isAdded)
+    console.log (`isDELETED?`, isDeleted)
+    if (updateAvailable && importedDeck) {
+      return 'update-available'
+    }
+
+    // Priority 2: Own deck scenarios
+    if (isOwnDeck) {
+      if (!isDeleted) {
+        // Own deck, still in personal library → Unpublish only
+        return 'own-unpublish'
+      } else {
+        // Own deck, removed from personal library → Both Add + Unpublish
+        return 'own-removed'
+      }
+    }
+
+    // Priority 3: Other user's deck scenarios
+    if (isAdded) {
+      // Someone else's deck already added
+      return 'already-added'
+    } else {
+      // Someone else's deck not yet added
+      return 'add-to-decks'
+    }
+  }
+
+  const buttonState = getButtonState()
+
   return (
     <div className={cardClassName}>
       <button
@@ -68,24 +145,19 @@ export function CommunityDeckCard({
                 Featured
               </span>
             )}
-            <span className="text-xs px-2 py-0.5 sm:py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-full truncate max-w-[100px]">
-              {deck.category}
-            </span>
-            <span className="text-xs px-2 py-0.5 sm:py-1 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded-full truncate max-w-[100px]">
-              {deck.subtopic}
-            </span>
+            {deck.category && (
+              <span className="text-xs px-2 py-0.5 sm:py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-full truncate max-w-[100px]">
+                {deck.category}
+              </span>
+            )}
+            {deck.subtopic && (
+              <span className="text-xs px-2 py-0.5 sm:py-1 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded-full truncate max-w-[100px]">
+                {deck.subtopic}
+              </span>
+            )}
             {deck.difficulty && (
-              <span className={`text-xs px-2 py-0.5 sm:py-1 rounded-full truncate max-w-[100px] ${
-                deck.difficulty === 'beginner' ? 'bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400' :
-                deck.difficulty === 'intermediate' ? 'bg-yellow-50 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400' :
-                deck.difficulty === 'advanced' ? 'bg-orange-50 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400' :
-                deck.difficulty === 'expert' ? 'bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400' :
-                'bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/30 dark:to-pink-900/30 text-purple-700 dark:text-purple-400'
-              }`}>
-                {deck.difficulty === 'beginner' ? '🟢' :
-                 deck.difficulty === 'intermediate' ? '🟡' :
-                 deck.difficulty === 'advanced' ? '🟠' :
-                 deck.difficulty === 'expert' ? '🔴' : '🌈'} {deck.difficulty.charAt(0).toUpperCase() + deck.difficulty.slice(1)}
+              <span className={`text-xs px-2 py-0.5 sm:py-1 rounded-full truncate max-w-[100px] ${getDifficultyClassName(deck.difficulty)}`}>
+                {getDifficultyEmoji(deck.difficulty)} {getDifficultyLabel(deck.difficulty)}
               </span>
             )}
           </div>
@@ -168,28 +240,13 @@ export function CommunityDeckCard({
         </div>
       )}
 
-      {/* Unpublish Button for Deck Owner */}
-      {isOwnDeck && (
-        <Button
-          variant="outline"
-          onClick={(e) => {
-            e.stopPropagation()
-            onUnpublishDeck(deck.id, deck.name)
-          }}
-          disabled={unpublishingDeckId === deck.id}
-          className="w-full mb-3 border-orange-300 dark:border-orange-700 text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20"
-        >
-          <EyeOff className="w-4 h-4 mr-2" />
-          {unpublishingDeckId === deck.id ? 'Unpublishing...' : 'Unpublish Deck'}
-        </Button>
-      )}
-
-      {/* Add/Update Buttons */}
-      {updateAvailable && importedDeck ? (
+      {/* Consolidated Button Logic - Now with getButtonState() */}
+      {buttonState === 'update-available' && importedDeck ? (
+        /* Update available */
         <div className="space-y-2">
           <div className="flex items-center justify-center gap-2 text-xs bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 py-1 px-2 rounded-md">
             <Upload className="w-3 h-3" />
-            {isFeatured ? 'Update Available' : `Update Available (v${deck.version})`}
+            {isFeatured ? 'Update Available' : `Update Available`}
           </div>
           <Button
             onClick={(e) => {
@@ -203,30 +260,70 @@ export function CommunityDeckCard({
             {addingDeckId === deck.id ? 'Updating...' : 'Update Deck'}
           </Button>
         </div>
-      ) : (
+      ) : buttonState === 'own-unpublish' ? (
+        /* Own deck, still in library - Unpublish only */
         <Button
           onClick={(e) => {
             e.stopPropagation()
-            if (isAdded) {
-              toast.info('You have already added this deck')
-            } else {
+            onUnpublishDeck(deck.id, deck.name)
+          }}
+          disabled={unpublishingDeckId === deck.id}
+          className="w-full bg-orange-600 hover:bg-orange-700 text-white"
+        >
+          <EyeOff className="w-4 h-4 mr-2" />
+          {unpublishingDeckId === deck.id ? 'Unpublishing...' : 'Unpublish Deck'}
+        </Button>
+      ) : buttonState === 'own-removed' ? (
+        /* Own deck, removed from library - Both Add + Unpublish */
+        <div className="space-y-2">
+          <Button
+            onClick={(e) => {
+              e.stopPropagation()
               onAddDeck(deck)
-            }
+            }}
+            disabled={addingDeckId === deck.id}
+            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            {addingDeckId === deck.id ? 'Adding...' : 'Add to My Decks'}
+          </Button>
+          <Button
+            onClick={(e) => {
+              e.stopPropagation()
+              onUnpublishDeck(deck.id, deck.name)
+            }}
+            disabled={unpublishingDeckId === deck.id}
+            className="w-full bg-orange-600 hover:bg-orange-700 text-white"
+          >
+            <EyeOff className="w-4 h-4 mr-2" />
+            {unpublishingDeckId === deck.id ? 'Unpublishing...' : 'Unpublish Deck'}
+          </Button>
+        </div>
+      ) : buttonState === 'already-added' ? (
+        /* Someone else's deck already added */
+        <Button
+          onClick={(e) => {
+            e.stopPropagation()
+            toast.info('You have already added this deck')
+          }}
+          disabled
+          className="w-full bg-gray-400 text-white cursor-not-allowed"
+        >
+          <Check className="w-4 h-4 mr-2" />
+          Already Added
+        </Button>
+      ) : (
+        /* Someone else's deck not yet added */
+        <Button
+          onClick={(e) => {
+            e.stopPropagation()
+            onAddDeck(deck)
           }}
           disabled={addingDeckId === deck.id}
-          className={`w-full ${isAdded ? 'bg-gray-400 hover:bg-gray-500' : 'bg-emerald-600 hover:bg-emerald-700'} text-white ${isFeatured ? 'text-sm sm:text-base h-9 sm:h-10' : ''}`}
+          className={`w-full bg-emerald-600 hover:bg-emerald-700 text-white ${isFeatured ? 'text-sm sm:text-base h-9 sm:h-10' : ''}`}
         >
-          {isAdded ? (
-            <>
-              <Check className="w-4 h-4 mr-2" />
-              Already Added
-            </>
-          ) : (
-            <>
-              <Plus className="w-4 h-4 mr-2" />
-              {addingDeckId === deck.id ? 'Adding...' : 'Add to My Decks'}
-            </>
-          )}
+          <Plus className="w-4 h-4 mr-2" />
+          {addingDeckId === deck.id ? 'Adding...' : 'Add to My Decks'}
         </Button>
       )}
     </div>

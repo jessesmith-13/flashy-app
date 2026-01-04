@@ -1,16 +1,20 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useNavigation } from '../../hooks/useNavigation'
 import { Button } from '../ui/button'
 import { Check, Sparkles } from 'lucide-react'
 import { AppLayout } from './Layout/AppLayout'
 import { useStore } from '../../store/useStore'
-import { supabaseClient, verifyPayment } from '../../utils/api'
+import { verifyPayment } from '../../utils/api'
 
 export function PaymentSuccessScreen() {
   const { navigateTo } = useNavigation()
   const { setAuth, accessToken, user } = useStore()
+  const hasVerified = useRef(false)  // ✅ Track if we've already verified
 
   useEffect(() => {
+    // ✅ Prevent re-running if already verified
+    if (hasVerified.current) return
+
     console.log('=== PaymentSuccessScreen mounted ===')
     console.log('Current URL:', window.location.href)
     console.log('User:', user)
@@ -26,8 +30,8 @@ export function PaymentSuccessScreen() {
 
     // Verify payment and upgrade user immediately
     const verifyAndUpgrade = async () => {
-      if (!sessionId || !accessToken) {
-        console.log('Missing sessionId or accessToken')
+      if (!sessionId || !accessToken || !user) {
+        console.log('Missing sessionId, accessToken, or user')
         return
       }
 
@@ -36,36 +40,29 @@ export function PaymentSuccessScreen() {
         const result = await verifyPayment(accessToken, sessionId)
         console.log('✅ Payment verified:', result)
 
-        // Force refresh the session to get updated user data from the server
-        const { data: { session }, error } = await supabaseClient.auth.refreshSession()
+        // ✅ Mark as verified BEFORE updating state
+        hasVerified.current = true
+
+        // ✅ IMMEDIATELY UPDATE ZUSTAND STORE with premium subscription!
+        setAuth(
+          {
+            ...user,
+            subscriptionTier: result.tier,
+            subscriptionExpiry: result.subscriptionExpiry,
+            stripeSubscriptionId: result.stripeSubscriptionId,
+            subscriptionCancelledAtPeriodEnd: false,
+          },
+          accessToken
+        )
+
+        console.log('✅ User state updated with subscription_tier:', result.tier || 'premium')
+
+        // ✅✅✅ IMPORTANT: Start redirect timer AFTER store update
+        setTimeout(() => {
+          console.log('🔄 Redirecting to decks...')
+          navigateTo('decks')
+        }, 3000)
         
-        console.log('🔄 Session after refresh:', {
-          hasSession: !!session,
-          hasUser: !!session?.user,
-          metadata: session?.user?.user_metadata
-        })
-        
-        if (error) {
-          console.error('Error refreshing session:', error)
-          return
-        }
-        
-        if (session?.user) {
-          console.log('✅ User upgraded! New metadata:', session.user.user_metadata)
-          setAuth(
-            {
-              id: session.user.id,
-              email: session.user.email || '',
-              name: session.user.user_metadata?.name || session.user.user_metadata?.displayName || '',
-              displayName: session.user.user_metadata?.displayName || session.user.user_metadata?.name || '',
-              avatarUrl: session.user.user_metadata?.avatarUrl,
-              decksPublic: session.user.user_metadata?.decksPublic ?? true,
-              subscriptionTier: session.user.user_metadata?.subscriptionTier || 'free',
-              subscriptionExpiry: session.user.user_metadata?.subscriptionExpiry,
-            },
-            session.access_token
-          )
-        }
       } catch (error) {
         console.error('Error verifying payment:', error)
       }
@@ -73,51 +70,10 @@ export function PaymentSuccessScreen() {
 
     // Verify immediately
     verifyAndUpgrade()
-    
-    // Also refresh session periodically (in case webhook is delayed)
-    const refreshUserSession = async () => {
-      try {
-        const { data: { session }, error } = await supabaseClient.auth.getSession()
-        
-        if (error) {
-          console.error('Error refreshing session:', error)
-          return
-        }
-        
-        if (session?.user) {
-          setAuth(
-            {
-              id: session.user.id,
-              email: session.user.email || '',
-              name: session.user.user_metadata?.name || session.user.user_metadata?.displayName || '',
-              displayName: session.user.user_metadata?.displayName || session.user.user_metadata?.name || '',
-              avatarUrl: session.user.user_metadata?.avatarUrl,
-              decksPublic: session.user.user_metadata?.decksPublic ?? true,
-              subscriptionTier: session.user.user_metadata?.subscriptionTier || 'free',
-              subscriptionExpiry: session.user.user_metadata?.subscriptionExpiry,
-            },
-            session.access_token
-          )
-        }
-      } catch (error) {
-        console.error('Error refreshing user session:', error)
-      }
-    }
-    
-    // Refresh every 2 seconds for up to 10 seconds (in case webhook is delayed)
-    const interval = setInterval(refreshUserSession, 2000)
-    setTimeout(() => clearInterval(interval), 10000)
 
-    // Auto-redirect after 5 seconds
-    const timer = setTimeout(() => {
-      navigateTo('decks')
-    }, 5000)
+    // ❌ REMOVE the old timer from here - it's now inside verifyAndUpgrade!
 
-    return () => {
-      clearTimeout(timer)
-      clearInterval(interval)
-    }
-  }, [navigateTo, setAuth, accessToken, user])
+  }, []) // ✅ EMPTY dependency array - only run once on mount!
 
   return (
     <AppLayout>
@@ -182,7 +138,7 @@ export function PaymentSuccessScreen() {
           </div>
 
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-6">
-            Redirecting to your decks in 5 seconds...
+            Redirecting to your decks in 3 seconds...
           </p>
         </div>
       </div>

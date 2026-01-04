@@ -87,9 +87,13 @@ export const canImportCommunityDecks = (tier?: SubscriptionTier, isSuperuserFlag
   return SUBSCRIPTION_LIMITS[effectiveTier].importCommunityDecks
 }
 
-export const canPublishToCommunity = (tier?: SubscriptionTier, isSuperuserFlag?: boolean): boolean => {
-  // Superusers have access to all features
-  if (isSuperuserFlag) return true
+export const canPublishToCommunity = (
+  tier?: SubscriptionTier,
+  isSuperuserFlag?: boolean,
+  isModeratorFlag?: boolean
+): boolean => {
+  if (isSuperuserFlag || isModeratorFlag) return true
+
   const effectiveTier = tier || 'free'
   return SUBSCRIPTION_LIMITS[effectiveTier].publishToCommunity
 }

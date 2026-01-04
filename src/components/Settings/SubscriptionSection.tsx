@@ -29,6 +29,7 @@ export function SubscriptionSection({
   const isModerator = user?.isModerator === true
   const isSuperuser = user?.isSuperuser === true
   const hasSpecialRole = isModerator || isSuperuser
+  const isRecurring = user?.subscriptionTier === 'monthly' || user?.subscriptionTier === 'annual'
   
   // Effective premium status includes special roles
   const effectiveIsPremium = isPremiumSubscription || hasSpecialRole
@@ -149,7 +150,7 @@ export function SubscriptionSection({
             </div>
           )}
           
-          {isPremiumSubscription && (
+          {isRecurring && (
             <Button
               onClick={onChangePlan}
               className="w-full justify-start bg-blue-600 hover:bg-blue-700 text-white"

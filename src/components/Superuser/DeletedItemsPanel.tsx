@@ -14,7 +14,8 @@ import {
   AlertCircle,
   CheckCircle
 } from 'lucide-react'
-import { getDeletedItems, restoreDeletedItem } from '../../../utils/api'
+import { getDeletedItems, restoreDeletedItem } from '../../../utils/api/admin'
+import { getCommunityDeck } from '../../../utils/api'
 import { toast } from 'sonner'
 import {
   AlertDialog,
@@ -79,6 +80,7 @@ export function DeletedItemsPanel({ accessToken }: DeletedItemsPanelProps) {
   const [loading, setLoading] = useState(true)
   const [restoring, setRestoring] = useState<string | null>(null)
   const [restoreDialogOpen, setRestoreDialogOpen] = useState(false)
+  const [communityDeck, setCommunityDeck] = useState<boolean>(false)
   const [selectedItem, setSelectedItem] = useState<{
     id: string
     type: 'comment' | 'deck' | 'card'
@@ -94,6 +96,7 @@ export function DeletedItemsPanel({ accessToken }: DeletedItemsPanelProps) {
       setLoading(true)
       const data = await getDeletedItems(accessToken)
       setComments(data.comments || [])
+      console.log('deck DATA', data.decks)
       setDecks(data.decks || [])
       setCards(data.cards || [])
     } catch (error: any) {
@@ -236,11 +239,11 @@ export function DeletedItemsPanel({ accessToken }: DeletedItemsPanelProps) {
                       <div className="flex items-start justify-between gap-4 mb-3">
                         <div className="flex-1 min-w-0">
                           <p className="text-gray-900 dark:text-gray-100 break-words">
-                            {comment.text}
+                            {comment.content}
                           </p>
-                          {comment.deckName && (
+                          {comment.communityDeckName && (
                             <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                              Deck: {comment.deckName}
+                              Deck: {comment.communityDeckName} {comment.communityDeckEmoji}
                             </p>
                           )}
                         </div>
@@ -259,11 +262,11 @@ export function DeletedItemsPanel({ accessToken }: DeletedItemsPanelProps) {
                       <div className="flex flex-wrap gap-2 text-xs text-gray-600 dark:text-gray-400">
                         <div className="flex items-center gap-1 bg-blue-50 dark:bg-blue-900/20 px-2 py-1 rounded">
                           <User className="w-3 h-3 text-blue-600 dark:text-blue-400" />
-                          <span className="font-medium text-blue-700 dark:text-blue-300">Author: {comment.authorName}</span>
+                          <span className="font-medium text-blue-700 dark:text-blue-300">Author: {comment.userDisplayName}</span>
                         </div>
                         <div className="flex items-center gap-1">
                           <Trash2 className="w-3 h-3" />
-                          <span>Deleted by: {comment.deletedByName}</span>
+                          <span>Deleted by: {comment.deletedByDisplayName}</span>
                         </div>
                         <div className="flex items-center gap-1">
                           <Calendar className="w-3 h-3" />
@@ -339,7 +342,7 @@ export function DeletedItemsPanel({ accessToken }: DeletedItemsPanelProps) {
                       <div className="flex flex-wrap gap-2 text-xs text-gray-600 dark:text-gray-400">
                         <div className="flex items-center gap-1 bg-blue-50 dark:bg-blue-900/20 px-2 py-1 rounded">
                           <User className="w-3 h-3 text-blue-600 dark:text-blue-400" />
-                          <span className="font-medium text-blue-700 dark:text-blue-300">Author: {deck.authorName}</span>
+                          <span className="font-medium text-blue-700 dark:text-blue-300">Author: {deck.ownerName}</span>
                         </div>
                         <div className="flex items-center gap-1">
                           <Trash2 className="w-3 h-3" />
@@ -388,20 +391,14 @@ export function DeletedItemsPanel({ accessToken }: DeletedItemsPanelProps) {
                       <div className="flex items-start justify-between gap-4 mb-3">
                         <div className="flex-1 min-w-0 space-y-2">
                           <div>
-                            <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Front:</p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Question:</p>
                             <p className="text-gray-900 dark:text-gray-100 break-words">
                               {card.front}
                             </p>
                           </div>
-                          <div>
-                            <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Back:</p>
-                            <p className="text-gray-900 dark:text-gray-100 break-words">
-                              {card.back}
-                            </p>
-                          </div>
                           {card.deckName && (
                             <p className="text-xs text-gray-500 dark:text-gray-400">
-                              Deck: {card.deckName}
+                              Deck: {card.deckName} {card.deckEmoji}
                             </p>
                           )}
                         </div>

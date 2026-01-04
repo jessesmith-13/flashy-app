@@ -1,10 +1,29 @@
 import { useEffect, useState } from 'react'
 import { useStore, CardType, CommunityDeck, Card } from '../../../../store/useStore'
 import { useNavigation } from '../../../../hooks/useNavigation'
-import * as api from '../../../../utils/api'
+import { 
+  fetchCards as apiFetchCards, 
+  createCard as apiCreateCard, 
+  updateCard as apiUpdateCard, 
+  deleteCard as apiDeleteCard, 
+  updateDeck as apiUpdateDeck, 
+  deleteDeck as apiDeleteDeck, 
+  updateCardPositions as apiReorderCard, 
+  createCardsBatch as apiCreateCardsBatch,
+} from '../../../../utils/api/decks'
+import { translateText as apiTranslateText } from '../../../../utils/api/ai'
+import { 
+  fetchCommunityDecks as apiFetchCommunityDecks, 
+  publishDeck as apiPublishDeck, 
+  unpublishDeck as apiUnpublishDeck 
+} from '../../../../utils/api/community'
+import { 
+  uploadCardImage as apiUploadCardImage, 
+  uploadCardAudio as apiUploadCardAudio 
+} from '../../../../utils/api/storage'
 import { AppLayout } from '../../Layout/AppLayout'
 import { DeckHeader } from './DeckHeader'
-import { AddCardModal } from './AddCardModal'
+import { AddCardModal  } from './AddCardModal'
 import { EditCardModal } from './EditCardModal'
 import { BulkAddCardsDialog } from './BulkAddCardsDialog'
 import { DeckSettingsDialog } from './DeckSettingsDialog'
@@ -16,28 +35,30 @@ import { canPublishToCommunity } from '../../../../utils/subscription'
 import { handleAuthError } from '../../../../utils/authErrorHandler'
 
 interface CardData {
+  id?: string
   front: string
-  back: string
+  back?: string
   cardType: string
   frontImageUrl?: string | null
   backImageUrl?: string | null
   frontAudioUrl?: string | null
   backAudioUrl?: string | null
-  options?: string[]
   correctAnswers?: string[]
   acceptedAnswers?: string[]
+  incorrectAnswers?: string[]
 }
 
 interface ApiCardData {
   front: string
-  back: string
+  back?: string
   cardType: string
   frontImageUrl?: string
   backImageUrl?: string
-  frontAudioUrl?: string
-  backAudioUrl?: string
-  options?: string[]
+  frontAudio?: string
+  backAudio?: string
   acceptedAnswers?: string[]
+  correctAnswers?: string[]
+  incorrectAnswers?: string[]
 }
 
 export function DeckDetailScreen() {
@@ -56,7 +77,7 @@ export function DeckDetailScreen() {
     studySessions,
   } = useStore()
   const { navigateTo } = useNavigation()
-
+  
   const deck = decks.find((d) => d.id === selectedDeckId)
   const deckCards = cards.filter((c) => c.deckId === selectedDeckId)
 
@@ -72,6 +93,7 @@ export function DeckDetailScreen() {
   const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [editCardDialogOpen, setEditCardDialogOpen] = useState(false)
   
+  // New card state - matching new API structure
   const [newCardType, setNewCardType] = useState<CardType>('classic-flip')
   const [newCardFront, setNewCardFront] = useState('')
   const [newCardBack, setNewCardBack] = useState('')
@@ -81,9 +103,14 @@ export function DeckDetailScreen() {
   const [newCardBackImageFile, setNewCardBackImageFile] = useState<File | null>(null)
   const [newCardFrontAudioUrl, setNewCardFrontAudioUrl] = useState('')
   const [newCardBackAudioUrl, setNewCardBackAudioUrl] = useState('')
-  const [newCardOptions, setNewCardOptions] = useState<string[]>(['', ''])
-  const [newCardCorrectIndices, setNewCardCorrectIndices] = useState<number[]>([0])
-  const [newCardAcceptedAnswers, setNewCardAcceptedAnswers] = useState('')
+  
+  // New API structure for multiple-choice
+  const [newCardCorrectAnswers, setNewCardCorrectAnswers] = useState<string[]>([''])
+  const [newCardIncorrectAnswers, setNewCardIncorrectAnswers] = useState<string[]>(['', '', ''])
+  
+  // New API structure for type-answer
+  const [newCardAcceptedAnswers, setNewCardAcceptedAnswers] = useState<string[]>([])
+  
   const [creating, setCreating] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [uploadingImage, setUploadingImage] = useState(false)
@@ -97,6 +124,7 @@ export function DeckDetailScreen() {
   const [translatingEditFront, setTranslatingEditFront] = useState(false)
   const [translatingEditBack, setTranslatingEditBack] = useState(false)
 
+  // Edit card state - matching new API structure
   const [editingCardId, setEditingCardId] = useState<string | null>(null)
   const [editCardType, setEditCardType] = useState<CardType>('classic-flip')
   const [editCardFront, setEditCardFront] = useState('')
@@ -107,9 +135,15 @@ export function DeckDetailScreen() {
   const [editCardBackImageFile, setEditCardBackImageFile] = useState<File | null>(null)
   const [editCardFrontAudioUrl, setEditCardFrontAudioUrl] = useState('')
   const [editCardBackAudioUrl, setEditCardBackAudioUrl] = useState('')
-  const [editCardOptions, setEditCardOptions] = useState<string[]>(['', ''])
-  const [editCardCorrectIndices, setEditCardCorrectIndices] = useState<number[]>([0])
-  const [editCardAcceptedAnswers, setEditCardAcceptedAnswers] = useState('')
+  
+  // New API structure for edit - multiple-choice
+  const [editCardAcceptedAnswers, setEditCardAcceptedAnswers] = useState<string[]>([''])
+  const [editCardIncorrectAnswers, setEditCardIncorrectAnswers] = useState<string[]>(['', '', ''])
+  
+  // New API structure for edit - type-answer
+  const [editCardTypeAnswerAcceptedAnswers, setEditCardTypeAnswerAcceptedAnswers] = useState<string[]>([''])
+  const [editCardCorrectAnswers, setEditCardCorrectAnswers] = useState<string[]>([''])
+  
   const [updating, setUpdating] = useState(false)
   
   const [editName, setEditName] = useState('')
@@ -121,6 +155,7 @@ export function DeckDetailScreen() {
   const [editFrontLanguage, setEditFrontLanguage] = useState('')
   const [editBackLanguage, setEditBackLanguage] = useState('')
   const [draggedCard, setDraggedCard] = useState<string | null>(null)
+  const [dragOverCard, setDragOverCard] = useState<string | null>(null)
   
   const [publishDialogOpen, setPublishDialogOpen] = useState(false)
   const [publishing, setPublishing] = useState(false)
@@ -157,7 +192,7 @@ export function DeckDetailScreen() {
 
   const loadCommunityDeckAuthor = async (communityDeckId: string) => {
     try {
-      const publishedDecks = await api.fetchCommunityDecks()
+      const publishedDecks = await apiFetchCommunityDecks()
       const allDecks = publishedDecks
       
       const communityDeck = allDecks.find((d: CommunityDeck) => d.id === communityDeckId)
@@ -177,7 +212,7 @@ export function DeckDetailScreen() {
     if (!accessToken || !selectedDeckId) return
 
     try {
-      const fetchedCards = await api.fetchCards(accessToken, selectedDeckId)
+      const fetchedCards = await apiFetchCards(accessToken, selectedDeckId)
       setCards(fetchedCards)
     } catch (error) {
       handleAuthError(error)
@@ -191,24 +226,22 @@ export function DeckDetailScreen() {
     e.preventDefault()
     if (!accessToken || !selectedDeckId) return
     
+    // Validation
     if (!newCardFront.trim() && !newCardImageFile) {
       toast.error('Please provide question text or image')
       return
     }
 
     if (newCardType === 'multiple-choice') {
-      const filledOptions = newCardOptions.filter(opt => opt.trim())
-      if (filledOptions.length < 2) {
-        toast.error('Please provide at least 2 options')
+      const filledCorrect = newCardCorrectAnswers.filter(a => a.trim())
+      const filledIncorrect = newCardIncorrectAnswers.filter(a => a.trim())
+      
+      if (filledCorrect.length === 0) {
+        toast.error('Please provide at least one correct answer')
         return
       }
-      if (newCardCorrectIndices.length === 0) {
-        toast.error('Please select at least one correct answer')
-        return
-      }
-      const invalidIndices = newCardCorrectIndices.filter(idx => idx >= filledOptions.length)
-      if (invalidIndices.length > 0) {
-        toast.error('Invalid correct answer selection')
+      if (filledIncorrect.length === 0) {
+        toast.error('Please provide at least one incorrect option')
         return
       }
     } else if (newCardType === 'classic-flip') {
@@ -216,25 +249,26 @@ export function DeckDetailScreen() {
         toast.error('Please provide answer text or image')
         return
       }
-    } else {
-      if (!newCardBack.trim()) {
-        toast.error('Please provide an answer')
+    } else if (newCardType === 'type-answer') {
+      if (!newCardBack.trim() && !newCardBackImageFile) {
+        toast.error('Please provide answer text or image')
         return
       }
+      // acceptedAnswers is optional for type-answer
     }
 
     setCreating(true)
     try {
       const cardData: CardData = {
         front: newCardFront,
-        back: newCardBack, // Initialize with default value
         cardType: newCardType,
       }
 
+      // Handle front image
       if (newCardImageFile && accessToken) {
         try {
           setUploadingImage(true)
-          const imageUrl = await api.uploadCardImage(accessToken, newCardImageFile)
+          const imageUrl = await apiUploadCardImage(accessToken, newCardImageFile)
           cardData.frontImageUrl = imageUrl
           setUploadingImage(false)
         } catch (error) {
@@ -248,64 +282,83 @@ export function DeckDetailScreen() {
         cardData.frontImageUrl = newCardFrontImageUrl.trim()
       }
 
-      if (newCardType === 'multiple-choice') {
-        const filledOptions = newCardOptions.filter(opt => opt.trim())
-        const correctAnswers = newCardCorrectIndices.map(idx => filledOptions[idx])
-        const incorrectOptions = filledOptions.filter((_, idx) => !newCardCorrectIndices.includes(idx))
-        
-        cardData.back = correctAnswers[0] // Override for multiple-choice
-        cardData.correctAnswers = correctAnswers
-        cardData.options = incorrectOptions
-      } else {
+      // Handle card type specific data
+      if (newCardType === 'classic-flip') {
         cardData.back = newCardBack
-      }
-
-      if (newCardType === 'classic-flip' && newCardBackImageFile && accessToken) {
-        try {
-          setUploadingBackImage(true)
-          const backImageUrl = await api.uploadCardImage(accessToken, newCardBackImageFile)
-          cardData.backImageUrl = backImageUrl
-          setUploadingBackImage(false)
-        } catch (error) {
-          setUploadingBackImage(false)
-          console.error('Failed to upload answer image:', error)
-          toast.error('Failed to upload answer image')
-          setCreating(false)
-          return
+        
+        // Handle back image
+        if (newCardBackImageFile && accessToken) {
+          try {
+            setUploadingBackImage(true)
+            const backImageUrl = await apiUploadCardImage(accessToken, newCardBackImageFile)
+            cardData.backImageUrl = backImageUrl
+            setUploadingBackImage(false)
+          } catch (error) {
+            setUploadingBackImage(false)
+            console.error('Failed to upload answer image:', error)
+            toast.error('Failed to upload answer image')
+            setCreating(false)
+            return
+          }
+        } else if (newCardBackImageUrl.trim()) {
+          cardData.backImageUrl = newCardBackImageUrl.trim()
         }
-      } else if (newCardType === 'classic-flip' && newCardBackImageUrl.trim()) {
-        cardData.backImageUrl = newCardBackImageUrl.trim()
+        
+        // Handle audio URLs
+        if (newCardFrontAudioUrl.trim()) {
+          cardData.frontAudioUrl = newCardFrontAudioUrl.trim()
+        }
+        if (newCardBackAudioUrl.trim()) {
+          cardData.backAudioUrl = newCardBackAudioUrl.trim()
+        }
+      } else if (newCardType === 'multiple-choice') {
+        // Filter out empty answers - multiple-choice uses correctAnswers + incorrectAnswers
+        cardData.correctAnswers = newCardCorrectAnswers.filter(a => a.trim())
+        cardData.incorrectAnswers = newCardIncorrectAnswers.filter(a => a.trim())
+      } else if (newCardType === 'type-answer') {
+        // Filter out empty answers - type-answer requires back + acceptedAnswers
+        cardData.back = newCardBack
+        cardData.acceptedAnswers = newCardAcceptedAnswers.filter(a => a.trim())
+        
+        // Handle back image for type-answer
+        if (newCardBackImageFile && accessToken) {
+          try {
+            setUploadingBackImage(true)
+            const backImageUrl = await apiUploadCardImage(accessToken, newCardBackImageFile)
+            cardData.backImageUrl = backImageUrl
+            setUploadingBackImage(false)
+          } catch (error) {
+            setUploadingBackImage(false)
+            console.error('Failed to upload answer image:', error)
+            toast.error('Failed to upload answer image')
+            setCreating(false)
+            return
+          }
+        } else if (newCardBackImageUrl.trim()) {
+          cardData.backImageUrl = newCardBackImageUrl.trim()
+        }
       }
 
-      // Handle audio URLs
-      if (newCardFrontAudioUrl.trim()) {
-        cardData.frontAudioUrl = newCardFrontAudioUrl.trim()
-      }
-
-      if (newCardBackAudioUrl.trim()) {
-        cardData.backAudioUrl = newCardBackAudioUrl.trim()
-      }
-
-      if (newCardType === 'type-answer' && newCardAcceptedAnswers.trim()) {
-        cardData.acceptedAnswers = newCardAcceptedAnswers
-          .split(',')
-          .map(ans => ans.trim())
-          .filter(ans => ans.length > 0)
-      }
-
-      // Remove correctAnswers and convert null to undefined for API compatibility
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { correctAnswers: _correctAnswers, frontImageUrl, backImageUrl, frontAudioUrl, backAudioUrl, ...rest } = cardData
+      // Convert to API format with correct field names
+      const { correctAnswers, acceptedAnswers, incorrectAnswers, frontImageUrl, backImageUrl, frontAudioUrl, backAudioUrl, ...rest } = cardData
       
       const apiData: ApiCardData = {
         ...rest,
         ...(frontImageUrl !== null && frontImageUrl !== undefined ? { frontImageUrl } : {}),
         ...(backImageUrl !== null && backImageUrl !== undefined ? { backImageUrl } : {}),
-        ...(frontAudioUrl !== null && frontAudioUrl !== undefined ? { frontAudioUrl } : {}),
-        ...(backAudioUrl !== null && backAudioUrl !== undefined ? { backAudioUrl } : {}),
+        ...(frontAudioUrl !== null && frontAudioUrl !== undefined ? { frontAudio: frontAudioUrl } : {}),
+        ...(backAudioUrl !== null && backAudioUrl !== undefined ? { backAudio: backAudioUrl } : {}),
       }
       
-      const card = await api.createCard(accessToken, selectedDeckId, apiData)
+      // Add answer arrays with correct field names based on card type
+      if (newCardType === 'multiple-choice' && correctAnswers && incorrectAnswers) {
+        apiData.correctAnswers = correctAnswers
+        apiData.incorrectAnswers = incorrectAnswers
+      } else if (newCardType === 'type-answer' && acceptedAnswers) {
+        apiData.acceptedAnswers = acceptedAnswers
+      }
+      
+      const card = await apiCreateCard(accessToken, selectedDeckId, apiData)
 
       addCard(card)
       
@@ -313,10 +366,7 @@ export function DeckDetailScreen() {
         updateDeck(deck.id, { cardCount: (deck.cardCount || 0) + 1 })
       }
 
-      if (closeDialog) {
-        setCreateDialogOpen(false)
-      }
-      setNewCardType('classic-flip')
+      // Reset form
       setNewCardFront('')
       setNewCardBack('')
       setNewCardFrontImageUrl('')
@@ -325,16 +375,20 @@ export function DeckDetailScreen() {
       setNewCardBackImageFile(null)
       setNewCardFrontAudioUrl('')
       setNewCardBackAudioUrl('')
-      setNewCardOptions(['', ''])
-      setNewCardCorrectIndices([0])
-      setNewCardAcceptedAnswers('')
+      setNewCardAcceptedAnswers([''])
+      setNewCardCorrectAnswers([''])
+      setNewCardIncorrectAnswers(['', '', ''])
       
-      if (!closeDialog) {
+      if (closeDialog) {
+        setCreateDialogOpen(false)
+        toast.success('Card created successfully!')
+      } else {
         toast.success('Card added! Add another card below.')
       }
     } catch (error) {
       handleAuthError(error)
       console.error('Failed to create card:', error)
+      toast.error('Failed to create card')
     } finally {
       setCreating(false)
     }
@@ -347,7 +401,7 @@ export function DeckDetailScreen() {
     setEditingCardId(cardId)
     setEditCardType(card.cardType)
     setEditCardFront(card.front)
-    setEditCardBack(card.back)
+    setEditCardBack(card.back || '')
     setEditCardFrontImageUrl(card.frontImageUrl || '')
     setEditCardImageFile(null)
     setEditCardBackImageUrl(card.backImageUrl || '')
@@ -356,18 +410,22 @@ export function DeckDetailScreen() {
     setEditCardBackAudioUrl(card.backAudioUrl || '')
     
     if (card.cardType === 'multiple-choice') {
-      const correctAnswers = card.correctAnswers || [card.back]
-      const incorrectOptions = card.options || []
-      const allOptions = [...correctAnswers, ...incorrectOptions]
-      setEditCardOptions(allOptions)
-      const correctIndices = correctAnswers.map((_, idx) => idx)
-      setEditCardCorrectIndices(correctIndices)
+      // Parse from new API structure
+      const correctAnswers = card.correctAnswers || (card.correctAnswers ? card.correctAnswers : [''])
+      const incorrectAnswers = card.incorrectAnswers || (card.incorrectAnswers ? card.incorrectAnswers : ['', '', ''])
+      
+      setEditCardCorrectAnswers(correctAnswers.length > 0 ? correctAnswers : [''])
+      setEditCardIncorrectAnswers(incorrectAnswers.length > 0 ? incorrectAnswers : ['', '', ''])
+    } else if (card.cardType === 'type-answer') {
+      const acceptedAnswers = card.acceptedAnswers || ['']
+      setEditCardTypeAnswerAcceptedAnswers(acceptedAnswers.length > 0 ? acceptedAnswers : [''])
     } else {
-      setEditCardOptions(['', ''])
-      setEditCardCorrectIndices([0])
+      // Reset to defaults for classic-flip
+      setEditCardAcceptedAnswers([''])
+      setEditCardIncorrectAnswers(['', '', ''])
+      setEditCardTypeAnswerAcceptedAnswers([''])
     }
     
-    setEditCardAcceptedAnswers(card.acceptedAnswers?.join(', ') || '')
     setEditCardDialogOpen(true)
   }
 
@@ -375,24 +433,22 @@ export function DeckDetailScreen() {
     e.preventDefault()
     if (!accessToken || !selectedDeckId || !editingCardId) return
     
+    // Validation
     if (!editCardFront.trim() && !editCardImageFile && !editCardFrontImageUrl) {
       toast.error('Please provide question text or image')
       return
     }
 
     if (editCardType === 'multiple-choice') {
-      const filledOptions = editCardOptions.filter(opt => opt.trim())
-      if (filledOptions.length < 2) {
-        toast.error('Please provide at least 2 options')
+      const filledCorrect = editCardCorrectAnswers.filter(a => a.trim())
+      const filledIncorrect = editCardIncorrectAnswers.filter(a => a.trim())
+      
+      if (filledCorrect.length === 0) {
+        toast.error('Please provide at least one correct answer')
         return
       }
-      if (editCardCorrectIndices.length === 0) {
-        toast.error('Please select at least one correct answer')
-        return
-      }
-      const invalidIndices = editCardCorrectIndices.filter(idx => idx >= filledOptions.length)
-      if (invalidIndices.length > 0) {
-        toast.error('Invalid correct answer selection')
+      if (filledIncorrect.length === 0) {
+        toast.error('Please provide at least one incorrect option')
         return
       }
     } else if (editCardType === 'classic-flip') {
@@ -400,9 +456,14 @@ export function DeckDetailScreen() {
         toast.error('Please provide answer text or image')
         return
       }
-    } else {
-      if (!editCardBack.trim()) {
-        toast.error('Please provide an answer')
+    } else if (editCardType === 'type-answer') {
+      if (!editCardBack.trim() && !editCardBackImageFile) {
+        toast.error('Please provide answer text or image')
+        return
+      }
+      const filledAnswers = editCardTypeAnswerAcceptedAnswers.filter(a => a.trim())
+      if (filledAnswers.length === 0) {
+        toast.error('Please provide at least one accepted answer')
         return
       }
     }
@@ -410,15 +471,16 @@ export function DeckDetailScreen() {
     setUpdating(true)
     try {
       const cardData: CardData = {
+        id: editingCardId,
         front: editCardFront,
-        back: editCardBack, // Initialize with default value
         cardType: editCardType,
       }
 
+      // Handle front image
       if (editCardImageFile && accessToken) {
         try {
           setUploadingEditImage(true)
-          const imageUrl = await api.uploadCardImage(accessToken, editCardImageFile)
+          const imageUrl = await apiUploadCardImage(accessToken, editCardImageFile)
           cardData.frontImageUrl = imageUrl
           setUploadingEditImage(false)
         } catch (error) {
@@ -434,266 +496,173 @@ export function DeckDetailScreen() {
         cardData.frontImageUrl = null
       }
 
-      if (editCardType === 'multiple-choice') {
-        const filledOptions = editCardOptions.filter(opt => opt.trim())
-        const correctAnswers = editCardCorrectIndices.map(idx => filledOptions[idx])
-        const incorrectOptions = filledOptions.filter((_, idx) => !editCardCorrectIndices.includes(idx))
-        
-        cardData.back = correctAnswers[0] // Override for multiple-choice
-        cardData.correctAnswers = correctAnswers
-        cardData.options = incorrectOptions
-      } else {
+      // Handle card type specific data
+      if (editCardType === 'classic-flip') {
         cardData.back = editCardBack
-      }
-
-      if (editCardType === 'classic-flip' && editCardBackImageFile && accessToken) {
-        try {
-          setUploadingEditBackImage(true)
-          const backImageUrl = await api.uploadCardImage(accessToken, editCardBackImageFile)
-          cardData.backImageUrl = backImageUrl
-          setUploadingEditBackImage(false)
-        } catch (error) {
-          setUploadingEditBackImage(false)
-          console.error('Failed to upload answer image:', error)
-          toast.error('Failed to upload answer image')
-          setUpdating(false)
-          return
+        
+        // Handle back image
+        if (editCardBackImageFile && accessToken) {
+          try {
+            setUploadingEditBackImage(true)
+            const backImageUrl = await apiUploadCardImage(accessToken, editCardBackImageFile)
+            cardData.backImageUrl = backImageUrl
+            setUploadingEditBackImage(false)
+          } catch (error) {
+            setUploadingEditBackImage(false)
+            console.error('Failed to upload answer image:', error)
+            toast.error('Failed to upload answer image')
+            setUpdating(false)
+            return
+          }
+        } else if (editCardBackImageUrl.trim()) {
+          cardData.backImageUrl = editCardBackImageUrl.trim()
+        } else {
+          cardData.backImageUrl = null
         }
-      } else if (editCardType === 'classic-flip' && editCardBackImageUrl.trim()) {
-        cardData.backImageUrl = editCardBackImageUrl.trim()
-      } else if (editCardType === 'classic-flip') {
-        cardData.backImageUrl = null
+        
+        // Handle audio URLs
+        if (editCardFrontAudioUrl.trim()) {
+          cardData.frontAudioUrl = editCardFrontAudioUrl.trim()
+        } else {
+          cardData.frontAudioUrl = null
+        }
+        
+        if (editCardBackAudioUrl.trim()) {
+          cardData.backAudioUrl = editCardBackAudioUrl.trim()
+        } else {
+          cardData.backAudioUrl = null
+        }
+      } else if (editCardType === 'multiple-choice') {
+        // Filter out empty answers - multiple-choice uses correctAnswers + incorrectAnswers
+        cardData.correctAnswers = editCardCorrectAnswers.filter(a => a.trim())
+        cardData.incorrectAnswers = editCardIncorrectAnswers.filter(a => a.trim())
+      } else if (editCardType === 'type-answer') {
+        // Filter out empty answers - type-answer requires back + acceptedAnswers
+        cardData.back = editCardBack
+        cardData.acceptedAnswers = editCardTypeAnswerAcceptedAnswers.filter(a => a.trim())
+        
+        // Handle back image for type-answer
+        if (editCardBackImageFile && accessToken) {
+          try {
+            setUploadingEditBackImage(true)
+            const backImageUrl = await apiUploadCardImage(accessToken, editCardBackImageFile)
+            cardData.backImageUrl = backImageUrl
+            setUploadingEditBackImage(false)
+          } catch (error) {
+            setUploadingEditBackImage(false)
+            console.error('Failed to upload answer image:', error)
+            toast.error('Failed to upload answer image')
+            setUpdating(false)
+            return
+          }
+        } else if (editCardBackImageUrl.trim()) {
+          cardData.backImageUrl = editCardBackImageUrl.trim()
+        } else {
+          cardData.backImageUrl = null
+        }
       }
 
-      // Handle audio URLs
-      if (editCardFrontAudioUrl.trim()) {
-        cardData.frontAudioUrl = editCardFrontAudioUrl.trim()
-      } else {
-        cardData.frontAudioUrl = null
-      }
-
-      if (editCardBackAudioUrl.trim()) {
-        cardData.backAudioUrl = editCardBackAudioUrl.trim()
-      } else {
-        cardData.backAudioUrl = null
-      }
-
-      if (editCardType === 'type-answer' && editCardAcceptedAnswers.trim()) {
-        cardData.acceptedAnswers = editCardAcceptedAnswers
-          .split(',')
-          .map(ans => ans.trim())
-          .filter(ans => ans.length > 0)
-      } else if (editCardType !== 'type-answer') {
-        cardData.acceptedAnswers = []
-      }
-
-      if (editCardType !== 'multiple-choice') {
-        cardData.options = []
-      }
-
-      // Remove correctAnswers and convert null to undefined for API compatibility
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { correctAnswers: _correctAnswers, frontImageUrl, backImageUrl, frontAudioUrl, backAudioUrl, ...rest } = cardData
+      // Convert to API format with correct field names
+      const { correctAnswers, acceptedAnswers, incorrectAnswers, frontImageUrl, backImageUrl, frontAudioUrl, backAudioUrl, ...rest } = cardData
       
       const apiData: ApiCardData = {
         ...rest,
         ...(frontImageUrl !== null && frontImageUrl !== undefined ? { frontImageUrl } : {}),
         ...(backImageUrl !== null && backImageUrl !== undefined ? { backImageUrl } : {}),
-        ...(frontAudioUrl !== null && frontAudioUrl !== undefined ? { frontAudioUrl } : {}),
-        ...(backAudioUrl !== null && backAudioUrl !== undefined ? { backAudioUrl } : {}),
+        ...(frontAudioUrl !== null && frontAudioUrl !== undefined ? { frontAudio: frontAudioUrl } : {}),
+        ...(backAudioUrl !== null && backAudioUrl !== undefined ? { backAudio: backAudioUrl } : {}),
       }
       
-      const updatedCard = await api.updateCard(accessToken, selectedDeckId, editingCardId, apiData)
+      // Add answer arrays with correct field names based on card type
+      if (editCardType === 'multiple-choice' && correctAnswers && incorrectAnswers) {
+        apiData.correctAnswers = correctAnswers
+        apiData.incorrectAnswers = incorrectAnswers
+      } else if (editCardType === 'type-answer' && acceptedAnswers) {
+        apiData.acceptedAnswers = acceptedAnswers
+      }
+      
+      const updatedCard = await apiUpdateCard(accessToken, selectedDeckId, editingCardId, apiData)
 
       updateCard(editingCardId, updatedCard)
-
       setEditCardDialogOpen(false)
+      toast.success('Card updated successfully!')
+      
+      // Reset edit state
       setEditingCardId(null)
+      setEditCardFront('')
+      setEditCardBack('')
+      setEditCardFrontImageUrl('')
+      setEditCardImageFile(null)
+      setEditCardBackImageUrl('')
+      setEditCardBackImageFile(null)
+      setEditCardFrontAudioUrl('')
+      setEditCardBackAudioUrl('')
+      setEditCardAcceptedAnswers([''])
+      setEditCardIncorrectAnswers(['', '', ''])
+      setEditCardTypeAnswerAcceptedAnswers([''])
     } catch (error) {
       handleAuthError(error)
       console.error('Failed to update card:', error)
+      toast.error('Failed to update card')
     } finally {
       setUpdating(false)
     }
   }
 
   const handleDeleteCard = async (cardId: string) => {
-    if (!accessToken || !selectedDeckId) return
+    if (!accessToken) return
 
     try {
-      await api.deleteCard(accessToken, selectedDeckId, cardId)
+      await apiDeleteCard(accessToken, deck.id, cardId)
       removeCard(cardId)
       
       if (deck) {
         updateDeck(deck.id, { cardCount: Math.max(0, (deck.cardCount || 0) - 1) })
       }
+      
+      toast.success('Card deleted successfully!')
     } catch (error) {
       handleAuthError(error)
       console.error('Failed to delete card:', error)
+      toast.error('Failed to delete card')
     }
   }
 
-  const handleDeleteDeck = async () => {
-    if (!accessToken || !selectedDeckId) return
+  const handleDeleteSelectedCards = async () => {
+    if (!accessToken || selectedCards.size === 0) return
 
-    setDeleting(true)
     try {
-      const result = await api.deleteDeck(accessToken, selectedDeckId)
-      removeDeck(selectedDeckId)
-      navigateTo('decks')
+      const cardIds = Array.from(selectedCards)
+      await Promise.all(cardIds.map(id => apiDeleteCard(accessToken, deck.id, id)))
       
-      if (result.deletedFromCommunity) {
-        toast.success('Deck deleted from your collection and unpublished from community')
-      } else {
-        toast.success('Deck deleted successfully')
+      cardIds.forEach(id => removeCard(id))
+      
+      if (deck) {
+        updateDeck(deck.id, { cardCount: Math.max(0, (deck.cardCount || 0) - cardIds.length) })
       }
+      
+      setSelectedCards(new Set())
+      setSelectionMode(false)
+      toast.success(`${cardIds.length} cards deleted successfully!`)
     } catch (error) {
       handleAuthError(error)
-      console.error('Failed to delete deck:', error)
-      toast.error('Failed to delete deck')
-    } finally {
-      setDeleting(false)
+      console.error('Failed to delete cards:', error)
+      toast.error('Failed to delete cards')
     }
   }
 
-  const handleUpdateDeck = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!accessToken || !selectedDeckId) return
+  const handleToggleFavorite = async (cardId: string) => {
+    const card = deckCards.find(c => c.id === cardId)
+    if (!card) return
 
-    try {
-      const updated = await api.updateDeck(accessToken, selectedDeckId, {
-        name: editName,
-        emoji: editEmoji,
-        color: editColor,
-        category: editCategory,
-        subtopic: editSubtopic,
-        difficulty: editDifficulty,
-        frontLanguage: editFrontLanguage,
-        backLanguage: editBackLanguage,
-      })
-
-      updateDeck(selectedDeckId, updated)
-      setEditDialogOpen(false)
-      toast.success('Deck updated successfully')
-      
-      if (deck?.communityPublishedId) {
-        toast.info('Your published deck can be updated by republishing it', {
-          duration: 5000,
-        })
-      }
-    } catch (error) {
-      handleAuthError(error)
-      console.error('Failed to update deck:', error)
-      toast.error('Failed to update deck')
-    }
+    updateCard(cardId, { favorite: !card.favorite })
   }
 
-  const handleStartStudy = () => {
-    if (deckCards.length === 0) return
-    navigateTo('study-options')
-  }
+  const handleToggleIgnored = async (cardId: string) => {
+    const card = deckCards.find(c => c.id === cardId)
+    if (!card) return
 
-  const handlePublishDeck = async () => {
-    if (!accessToken || !selectedDeckId) {
-      toast.error('Something went wrong')
-      return
-    }
-
-    const deckToPublish = decks.find(d => d.id === selectedDeckId)
-    
-    if (!deckToPublish) {
-      toast.error('Deck not found')
-      return
-    }
-
-    if (deckToPublish.sourceCommunityDeckId) {
-      toast.error('Cannot publish decks imported from the community. Only decks you created can be published.')
-      return
-    }
-
-    if (!deckToPublish.category || !deckToPublish.subtopic) {
-      toast.error('Please set a category and subtopic in deck settings first')
-      return
-    }
-
-    const deckCardCount = cards.filter(c => c.deckId === selectedDeckId).length
-
-    if (deckCardCount === 0) {
-      toast.error('Cannot publish an empty deck')
-      return
-    }
-
-    if (deckCardCount < 10) {
-      toast.error('Deck must have at least 10 cards to be published')
-      return
-    }
-
-    setPublishing(true)
-    try {
-      const result = await api.publishDeckToCommunity(accessToken, {
-        deckId: selectedDeckId,
-        category: deckToPublish.category,
-        subtopic: deckToPublish.subtopic,
-      })
-      
-      updateDeck(selectedDeckId, {
-        communityPublishedId: result.publishedDeck?.id,
-      })
-      
-      if (result.updated) {
-        toast.success('Published deck updated successfully!')
-      } else {
-        toast.success('Deck published to community!')
-      }
-      setPublishDialogOpen(false)
-    } catch (error: unknown) {
-      handleAuthError(error)
-      console.error('Failed to publish deck:', error)
-
-      if (error instanceof Error) {
-        if (error.message.includes('already been published')) {
-          // Just show the info message, don't show error
-          toast.info('This deck is already published with no changes. Make edits to the deck to publish an update.')
-        } else if (error.message.includes('10 cards')) {
-          toast.error(error.message)
-        } else {
-          toast.error(error.message || 'Failed to publish deck')
-        }
-      } else {
-        toast.error('Failed to publish deck')
-      }
-    } finally {
-      setPublishing(false)
-    }
-  }
-
-  const handleUnpublishDeck = async () => {
-    if (!accessToken || !selectedDeckId || !deck?.communityPublishedId) {
-      toast.error('Something went wrong')
-      return
-    }
-
-    setUnpublishing(true)
-    try {
-      await api.unpublishDeck(accessToken, deck.communityPublishedId)
-      
-      // Remove the communityPublishedId from the deck
-      updateDeck(selectedDeckId, {
-        communityPublishedId: undefined,
-      })
-      
-      toast.success('Deck unpublished from community')
-    } catch (error) {
-      handleAuthError(error)
-      console.error('Failed to unpublish deck:', error)
-      if (error instanceof Error) {
-        toast.error(error.message || 'Failed to unpublish deck')
-      } else {
-        toast.error('Failed to unpublish deck')
-      }
-    } finally {
-      setUnpublishing(false)
-    }
+    updateCard(cardId, { ignored: !card.ignored })
   }
 
   const handleCardDragStart = (cardId: string) => {
@@ -704,126 +673,200 @@ export function DeckDetailScreen() {
     e.preventDefault()
   }
 
-  const handleCardDrop = async (targetCardId: string) => {
-    if (!draggedCard || draggedCard === targetCardId || !accessToken || !selectedDeckId) return
+  const handleCardDrop = (cardId: string) => {
+    if (!draggedCard || draggedCard === cardId) {
+      setDraggedCard(null)
+      return
+    }
 
     const draggedIndex = deckCards.findIndex(c => c.id === draggedCard)
-    const targetIndex = deckCards.findIndex(c => c.id === targetCardId)
-
-    if (draggedIndex === -1 || targetIndex === -1) return
-
-    const allCards = [...cards]
-    const deckCardsOnly = [...deckCards]
-    const [removed] = deckCardsOnly.splice(draggedIndex, 1)
-    deckCardsOnly.splice(targetIndex, 0, removed)
-
-    const updatedDeckCards = deckCardsOnly.map((card, index) => ({
-      ...card,
-      position: index,
-    }))
-
-    const otherCards = allCards.filter(c => c.deckId !== selectedDeckId)
-    setCards([...otherCards, ...updatedDeckCards])
+    const dropIndex = deckCards.findIndex(c => c.id === cardId)
+    
+    if (draggedIndex !== -1 && dropIndex !== -1) {
+      handleReorderCards(draggedCard, dropIndex)
+    }
+    
     setDraggedCard(null)
-
-    try {
-      await api.updateCardPositions(accessToken, selectedDeckId, updatedDeckCards.map(c => ({ id: c.id, position: c.position })))
-    } catch (error) {
-      handleAuthError(error)
-      console.error('Failed to update card positions:', error)
-    }
   }
 
-  const handleToggleFavorite = async (cardId: string) => {
-    if (!accessToken || !selectedDeckId) return
-
-    const card = cards.find(c => c.id === cardId)
-    if (!card) return
-
-    const newFavoriteValue = !card.favorite
-
-    try {
-      await api.updateCard(accessToken, selectedDeckId, cardId, { favorite: newFavoriteValue })
-      updateCard(cardId, { favorite: newFavoriteValue })
-      toast.success(newFavoriteValue ? 'Added to favorites' : 'Removed from favorites')
-    } catch (error) {
-      handleAuthError(error)
-      console.error('Failed to toggle favorite:', error)
-      toast.error('Failed to update favorite status')
-    }
-  }
-
-  const handleToggleIgnored = async (cardId: string) => {
-    if (!accessToken || !selectedDeckId) return
-
-    const card = cards.find(c => c.id === cardId)
-    if (!card) return
-
-    const newIgnoredValue = !card.ignored
-
-    try {
-      await api.updateCard(accessToken, selectedDeckId, cardId, { ignored: newIgnoredValue })
-      updateCard(cardId, { ignored: newIgnoredValue })
-      toast.success(newIgnoredValue ? 'Card ignored' : 'Card unignored')
-    } catch (error) {
-      handleAuthError(error)
-      console.error('Failed to toggle ignored:', error)
-      toast.error('Failed to update ignored status')
-    }
-  }
-
-  // Multi-select handlers
-  const handleToggleSelectionMode = () => {
-    setSelectionMode(!selectionMode)
-    if (selectionMode) {
-      setSelectedCards(new Set())
-    }
-  }
-
-  const handleToggleCardSelection = (cardId: string) => {
-    const newSelected = new Set(selectedCards)
-    if (newSelected.has(cardId)) {
-      newSelected.delete(cardId)
-    } else {
-      newSelected.add(cardId)
-    }
-    setSelectedCards(newSelected)
-  }
-
-  const handleSelectAll = (cardIds: string[]) => {
-    setSelectedCards(new Set(cardIds))
+  const handleSelectAll = () => {
+    setSelectedCards(new Set(deckCards.map(c => c.id)))
   }
 
   const handleDeselectAll = () => {
     setSelectedCards(new Set())
   }
 
-  const handleBulkDelete = async () => {
-    if (!accessToken || !selectedDeckId || selectedCards.size === 0) return
+  const handleUpdateDeck = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!accessToken || !deck) return
 
     try {
-      const cardIds = Array.from(selectedCards)
-      
-      // Delete all cards in parallel
-      await Promise.all(
-        cardIds.map(cardId => api.deleteCard(accessToken, selectedDeckId, cardId))
-      )
-
-      // Remove from state
-      cardIds.forEach(cardId => removeCard(cardId))
-      
-      // Update deck card count
-      if (deck) {
-        updateDeck(deck.id, { cardCount: Math.max(0, (deck.cardCount || 0) - cardIds.length) })
+      const updates = {
+        name: editName,
+        emoji: editEmoji,
+        color: editColor,
+        category: editCategory || undefined,
+        subtopic: editSubtopic || undefined,
+        difficulty: editDifficulty || undefined,
+        frontLanguage: editFrontLanguage || undefined,
+        backLanguage: editBackLanguage || undefined,
       }
 
-      toast.success(`Deleted ${cardIds.length} card${cardIds.length === 1 ? '' : 's'}`)
-      setSelectedCards(new Set())
-      setSelectionMode(false)
+      await apiUpdateDeck(accessToken, deck.id, updates)
+      updateDeck(deck.id, updates)
+      setEditDialogOpen(false)
+      toast.success('Deck updated successfully!')
     } catch (error) {
       handleAuthError(error)
-      console.error('Failed to bulk delete cards:', error)
-      toast.error('Failed to delete cards')
+      console.error('Failed to update deck:', error)
+      toast.error('Failed to update deck')
+    }
+  }
+
+  const handleDeleteDeck = async () => {
+    if (!accessToken || !deck) return
+
+    const confirmed = window.confirm(
+      `Are you sure you want to delete "${deck.name}"? This will delete all ${deckCards.length} cards in this deck. This action cannot be undone.`
+    )
+
+    if (!confirmed) return
+
+    setDeleting(true)
+    try {
+      await apiDeleteDeck(accessToken, deck.id)
+      removeDeck(deck.id)
+      navigateTo('decks')
+      toast.success('Deck deleted successfully!')
+    } catch (error) {
+      handleAuthError(error)
+      console.error('Failed to delete deck:', error)
+      toast.error('Failed to delete deck')
+    } finally {
+      setDeleting(false)
+    }
+  }
+
+  const handleStartStudy = () => {
+    if (deckCards.length === 0) {
+      toast.error('Add some cards to this deck before studying!')
+      return
+    }
+    navigateTo('study')
+  }
+
+  const handlePublishDeck = async () => {
+    if (!accessToken || !deck) return
+
+    if (deckCards.length === 0) {
+      toast.error('Cannot publish an empty deck. Add some cards first!')
+      return
+    }
+
+    if (!deck.category) {
+      toast.error('Please set a category for your deck before publishing')
+      setPublishDialogOpen(false)
+      setEditDialogOpen(true)
+      return
+    }
+
+    setPublishing(true)
+    try {
+      await apiPublishDeck(
+        accessToken, 
+        deck.id,
+        {
+          category: deck.category,
+          subtopic: deck.subtopic,
+        }
+      )
+      updateDeck(deck.id, { isPublished: true })
+      setPublishDialogOpen(false)
+      toast.success('Deck published to community!')
+    } catch (error) {
+      console.error('❌ Failed to publish deck:', error)
+      if (error.message?.includes('No changes detected')) {
+        toast.info('This deck is already published with no changes. Make edits to the deck to publish an update.')
+      } else {
+        toast.error(error.message || 'Failed to publish deck to community')
+      }
+    } finally {
+      setPublishing(false)
+    }
+  }
+
+  const handleUnpublishDeck = async () => {
+    if (!accessToken || !deck) return
+
+    const confirmed = window.confirm(
+      'Are you sure you want to unpublish this deck from the community?'
+    )
+
+    if (!confirmed) return
+
+    setUnpublishing(true)
+    try {
+      await apiUnpublishDeck(accessToken, deck.id)
+      updateDeck(deck.id, { isPublished: false })
+      toast.success('Deck unpublished from community')
+    } catch (error) {
+      handleAuthError(error)
+      console.error('Failed to unpublish deck:', error)
+      toast.error('Failed to unpublish deck')
+    } finally {
+      setUnpublishing(false)
+    }
+  }
+
+  const handleReorderCards = async (cardId: string, newIndex: number) => {
+    if (!accessToken || !selectedDeckId) return
+
+    // Store original order for rollback on error
+    const originalCards = [...deckCards]
+    
+    try {
+      // Reorder cards locally IMMEDIATELY for instant UI feedback
+      const currentCards = [...deckCards]
+      const draggedIndex = currentCards.findIndex(c => c.id === cardId)
+      
+      if (draggedIndex === -1) return
+      
+      // Remove the dragged card
+      const [draggedCard] = currentCards.splice(draggedIndex, 1)
+      // Insert at new position
+      currentCards.splice(newIndex, 0, draggedCard)
+      
+      // Update positions for all cards
+      const updatedCards = currentCards.map((card, index) => ({
+        ...card,
+        position: index
+      }))
+      
+      // Update local state IMMEDIATELY (optimistic update)
+      updatedCards.forEach(card => {
+        updateCard(card.id, { position: card.position })
+      })
+      
+      // Prepare positions array for API
+      const positions = updatedCards.map((card, index) => ({
+        id: card.id,
+        position: index
+      }))
+      
+      // Send to backend in the background (don't await yet)
+      await apiReorderCard(accessToken, selectedDeckId, positions)
+      
+      // Success! No need to reload from server since we already updated locally
+    } catch (error) {
+      // Rollback on error - restore original positions
+      originalCards.forEach(card => {
+        updateCard(card.id, { position: card.position })
+      })
+      
+      handleAuthError(error)
+      console.error('Failed to reorder cards:', error)
+      toast.error('Failed to reorder cards')
     }
   }
 
@@ -838,30 +881,24 @@ export function DeckDetailScreen() {
       return
     }
 
-    // Check if deck has frontLanguage set
-    if (!deck?.frontLanguage) {
-      toast.error('Please set a Front Language for this deck in settings first')
-      setEditDialogOpen(true)
-      return
-    }
-
     if (!newCardFront.trim()) {
       toast.error('Please enter some text to translate')
       return
     }
 
+    if (!deck?.frontLanguage) {
+      toast.error('Please set a front language for this deck in deck settings')
+      return
+    }
+
     setTranslatingFront(true)
     try {
-      const result = await api.translateText(accessToken, newCardFront, deck.frontLanguage)
+      const result = await apiTranslateText(accessToken, newCardFront, deck.frontLanguage)
       setNewCardFront(result.translatedText)
-      toast.success(`Translated to ${deck.frontLanguage}`)
+      toast.success('Translation complete!')
     } catch (error) {
       console.error('Translation error:', error)
-      if (error instanceof Error) {
-        toast.error(error.message)
-      } else {
-        toast.error('Failed to translate text')
-      }
+      toast.error('Failed to translate text')
     } finally {
       setTranslatingFront(false)
     }
@@ -877,30 +914,24 @@ export function DeckDetailScreen() {
       return
     }
 
-    // Check if deck has backLanguage set
-    if (!deck?.backLanguage) {
-      toast.error('Please set a Back Language for this deck in settings first')
-      setEditDialogOpen(true)
-      return
-    }
-
     if (!newCardBack.trim()) {
       toast.error('Please enter some text to translate')
       return
     }
 
+    if (!deck?.backLanguage) {
+      toast.error('Please set a back language for this deck in deck settings')
+      return
+    }
+
     setTranslatingBack(true)
     try {
-      const result = await api.translateText(accessToken, newCardBack, deck.backLanguage)
+      const result = await apiTranslateText(accessToken, newCardBack, deck.backLanguage)
       setNewCardBack(result.translatedText)
-      toast.success(`Translated to ${deck.backLanguage}`)
+      toast.success('Translation complete!')
     } catch (error) {
       console.error('Translation error:', error)
-      if (error instanceof Error) {
-        toast.error(error.message)
-      } else {
-        toast.error('Failed to translate text')
-      }
+      toast.error('Failed to translate text')
     } finally {
       setTranslatingBack(false)
     }
@@ -916,30 +947,24 @@ export function DeckDetailScreen() {
       return
     }
 
-    // Check if deck has frontLanguage set
-    if (!deck?.frontLanguage) {
-      toast.error('Please set a Front Language for this deck in settings first')
-      setEditDialogOpen(true)
-      return
-    }
-
     if (!editCardFront.trim()) {
       toast.error('Please enter some text to translate')
       return
     }
 
+    if (!deck?.frontLanguage) {
+      toast.error('Please set a front language for this deck in deck settings')
+      return
+    }
+
     setTranslatingEditFront(true)
     try {
-      const result = await api.translateText(accessToken, editCardFront, deck.frontLanguage)
+      const result = await apiTranslateText(accessToken, editCardFront, deck.frontLanguage)
       setEditCardFront(result.translatedText)
-      toast.success(`Translated to ${deck.frontLanguage}`)
+      toast.success('Translation complete!')
     } catch (error) {
       console.error('Translation error:', error)
-      if (error instanceof Error) {
-        toast.error(error.message)
-      } else {
-        toast.error('Failed to translate text')
-      }
+      toast.error('Failed to translate text')
     } finally {
       setTranslatingEditFront(false)
     }
@@ -955,172 +980,129 @@ export function DeckDetailScreen() {
       return
     }
 
-    // Check if deck has backLanguage set
-    if (!deck?.backLanguage) {
-      toast.error('Please set a Back Language for this deck in settings first')
-      setEditDialogOpen(true)
-      return
-    }
-
     if (!editCardBack.trim()) {
       toast.error('Please enter some text to translate')
       return
     }
 
+    if (!deck?.backLanguage) {
+      toast.error('Please set a back language for this deck in deck settings')
+      return
+    }
+
     setTranslatingEditBack(true)
     try {
-      const result = await api.translateText(accessToken, editCardBack, deck.backLanguage)
+      const result = await apiTranslateText(accessToken, editCardBack, deck.backLanguage)
       setEditCardBack(result.translatedText)
-      toast.success(`Translated to ${deck.backLanguage}`)
+      toast.success('Translation complete!')
     } catch (error) {
       console.error('Translation error:', error)
-      if (error instanceof Error) {
-        toast.error(error.message)
-      } else {
-        toast.error('Failed to translate text')
-      }
+      toast.error('Failed to translate text')
     } finally {
       setTranslatingEditBack(false)
     }
   }
 
-  // Bulk Add Cards Handler
-  const handleBulkAddCards = async (cards: { 
-    id: string
-    cardType: CardType
-    front: string
-    back: string
-    frontImageUrl: string
-    frontImageFile: File | null
-    backImageUrl: string
-    backImageFile: File | null
-    options: string[]
-    correctIndices: number[]
-    acceptedAnswers: string
-  }[]) => {
+  // Bulk add cards handler - updated for new API structure
+  const handleBulkAddCards = async (cardsData: any[]) => {
     if (!accessToken || !selectedDeckId) return
 
-    // Validate that each card has both front and back content
-    const validCards = cards.filter(card => {
-      const hasFront = card.front.trim() || card.frontImageFile
-      const hasBack = card.back.trim() || card.backImageFile || card.cardType === 'multiple-choice'
-      return hasFront && hasBack
-    })
-    
-    if (validCards.length === 0) {
-      toast.error('Each card must have both front and back content')
-      return
-    }
-
     try {
-      // Step 1: Upload all images in parallel (much faster!)
-      console.log(`⚡ Starting parallel image uploads for ${validCards.length} cards...`)
-      const imageUploadPromises = validCards.map(async (card, index) => {
-        const result: {
-          frontImageUrl?: string
-          backImageUrl?: string
-          error?: string
-          cardIndex: number
-        } = { cardIndex: index }
-
-        try {
-          // Upload front image if exists
-          if (card.frontImageFile) {
-            result.frontImageUrl = await api.uploadCardImage(accessToken, card.frontImageFile)
-          } else if (card.frontImageUrl.trim()) {
-            result.frontImageUrl = card.frontImageUrl.trim()
-          }
-
-          // Upload back image if exists (classic flip only)
-          if (card.cardType === 'classic-flip' && card.backImageFile) {
-            result.backImageUrl = await api.uploadCardImage(accessToken, card.backImageFile)
-          } else if (card.cardType === 'classic-flip' && card.backImageUrl.trim()) {
-            result.backImageUrl = card.backImageUrl.trim()
-          }
-        } catch (error) {
-          console.error(`Failed to upload images for card ${index + 1}:`, error)
-          result.error = `Image upload failed`
-        }
-
-        return result
-      })
-
-      const imageResults = await Promise.all(imageUploadPromises)
-      console.log(`✅ Completed parallel image uploads`)
-
-      // Step 2: Prepare cards for batch creation
+      console.log(`🚀 Starting bulk card creation for ${cardsData.length} cards`)
+      
       const cardsToCreate: ApiCardData[] = []
-      const failedCards: number[] = []
+      const failedCards: any[] = []
 
-      for (let i = 0; i < validCards.length; i++) {
-        const card = validCards[i]
-        const imageResult = imageResults[i]
+      // Process each card
+      for (const cardInput of cardsData) {
+        try {
+          const cardData: CardData = {
+            front: cardInput.front || '',
+            cardType: cardInput.cardType || 'classic-flip',
+          }
 
-        // Skip cards that had image upload errors
-        if (imageResult.error) {
-          failedCards.push(i)
-          continue
-        }
+          // Handle front image upload
+          if (cardInput.frontImageFile) {
+            try {
+              const imageUrl = await apiUploadCardImage(accessToken, cardInput.frontImageFile)
+              cardData.frontImageUrl = imageUrl
+            } catch (error) {
+              console.error('Failed to upload front image:', error)
+              failedCards.push(cardInput)
+              continue
+            }
+          }
 
-        const cardData: CardData = {
-          front: card.front,
-          back: card.back,
-          cardType: card.cardType,
-        }
+          // Handle card type specific fields
+          if (cardInput.cardType === 'classic-flip') {
+            cardData.back = cardInput.back || ''
+            
+            // Handle back image
+            if (cardInput.backImageFile) {
+              try {
+                const backImageUrl = await apiUploadCardImage(accessToken, cardInput.backImageFile)
+                cardData.backImageUrl = backImageUrl
+              } catch (error) {
+                console.error('Failed to upload back image:', error)
+                failedCards.push(cardInput)
+                continue
+              }
+            }
 
-        // Add uploaded image URLs
-        if (imageResult.frontImageUrl) {
-          cardData.frontImageUrl = imageResult.frontImageUrl
-        }
-        if (imageResult.backImageUrl) {
-          cardData.backImageUrl = imageResult.backImageUrl
-        }
+            // Handle audio files
+            if (cardInput.frontAudioUrl) {
+              cardData.frontAudioUrl = cardInput.frontAudioUrl
+            }
 
-        // Handle card type specific logic
-        if (card.cardType === 'multiple-choice') {
-          const filledOptions = card.options.filter(opt => opt.trim())
-          const correctAnswers = card.correctIndices.map(idx => filledOptions[idx])
-          const incorrectOptions = filledOptions.filter((_, idx) => !card.correctIndices.includes(idx))
+            if (cardInput.backAudioUrl) {
+              cardData.backAudioUrl = cardInput.backAudioUrl
+            }
+          } else if (cardInput.cardType === 'multiple-choice') {
+            // Multiple-choice: use correctAnswers and incorrectAnswers arrays
+            cardData.correctAnswers = cardInput.correctAnswers?.filter((a: string) => a.trim()) || []
+            cardData.incorrectAnswers = cardInput.incorrectAnswers?.filter((a: string) => a.trim()) || []
+          } else if (cardInput.cardType === 'type-answer') {
+            // Type-answer: requires back + optional acceptedAnswers
+            cardData.back = cardInput.back || ''
+            cardData.acceptedAnswers = cardInput.acceptedAnswers?.filter((a: string) => a.trim()) || []
+          }
+
+          // Convert to API format with correct field names
+          const { correctAnswers, acceptedAnswers, incorrectAnswers, frontImageUrl, backImageUrl, frontAudioUrl, backAudioUrl, ...rest } = cardData
           
-          cardData.back = correctAnswers[0]
-          cardData.correctAnswers = correctAnswers
-          cardData.options = incorrectOptions
-        }
+          const apiData: ApiCardData = {
+            ...rest,
+            ...(frontImageUrl !== null && frontImageUrl !== undefined ? { frontImageUrl } : {}),
+            ...(backImageUrl !== null && backImageUrl !== undefined ? { backImageUrl } : {}),
+            ...(frontAudioUrl !== null && frontAudioUrl !== undefined ? { frontAudio: frontAudioUrl } : {}),
+            ...(backAudioUrl !== null && backAudioUrl !== undefined ? { backAudio: backAudioUrl } : {}),
+          }
 
-        // Handle accepted answers (type answer only)
-        if (card.cardType === 'type-answer' && card.acceptedAnswers.trim()) {
-          cardData.acceptedAnswers = card.acceptedAnswers
-            .split(',')
-            .map(ans => ans.trim())
-            .filter(ans => ans.length > 0)
-        }
+          // Add answer arrays based on card type
+          if (cardInput.cardType === 'multiple-choice' && correctAnswers && incorrectAnswers) {
+            apiData.correctAnswers = correctAnswers
+            apiData.incorrectAnswers = incorrectAnswers
+          } else if (cardInput.cardType === 'type-answer' && acceptedAnswers) {
+            apiData.acceptedAnswers = acceptedAnswers
+          }
 
-        // Remove correctAnswers and convert null to undefined for API compatibility
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { correctAnswers: _correctAnswers, frontImageUrl, backImageUrl, ...rest } = cardData
-        
-        const apiData: ApiCardData = {
-          ...rest,
-          ...(frontImageUrl !== null && frontImageUrl !== undefined ? { frontImageUrl } : {}),
-          ...(backImageUrl !== null && backImageUrl !== undefined ? { backImageUrl } : {}),
+          cardsToCreate.push(apiData)
+        } catch (error) {
+          console.error('Error processing card:', error)
+          failedCards.push(cardInput)
         }
-
-        cardsToCreate.push(apiData)
       }
 
-      // Step 3: Batch create all cards at once (super fast!)
+      // Batch create all cards
       if (cardsToCreate.length > 0) {
         console.log(`⚡ Batch creating ${cardsToCreate.length} cards...`)
-        const createdCards = await api.createCardsBatch(accessToken, selectedDeckId, cardsToCreate)
+        const createdCards = await apiCreateCardsBatch(accessToken, selectedDeckId, cardsToCreate)
         
-        // Add all cards to local state
         if (createdCards && Array.isArray(createdCards)) {
           createdCards.forEach((card: any) => {
             addCard(card)
           })
           console.log(`✅ Successfully batch created ${createdCards.length} cards`)
-        } else {
-          throw new Error('Invalid response from batch create')
         }
       }
 
@@ -1137,7 +1119,7 @@ export function DeckDetailScreen() {
         toast.success(`Successfully added ${successCount} ${successCount === 1 ? 'card' : 'cards'}!`)
       }
       if (failCount > 0) {
-        toast.error(`Failed to add ${failCount} ${failCount === 1 ? 'card' : 'cards'} due to image upload errors`)
+        toast.error(`Failed to add ${failCount} ${failCount === 1 ? 'card' : 'cards'} due to errors`)
       }
     } catch (error) {
       handleAuthError(error)
@@ -1150,7 +1132,7 @@ export function DeckDetailScreen() {
   const handleBulkTranslate = async (text: string, language: string): Promise<string> => {
     if (!accessToken) throw new Error('Not authenticated')
     
-    const result = await api.translateText(accessToken, text, language)
+    const result = await apiTranslateText(accessToken, text, language)
     return result.translatedText
   }
 
@@ -1158,15 +1140,13 @@ export function DeckDetailScreen() {
   const handleBulkImageUpload = async (file: File): Promise<string> => {
     if (!accessToken) throw new Error('Not authenticated')
     
-    const imageUrl = await api.uploadCardImage(accessToken, file)
+    const imageUrl = await apiUploadCardImage(accessToken, file)
     return imageUrl
   }
 
   // Audio upload wrapper for bulk add
   const handleBulkAudioUpload = async (file: File): Promise<string> => {
-    if (!accessToken) throw new Error('Not authenticated')
-    
-    const audioUrl = await api.uploadCardAudio(accessToken, file)
+    const audioUrl = await apiUploadCardAudio(file)
     return audioUrl
   }
 
@@ -1267,13 +1247,15 @@ export function DeckDetailScreen() {
             backImageFile={newCardBackImageFile}
             frontAudioUrl={newCardFrontAudioUrl}
             backAudioUrl={newCardBackAudioUrl}
-            options={newCardOptions}
-            correctIndices={newCardCorrectIndices}
+            correctAnswers={newCardCorrectAnswers}
+            incorrectAnswers={newCardIncorrectAnswers}
             acceptedAnswers={newCardAcceptedAnswers}
             creating={creating}
             uploadingImage={uploadingImage}
             uploadingBackImage={uploadingBackImage}
             userTier={user?.subscriptionTier}
+            deckFrontLanguage={deck?.frontLanguage}
+            deckBackLanguage={deck?.backLanguage}
             onCardTypeChange={setNewCardType}
             onFrontChange={setNewCardFront}
             onBackChange={setNewCardBack}
@@ -1287,13 +1269,16 @@ export function DeckDetailScreen() {
             }}
             onFrontAudioChange={setNewCardFrontAudioUrl}
             onBackAudioChange={setNewCardBackAudioUrl}
-            onOptionsChange={setNewCardOptions}
-            onCorrectIndicesChange={setNewCardCorrectIndices}
+            onCorrectAnswersChange={setNewCardCorrectAnswers}
+            onIncorrectAnswersChange={setNewCardIncorrectAnswers}
             onAcceptedAnswersChange={setNewCardAcceptedAnswers}
             onSubmit={handleCreateCard}
             onUpgradeClick={() => setUpgradeModalOpen(true)}
             onTranslateFront={handleTranslateFront}
             onTranslateBack={handleTranslateBack}
+            isSuperuser={user?.isSuperuser}
+            translatingFront={translatingFront}
+            translatingBack={translatingBack}
           />
 
           <EditCardModal
@@ -1308,13 +1293,15 @@ export function DeckDetailScreen() {
             backImageFile={editCardBackImageFile}
             frontAudioUrl={editCardFrontAudioUrl}
             backAudioUrl={editCardBackAudioUrl}
-            options={editCardOptions}
-            correctIndices={editCardCorrectIndices}
-            acceptedAnswers={editCardAcceptedAnswers}
+            correctAnswers={editCardCorrectAnswers}
+            incorrectAnswers={editCardIncorrectAnswers}
+            acceptedAnswers={editCardTypeAnswerAcceptedAnswers}
             updating={updating}
             uploadingImage={uploadingEditImage}
             uploadingBackImage={uploadingEditBackImage}
             userTier={user?.subscriptionTier}
+            deckFrontLanguage={deck?.frontLanguage}
+            deckBackLanguage={deck?.backLanguage}
             onCardTypeChange={setEditCardType}
             onFrontChange={setEditCardFront}
             onBackChange={setEditCardBack}
@@ -1328,13 +1315,15 @@ export function DeckDetailScreen() {
             }}
             onFrontAudioChange={setEditCardFrontAudioUrl}
             onBackAudioChange={setEditCardBackAudioUrl}
-            onOptionsChange={setEditCardOptions}
-            onCorrectIndicesChange={setEditCardCorrectIndices}
-            onAcceptedAnswersChange={setEditCardAcceptedAnswers}
+            onCorrectAnswersChange={setEditCardCorrectAnswers}
+            onIncorrectAnswersChange={setEditCardIncorrectAnswers}
+            onAcceptedAnswersChange={setEditCardTypeAnswerAcceptedAnswers}
             onSubmit={handleUpdateCard}
             onUpgradeClick={() => setUpgradeModalOpen(true)}
             onTranslateFront={handleTranslateEditFront}
             onTranslateBack={handleTranslateEditBack}
+            translatingFront={translatingEditFront}
+            translatingBack={translatingEditBack}
           />
 
           <BulkAddCardsDialog
@@ -1359,20 +1348,33 @@ export function DeckDetailScreen() {
             onCardDragOver={handleCardDragOver}
             onCardDrop={handleCardDrop}
             selectionMode={selectionMode}
-            onToggleSelectionMode={handleToggleSelectionMode}
-            onToggleCardSelection={handleToggleCardSelection}
+            onToggleSelectionMode={() => {
+              setSelectionMode(!selectionMode)
+              if (selectionMode) {
+                setSelectedCards(new Set())
+              }
+            }}
+            onToggleCardSelection={(cardId) => {
+              const newSelection = new Set(selectedCards)
+              if (newSelection.has(cardId)) {
+                newSelection.delete(cardId)
+              } else {
+                newSelection.add(cardId)
+              }
+              setSelectedCards(newSelection)
+            }}
             onSelectAll={handleSelectAll}
             onDeselectAll={handleDeselectAll}
-            onBulkDelete={handleBulkDelete}
+            onBulkDelete={handleDeleteSelectedCards}
             selectedCards={selectedCards}
+          />
+
+          <UpgradeModal
+            open={upgradeModalOpen}
+            onOpenChange={setUpgradeModalOpen}
           />
         </div>
       </div>
-
-      <UpgradeModal
-        open={upgradeModalOpen}
-        onOpenChange={setUpgradeModalOpen}
-      />
     </AppLayout>
   )
 }

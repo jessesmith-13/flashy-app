@@ -55,9 +55,16 @@ export function ResetPasswordScreen() {
       setTimeout(() => {
         navigate('/login')
       }, 2000)
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Password update error:', err)
-      setError(err.message || 'Failed to update password. Please try again.')
+
+      let message = 'Failed to update password. Please try again.'
+
+      if (err instanceof Error) {
+        message = err.message
+      }
+
+      setError(message)
     } finally {
       setLoading(false)
     }

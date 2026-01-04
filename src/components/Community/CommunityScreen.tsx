@@ -1,7 +1,26 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { useStore } from '../../../store/useStore'
 import { useNavigation } from '../../../hooks/useNavigation'
-import * as api from '../../../utils/api'
+// Import community-specific functions from API
+import { getUserDeck } from '../../../utils/api/users'
+import { createFlag } from '../../../utils/api/moderation'
+import { 
+  toggleCommunityDeckFeatured,
+  deleteCommunityDeck,
+  deleteCommunityCard
+} from '../../../utils/api/admin'
+import { 
+  fetchCommunityDecks, 
+  fetchFeaturedCommunityDecks,
+  getCommunityDeck,
+  fetchDownloadCounts,
+  getDeckRatings,
+  addDeckFromCommunity,
+  searchCommunityUsers,
+  unpublishDeck
+} from '../../../utils/api/community'
+import { updateImportedDeck, fetchDecks } from '../../../utils/api/decks'
+import { publishDeck } from '../../../utils/api/community'
 import { toast } from 'sonner'
 import { canImportCommunityDecks, canPublishToCommunity } from '../../../utils/subscription'
 import { useIsSuperuser } from '../../../utils/userUtils'
@@ -20,24 +39,14 @@ import { Pagination } from '../Pagination/Pagination'
 import { UpgradeModal } from '../UpgradeModal'
 import { FlagDialog } from './FlagDialog'
 import { DeletionDialog } from './DeletionDialog'
+import { UpdateDeckWarningDialog } from './UpdateDeckWarningDialog'
+import { Deck } from '../../types/decks'
 
 interface Card {
   id: string
   front: string
   back: string
   deckId: string
-}
-
-interface Deck {
-  id: string
-  name: string
-  emoji: string
-  color: string
-  cardCount: number
-  category?: string
-  subtopic?: string
-  sourceCommunityDeckId?: string
-  communityPublishedId?: string
 }
 
 interface CommunityDeck {
@@ -59,7 +68,29 @@ interface CommunityDeck {
 }
 
 export function CommunityScreen() {
-  const { user, accessToken, addDeck, updateDeck, decks, setDecks, setTemporaryStudyDeck, setReturnToCommunityDeck, setReturnToUserDeck, returnToCommunityDeck, returnToUserDeck, viewingCommunityDeckId, setViewingCommunityDeckId, targetCommentId, setTargetCommentId, targetCardIndex, viewingUserId, setViewingUserId, userProfileReturnView, setUserProfileReturnView, invalidateDecksCache } = useStore()
+  const { 
+    user, 
+    accessToken, 
+    updateDeck, 
+    decks, 
+    setDecks, 
+    setTemporaryStudyDeck, 
+    setReturnToCommunityDeck, 
+    setReturnToUserDeck, 
+    returnToCommunityDeck, 
+    returnToUserDeck, 
+    viewingCommunityDeckId, 
+    setViewingCommunityDeckId, 
+    targetCommentId, 
+    setTargetCommentId, 
+    targetCardIndex, 
+    viewingUserId, 
+    setViewingUserId, 
+    userProfileReturnView, 
+    setUserProfileReturnView, 
+    invalidateDecksCache, 
+    updateCommunityDeck
+  } = useStore()
   const { navigateTo } = useNavigation()
   const isSuperuser = useIsSuperuser()
   const [searchQuery, setSearchQuery] = useState('')
@@ -76,6 +107,8 @@ export function CommunityScreen() {
   const [featuredDecks, setFeaturedDecks] = useState<CommunityDeck[]>([])
   const [loading, setLoading] = useState(true)
   const [searchedUsers, setSearchedUsers] = useState<{ id: string; name: string; deckCount: number }[]>([])
+  const [updateWarningOpen, setUpdateWarningOpen] = useState(false)
+  const [pendingUpdate, setPendingUpdate] = useState<{ communityDeck: any; importedDeck: any } | null>(null)
   
   // Superuser state
   const [deletingDeckId, setDeletingDeckId] = useState<string | null>(null)
@@ -91,6 +124,7 @@ export function CommunityScreen() {
   const [showFeaturedOnly, setShowFeaturedOnly] = useState(false)
   const [showFlashyDecksOnly, setShowFlashyDecksOnly] = useState(false)
   const [showMyPublishedOnly, setShowMyPublishedOnly] = useState(false)
+  const [showUpdatesOnly, setShowUpdatesOnly] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
   const [deckDetailPage, setDeckDetailPage] = useState(1)
   const ITEMS_PER_PAGE = 12
@@ -113,6 +147,7 @@ export function CommunityScreen() {
 
   // Fetch community decks on mount
   useEffect(() => {
+    console.log('🚀 CommunityScreen mounted - calling loadCommunityDecks()')
     loadCommunityDecks()
   }, [])
 
@@ -129,14 +164,14 @@ export function CommunityScreen() {
   // Reset to page 1 when filters or sorting changes
   useEffect(() => {
     setCurrentPage(1)
-  }, [searchQuery, filterCategory, filterSubtopic, sortBy, showFeaturedOnly, showFlashyDecksOnly, showMyPublishedOnly])
+  }, [searchQuery, filterCategory, filterSubtopic, sortBy, showFeaturedOnly, showFlashyDecksOnly, showMyPublishedOnly, showUpdatesOnly])
 
   // Search for users when search query changes
   useEffect(() => {
     const searchUsers = async () => {
       if (searchQuery.length >= 2) {
         try {
-          const users = await api.searchCommunityUsers(searchQuery)
+          const users = await searchCommunityUsers(searchQuery)
           setSearchedUsers(users)
         } catch (error) {
           console.error('Failed to search users:', error)
@@ -157,7 +192,7 @@ export function CommunityScreen() {
     if (!targetCardIndex) {
       setDeckDetailPage(1)
     }
-  }, [viewingDeck?.id]) // Remove targetCardIndex from dependencies to prevent reset when it's cleared
+  }, [viewingDeck?.id])
 
   // Listen for custom event to view user profile
   useEffect(() => {
@@ -178,20 +213,18 @@ export function CommunityScreen() {
   useEffect(() => {
     if (viewingUserId) {
       setSelectedUserId(viewingUserId)
-      setViewingUserId(null) // Clear the store after using it
+      setViewingUserId(null)
     }
   }, [viewingUserId, setViewingUserId])
 
   // Listen for notification-triggered deck viewing
   useEffect(() => {
-    // Only process viewingCommunityDeckId after decks have loaded
     if (viewingCommunityDeckId && !loading) {
       const deckToView = communityDecks.find(d => d.id === viewingCommunityDeckId)
       if (deckToView) {
         setViewingDeck(deckToView)
-        setViewingCommunityDeckId(null) // Reset after setting
+        setViewingCommunityDeckId(null)
       } else {
-        // Deck not found in current list, try fetching it directly
         fetchDeckById(viewingCommunityDeckId)
       }
     }
@@ -200,13 +233,12 @@ export function CommunityScreen() {
   const fetchDeckById = async (deckId: string) => {
     console.log('🔍 fetchDeckById called with:', deckId)
     try {
-      // Fetch the deck from the API
-      console.log('📡 Calling api.getCommunityDeck...')
-      const deck = await api.getCommunityDeck(deckId)
+      console.log('📡 Calling getCommunityDeck...')
+      const deck = await getCommunityDeck(deckId)
       console.log('✅ Got deck:', deck)
       if (deck) {
         setViewingDeck(deck)
-        setViewingCommunityDeckId(null) // Reset after setting
+        setViewingCommunityDeckId(null)
       } else {
         console.log('❌ Deck returned null/undefined')
         toast.error('This deck is not available in the community. It may have been deleted or is a personal deck.')
@@ -220,11 +252,17 @@ export function CommunityScreen() {
   }
 
   const loadCommunityDecks = async () => {
+    console.log('📡 loadCommunityDecks called')
     try {
+      console.log('  Fetching published and featured decks...')
       const [publishedDecks, featuredPublishedDecks] = await Promise.all([
-        api.fetchCommunityDecks(),
-        api.fetchFeaturedCommunityDecks()
+        fetchCommunityDecks(),
+        fetchFeaturedCommunityDecks()
       ])
+      
+      console.log('  ✅ Published decks:', publishedDecks.length)
+      console.log('  ✅ Featured decks:', featuredPublishedDecks.length)
+      console.log('  Published decks data:', publishedDecks)
       
       // Use only real published decks
       const allDecks = publishedDecks
@@ -232,12 +270,14 @@ export function CommunityScreen() {
       // Get all deck IDs
       const allDeckIds = allDecks.map(d => d.id)
       
+      console.log('  📊 Fetching download counts and ratings...')
+      
       // Get download counts for all decks
-      const downloadCounts = await api.fetchDownloadCounts(allDeckIds)
+      const downloadCounts = await fetchDownloadCounts(allDeckIds)
       
       // Get ratings for all decks
       const ratingsPromises = allDeckIds.map(id => 
-        api.getDeckRatings(id).catch(() => ({ averageRating: 0, totalRatings: 0, userRating: null }))
+        getDeckRatings(id).catch(() => ({ averageRating: 0, totalRatings: 0, userRating: null }))
       )
       const ratingsData = await Promise.all(ratingsPromises)
       const ratingsMap = allDeckIds.reduce((acc, id, index) => {
@@ -261,11 +301,14 @@ export function CommunityScreen() {
         ratingCount: ratingsMap[deck.id]?.totalRatings || 0
       }))
       
+      console.log('  📊 Final deck counts:')
+      console.log('    - Community decks:', updatedDecks.length)
+      console.log('    - Featured decks:', updatedFeaturedDecks.length)
+      
       setCommunityDecks(updatedDecks)
       setFeaturedDecks(updatedFeaturedDecks)
     } catch (error) {
-      console.error('Failed to load community decks:', error)
-      // Set empty arrays on error
+      console.error('❌ Failed to load community decks:', error)
       setCommunityDecks([])
       setFeaturedDecks([])
     } finally {
@@ -276,29 +319,26 @@ export function CommunityScreen() {
   const handleAddDeck = async (deck: CommunityDeck) => {
     if (!accessToken || !user) return
 
-    // Check if user can import community decks
     if (!canImportCommunityDecks(user?.subscriptionTier, isSuperuser)) {
       setUpgradeFeature('importing Community decks')
       setUpgradeModalOpen(true)
       return
     }
 
-    // Check if user is trying to import their own published deck
     if (deck.authorId === user.id) {
-      // Check if deck is already in their collection
-      const alreadyInCollection = decks.find(d => d.communityPublishedId === deck.id)
+      // ✅ ADD: && !d.isDeleted
+      const alreadyInCollection = decks.find(d => d.communityPublishedId === deck.id && !d.isDeleted)
       if (alreadyInCollection) {
         toast.info('This is your own deck - it\'s already in "My Decks"')
         return
       } else {
-        // User deleted their deck but it's still published - allow re-adding
         toast.info('Re-adding your published deck to "My Decks"')
       }
     }
 
-    // Check if deck is already imported (for non-author users)
     if (deck.authorId !== user.id) {
-      const alreadyImported = decks.find(d => d.sourceCommunityDeckId === deck.id)
+      // ✅ ADD: && !d.isDeleted
+      const alreadyImported = decks.find(d => d.sourceCommunityDeckId === deck.id && !d.isDeleted)
       if (alreadyImported) {
         toast.info('You have already added this deck to your collection')
         return
@@ -307,7 +347,7 @@ export function CommunityScreen() {
 
     setAddingDeckId(deck.id)
     try {
-      const newDeck = await api.addDeckFromCommunity(accessToken, {
+      const newDeck = await addDeckFromCommunity(accessToken, {
         communityDeckId: deck.id,
         name: deck.name,
         color: deck.color,
@@ -318,19 +358,14 @@ export function CommunityScreen() {
         version: deck.version || 1,
       })
 
-      console.log('Re-added deck from community:', newDeck)
-      console.log('  communityPublishedId:', newDeck.communityPublishedId)
-      console.log('  communityDeckVersion:', newDeck.communityDeckVersion)
-      console.log('  sourceCommunityDeckId:', newDeck.sourceCommunityDeckId)
+      toast.success(`"${deck.name}" added to your decks!`)
+      console.log('Added deck from community:', newDeck)
 
-      // Don't use addDeck here - just invalidate the cache
-      // This prevents duplicate decks when navigating back to DecksScreen
-      invalidateDecksCache()
+      const updatedDecks = await fetchDecks(accessToken)
+      setDecks(updatedDecks)
       
-      // Reload community decks to show updated download count
       await loadCommunityDecks()
       
-      // Update viewingDeck if it's the same deck we just added
       if (viewingDeck && viewingDeck.id === deck.id) {
         setViewingDeck({
           ...viewingDeck,
@@ -338,28 +373,45 @@ export function CommunityScreen() {
         })
       }
       
-      toast.success(`"${deck.name}" added to your decks!`)
+      
     } catch (error: any) {
       console.error('Failed to add deck:', error)
       if (error.message.includes('already added')) {
         toast.info(error.message)
       } else {
-        toast.error('Failed to add deck')
+        toast.error(error.message)
       }
     } finally {
       setAddingDeckId(null)
     }
   }
 
-  const handleUpdateDeck = async (communityDeck: any, importedDeck: any) => {
+  const handleUpdateDeck = async (communityDeck: CommunityDeck, importedDeck: Deck) => {
     if (!accessToken) {
       toast.error('Please login to update decks')
       return
     }
 
+    // ✅ CHECK: Has user made local edits?
+    const userHasEdits = importedDeck.updatedAt && importedDeck.lastSyncedAt
+      ? new Date(importedDeck.updatedAt).getTime() > new Date(importedDeck.lastSyncedAt).getTime()
+      : false
+
+    if (userHasEdits) {
+      // Show warning dialog
+      setPendingUpdate({ communityDeck, importedDeck })
+      setUpdateWarningOpen(true)
+      return
+    }
+
+    // No edits, proceed with update
+    await performUpdate(communityDeck, importedDeck)
+  }
+
+  const performUpdate = async (communityDeck: any, importedDeck: any) => {
     setAddingDeckId(communityDeck.id)
     try {
-      const updatedDeck = await api.updateImportedDeck(accessToken, importedDeck.id, {
+      const updatedDeck = await updateImportedDeck(accessToken, importedDeck.id, {
         name: communityDeck.name,
         color: communityDeck.color,
         emoji: communityDeck.emoji,
@@ -369,11 +421,11 @@ export function CommunityScreen() {
         version: communityDeck.version || 1,
       })
 
-      updateDeck(updatedDeck)
-      toast.success(`\"${communityDeck.name}\" updated to version ${communityDeck.version}!`)
+      updateDeck(importedDeck.id, updatedDeck)
+      toast.success(`${communityDeck.name} updated!`)
     } catch (error: any) {
       console.error('Failed to update deck:', error)
-      toast.error('Failed to update deck')
+      toast.error(`Failed to update deck: ${error.message}`)
     } finally {
       setAddingDeckId(null)
     }
@@ -385,7 +437,6 @@ export function CommunityScreen() {
       return
     }
 
-    // Get the selected deck
     const selectedDeck = decks.find(d => d.id === selectedDeckId)
     
     if (!selectedDeck) {
@@ -393,7 +444,6 @@ export function CommunityScreen() {
       return
     }
     
-    // Prevent publishing imported decks
     if (selectedDeck.sourceCommunityDeckId) {
       toast.error('Cannot publish decks imported from the community. Only decks you created can be published.')
       return
@@ -411,23 +461,27 @@ export function CommunityScreen() {
 
     setPublishing(true)
     try {
-      const result = await api.publishDeckToCommunity(accessToken, {
-        deckId: selectedDeckId,
+      console.log('📤 Publishing deck:', selectedDeckId)
+      const result = await publishDeck(accessToken, selectedDeckId, {
         category: selectedDeck.category,
         subtopic: selectedDeck.subtopic,
       })
       
-      if (result.updated) {
-        toast.success('Deck updated successfully!')
-      } else {
+      console.log('✅ Publish result:', result)
+      
+      if (result.republished) {
+        toast.success('Deck re-published successfully!')
+      } else if (result.published) {
         toast.success('Deck published to community!')
+      } else {
+        toast.success('Deck updated successfully!')
       }
       
-      // Update the deck in the local store with the published ID
-      const publishedDeck = result.publishedDeck
-      if (publishedDeck && publishedDeck.id) {
+      // Update the deck in the local store
+      if (result.deck) {
         updateDeck(selectedDeckId, { 
-          communityPublishedId: publishedDeck.id 
+          communityPublishedId: result.deck.id,
+          isPublished: true
         })
       }
       
@@ -437,14 +491,8 @@ export function CommunityScreen() {
       // Reload community decks to show the newly published deck
       await loadCommunityDecks()
     } catch (error: any) {
-      console.error('Failed to publish deck:', error)
-      if (error.message.includes('already been published')) {
-        toast.info(error.message)
-      } else if (error.message.includes('10 cards')) {
-        toast.error(error.message)
-      } else {
-        toast.error(error.message || 'Failed to publish deck')
-      }
+      console.error('❌ Failed to publish deck:', error)
+      toast.error(error.message || 'Failed to publish deck')
     } finally {
       setPublishing(false)
     }
@@ -457,12 +505,10 @@ export function CommunityScreen() {
         return
       }
 
-      // Fetch the user's deck
-      const {deck, cards} = await api.getUserDeck(accessToken, userId, deckId)
+      const {deck, cards} = await getUserDeck(accessToken, userId, deckId)
       
-      // Set viewing user deck
       setViewingUserDeck({ deck, cards, ownerId: userId })
-      setSelectedUserId(null) // Clear the profile view
+      setSelectedUserId(null)
     } catch (error: any) {
       console.error('Failed to load user deck:', error)
       toast.error(error.message || 'Failed to load deck')
@@ -471,15 +517,13 @@ export function CommunityScreen() {
 
   const handleFlagItem = async (itemId: string, reason: string, details: string) => {
     try {
-      // API call to flag the item
-      await api.flagCommunityItem(accessToken, {
+      await createFlag(accessToken, {
         itemType: flagItemType,
         itemId,
         reason,
         details
       })
 
-      // Track flagged items locally
       if (flagItemType === 'deck') {
         setFlaggedDecks(prev => new Set(prev).add(itemId))
       } else {
@@ -495,7 +539,6 @@ export function CommunityScreen() {
     setFlagItemType(type)
     setFlagItemId(id)
     setFlagItemName(name)
-    // For cards, store the deckId in targetDetails
     if (type === 'card' && deckId) {
       setFlagItemDetails({ deckId })
     } else {
@@ -510,7 +553,6 @@ export function CommunityScreen() {
       return
     }
 
-    // Open deletion dialog instead of using confirm
     setDeckToDelete({ id: deckId, name: deckName })
     setDeleteDeckDialogOpen(true)
   }
@@ -520,19 +562,16 @@ export function CommunityScreen() {
 
     setDeletingDeckId(deckToDelete.id)
     try {
-      await api.deleteCommunityDeck(accessToken, deckToDelete.id, reason)
+      await deleteCommunityDeck(accessToken, deckToDelete.id, reason)
       toast.success('Deck deleted successfully')
       
-      // Reload community decks
       await loadCommunityDecks()
       
-      // If we're viewing this deck, go back to the list
       if (viewingDeck && viewingDeck.id === deckToDelete.id) {
         setViewingDeck(null)
         setReturnToCommunityDeck(null)
       }
 
-      // Close dialog
       setDeleteDeckDialogOpen(false)
       setDeckToDelete(null)
     } catch (error: any) {
@@ -551,13 +590,11 @@ export function CommunityScreen() {
 
     setFeaturingDeckId(deckId)
     try {
-      const result = await api.toggleCommunityDeckFeatured(accessToken, deckId)
-      toast.success(result.message)
+      const result = await toggleCommunityDeckFeatured(accessToken, deckId)
+      // toast.success(result.message)
       
-      // Reload community decks
       await loadCommunityDecks()
       
-      // Update viewing deck if it's the same one
       if (viewingDeck && viewingDeck.id === deckId) {
         setViewingDeck(result.deck)
       }
@@ -565,6 +602,7 @@ export function CommunityScreen() {
       console.error('Failed to toggle featured status:', error)
       toast.error(error.message || 'Failed to toggle featured status')
     } finally {
+      toast.success('Deck featured status updated')
       setFeaturingDeckId(null)
     }
   }
@@ -575,7 +613,6 @@ export function CommunityScreen() {
       return
     }
 
-    // Find and open unpublish dialog
     const deck = communityDecks.find(d => d.id === deckId)
     if (deck) {
       setUnpublishingDeck(deck)
@@ -588,22 +625,19 @@ export function CommunityScreen() {
 
     setUnpublishingDeckId(unpublishingDeck.id)
     try {
-      await api.unpublishDeck(accessToken, unpublishingDeck.id)
+      await unpublishDeck(accessToken, unpublishingDeck.id)
       toast.success(`"${unpublishingDeck.name}" has been unpublished from the community`)
       
-      // Reload community decks
       await loadCommunityDecks()
       
-      // Reload user decks to update the status
-      const updatedDecks = await api.fetchDecks(accessToken)
+      // Fetch USER's personal decks, not community decks
+      const updatedDecks = await fetchDecks(accessToken)
       setDecks(updatedDecks)
       
-      // Close deck detail view if we're viewing the unpublished deck
       if (viewingDeck && viewingDeck.id === unpublishingDeck.id) {
         setViewingDeck(null)
       }
 
-      // Close dialog
       setUnpublishDialogOpen(false)
       setUnpublishingDeck(null)
     } catch (error: any) {
@@ -623,6 +657,7 @@ export function CommunityScreen() {
     navigateTo('study')
   }
 
+  // I think this is for admin/superuser only
   const handleDeleteCard = (cardId: string, cardName: string, deckId: string) => {
     if (!accessToken || !isSuperuser) {
       toast.error('Unauthorized')
@@ -637,22 +672,18 @@ export function CommunityScreen() {
     if (!cardToDelete || !accessToken) return
 
     try {
-      await api.deleteCard(accessToken, cardToDelete.deckId, cardToDelete.id, reason)
+      await deleteCommunityCard(accessToken, cardToDelete.deckId, cardToDelete.id, reason)
       toast.success('Card deleted successfully')
       
-      // Reload the community deck to reflect the changes
       if (viewingDeck && viewingDeck.id === cardToDelete.deckId) {
-        // Reload community decks
         await loadCommunityDecks()
         
-        // Find and update the viewing deck
-        const updatedDeck = await api.getCommunityDeck(cardToDelete.deckId)
+        const updatedDeck = await getCommunityDeck(cardToDelete.deckId)
         if (updatedDeck) {
           setViewingDeck(updatedDeck)
         }
       }
 
-      // Close dialog
       setDeleteCardDialogOpen(false)
       setCardToDelete(null)
     } catch (error: any) {
@@ -666,13 +697,12 @@ export function CommunityScreen() {
     return <UserProfileView 
       userId={selectedUserId} 
       onBack={() => {
-        // Check if we should return to profile, community, or superuser
         if (userProfileReturnView === 'profile') {
           navigateTo('profile')
-          setUserProfileReturnView(null) // Clear the return view
+          setUserProfileReturnView(null)
         } else if (userProfileReturnView === 'superuser') {
           navigateTo('superuser')
-          setUserProfileReturnView(null) // Clear the return view
+          setUserProfileReturnView(null)
         }
         setSelectedUserId(null)
       }} 
@@ -692,7 +722,7 @@ export function CommunityScreen() {
         onBack={() => {
           setSelectedUserId(viewingUserDeck.ownerId)
           setViewingUserDeck(null)
-          setReturnToUserDeck(null) // Clear return state
+          setReturnToUserDeck(null)
         }}
         onStudy={(deck, cards) => {
           setTemporaryStudyDeck({ deck, cards })
@@ -722,7 +752,7 @@ export function CommunityScreen() {
         onBack={() => {
           setViewingDeck(null)
           setReturnToCommunityDeck(null)
-          setTargetCommentId(null) // Clear target comment when leaving deck view
+          setTargetCommentId(null)
         }}
         onViewUser={setSelectedUserId}
         onAddDeck={handleAddDeck}
@@ -760,12 +790,10 @@ export function CommunityScreen() {
     if (sortBy === 'rating') {
       const ratingA = a.rating || 0
       const ratingB = b.rating || 0
-      // Sort by rating descending, then by number of ratings as tiebreaker
       if (ratingB !== ratingA) return ratingB - ratingA
       return (b.ratingCount || 0) - (a.ratingCount || 0)
     }
     if (sortBy === 'newest') {
-      // Sort by publishedAt timestamp, newest first
       const dateA = a.publishedAt ? new Date(a.publishedAt).getTime() : 0
       const dateB = b.publishedAt ? new Date(b.publishedAt).getTime() : 0
       return dateB - dateA
@@ -773,7 +801,6 @@ export function CommunityScreen() {
     return 0
   })
 
-  // If showing featured decks, exclude them from the main grid to avoid duplication
   const showingFeaturedSection = featuredDecks.length > 0 && !searchQuery && filterCategory === 'all' && !showFeaturedOnly
   const decksForGrid = showingFeaturedSection 
     ? filteredDecks.filter(deck => !featuredDecks.some(fd => fd.id === deck.id))
@@ -786,7 +813,6 @@ export function CommunityScreen() {
     currentPage * ITEMS_PER_PAGE
   )
 
-  // Only show user-created decks (not imported from community)
   const publishableDecks = decks.filter(d => !d.sourceCommunityDeckId && d.cardCount > 0)
 
   if (loading) {
@@ -945,6 +971,8 @@ export function CommunityScreen() {
               onToggleFlashy={() => setShowFlashyDecksOnly(!showFlashyDecksOnly)}
               showMyPublishedOnly={showMyPublishedOnly}
               onToggleMyPublished={() => setShowMyPublishedOnly(!showMyPublishedOnly)}
+              showUpdatesOnly={showUpdatesOnly}
+              onToggleUpdates={() => setShowUpdatesOnly(!showUpdatesOnly)}
             />
           </div>
 
@@ -990,6 +1018,7 @@ export function CommunityScreen() {
             featuredDecks={featuredDecks}
             showFeaturedSection={showingFeaturedSection}
             showFeaturedOnly={showFeaturedOnly}
+            showUpdatesOnly={showUpdatesOnly}
             searchQuery={searchQuery}
             filterCategory={filterCategory}
             userDecks={decks}
@@ -1025,7 +1054,7 @@ export function CommunityScreen() {
       <FlagDialog
         open={flagDialogOpen}
         onOpenChange={setFlagDialogOpen}
-        targetType={flagItemType} // Now properly supports 'card' type
+        targetType={flagItemType}
         targetId={flagItemId}
         targetName={flagItemName}
         targetDetails={flagItemDetails}
@@ -1048,6 +1077,24 @@ export function CommunityScreen() {
         targetId={cardToDelete?.id}
         targetName={cardToDelete?.name}
         onConfirm={confirmDeleteCard}
+      />
+
+      <UpdateDeckWarningDialog
+        open={updateWarningOpen}
+        onOpenChange={setUpdateWarningOpen}
+        communityDeck={pendingUpdate?.communityDeck || null}
+        importedDeck={pendingUpdate?.importedDeck || null}
+        onCancel={() => {
+          setUpdateWarningOpen(false)
+          setPendingUpdate(null)
+        }}
+        onUpdate={async () => {
+          if (pendingUpdate) {
+            await performUpdate(pendingUpdate.communityDeck, pendingUpdate.importedDeck)
+            setUpdateWarningOpen(false)
+            setPendingUpdate(null)
+          }
+        }}
       />
 
       {/* Unpublish from Community Dialog */}

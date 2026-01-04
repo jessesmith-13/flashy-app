@@ -84,6 +84,8 @@ export function CardItem({
             <TypeIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-600 dark:text-emerald-400" />
             <span className="text-xs text-emerald-600 dark:text-emerald-400">{cardTypeInfo?.label}</span>
           </div>
+          
+          {/* Front/Question */}
           <div>
             <p className="text-xs text-gray-500 dark:text-gray-500 mb-1 uppercase tracking-wide">
               {card.cardType === 'classic-flip' ? 'Front' : 'Question'}
@@ -99,23 +101,67 @@ export function CardItem({
               </div>
             )}
           </div>
-          <div>
-            <p className="text-xs text-gray-500 dark:text-gray-500 mb-1 uppercase tracking-wide">
-              {card.cardType === 'classic-flip' ? 'Back' : card.cardType === 'multiple-choice' && card.correctAnswers && card.correctAnswers.length > 1 ? 'Correct Answers' : 'Answer'}
-            </p>
-            {card.cardType === 'multiple-choice' && card.correctAnswers && card.correctAnswers.length > 0 ? (
-              <ul className="text-sm space-y-1">
-                {card.correctAnswers.map((answer, idx) => (
-                  <li key={idx} className="text-gray-900 dark:text-gray-100 break-words flex items-start gap-1">
-                    <span className="text-emerald-600 dark:text-emerald-400 flex-shrink-0">✓</span>
-                    <span>{answer}</span>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <>
+
+          {/* Answer section - varies by card type */}
+          {card.cardType === 'classic-flip' && (
+            <div>
+              <p className="text-xs text-gray-500 dark:text-gray-500 mb-1 uppercase tracking-wide">Back</p>
+              {card.back && <p className="text-sm break-words text-gray-900 dark:text-gray-100">{card.back}</p>}
+              {card.backImageUrl && (
+                <div className="mt-2 rounded-lg overflow-hidden border">
+                  <img 
+                    src={card.backImageUrl} 
+                    alt="Answer image" 
+                    className="w-full h-32 object-cover"
+                  />
+                </div>
+              )}
+            </div>
+          )}
+
+          {card.cardType === 'multiple-choice' && (
+            <>
+              {/* Correct Answers */}
+              {card.correctAnswers && card.correctAnswers.length > 0 && (
+                <div>
+                  <p className="text-xs text-gray-500 dark:text-gray-500 mb-1 uppercase tracking-wide">
+                    {card.correctAnswers.length > 1 ? 'Correct Answers' : 'Correct Answer'}
+                  </p>
+                  <ul className="text-sm space-y-1">
+                    {card.correctAnswers.map((answer, idx) => (
+                      <li key={idx} className="text-gray-900 dark:text-gray-100 break-words flex items-start gap-1">
+                        <span className="text-emerald-600 dark:text-emerald-400 flex-shrink-0">✓</span>
+                        <span>{answer}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              
+              {/* Incorrect Options */}
+              {card.incorrectAnswers && card.incorrectAnswers.length > 0 && (
+                <div>
+                  <p className="text-xs text-gray-500 dark:text-gray-500 mb-1 uppercase tracking-wide">Incorrect Options</p>
+                  <ul className="text-sm space-y-1">
+                    {card.incorrectAnswers.map((option, idx) => (
+                      <li key={idx} className="text-gray-600 dark:text-gray-400 break-words flex items-start gap-1">
+                        <span className="text-red-500 dark:text-red-400 flex-shrink-0">✗</span>
+                        <span>{option}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </>
+          )}
+
+          {card.cardType === 'type-answer' && (
+            <>
+              {/* Primary Answer */}
+              <div>
+                <p className="text-xs text-gray-500 dark:text-gray-500 mb-1 uppercase tracking-wide">Answer</p>
                 {card.back && <p className="text-sm break-words text-gray-900 dark:text-gray-100">{card.back}</p>}
-                {card.cardType === 'classic-flip' && card.backImageUrl && (
+                {card.backImageUrl && (
                   <div className="mt-2 rounded-lg overflow-hidden border">
                     <img 
                       src={card.backImageUrl} 
@@ -124,26 +170,20 @@ export function CardItem({
                     />
                   </div>
                 )}
-              </>
-            )}
-          </div>
-          {card.cardType === 'multiple-choice' && card.options && card.options.length > 0 && (
-            <div>
-              <p className="text-xs text-gray-500 dark:text-gray-500 mb-1 uppercase tracking-wide">Incorrect Options</p>
-              <ul className="text-sm space-y-1">
-                {card.options.map((option, idx) => (
-                  <li key={idx} className="text-gray-600 dark:text-gray-400 break-words">• {option}</li>
-                ))}
-              </ul>
-            </div>
-          )}
-          {card.cardType === 'type-answer' && card.acceptedAnswers && card.acceptedAnswers.length > 0 && (
-            <div>
-              <p className="text-xs text-gray-500 dark:text-gray-500 mb-1 uppercase tracking-wide">Accepted Alternatives</p>
-              <p className="text-sm text-gray-600 dark:text-gray-400 break-words">{card.acceptedAnswers.join(', ')}</p>
-            </div>
+              </div>
+              
+              {/* Accepted Alternatives */}
+              {card.acceptedAnswers && card.acceptedAnswers.length > 0 && (
+                <div>
+                  <p className="text-xs text-gray-500 dark:text-gray-500 mb-1 uppercase tracking-wide">Accepted Alternatives</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 break-words">{card.acceptedAnswers.join(', ')}</p>
+                </div>
+              )}
+            </>
           )}
         </div>
+        
+        {/* Action Buttons */}
         <div className="flex flex-col gap-0.5 sm:gap-1 flex-shrink-0">
           {!selectionMode && (
             <>

@@ -9,7 +9,7 @@ import { Label } from '../../ui/label'
 import { Textarea } from '../../ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../ui/select'
 import { toast } from 'sonner'
-import { projectId } from '../../../utils/supabase/info'
+import { API_BASE } from '../../../utils/supabase/info'
 
 export function ContactScreen() {
   const { user, accessToken } = useStore()
@@ -36,7 +36,7 @@ export function ContactScreen() {
 
     try {
       const response = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/make-server-8a1502a9/contact`,
+        `${API_BASE}/support/contact`,
         {
           method: 'POST',
           headers: {

@@ -117,7 +117,11 @@ export function EditDeckDialog({ open, onOpenChange, deck, onUpdateDeck }: EditD
               <SelectTrigger className="mt-1">
                 <SelectValue placeholder="Select a category..." />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent
+                position="popper"
+                className="max-h-[200px] overflow-y-auto"
+                sideOffset={4}
+              >
                 <SelectItem value="none">None</SelectItem>
                 {[...DECK_CATEGORIES].sort((a, b) => a.category.localeCompare(b.category)).map(cat => (
                   <SelectItem key={cat.category} value={cat.category}>
@@ -135,7 +139,11 @@ export function EditDeckDialog({ open, onOpenChange, deck, onUpdateDeck }: EditD
                 <SelectTrigger className="mt-1">
                   <SelectValue placeholder="Select a subtopic..." />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent
+                  position="popper"
+                  className="max-h-[200px] overflow-y-auto"
+                  sideOffset={4}
+                >
                   <SelectItem value="none">None</SelectItem>
                   {[...(DECK_CATEGORIES.find(c => c.category === editCategory)?.subtopics || [])].sort((a, b) => a.localeCompare(b)).map(subtopic => (
                     <SelectItem key={subtopic} value={subtopic}>
@@ -170,7 +178,11 @@ export function EditDeckDialog({ open, onOpenChange, deck, onUpdateDeck }: EditD
               <SelectTrigger className="mt-1">
                 <SelectValue placeholder="Select a language..." />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent
+                position="popper"
+                className="max-h-[200px] overflow-y-auto"
+                sideOffset={4}
+              >
                 <SelectItem value="none">None</SelectItem>
                 {DECK_LANGUAGES.map(lang => (
                   <SelectItem key={lang.code} value={lang.name}>
@@ -187,7 +199,11 @@ export function EditDeckDialog({ open, onOpenChange, deck, onUpdateDeck }: EditD
               <SelectTrigger className="mt-1">
                 <SelectValue placeholder="Select a language..." />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent
+                position="popper"
+                className="max-h-[200px] overflow-y-auto"
+                sideOffset={4}
+              >
                 <SelectItem value="none">None</SelectItem>
                 {DECK_LANGUAGES.map(lang => (
                   <SelectItem key={lang.code} value={lang.name}>

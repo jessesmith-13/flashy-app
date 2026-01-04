@@ -4,7 +4,7 @@ import { Button } from '../../ui/button'
 import { ChevronRight, Check, X, Star, EyeOff, Volume2 } from 'lucide-react'
 import { Card, useStore } from '../../../store/useStore'
 import { toast } from 'sonner'
-import * as api from '../../../utils/api'
+import { updateCard as apiUpdateCard } from '../../../utils/api/decks'
 import { speak } from '../../../utils/textToSpeech'
 
 interface MultipleChoiceModeProps {
@@ -16,9 +16,22 @@ interface MultipleChoiceModeProps {
   frontLanguage?: string
 }
 
-export function MultipleChoiceMode({ cards, onNext, currentIndex, isLastCard, isTemporaryStudy = false, frontLanguage }: MultipleChoiceModeProps) {
-  const [options, setOptions] = useState<string[]>([])
-  const [selectedAnswers, setSelectedAnswers] = useState<string[]>([])
+interface Option {
+  text: string
+  isCorrect: boolean
+  id: string // Unique identifier for each option
+}
+
+export function MultipleChoiceMode({ 
+  cards, 
+  onNext, 
+  currentIndex, 
+  isLastCard, 
+  isTemporaryStudy = false, 
+  frontLanguage 
+}: MultipleChoiceModeProps) {
+  const [options, setOptions] = useState<Option[]>([])
+  const [selectedOptionIds, setSelectedOptionIds] = useState<string[]>([])
   const [hasAnswered, setHasAnswered] = useState(false)
   const [isSpeaking, setIsSpeaking] = useState(false)
 
@@ -26,13 +39,15 @@ export function MultipleChoiceMode({ cards, onNext, currentIndex, isLastCard, is
   
   // Get current card from store to ensure we have the latest state
   const currentCard = storeCards.find(c => c.id === cards[currentIndex]?.id) || cards[currentIndex]
-  const correctAnswers = currentCard?.correctAnswers || [currentCard?.back]
+  
+  // Multiple-choice cards use correctAnswers array (never back field)
+  const correctAnswers = currentCard?.correctAnswers || []
   const hasMultipleCorrect = correctAnswers.length > 1
 
   useEffect(() => {
     if (currentCard) {
       generateOptions()
-      setSelectedAnswers([])
+      setSelectedOptionIds([])
       setHasAnswered(false)
     }
   }, [currentIndex, currentCard])
@@ -59,39 +74,41 @@ export function MultipleChoiceMode({ cards, onNext, currentIndex, isLastCard, is
   const generateOptions = () => {
     if (!currentCard) return
 
-    // Support multiple correct answers
-    const correctAnswers = currentCard.correctAnswers || [currentCard.back]
+    // Multiple-choice cards have correctAnswers and incorrectAnswers arrays
+    const correct = currentCard.correctAnswers || []
+    const incorrect = currentCard.incorrectAnswers || []
     
-    // Use the card's predefined options if available
-    let wrongAnswers: string[] = []
-    if (currentCard.options && currentCard.options.length > 0) {
-      wrongAnswers = currentCard.options
-    } else {
-      // Fallback: generate options from other cards if no predefined options
-      wrongAnswers = cards
-        .filter(c => c.id !== currentCard.id && !correctAnswers.includes(c.back))
-        .map(c => c.back)
-        .sort(() => Math.random() - 0.5)
-        .slice(0, 3)
-    }
-
-    const allOptions = [...correctAnswers, ...wrongAnswers].sort(() => Math.random() - 0.5)
+    // Create option objects with unique IDs
+    const correctOptions: Option[] = correct.map((text, index) => ({
+      text,
+      isCorrect: true,
+      id: `correct-${index}`
+    }))
+    
+    const incorrectOptions: Option[] = incorrect.map((text, index) => ({
+      text,
+      isCorrect: false,
+      id: `incorrect-${index}`
+    }))
+    
+    // Combine and shuffle all options
+    const allOptions = [...correctOptions, ...incorrectOptions].sort(() => Math.random() - 0.5)
     setOptions(allOptions)
   }
 
-  const handleSelectAnswer = (answer: string) => {
+  const handleSelectAnswer = (optionId: string) => {
     if (hasAnswered) return
     
     if (hasMultipleCorrect) {
       // Allow multiple selection
-      if (selectedAnswers.includes(answer)) {
-        setSelectedAnswers(selectedAnswers.filter(a => a !== answer))
+      if (selectedOptionIds.includes(optionId)) {
+        setSelectedOptionIds(selectedOptionIds.filter(id => id !== optionId))
       } else {
-        setSelectedAnswers([...selectedAnswers, answer])
+        setSelectedOptionIds([...selectedOptionIds, optionId])
       }
     } else {
-      // Single selection (existing behavior)
-      setSelectedAnswers([answer])
+      // Single selection - immediately mark as answered
+      setSelectedOptionIds([optionId])
       setHasAnswered(true)
     }
   }
@@ -103,13 +120,14 @@ export function MultipleChoiceMode({ cards, onNext, currentIndex, isLastCard, is
   }
 
   const handleNext = () => {
-    const correctAnswersSet = new Set(correctAnswers)
-    const selectedAnswersSet = new Set(selectedAnswers)
+    // Count how many correct options were selected and how many incorrect were selected
+    const selectedOptions = options.filter(opt => selectedOptionIds.includes(opt.id))
+    const correctlySelected = selectedOptions.filter(opt => opt.isCorrect).length
+    const incorrectlySelected = selectedOptions.filter(opt => !opt.isCorrect).length
+    const totalCorrect = options.filter(opt => opt.isCorrect).length
     
-    // Check if all correct answers are selected and no incorrect answers are selected
-    const isCorrect = 
-      correctAnswersSet.size === selectedAnswersSet.size &&
-      [...correctAnswersSet].every(ans => selectedAnswersSet.has(ans))
+    // User is correct if they selected ALL correct options and NO incorrect options
+    const isCorrect = correctlySelected === totalCorrect && incorrectlySelected === 0
     
     onNext(isCorrect)
   }
@@ -123,7 +141,7 @@ export function MultipleChoiceMode({ cards, onNext, currentIndex, isLastCard, is
     updateCard(currentCard.id, { favorite: newFavoriteValue })
 
     try {
-      await api.updateCard(accessToken, selectedDeckId, currentCard.id, { favorite: newFavoriteValue })
+      await apiUpdateCard(accessToken, selectedDeckId, currentCard.id, { favorite: newFavoriteValue })
       toast.success(newFavoriteValue ? 'Added to favorites' : 'Removed from favorites')
     } catch (error) {
       // Revert on error
@@ -142,7 +160,7 @@ export function MultipleChoiceMode({ cards, onNext, currentIndex, isLastCard, is
     updateCard(currentCard.id, { ignored: newIgnoredValue })
 
     try {
-      await api.updateCard(accessToken, selectedDeckId, currentCard.id, { ignored: newIgnoredValue })
+      await apiUpdateCard(accessToken, selectedDeckId, currentCard.id, { ignored: newIgnoredValue })
       toast.success(newIgnoredValue ? 'Card ignored - will be excluded from future study sessions' : 'Card unignored')
     } catch (error) {
       // Revert on error
@@ -154,11 +172,12 @@ export function MultipleChoiceMode({ cards, onNext, currentIndex, isLastCard, is
 
   if (!currentCard) return null
 
-  const correctAnswersSet = new Set(correctAnswers)
-  const selectedAnswersSet = new Set(selectedAnswers)
-  const isCorrect = 
-    correctAnswersSet.size === selectedAnswersSet.size &&
-    [...correctAnswersSet].every(ans => selectedAnswersSet.has(ans))
+  // Calculate correctness for display
+  const selectedOptions = options.filter(opt => selectedOptionIds.includes(opt.id))
+  const correctlySelected = selectedOptions.filter(opt => opt.isCorrect).length
+  const incorrectlySelected = selectedOptions.filter(opt => !opt.isCorrect).length
+  const totalCorrect = options.filter(opt => opt.isCorrect).length
+  const isCorrect = correctlySelected === totalCorrect && incorrectlySelected === 0
 
   return (
     <div className="flex items-center justify-center p-2 sm:p-4 lg:p-8" style={{ minHeight: 'calc(100vh - 280px)' }}>
@@ -219,7 +238,9 @@ export function MultipleChoiceMode({ cards, onNext, currentIndex, isLastCard, is
               </Button>
             )}
           </div>
-          <p className="text-2xl md:text-3xl text-center mb-6 sm:mb-8 md:mb-12 max-w-2xl mx-auto text-gray-900 dark:text-gray-100">{currentCard.front}</p>
+          <p className="text-2xl md:text-3xl text-center mb-6 sm:mb-8 md:mb-12 max-w-2xl mx-auto text-gray-900 dark:text-gray-100">
+            {currentCard.front}
+          </p>
           
           {currentCard.frontImageUrl && (
             <div className="mb-6 rounded-lg overflow-hidden border max-w-2xl mx-auto">
@@ -232,11 +253,11 @@ export function MultipleChoiceMode({ cards, onNext, currentIndex, isLastCard, is
             </div>
           )}
           
-          {currentCard.frontAudio && (
+          {currentCard.frontAudioUrl && (
             <div className="mb-6 w-full max-w-md mx-auto">
               <audio controls className="w-full">
-                <source src={currentCard.frontAudio} type="audio/wav" />
-                <source src={currentCard.frontAudio} type="audio/mpeg" />
+                <source src={currentCard.frontAudioUrl} type="audio/wav" />
+                <source src={currentCard.frontAudioUrl} type="audio/mpeg" />
                 Your browser does not support the audio element.
               </audio>
             </div>
@@ -249,29 +270,42 @@ export function MultipleChoiceMode({ cards, onNext, currentIndex, isLastCard, is
           )}
 
           <div className="space-y-3">
-            {options.map((option, index) => {
-              const isSelected = selectedAnswers.includes(option)
-              const isCorrectOption = correctAnswersSet.has(option)
+            {options.map((option) => {
+              const isSelected = selectedOptionIds.includes(option.id)
+              const isCorrectOption = option.isCorrect
               
               let buttonClass = 'border-2 transition-all'
               if (!hasAnswered) {
-                buttonClass += ' border-gray-200 dark:border-gray-700 hover:border-blue-400 dark:hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20'
-              } else if (isCorrectOption) {
-                buttonClass += ' border-emerald-600 dark:border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20'
-              } else if (isSelected && !isCorrectOption) {
-                buttonClass += ' border-red-600 dark:border-red-500 bg-red-50 dark:bg-red-900/20'
+                // Before answering - highlight selected options
+                if (isSelected) {
+                  buttonClass += ' border-blue-500 dark:border-blue-400 bg-blue-50 dark:bg-blue-900/20'
+                } else {
+                  buttonClass += ' border-gray-200 dark:border-gray-700 hover:border-blue-400 dark:hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20'
+                }
               } else {
-                buttonClass += ' border-gray-200 dark:border-gray-700 opacity-50'
+                // After answering - show correct/incorrect
+                if (isCorrectOption) {
+                  buttonClass += ' border-emerald-600 dark:border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20'
+                } else if (isSelected && !isCorrectOption) {
+                  buttonClass += ' border-red-600 dark:border-red-500 bg-red-50 dark:bg-red-900/20'
+                } else {
+                  buttonClass += ' border-gray-200 dark:border-gray-700 opacity-50'
+                }
               }
 
               return (
                 <button
-                  key={index}
-                  onClick={() => handleSelectAnswer(option)}
+                  key={option.id}
+                  onClick={() => handleSelectAnswer(option.id)}
                   disabled={hasAnswered}
                   className={`w-full p-4 rounded-xl text-left ${buttonClass} flex items-center justify-between group`}
                 >
-                  <span className="text-lg text-gray-900 dark:text-gray-100">{option}</span>
+                  <span className="text-lg text-gray-900 dark:text-gray-100">{option.text}</span>
+                  {!hasAnswered && isSelected && (
+                    <div className="w-5 h-5 rounded-full bg-blue-600 flex items-center justify-center">
+                      <Check className="w-3 h-3 text-white" />
+                    </div>
+                  )}
                   {hasAnswered && isCorrectOption && (
                     <Check className="w-6 h-6 text-emerald-600" />
                   )}
@@ -284,7 +318,7 @@ export function MultipleChoiceMode({ cards, onNext, currentIndex, isLastCard, is
           </div>
 
           {/* Submit button for multiple correct answers */}
-          {hasMultipleCorrect && !hasAnswered && selectedAnswers.length > 0 && (
+          {hasMultipleCorrect && !hasAnswered && selectedOptionIds.length > 0 && (
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -332,7 +366,7 @@ export function MultipleChoiceMode({ cards, onNext, currentIndex, isLastCard, is
                 onClick={handleNext}
                 className="w-full bg-blue-600 hover:bg-blue-700 text-white"
               >
-                Next Question
+                {isLastCard ? 'Finish' : 'Next Question'}
                 <ChevronRight className="w-5 h-5 ml-2" />
               </Button>
             </motion.div>

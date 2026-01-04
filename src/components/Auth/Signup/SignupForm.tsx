@@ -47,7 +47,7 @@ export function SignupForm({
     const timeoutId = setTimeout(async () => {
       try {
         const response = await fetch(
-          `https://${projectId}.supabase.co/functions/v1/make-server-8a1502a9/check-displayname/${encodeURIComponent(displayName)}`,
+          `https://${projectId}.supabase.co/functions/v1/server/auth/check-displayname/${encodeURIComponent(displayName)}`,
           {
             headers: {
               'Authorization': `Bearer ${publicAnonKey}`,

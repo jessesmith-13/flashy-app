@@ -1,12 +1,29 @@
 import { useState } from 'react'
 import { useStore } from '../../../../store/useStore'
 import { useNavigation } from '../../../../hooks/useNavigation'
-import * as api from '../../../../utils/api'
+import { signIn, resetPassword, signInWithGoogle }from '../../../../utils/api/auth'
+import { getFriends, getFriendRequests } from '../../../../utils/api/friends'
 import { AuthHeader } from './AuthHeader'
 import { LoginForm } from './LoginForm'
 import { ForgotPasswordForm } from './ForgotPasswordForm'
 import { GoogleLoginButton } from './GoogleLoginButton'
 import { toast } from 'sonner'
+
+interface AccountBannedError extends Error {
+  name: 'ACCOUNT_BANNED'
+  banReason?: string
+}
+
+function isAccountBannedError(err: unknown): err is AccountBannedError {
+  return (
+    err instanceof Error &&
+    err.name === 'ACCOUNT_BANNED'
+  )
+}
+
+type Friend = {
+  id: string
+}
 
 export function LoginScreen() {
   const [loading, setLoading] = useState(false)
@@ -23,38 +40,38 @@ export function LoginScreen() {
 
     try {
       console.log('Attempting login with email:', email)
-      const { session, user } = await api.signIn(email, password)
+      
+      // ✅ Step 1: Call new backend endpoint that checks ban status from DB
+      const { session, user, profile } = await signIn(email, password)
       
       console.log('Login successful, session:', session ? 'exists' : 'null')
       console.log('User data:', user)
+      console.log('Profile data from DB:', profile)
       
-      if (session && user) {
-        // Check if user is a superuser or moderator
-        const isSuperuser = user.user_metadata?.isSuperuser === true
-        const isModerator = user.user_metadata?.isModerator === true
-        
+      if (session && user && profile) {
+        // ✅ Step 2: Use database values (not metadata) for auth state
         setAuth(
           { 
             id: user.id, 
             email: user.email || '', 
-            name: user.user_metadata?.name || '',
-            displayName: user.user_metadata?.displayName || user.user_metadata?.name || '',
-            avatarUrl: user.user_metadata?.avatarUrl,
-            decksPublic: user.user_metadata?.decksPublic ?? false,
-            subscriptionTier: user.user_metadata?.subscriptionTier || 'free',
-            subscriptionExpiry: user.user_metadata?.subscriptionExpiry,
-            isSuperuser,
-            isModerator,
+            name: profile.name || '',
+            displayName: profile.displayName || profile.name || '',
+            avatarUrl: profile.avatarUrl || null,
+            decksPublic: profile.decksPublic ?? false,
+            subscriptionTier: profile.subscriptionTier || 'free',
+            subscriptionExpiry: profile.subscriptionExpiry || null,
+            isSuperuser: profile.isSuperuser || false, // ✅ Fresh from DB
+            isModerator: profile.isModerator || false, // ✅ Fresh from DB
           },
           session.access_token
         )
         
         // Load friend data
         try {
-          const friends = await api.getFriends(session.access_token)
+          const friends = await getFriends(session.access_token) as Friend[]
           setFriends(friends.map(f => f.id)) // Extract just the IDs
           
-          const requests = await api.getFriendRequests(session.access_token)
+          const requests = await getFriendRequests(session.access_token)
           setFriendRequests(requests)
         } catch (error) {
           console.error('Failed to load friends data:', error)
@@ -72,28 +89,42 @@ export function LoginScreen() {
           navigateTo('decks')
         }
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Login error:', err)
-      console.error('Error message:', err.message)
-      console.error('Error name:', err.name)
-      
-      const errorMessage = err.message || 'Failed to login'
-      
-      // Check if the error is due to a banned account
-      if (err.name === 'ACCOUNT_BANNED') {
-        const banReason = err.banReason || ''
-        const description = banReason 
-          ? `Your account has been banned. Reason: ${banReason}` 
+
+      if (err instanceof Error) {
+        console.error('Error message:', err.message)
+        console.error('Error name:', err.name)
+      }
+
+      const errorMessage =
+        err instanceof Error ? err.message : 'Failed to login'
+
+      // 🔒 Banned account handling
+      if (isAccountBannedError(err)) {
+        const banReason = err.banReason ?? ''
+        const description = banReason
+          ? `Your account has been banned. Reason: ${banReason}`
           : 'Your account has been banned. Please contact support for more information.'
-        
+
         toast.error('Account Banned', {
           description,
           duration: 8000,
         })
+
         setError(errorMessage)
-      } else if (errorMessage.includes('Invalid login credentials')) {
-        setError('Invalid email or password. Please check your credentials or create a new account below.')
-      } else {
+      } 
+      // 🔑 Invalid credentials
+      else if (
+        err instanceof Error &&
+        err.message.includes('Invalid login credentials')
+      ) {
+        setError(
+          'Invalid email or password. Please check your credentials or create a new account below.'
+        )
+      } 
+      // ❌ Fallback
+      else {
         setError(errorMessage)
       }
     } finally {
@@ -105,11 +136,18 @@ export function LoginScreen() {
     try {
       setError('')
       setLoading(true)
-      await api.signInWithGoogle()
-      // The redirect will be handled by Supabase
-    } catch (err: any) {
+      await signInWithGoogle()
+      // Redirect handled by Supabase
+    } catch (err: unknown) {
       console.error('Google sign-in error:', err)
-      setError(err.message || 'Failed to sign in with Google')
+
+      const message =
+        err instanceof Error
+          ? err.message
+          : 'Failed to sign in with Google'
+
+      setError(message)
+    } finally {
       setLoading(false)
     }
   }
@@ -119,15 +157,22 @@ export function LoginScreen() {
     setLoading(true)
 
     try {
-      await api.resetPassword(email)
+      await resetPassword(email)
       setResetSuccess(true)
+
       setTimeout(() => {
         setShowForgotPassword(false)
         setResetSuccess(false)
       }, 3000)
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Password reset error:', err)
-      setError(err.message || 'Failed to send password reset email')
+
+      const message =
+        err instanceof Error
+          ? err.message
+          : 'Failed to send password reset email'
+
+      setError(message)
     } finally {
       setLoading(false)
     }

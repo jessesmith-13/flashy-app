@@ -2,7 +2,9 @@ import { useState, useEffect } from 'react'
 import { AppLayout } from '../Layout/AppLayout'
 import { Flame, Trophy, Target, ArrowLeft, UserPlus, UserMinus, Lock, CheckCircle2, ShieldOff, Shield, Users, Flag } from 'lucide-react'
 import { Button } from '../../ui/button'
-import * as api from '../../../utils/api'
+import { getUserProfile, getUserFriends } from '../../../utils/api/users'
+import { sendFriendRequest, removeFriend } from '../../../utils/api/friends'
+import { banUser, toggleModeratorStatus } from '../../../utils/api/admin'
 import { toast } from 'sonner'
 import { getAchievementsByCategory, CATEGORY_LABELS, AchievementCategory } from '../../../utils/achievements'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../ui/tabs'
@@ -17,6 +19,7 @@ import {
   AlertDialogTitle,
 } from '../../ui/alert-dialog'
 import { useStore } from '../../../store/useStore'
+import { CommunityDeck } from '@/types/community'
 
 interface UserProfileViewProps {
   userId: string
@@ -74,7 +77,7 @@ export function UserProfileView({ userId, onBack, onViewDeck, onViewUser, onFlag
       setLoading(true)
       
       // Load from API only
-      const userData = await api.getUserProfile(userId)
+      const userData = await getUserProfile(userId)
       console.log('UserProfileView - Loaded user data:', userData)
       console.log('UserProfileView - Achievements:', userData.achievements)
       console.log('UserProfileView - Decks:', userData.decks)
@@ -94,7 +97,7 @@ export function UserProfileView({ userId, onBack, onViewDeck, onViewUser, onFlag
     
     setActionLoading(true)
     try {
-      await api.sendFriendRequest(accessToken, userId)
+      await sendFriendRequest(accessToken, userId)
       addPendingFriendRequest(userId)
       toast.success('Friend request sent!')
     } catch (error) {
@@ -110,7 +113,7 @@ export function UserProfileView({ userId, onBack, onViewDeck, onViewUser, onFlag
     
     setActionLoading(true)
     try {
-      await api.removeFriend(accessToken, userId)
+      await removeFriend(accessToken, userId)
       removeFriendFromStore(userId)
       toast.success('Friend removed')
     } catch (error) {
@@ -127,7 +130,7 @@ export function UserProfileView({ userId, onBack, onViewDeck, onViewUser, onFlag
     setBanLoading(true)
     try {
       const newBannedStatus = !isUserBanned
-      await api.banUser(accessToken, userId, newBannedStatus)
+      await banUser(accessToken, userId, newBannedStatus)
       
       // Update local state
       setProfileUser((prev: any) => ({
@@ -151,7 +154,7 @@ export function UserProfileView({ userId, onBack, onViewDeck, onViewUser, onFlag
     setModeratorLoading(true)
     try {
       const newModeratorStatus = !profileUser.isModerator
-      await api.toggleModeratorStatus(accessToken, userId, newModeratorStatus)
+      await toggleModeratorStatus(accessToken, userId, newModeratorStatus)
       
       // Update local state
       setProfileUser((prev: any) => ({
@@ -174,7 +177,7 @@ export function UserProfileView({ userId, onBack, onViewDeck, onViewUser, onFlag
     
     setFriendsLoading(true)
     try {
-      const friendsData = await api.getUserFriends(accessToken, userId)
+      const friendsData = await getUserFriends(accessToken, userId)
       setUserFriends(friendsData)
     } catch (error) {
       console.error('Failed to load user friends:', error)
@@ -217,7 +220,7 @@ export function UserProfileView({ userId, onBack, onViewDeck, onViewUser, onFlag
   const showDecks = profileUser.decksPublic !== false
   
   // Filter out any null or undefined decks as a safety measure
-  const validDecks = userDecks.filter((deck: any) => deck && deck.id && deck.name)
+  const validDecks = userDecks.filter((deck: CommunityDeck) => deck && deck.id && deck.name)
   
   // Debug logging
   console.log('UserProfileView - Computed values:')

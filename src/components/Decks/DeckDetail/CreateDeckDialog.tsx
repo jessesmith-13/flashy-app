@@ -110,7 +110,11 @@ export function CreateDeckDialog({ open, onOpenChange, onCreateDeck }: CreateDec
               <SelectTrigger className="mt-1">
                 <SelectValue placeholder="Select a category..." />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent
+                position="popper"
+                className="max-h-[200px] overflow-y-auto"
+                sideOffset={4}
+              >
                 {[...DECK_CATEGORIES].sort((a, b) => a.category.localeCompare(b.category)).map(cat => (
                   <SelectItem key={cat.category} value={cat.category}>
                     {cat.category}
@@ -127,7 +131,11 @@ export function CreateDeckDialog({ open, onOpenChange, onCreateDeck }: CreateDec
                 <SelectTrigger className="mt-1">
                   <SelectValue placeholder="Select a subtopic..." />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent
+                  position="popper"
+                  className="max-h-[200px] overflow-y-auto"
+                  sideOffset={4}
+                >
                   {[...(DECK_CATEGORIES.find(c => c.category === selectedCategory)?.subtopics || [])].sort((a, b) => a.localeCompare(b)).map(subtopic => (
                     <SelectItem key={subtopic} value={subtopic}>
                       {subtopic}
@@ -160,7 +168,11 @@ export function CreateDeckDialog({ open, onOpenChange, onCreateDeck }: CreateDec
               <SelectTrigger className="mt-1">
                 <SelectValue placeholder="Select a language..." />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent
+                position="popper"
+                className="max-h-[200px] overflow-y-auto"
+                sideOffset={4}
+              >
                 {DECK_LANGUAGES.map(lang => (
                   <SelectItem key={lang.code} value={lang.name}>
                     {lang.flag} {lang.name}
@@ -176,7 +188,11 @@ export function CreateDeckDialog({ open, onOpenChange, onCreateDeck }: CreateDec
               <SelectTrigger className="mt-1">
                 <SelectValue placeholder="Select a language..." />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent
+                position="popper"
+                className="max-h-[200px] overflow-y-auto"
+                sideOffset={4}
+              >
                 {DECK_LANGUAGES.map(lang => (
                   <SelectItem key={lang.code} value={lang.name}>
                     {lang.flag} {lang.name}

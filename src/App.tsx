@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { HashRouter, Routes, Route, Navigate, useNavigate, useParams } from 'react-router-dom'
 import { useStore } from '../store/useStore'
 import * as api from '../utils/api'
+import { getUserProfile } from '../utils/api/auth'
 import { LandingPage } from './components/Landing/LandingPage'
 import { LoginScreen } from './components/Auth/Login/LoginScreen'
 import { SignUpScreen } from './components/Auth/Signup/SignupScreen'
@@ -28,6 +29,7 @@ import ProtectedRoute from './components/ProtectedRoute'
 import { Toaster } from './ui/sonner'
 import { useAchievementTracking } from '../hooks/useAchievements'
 import { toast } from 'sonner'
+import { SetDisplayModal } from './components/Auth/Signup/SetDisplayModal'
 
 // Suppress Supabase auth errors from console
 const originalConsoleError = console.error
@@ -61,10 +63,37 @@ function SharedDeckRoute() {
   )
 }
 
+// Helper function to fetch user role from database
+async function fetchUserRole(userId: string): Promise<{ isSuperuser: boolean; isModerator: boolean }> {
+  try {
+    const { data, error } = await api.supabaseClient
+      .from('users')
+      .select('is_superuser, is_moderator')
+      .eq('id', userId)
+      .single()
+
+    if (error) {
+      console.error('Error fetching user role from database:', error)
+      return { isSuperuser: false, isModerator: false }
+    }
+
+    return {
+      isSuperuser: data?.is_superuser === true,
+      isModerator: data?.is_moderator === true
+    }
+  } catch (error) {
+    console.error('Error fetching user role:', error)
+    return { isSuperuser: false, isModerator: false }
+  }
+}
+
 // Main app component that handles session checking
 function AppContent() {
-  const { setAuth, setFriends, setFriendRequests, darkMode, user, setDarkMode } = useStore()
+  const { setAuth, setFriends, setFriendRequests, darkMode, user, token } = useStore()
   const [checkingSession, setCheckingSession] = useState(true)
+  const [showDisplayNameModal, setShowDisplayNameModal] = useState(false)
+  const [isSettingDisplayName, setIsSettingDisplayName] = useState(false)
+  const [sessionToken, setSessionToken] = useState<string | null>(null)
   const navigate = useNavigate()
 
   // Track achievements
@@ -122,9 +151,8 @@ function AppContent() {
             const requests = await api.getFriendRequests(session.access_token)
             setFriendRequests(requests)
             
-            // Check if user is a superuser or moderator
-            const isSuperuser = session.user.user_metadata?.isSuperuser === true
-            const isModerator = session.user.user_metadata?.isModerator === true
+            // Fetch user role from database instead of metadata
+            const { isSuperuser, isModerator } = await fetchUserRole(session.user.id)
             
             // Update auth with refreshed token
             setAuth(
@@ -157,6 +185,55 @@ function AppContent() {
       authListener.subscription.unsubscribe()
     }
   }, [])
+
+  const handleDisplayNameComplete = async (displayName: string) => {
+    setIsSettingDisplayName(true)
+    try {
+      // Get the session directly - don't rely on state!
+      const session = await api.getSession()
+      
+      if (!session || !session.access_token) {
+        toast.error('No authentication token found')
+        return
+      }
+      
+      // SET the display name in the database
+      await api.setDisplayName(session.access_token, displayName)
+      
+      setShowDisplayNameModal(false)
+      
+      // Refresh user data
+      const userProfile = await getUserProfile(session.access_token)
+      
+      // Fetch user role from database instead of metadata
+      const { isSuperuser, isModerator } = await fetchUserRole(session.user.id)
+      
+      // Update auth with database values
+      setAuth(
+        {
+          id: session.user.id,
+          email: session.user.email || '',
+          name: userProfile.display_name || '',
+          displayName: userProfile.display_name || '',
+          avatarUrl: userProfile.avatar_url || session.user.user_metadata?.avatarUrl,
+          decksPublic: userProfile.decks_public ?? false,
+          subscriptionTier: userProfile.subscription_tier || 'free',
+          subscriptionExpiry: userProfile.subscription_expiry,
+          isSuperuser,
+          isModerator,
+        },
+        session.access_token
+      )
+      
+      toast.success('Welcome to Flashy!')
+      navigate('/decks')
+    } catch (error) {
+      console.error('Failed to set display name:', error)
+      toast.error('Failed to set display name. Please try again.')
+    } finally {
+      setIsSettingDisplayName(false)
+    }
+  }
 
   const checkSession = async () => {
     console.log('checkSession - Starting...')
@@ -219,9 +296,8 @@ function AppContent() {
           console.log('checkSession - Friend requests fetched:', requests)
           setFriendRequests(requests)
           
-          // Check if user is a superuser or moderator
-          const isSuperuser = session.user.user_metadata?.isSuperuser === true
-          const isModerator = session.user.user_metadata?.isModerator === true
+          // Fetch user role from database instead of metadata
+          const { isSuperuser, isModerator } = await fetchUserRole(session.user.id)
           
           // Token is valid, set auth
           setAuth(
@@ -239,6 +315,60 @@ function AppContent() {
             },
             session.access_token
           )
+
+          // Check if user needs to set display name (OAuth users with NULL display_name)
+          try {
+            const userProfile = await getUserProfile(session.access_token)
+            console.log('User profile from database:', userProfile)
+            
+            // Check if display_name is NULL in the database
+            if (userProfile && userProfile.display_name === null) {
+              console.log('User has NULL display_name, showing modal')
+              
+              // SET AUTH FIRST so token is available!
+              setAuth(
+                {
+                  id: session.user.id,
+                  email: session.user.email || '',
+                  name: '',
+                  displayName: '',
+                  avatarUrl: userProfile.avatar_url || session.user.user_metadata?.avatarUrl,
+                  decksPublic: userProfile.decks_public ?? false,
+                  subscriptionTier: userProfile.subscription_tier || 'free',
+                  subscriptionExpiry: userProfile.subscription_expiry,
+                  isSuperuser,
+                  isModerator,
+                },
+                session.access_token
+              )
+              
+              setShowDisplayNameModal(true)
+              setCheckingSession(false)
+              return
+            }
+            
+            // Update local state with database values if they exist
+            if (userProfile) {
+              setAuth(
+                {
+                  id: session.user.id,
+                  email: session.user.email || '',
+                  name: userProfile.display_name || session.user.user_metadata?.name || '',
+                  displayName: userProfile.display_name || session.user.user_metadata?.displayName || session.user.user_metadata?.name || '',
+                  avatarUrl: userProfile.avatar_url || session.user.user_metadata?.avatarUrl,
+                  decksPublic: userProfile.decks_public ?? session.user.user_metadata?.decksPublic ?? false,
+                  subscriptionTier: userProfile.subscription_tier || 'free',
+                  subscriptionExpiry: userProfile.subscription_expiry || session.user.user_metadata?.subscriptionExpiry,
+                  isSuperuser,
+                  isModerator,
+                },
+                session.access_token
+              )
+            }
+          } catch (error) {
+            console.error('Failed to fetch user profile for display name check:', error)
+            // Continue with normal flow even if this fails
+          }
 
           // Check if we need to record terms acceptance (for Google OAuth users)
           const termsAccepted = sessionStorage.getItem('termsAccepted')
@@ -358,9 +488,17 @@ function AppContent() {
             <Route path="/contact" element={<ContactScreen />} />
             <Route path="/notifications" element={<ProtectedRoute><NotificationsScreen /></ProtectedRoute>} />
             <Route path="/shared/:shareId" element={<SharedDeckRoute />} />
-            {/* Catch-all route for unmatched paths (including preview_page_v2.html) */}
+            {/* Catch-all route for unmatched paths */}
             <Route path="*" element={user ? <Navigate to="/decks" replace /> : <LandingPage />} />
           </Routes>
+          
+          {/* Display name modal for OAuth users */}
+          {showDisplayNameModal && (
+            <SetDisplayModal 
+              onSubmit={handleDisplayNameComplete}
+              isLoading={isSettingDisplayName}
+            />
+          )}
         </>
       )}
       <Toaster position="top-center" richColors />

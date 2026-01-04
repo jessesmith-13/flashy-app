@@ -3,7 +3,7 @@ import { useNavigation } from '../../../hooks/useNavigation'
 import { AppLayout } from '../Layout/AppLayout'
 import { Button } from '../../ui/button'
 import { ArrowLeft, Shield, Trash2, Flag, Users, History } from 'lucide-react'
-import { FlagManagementPanel } from '../Moderation/FlagManagementPanel'
+import { TicketManagementPanel } from '../Moderation/TicketManagementPanel'
 import { DeletedItemsPanel } from './DeletedItemsPanel'
 import { UserManagementPanel } from './UserManagementPanel'
 import { UserActivityPanel } from './UserActivityPanel'
@@ -97,7 +97,7 @@ export function SuperuserScreen() {
 
             <TabsContent value="flags" className="space-y-6">
               <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 sm:p-6 shadow-md border border-gray-200 dark:border-gray-700">
-                {accessToken && <FlagManagementPanel accessToken={accessToken} />}
+                {accessToken && <TicketManagementPanel accessToken={accessToken} />}
               </div>
             </TabsContent>
 

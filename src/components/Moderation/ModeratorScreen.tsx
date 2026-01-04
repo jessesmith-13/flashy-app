@@ -3,7 +3,7 @@ import { useNavigation } from '../../../hooks/useNavigation'
 import { AppLayout } from '../Layout/AppLayout'
 import { Button } from '../../ui/button'
 import { ArrowLeft, Shield } from 'lucide-react'
-import { FlagManagementPanel } from './FlagManagementPanel'
+import { TicketManagementPanel } from './TicketManagementPanel'
 import { useIsModerator } from '../../../utils/userUtils'
 
 export function ModeratorScreen() {
@@ -63,7 +63,7 @@ export function ModeratorScreen() {
             </div>
           </div>
 
-          {/* Flag Management */}
+          {/* Ticket Management */}
           <div className="bg-white dark:bg-gray-800 rounded-2xl border-2 border-blue-200 dark:border-blue-700 shadow-lg overflow-hidden">
             <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/30 dark:to-indigo-900/30 px-6 py-4 border-b border-blue-200 dark:border-blue-700">
               <h2 className="text-lg text-gray-900 dark:text-gray-100 flex items-center gap-2">
@@ -76,7 +76,7 @@ export function ModeratorScreen() {
             </div>
             
             <div className="p-6">
-              <FlagManagementPanel accessToken={accessToken} />
+              <TicketManagementPanel />
             </div>
           </div>
         </div>

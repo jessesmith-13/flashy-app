@@ -156,12 +156,16 @@ export function StudyScreen() {
       // Only save study session for personal decks, not temporary community decks
       if (!isTemporaryStudy && selectedDeckId) {
         addStudySession({
-          id: `session-${Date.now()}`,
           deckId: selectedDeckId,
-          date: new Date().toISOString(),
-          correctAnswers: correct,
-          totalQuestions,
-          score,
+          startedAt: new Date(sessionStartTime).toISOString(),
+          endedAt: new Date().toISOString(),
+          cardsStudied: studied,
+          correctCount: correct,
+          incorrectCount: wrong,
+          skippedCount: 0,
+          mode: 'review',
+          timeSpentSeconds: Math.floor((Date.now() - sessionStartTime) / 1000),
+          score: score
         })
       }
     }
@@ -226,7 +230,7 @@ export function StudyScreen() {
       filteredCards = filteredCards.filter(c => c.favorite)
     }
     
-    let orderedCards = [...filteredCards]
+    const orderedCards = [...filteredCards]
     
     if (order === 'randomized') {
       orderedCards.sort(() => Math.random() - 0.5)

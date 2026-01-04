@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useStore } from '../store/useStore'
 import { checkNewAchievements, AchievementStats } from '../utils/achievements'
 import { toast } from 'sonner'
@@ -16,6 +16,12 @@ export function useAchievementTracking() {
     user,
     friends
   } = useStore()
+
+  // Track which achievements we've already shown toasts for in this session
+  const shownToastsRef = useRef<Set<string>>(new Set())
+  
+  // Track the previous unlocked achievements to detect when backend data changes
+  const prevUnlockedRef = useRef<string[]>([])
 
   // Initialize achievements if not set
   useEffect(() => {
@@ -49,6 +55,34 @@ export function useAchievementTracking() {
     }
   }, [userAchievements, setUserAchievements])
 
+  // Reset shown toasts when backend unlocked achievements change
+  useEffect(() => {
+    if (!userAchievements) return
+    
+    const currentUnlocked = userAchievements.unlockedAchievementIds
+    const prevUnlocked = prevUnlockedRef.current
+    
+    // Check if the unlocked list changed (backend reload or reset)
+    const hasChanged = 
+      currentUnlocked.length !== prevUnlocked.length ||
+      currentUnlocked.some(id => !prevUnlocked.includes(id)) ||
+      prevUnlocked.some(id => !currentUnlocked.includes(id))
+    
+    if (hasChanged) {
+      console.log('[Achievement] Backend unlocked list changed, resetting toast tracking')
+      console.log('[Achievement] Previous:', prevUnlocked)
+      console.log('[Achievement] Current:', currentUnlocked)
+      
+      // Reset the shown toasts to match what's in the backend
+      // Only keep achievements that are still unlocked
+      const newShownToasts = new Set<string>()
+      currentUnlocked.forEach(id => newShownToasts.add(id))
+      shownToastsRef.current = newShownToasts
+      
+      prevUnlockedRef.current = [...currentUnlocked]
+    }
+  }, [userAchievements])
+
   // Check for new achievements whenever relevant data changes
   useEffect(() => {
     if (!userStats || !userAchievements) return
@@ -65,11 +99,6 @@ export function useAchievementTracking() {
         .map(d => d.category)
     )
     const categoriesUsed = uniqueCategories.size
-    
-    // Log category tracking for debugging (optional - can be removed later)
-    if (categoriesUsed > 0) {
-      console.log(`Achievement Tracking: User has created decks in ${categoriesUsed} different categories:`, Array.from(uniqueCategories))
-    }
 
     const stats: AchievementStats = {
       // Deck stats
@@ -146,8 +175,24 @@ export function useAchievementTracking() {
       userAchievements.unlockedAchievementIds
     )
 
+    console.log('[Achievement] Checking for new achievements...')
+    console.log('[Achievement] Currently unlocked:', userAchievements.unlockedAchievementIds)
+    console.log('[Achievement] New achievements detected:', newAchievements.map(a => a.id))
+
     // Unlock new achievements and show notifications
     newAchievements.forEach((achievement) => {
+      // Check if we've already shown a toast for this achievement in this session
+      if (shownToastsRef.current.has(achievement.id)) {
+        console.log(`[Achievement] Skipping duplicate toast for: ${achievement.id}`)
+        return
+      }
+
+      // Mark as shown BEFORE unlocking (in case unlock triggers re-render)
+      shownToastsRef.current.add(achievement.id)
+      
+      console.log(`[Achievement] 🎉 Unlocking: ${achievement.id} - ${achievement.title}`)
+      
+      // Unlock the achievement (saves to backend)
       unlockAchievement(achievement.id)
       
       // Show achievement unlock toast
@@ -159,5 +204,5 @@ export function useAchievementTracking() {
         }
       )
     })
-  }, [decks, cards, studySessions, userStats, userAchievements, darkMode, user, friends])
+  }, [decks, cards, studySessions, userStats, userAchievements, darkMode, user, friends, unlockAchievement])
 }

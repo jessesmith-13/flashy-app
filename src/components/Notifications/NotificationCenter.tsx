@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { useStore } from '../../../store/useStore'
 import { useNavigation } from '../../../hooks/useNavigation'
-import * as api from '../../../utils/api'
+import { markAllNotificationsSeen, getNotifications } from '../../../utils/api/notifications'
+import { acceptFriendRequest, declineFriendRequest } from '../../../utils/api/friends'
 import { toast } from 'sonner'
 import { Button } from '../../ui/button'
 import { Bell, X, UserPlus, Reply, FileText, MessageCircle, Check, Heart, AlertTriangle, Ticket } from 'lucide-react'
@@ -47,7 +48,7 @@ export function NotificationCenter() {
   
   // Mark as seen when dropdown opens
   useEffect(() => {
-    if (accessToken && isOpen && mentionNotifications.some(n => !n.seen)) {
+    if (accessToken && isOpen && mentionNotifications.some(n => !n.isSeen)) {
       markNotificationsAsSeen()
     }
   }, [accessToken, isOpen])
@@ -56,9 +57,9 @@ export function NotificationCenter() {
     if (!accessToken) return
     
     try {
-      await api.markAllNotificationsSeen(accessToken)
+      await markAllNotificationsSeen(accessToken)
       // Update local state to mark all as seen
-      setMentionNotifications(mentionNotifications.map(n => ({ ...n, seen: true })))
+      setMentionNotifications(mentionNotifications.map(n => ({ ...n, isSeen: true })))
     } catch (error) {
       console.error('Failed to mark notifications as seen:', error)
       handleAuthError(error)
@@ -69,7 +70,9 @@ export function NotificationCenter() {
     if (!accessToken) return
     
     try {
-      const notifications = await api.getNotifications(accessToken)
+      // NEW API already returns camelCase - no mapper needed!
+      const notifications = await getNotifications(accessToken)
+      console.log('🔔 Loaded notifications:', notifications)
       setMentionNotifications(notifications)
     } catch (error) {
       // Completely silent - no console logs, no toasts, no auth error handling
@@ -83,19 +86,20 @@ export function NotificationCenter() {
   const friendRequestNotifications = mentionNotifications.filter(n => n.type === 'friend_request')
   const totalNotifications = mentionNotifications.length
   // Only show unseen notifications in the badge
-  const unseenCount = mentionNotifications.filter(n => !n.seen).length
+  const unseenCount = mentionNotifications.filter(n => !n.isSeen).length
 
+  
   const handleAcceptRequest = async (userId: string) => {
     if (!accessToken) return
     
     setLoading(userId)
     try {
-      await api.acceptFriendRequest(accessToken, userId)
+      await acceptFriendRequest(accessToken, userId)
       addFriend(userId)
       removeFriendRequest(userId)
       
       // Also remove the notification from mentionNotifications
-      const notification = mentionNotifications.find(n => n.type === 'friend_request' && n.fromUserId === userId)
+      const notification = mentionNotifications.find(n => n.type === 'friend_request' && n.relatedUserId === userId)
       if (notification) {
         removeMentionNotification(notification.id)
       }
@@ -115,11 +119,11 @@ export function NotificationCenter() {
     
     setLoading(userId)
     try {
-      await api.declineFriendRequest(accessToken, userId)
+      await declineFriendRequest(accessToken, userId)
       removeFriendRequest(userId)
       
       // Also remove the notification from mentionNotifications
-      const notification = mentionNotifications.find(n => n.type === 'friend_request' && n.fromUserId === userId)
+      const notification = mentionNotifications.find(n => n.type === 'friend_request' && n.relatedUserId === userId)
       if (notification) {
         removeMentionNotification(notification.id)
       }
@@ -132,17 +136,6 @@ export function NotificationCenter() {
     } finally {
       setLoading(null)
     }
-  }
-
-  const handleMentionClick = (notification: any) => {
-    // Set the current section to the notification's section
-    setCurrentSection(notification.section)
-    // Set the viewing community deck ID
-    setViewingCommunityDeckId(notification.context)
-    // Remove the notification from the list
-    removeMentionNotification(notification.id)
-    // Close the notification center
-    setIsOpen(false)
   }
 
   return (
@@ -204,7 +197,7 @@ export function NotificationCenter() {
                           <div
                             key={notification.id}
                             className={`p-4 rounded-lg transition-colors ${
-                              !notification.read 
+                              !notification.isRead 
                                 ? 'bg-orange-50/70 dark:bg-orange-900/20' 
                                 : 'bg-gray-50 dark:bg-gray-700/50'
                             }`}
@@ -232,7 +225,7 @@ export function NotificationCenter() {
                                 {/* Warning Message */}
                                 <div className="bg-orange-100 dark:bg-orange-900/30 rounded px-2 py-2 mb-2">
                                   <p className="text-xs text-gray-700 dark:text-gray-300">
-                                    {notification.text}
+                                    {notification.message}
                                   </p>
                                 </div>
                                 
@@ -251,22 +244,22 @@ export function NotificationCenter() {
                           <div
                             key={notification.id}
                             className={`p-4 rounded-lg transition-colors ${
-                              !notification.read 
+                              !notification.isRead 
                                 ? 'bg-emerald-50/70 dark:bg-emerald-900/20 hover:bg-emerald-100/70 dark:hover:bg-emerald-900/30' 
                                 : 'bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700'
                             }`}
                           >
                             <div className="flex items-start gap-3">
                               {/* User Avatar */}
-                              {notification.fromUserAvatar ? (
+                              {notification.requesterAvatar ? (
                                 <img
-                                  src={notification.fromUserAvatar}
-                                  alt={notification.fromUserName}
+                                  src={notification.requesterAvatar}
+                                  alt={notification.requesterDisplayName}
                                   className="w-10 h-10 rounded-full object-cover flex-shrink-0"
                                 />
                               ) : (
                                 <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-400 to-blue-500 flex items-center justify-center text-white flex-shrink-0">
-                                  {notification.fromUserName.charAt(0).toUpperCase()}
+                                  {notification.requesterDisplayName?.charAt(0).toUpperCase()}
                                 </div>
                               )}
 
@@ -275,7 +268,7 @@ export function NotificationCenter() {
                                 <div className="flex items-start justify-between gap-2 mb-3">
                                   <div>
                                     <p className="text-sm text-gray-900 dark:text-gray-100 font-medium">
-                                      {notification.fromUserName}
+                                      {notification.requesterDisplayName}
                                     </p>
                                     <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">
                                       sent you a friend request
@@ -288,8 +281,8 @@ export function NotificationCenter() {
                                 <div className="flex items-center gap-2">
                                   <Button
                                     size="sm"
-                                    onClick={() => handleAcceptRequest(notification.fromUserId)}
-                                    disabled={loading === notification.fromUserId}
+                                    onClick={() => handleAcceptRequest(notification.relatedUserId!)}
+                                    disabled={loading === notification.relatedUserId}
                                     className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white h-8"
                                   >
                                     <Check className="w-3.5 h-3.5 mr-1.5" />
@@ -298,8 +291,8 @@ export function NotificationCenter() {
                                   <Button
                                     size="sm"
                                     variant="outline"
-                                    onClick={() => handleDeclineRequest(notification.fromUserId)}
-                                    disabled={loading === notification.fromUserId}
+                                    onClick={() => handleDeclineRequest(notification.relatedUserId!)}
+                                    disabled={loading === notification.relatedUserId}
                                     className="flex-1 border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 h-8"
                                   >
                                     <X className="w-3.5 h-3.5 mr-1.5" />
@@ -317,7 +310,7 @@ export function NotificationCenter() {
                         <div
                           key={notification.id}
                           className={`p-4 rounded-lg transition-colors cursor-pointer ${
-                            !notification.read 
+                            !notification.isRead 
                               ? 'bg-emerald-50/70 dark:bg-emerald-900/20 hover:bg-emerald-100/70 dark:hover:bg-emerald-900/30' 
                               : 'bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700'
                           }`}
@@ -329,7 +322,7 @@ export function NotificationCenter() {
                           <div className="flex items-start gap-3">
                             {/* Icon based on notification type */}
                             <div className="flex-shrink-0">
-                              {notification.type === 'reply' && <Reply className="w-5 h-5 text-blue-600 dark:text-blue-400" />}
+                              {notification.type === 'comment_reply' && <Reply className="w-5 h-5 text-blue-600 dark:text-blue-400" />}
                               {notification.type === 'deck_comment' && <MessageCircle className="w-5 h-5 text-purple-600 dark:text-purple-400" />}
                               {notification.type === 'mention' && <FileText className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />}
                               {notification.type === 'comment_like' && <Heart className="w-5 h-5 text-red-600 dark:text-red-400" />}
@@ -339,7 +332,7 @@ export function NotificationCenter() {
                               {notification.type === 'premium_granted' && <Bell className="w-5 h-5 text-purple-600 dark:text-purple-400" />}
                               {notification.type === 'premium_revoked' && <Bell className="w-5 h-5 text-gray-600 dark:text-gray-400" />}
                               {notification.type === 'ticket_created' && <Ticket className="w-5 h-5 text-gray-600 dark:text-gray-400" />}
-                              {!['reply', 'deck_comment', 'mention', 'comment_like', 'comment_deleted', 'deck_deleted', 'card_deleted', 'comment_restored', 'deck_restored', 'card_restored', 'deck_flagged', 'card_flagged', 'comment_flagged', 'premium_granted', 'premium_revoked', 'ticket_created'].includes(notification.type) && (
+                              {!['comment_reply', 'deck_comment', 'mention', 'comment_like', 'comment_deleted', 'deck_deleted', 'card_deleted', 'comment_restored', 'deck_restored', 'card_restored', 'deck_flagged', 'card_flagged', 'comment_flagged', 'premium_granted', 'premium_revoked', 'ticket_created'].includes(notification.type) && (
                                 <Bell className="w-5 h-5 text-gray-600 dark:text-gray-400" />
                               )}
                             </div>
@@ -348,19 +341,19 @@ export function NotificationCenter() {
                             <div className="flex-1 min-w-0">
                               {/* Main message */}
                               <p className="text-sm text-gray-900 dark:text-gray-100">
-                                {notification.message || notification.text || `New ${notification.type.replace(/_/g, ' ')}`}
+                                {notification.message}
                               </p>
                               
                               {/* Additional info for specific types */}
-                              {notification.type === 'premium_granted' && notification.reason && (
+                              {notification.type === 'premium_granted' && notification.tier && (
                                 <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                                  Reason: {notification.reason}
+                                  Tier: {notification.tier}
                                 </p>
                               )}
                               
-                              {notification.fromUserName && (
+                              {notification.requesterDisplayName && (
                                 <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                                  From {notification.fromUserName}
+                                  From {notification.requesterDisplayName}
                                 </p>
                               )}
                               
@@ -376,7 +369,7 @@ export function NotificationCenter() {
                             </div>
 
                             {/* Unread indicator */}
-                            {!notification.read && (
+                            {!notification.isRead && (
                               <div className="w-2 h-2 bg-emerald-600 rounded-full flex-shrink-0 mt-1"></div>
                             )}
                           </div>
