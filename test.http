@@ -1,0 +1,1286 @@
+### Variables (you'll update these)
+@baseUrl = http://localhost:8787
+@email = test5@example.com
+@password = testpassword123
+@email2 = test@example.com
+@password2 = testpassword123
+@name = UpdatedName
+# Get access_token from Supabase client auth (frontend)
+@accessToken = eyJhbGciOiJIUzI1NiIsImtpZCI6Im1KTWVISWp2c0haNktYZnciLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL3RpandyeGtqcWx3bHFpampuYXpnLnN1cGFiYXNlLmNvL2F1dGgvdjEiLCJzdWIiOiI5ZTFlZDk2OS0zZGQwLTQyOTItYmY2OC0xOTE3YzM3YTk0MjUiLCJhdWQiOiJhdXRoZW50aWNhdGVkIiwiZXhwIjoxNzY2MTA1MjA5LCJpYXQiOjE3NjYxMDE2MDksImVtYWlsIjoidGVzdEBleGFtcGxlLmNvbSIsInBob25lIjoiIiwiYXBwX21ldGFkYXRhIjp7InByb3ZpZGVyIjoiZW1haWwiLCJwcm92aWRlcnMiOlsiZW1haWwiXX0sInVzZXJfbWV0YWRhdGEiOnsiZGlzcGxheU5hbWUiOiJUZXN0IFVzZXIiLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwibmFtZSI6IlRlc3QgVXNlciIsInN1YnNjcmlwdGlvbkNhbmNlbGxlZEF0UGVyaW9kRW5kIjpmYWxzZSwic3Vic2NyaXB0aW9uRXhwaXJ5IjoiMjAyNi0wMS0xN1QyMjo1Njo0OS40MDRaIiwic3Vic2NyaXB0aW9uVGllciI6Im1vbnRobHkifSwicm9sZSI6ImF1dGhlbnRpY2F0ZWQiLCJhYWwiOiJhYWwxIiwiYW1yIjpbeyJtZXRob2QiOiJwYXNzd29yZCIsInRpbWVzdGFtcCI6MTc2NjEwMTYwOX1dLCJzZXNzaW9uX2lkIjoiNDRiMjAxYWMtOWE4Ni00OGM2LWJhNTktNzAyODEzNzIxMjYxIiwiaXNfYW5vbnltb3VzIjpmYWxzZX0.ZBt4jDndzdxjwTZ8TkLc8HrkcY6zwunp2uZj3u09bLQ
+@userId = 9e1ed969-3dd0-4292-bf68-1917c37a9425
+@senderId=c2ddbcd8-cbcd-4b89-bead-bbfc1b0f29ef
+@deckId = 21566763-0b6e-4f72-a436-041ff5f089d3
+@deckId1 = 4dfc416a-41f7-4008-a6d2-bb4c9daa7f0f
+@deckId2 = edeccb11-7704-46f2-8802-fe2e55944978
+@cardId = 03ec2bd3-a139-4ed7-b400-313a4e97a8d2
+@friendId = 9e1ed969-3dd0-4292-bf68-1917c37a9425
+@communityDeckId = 9112833c-a8b3-44da-aeda-bb43d10d67bb
+@communityCardId = 0aa9a239-3d7b-47c9-a943-f2abe97aa39b
+@shareId = c56a6037-a03a-473a-9202-3930af0c9361
+@flagId = f88f4831-06b4-49fd-a586-9c2937fe0a68
+@ticketId = 3c0dec25-f771-4c54-bb83-2a351d6df9bf
+@notificationId = 48ec7527-1b16-4e02-aabc-fd1ddc581c87
+@commentId = be652721-71bf-4a12-af8a-22a775dcce2b
+
+### ============================================================
+### 👤 AUTH
+### ============================================================
+
+### STEP 1: Sign Up (Run this first!)
+POST {{baseUrl}}/auth/signup
+Content-Type: application/json
+
+{
+  "email": "test7@example.com",
+  "password": "testpassword123",
+  "name": "Test User7"
+}
+
+
+### 2. Login
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{email2}}",
+  "password": "{{password2}}"
+}
+
+### 2. Check Display Name Availability
+GET {{baseUrl}}/auth/check-displayname/{{name}}
+
+### 3. Accept Terms
+POST {{baseUrl}}/auth/terms/accept
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "termsAcceptedAt": "2024-12-11T10:30:00.000Z",
+  "privacyAcceptedAt": "2024-12-11T10:30:00.000Z"
+}
+
+### ============================================================
+### 👤 USER
+### ============================================================
+
+### 4. Get User Profile
+GET {{baseUrl}}/users/{{userId}}/profile
+Authorization: Bearer {{accessToken}}
+
+### 5. Update User Profile
+PUT {{baseUrl}}/users/{{userId}}/profile
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "displayName": "UpdatedName2",
+  "decksPublic": true
+}
+
+### 6. Get User Friends
+GET {{baseUrl}}/users/{{userId}}/friends
+Authorization: Bearer {{accessToken}}
+
+### 7. Get User Deck
+GET {{baseUrl}}/users/{{userId}}/decks/{{deckId}}
+Authorization: Bearer {{accessToken}}
+
+### 8. Fix Subscription Tier
+POST {{baseUrl}}/users/fix-subscription-tier
+Authorization: Bearer {{accessToken}}
+
+### ============================================================
+### 📦 STORAGE
+### ============================================================
+
+### 9. Upload Avatar
+POST {{baseUrl}}/storage/avatar
+Authorization: Bearer {{accessToken}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary
+
+------WebKitFormBoundary
+Content-Disposition: form-data; name="file"; filename="avatar.jpg"
+Content-Type: image/jpeg
+
+< ./path/to/avatar.jpg
+------WebKitFormBoundary--
+
+### 10. Upload Card Image
+POST {{baseUrl}}/storage/card-image
+Authorization: Bearer {{accessToken}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary
+
+------WebKitFormBoundary
+Content-Disposition: form-data; name="file"; filename="card.jpg"
+Content-Type: image/jpeg
+
+< ./path/to/card-image.jpg
+------WebKitFormBoundary--
+
+### 11. Upload Card Audio
+POST {{baseUrl}}/storage/card-audio
+Authorization: Bearer {{accessToken}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary
+
+------WebKitFormBoundary
+Content-Disposition: form-data; name="file"; filename="audio.mp3"
+Content-Type: audio/mpeg
+
+< ./path/to/audio.mp3
+------WebKitFormBoundary--
+
+### ============================================================
+### 🛡️ ADMIN
+### ============================================================
+
+### 12. Make User Moderator
+POST {{baseUrl}}/admin/users/{{userId}}/moderator
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "isModerator": false
+}
+
+### 13. Get All Users
+GET {{baseUrl}}/admin/users
+Authorization: Bearer {{accessToken}}
+
+### 14. Update User Role
+POST {{baseUrl}}/admin/users/{{userId}}/role
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "role": "moderator"
+}
+
+### 15a. Ban User
+POST {{baseUrl}}/admin/users/{{userId}}/ban
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "isBanned": true,
+  "reason": "Violation of terms"
+}
+
+### 15b. Unban User
+POST {{baseUrl}}/admin/users/{{userId}}/ban
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "isBanned": false,
+  "reason": ""
+}
+
+### 16. Grant Premium (Lifetime)
+POST {{baseUrl}}/admin/users/{{userId}}/premium
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "tier": "lifetime",
+  "reason": "Testing manual premium upgrade"
+}
+
+### 16b. Grant Premium (Monthly)
+POST {{baseUrl}}/admin/users/{{userId}}/premium
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "tier": "monthly",
+  "reason": "Testing monthly subscription",
+  "customReason": "Beta tester reward"
+}
+
+### 16c. Grant Premium (Annual)
+POST {{baseUrl}}/admin/users/{{userId}}/premium
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "tier": "annual",
+  "reason": "Testing annual subscription"
+}
+
+### 17. Demote User
+POST {{baseUrl}}/admin/users/{{userId}}/demote
+Authorization: Bearer {{accessToken}}
+
+### 18. Get User Activity
+GET {{baseUrl}}/admin/users/{{userId}}/activity
+Authorization: Bearer {{accessToken}}
+
+### 19. Restore Deleted Item
+POST {{baseUrl}}/admin/deleted-items/restore
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "itemId": "44d5b956-f2ba-44bf-ac80-e7ed5245dc83",
+  "itemType": "comment"
+}
+
+### 20. Delete Community Deck (Admin)
+DELETE {{baseUrl}}/admin/community/decks/{{communityDeckId}}
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "reason": "testing for stuff"
+}
+
+### 21. Delete Community Deck Card (Admin)
+DELETE {{baseUrl}}/admin/community/decks/{{communityDeckId}}/cards/{{communityCardId}}
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "reason": "testing for stuff"
+}
+
+### 22. Toggle Featured Status
+PATCH {{baseUrl}}/admin/community/decks/{{communityDeckId}}/featured
+Authorization: Bearer {{accessToken}}
+
+### 23. Get Deleted Items
+GET {{baseUrl}}/admin/deleted-items
+Authorization: Bearer {{accessToken}}
+
+### ============================================================
+### 📚 DECKS
+### ============================================================
+
+### 24. Get All Decks
+GET {{baseUrl}}/decks
+Authorization: Bearer {{accessToken}}
+
+### 25. Create Deck
+POST {{baseUrl}}/decks
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "name": "Spanish Vocabulary 2",
+  "description": "Common Spanish phrases 2",
+  "category": "Languages",
+  "subtopic": "Spanish",
+  "isPublic": false
+}
+
+### 26. Update Deck Positions
+PUT {{baseUrl}}/decks/positions
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "positions": [
+    { "id": "{{deckId1}}", "position": 1 },
+    { "id": "{{deckId2}}", "position": 0 }
+  ]
+}
+
+### 27. Update Deck
+PUT {{baseUrl}}/decks/{{deckId}}
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "name": "Spanish Vocabulary - Updated",
+  "description": "Updated description",
+  "category": "Languages",
+  "color": "000000"
+}
+
+### 28. Delete Deck
+DELETE {{baseUrl}}/decks/{{deckId2}}
+Authorization: Bearer {{accessToken}}
+
+### 29. Update Deck from Community
+PUT {{baseUrl}}/decks/{{deckId}}/update-from-community
+Authorization: Bearer {{accessToken}}
+
+### 30. Publish Deck
+POST {{baseUrl}}/decks/{{deckId}}/publish
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "category": "Languages",
+  "subtopic": "Spanish"
+}
+
+### 31. Unpublish Community Deck
+POST {{baseUrl}}/decks/{{communityDeckId}}/unpublish
+Authorization: Bearer {{accessToken}}
+
+### ============================================================
+### 🃏 CARDS
+### ============================================================
+
+### 32. Get Deck Cards
+GET {{baseUrl}}/decks/{{deckId}}/cards
+Authorization: Bearer {{accessToken}}
+
+### 33. Batch Create Cards
+### ============================================================
+### TEST 1: Batch create mixed card types (all 3 types)
+### ============================================================
+POST {{baseUrl}}/decks/{{deckId}}/cards/batch
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "cards": [
+    {
+      "front": "What is the capital of France?",
+      "back": "Paris",
+      "cardType": "classic-flip"
+    },
+    {
+      "front": "What is 2 + 2?",
+      "correctAnswer": "4",
+      "incorrectAnswers": ["3", "5", "6"],
+      "cardType": "multiple-choice"
+    },
+    {
+      "front": "Spell: accommodation",
+      "correctAnswer": "accommodation",
+      "acceptedAnswers": ["accommodation"],
+      "cardType": "type-answer"
+    }
+  ]
+}
+
+### ============================================================
+### TEST 2: Batch create 10 classic-flip cards (performance test)
+### ============================================================
+POST {{baseUrl}}/decks/{{deckId}}/cards/batch
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "cards": [
+    { "front": "Hello", "back": "Bonjour", "cardType": "classic-flip" },
+    { "front": "Goodbye", "back": "Au revoir", "cardType": "classic-flip" },
+    { "front": "Please", "back": "S'il vous plaît", "cardType": "classic-flip" },
+    { "front": "Thank you", "back": "Merci", "cardType": "classic-flip" },
+    { "front": "Yes", "back": "Oui", "cardType": "classic-flip" },
+    { "front": "No", "back": "Non", "cardType": "classic-flip" },
+    { "front": "Good morning", "back": "Bonjour", "cardType": "classic-flip" },
+    { "front": "Good night", "back": "Bonne nuit", "cardType": "classic-flip" },
+    { "front": "How are you?", "back": "Comment allez-vous?", "cardType": "classic-flip" },
+    { "front": "I'm fine", "back": "Je vais bien", "cardType": "classic-flip" }
+  ]
+}
+
+### ============================================================
+### TEST 3: Batch create with all optional fields
+### ============================================================
+POST {{baseUrl}}/decks/{{deckId}}/cards/batch
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "cards": [
+    {
+      "front": "Identify this landmark",
+      "back": "Eiffel Tower",
+      "frontImageUrl": "https://example.com/eiffel.jpg",
+      "backImageUrl": "https://example.com/eiffel-info.jpg",
+      "frontAudio": "https://example.com/audio/eiffel.mp3",
+      "backAudio": "https://example.com/audio/answer.mp3",
+      "cardType": "classic-flip"
+    },
+    {
+      "front": "What is this?",
+      "correctAnswer": "Taj Mahal",
+      "incorrectAnswers": ["Petra", "Colosseum", "Machu Picchu"],
+      "frontImageUrl": "https://example.com/taj.jpg",
+      "options": { "hint": "Located in India" },
+      "cardType": "multiple-choice"
+    },
+    {
+      "front": "Type the color",
+      "back": "blue",
+      "acceptedAnswers": ["blue", "Blue", "BLUE", "azul"],
+      "frontImageUrl": "https://example.com/sky.jpg",
+      "cardType": "type-answer"
+    }
+  ]
+}
+
+### ============================================================
+### ERROR TEST: Empty cards array
+### ============================================================
+POST {{baseUrl}}/decks/{{deckId}}/cards/batch
+Authorization: Bearer {{accessToken}}
+Content-Type: application/JSON
+
+{
+  "cards": []
+}
+
+### Expected: 400 Bad Request - "Cards array is required"
+
+### ============================================================
+### ERROR TEST: Missing cards field
+### ============================================================
+POST {{baseUrl}}/decks/{{deckId}}/cards/batch
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "data": [
+    { "front": "Test", "back": "Test" }
+  ]
+}
+
+### Expected: 400 Bad Request
+
+### ============================================================
+### ERROR TEST: Invalid deck ID  
+### ============================================================
+POST {{baseUrl}}/decks/00000000-0000-0000-0000-000000000000/cards/batch
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "cards": [
+    {
+      "front": "Test",
+      "back": "Test",
+      "cardType": "classic-flip"
+    }
+  ]
+}
+
+### Expected: 404 Not Found
+
+### ============================================================
+### ERROR TEST: Missing auth token
+### ============================================================
+POST {{baseUrl}}/decks/{{deckId}}/cards/batch
+Content-Type: application/json
+
+{
+  "cards": [
+    {
+      "front": "Test",
+      "back": "Test"
+    }
+  ]
+}
+
+### Expected: 401 Unauthorized
+
+### ============================================================
+### STRESS TEST: 50 cards (AI generation simulation)
+### ============================================================
+POST {{baseUrl}}/decks/{{deckId}}/cards/batch
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "cards": [
+    { "front": "Card 1", "back": "Answer 1" },
+    { "front": "Card 2", "back": "Answer 2" },
+    { "front": "Card 3", "back": "Answer 3" },
+    { "front": "Card 4", "back": "Answer 4" },
+    { "front": "Card 5", "back": "Answer 5" },
+    { "front": "Card 6", "back": "Answer 6" },
+    { "front": "Card 7", "back": "Answer 7" },
+    { "front": "Card 8", "back": "Answer 8" },
+    { "front": "Card 9", "back": "Answer 9" },
+    { "front": "Card 10", "back": "Answer 10" },
+    { "front": "Card 11", "back": "Answer 11" },
+    { "front": "Card 12", "back": "Answer 12" },
+    { "front": "Card 13", "back": "Answer 13" },
+    { "front": "Card 14", "back": "Answer 14" },
+    { "front": "Card 15", "back": "Answer 15" },
+    { "front": "Card 16", "back": "Answer 16" },
+    { "front": "Card 17", "back": "Answer 17" },
+    { "front": "Card 18", "back": "Answer 18" },
+    { "front": "Card 19", "back": "Answer 19" },
+    { "front": "Card 20", "back": "Answer 20" },
+    { "front": "Card 21", "back": "Answer 21" },
+    { "front": "Card 22", "back": "Answer 22" },
+    { "front": "Card 23", "back": "Answer 23" },
+    { "front": "Card 24", "back": "Answer 24" },
+    { "front": "Card 25", "back": "Answer 25" },
+    { "front": "Card 26", "back": "Answer 26" },
+    { "front": "Card 27", "back": "Answer 27" },
+    { "front": "Card 28", "back": "Answer 28" },
+    { "front": "Card 29", "back": "Answer 29" },
+    { "front": "Card 30", "back": "Answer 30" },
+    { "front": "Card 31", "back": "Answer 31" },
+    { "front": "Card 32", "back": "Answer 32" },
+    { "front": "Card 33", "back": "Answer 33" },
+    { "front": "Card 34", "back": "Answer 34" },
+    { "front": "Card 35", "back": "Answer 35" },
+    { "front": "Card 36", "back": "Answer 36" },
+    { "front": "Card 37", "back": "Answer 37" },
+    { "front": "Card 38", "back": "Answer 38" },
+    { "front": "Card 39", "back": "Answer 39" },
+    { "front": "Card 40", "back": "Answer 40" },
+    { "front": "Card 41", "back": "Answer 41" },
+    { "front": "Card 42", "back": "Answer 42" },
+    { "front": "Card 43", "back": "Answer 43" },
+    { "front": "Card 44", "back": "Answer 44" },
+    { "front": "Card 45", "back": "Answer 45" },
+    { "front": "Card 46", "back": "Answer 46" },
+    { "front": "Card 47", "back": "Answer 47" },
+    { "front": "Card 48", "back": "Answer 48" },
+    { "front": "Card 49", "back": "Answer 49" },
+    { "front": "Card 50", "back": "Answer 50" }
+  ]
+}
+
+### 34. Create Card
+### ========================================
+### CARD TYPE TESTS
+### ========================================
+
+### 1. Create Classic Flip Card (Basic)
+POST {{baseUrl}}/decks/{{deckId}}/cards
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "front": "Hello",
+  "back": "Hola",
+  "cardType": "classic-flip"
+}
+
+### 2. Create Classic Flip Card (With Images)
+POST {{baseUrl}}/decks/{{deckId}}/cards
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "front": "What is this animal?",
+  "back": "Dog",
+  "cardType": "classic-flip",
+  "frontImageUrl": "https://images.unsplash.com/photo-1543466835-00a7907e9de1",
+  "backImageUrl": "https://images.unsplash.com/photo-1587300003388-59208cc962cb"
+}
+
+### 3. Create Multiple Choice Card
+POST {{baseUrl}}/decks/{{deckId}}/cards
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "front": "hey",
+  "cardType": "multiple-choice",
+  "correctAnswer": "blah",
+  "incorrectAnswers": ["London", "Paris", "Berlin", "Madrid"]
+}
+
+### 4. Create Multiple Choice Card (With Image)
+POST {{baseUrl}}/decks/{{deckId}}/cards
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "front": "What color is this?",
+  "correctAnswer": "blah",
+  "incorrectAnswers": ["London", "Paris", "Berlin", "Madrid"],
+  "cardType": "multiple-choice",
+  "frontImageUrl": "https://images.unsplash.com/photo-1535083783855-76ae62b2914e"
+}
+
+### 5. Create Type Answer Card (Basic)
+POST {{baseUrl}}/decks/{{deckId}}/cards
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "front": "What is 2 + 2?",
+  "back": "4",
+  "cardType": "type-answer"
+}
+
+### 6. Create Type Answer Card (With Accepted Variations)
+POST {{baseUrl}}/decks/{{deckId}}/cards
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "front": "What is the largest ocean?",
+  "back": "Pacific Ocean",
+  "cardType": "type-answer",
+  "acceptedAnswers": ["Pacific", "Pacific Ocean", "The Pacific", "pacific ocean"]
+}
+
+### 7. Create Type Answer Card (Language Learning)
+POST {{baseUrl}}/decks/{{deckId}}/cards
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "front": "Translate: Thank you",
+  "back": "Gracias",
+  "cardType": "type-answer",
+  "acceptedAnswers": ["gracias", "Gracias", "GRACIAS"]
+}
+
+### 8. Create Classic Flip Card (Image-only front)
+POST {{baseUrl}}/decks/{{deckId}}/cards
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "back": "Eiffel Tower",
+  "cardType": "classic-flip",
+  "frontImageUrl": "https://images.unsplash.com/photo-1511739001486-6bfe10ce785f"
+}
+
+### 9. Create Classic Flip Card (Image-only back)
+POST {{baseUrl}}/decks/{{deckId}}/cards
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "front": "What landmark is this?",
+  "cardType": "classic-flip",
+  "backImageUrl": "https://images.unsplash.com/photo-1511739001486-6bfe10ce785f"
+}
+
+### 35. Update Card Positions
+PUT {{baseUrl}}/decks/{{deckId}}/cards/positions
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "positions": [
+    { "id": "card-1", "position": 0 },
+    { "id": "card-2", "position": 1 }
+  ]
+}
+
+### 36. Update Card
+PUT {{baseUrl}}/decks/{{deckId}}/cards/{{cardId}}
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "front": "Please (updated)",
+  "back": "Por favor (updated)",
+  "hint": "Updated hint"
+}
+
+### 37. Delete Card
+DELETE {{baseUrl}}/decks/{{deckId}}/cards/{{cardId}}
+Authorization: Bearer {{accessToken}}
+
+### 38. Share Deck
+POST {{baseUrl}}/decks/{{deckId}}/share
+Authorization: Bearer {{accessToken}}
+
+### 39. Get Shared Deck
+GET {{baseUrl}}/decks/shared/{{shareId}}
+
+### ============================================================
+### 🌍 COMMUNITY
+### ============================================================
+
+### 40. Add Deck from Community to personal decks
+POST {{baseUrl}}/community/add-deck
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "communityDeckId": "{{communityDeckId}}"
+}
+
+### 42. Browse Community Decks
+GET {{baseUrl}}/community/decks?category=Languages&sort=popular&limit=20&offset=0
+Authorization: Bearer {{accessToken}}
+
+### 43. Get Featured Community Decks
+GET {{baseUrl}}/community/decks/featured
+Authorization: Bearer {{accessToken}}
+
+### 44. Search Community Users
+GET {{baseUrl}}/community/users/search?q=test&limit=20
+Authorization: Bearer {{accessToken}}
+
+### 45. Get All Community Decks
+GET {{baseUrl}}/community/decks
+Authorization: Bearer {{accessToken}}
+
+### 45. Get Single Community Deck with community deck id
+GET {{baseUrl}}/community/decks/{{communityDeckId}}
+Authorization: Bearer {{accessToken}}
+
+### 46. Update Community Deck
+PUT {{baseUrl}}/community/decks/{{communityDeckId}}
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "name": "Updated Deck Name",
+  "description": "Updated description"
+}
+
+### 47. Download Community Deck
+POST {{baseUrl}}/community/downloads
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "communityDeckId": "{{communityDeckId}}"
+}
+
+### 48. Flag Content
+POST {{baseUrl}}/moderation/flags
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "targetType": "card",
+  "targetId": "{{communityCardId}}",
+  "reason": "inappropriate",
+  "description": "Contains offensive material"
+}
+
+### 49. Rate Community Deck
+POST {{baseUrl}}/community/decks/{{communityDeckId}}/rate
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "rating": 1
+}
+
+### 50. Get Deck Ratings
+GET {{baseUrl}}/community/decks/{{communityDeckId}}/ratings
+Authorization: Bearer {{accessToken}}
+
+### 51. Get Deck Comments
+GET {{baseUrl}}/community/decks/{{communityDeckId}}/comments
+Authorization: Bearer {{accessToken}}
+
+### 52. Post Deck Comment
+POST {{baseUrl}}/community/decks/{{communityDeckId}}/comments
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "content": "Great deck! Very helpful for learning."
+}
+
+### Post a reply to a comment
+POST {{baseUrl}}/community/decks/{{communityDeckId}}/comments
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "content": "Thanks! I agree, this deck is super useful.",
+  "parentCommentId": "44d5b956-f2ba-44bf-ac80-e7ed5245dc83"
+}
+
+### 53. Like Comment
+POST {{baseUrl}}/community/decks/{{communityDeckId}}/comments/{{commentId}}/like
+Authorization: Bearer {{accessToken}}
+
+### 54. Flag User/Content
+POST {{baseUrl}}/community/flag
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "targetType": "user",
+  "targetId": "{{userId}}",
+  "reason": "spam"
+}
+
+### ============================================================
+### 🚩 MODERATION
+### ============================================================
+
+### 55. Get Flags
+GET {{baseUrl}}/moderation/flags?status=open&limit=50&offset=0
+Authorization: Bearer {{accessToken}}
+
+{
+  "flashy": true
+}
+
+### 56. Update Flag Status
+PATCH {{baseUrl}}/moderation/flags/{{flagId}}
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "status": "resolved",
+  "resolution": "content_removed"
+}
+
+### 57. Escalate Flag
+POST {{baseUrl}}/moderation/flags/{{flagId}}/escalate
+Authorization: Bearer {{accessToken}}
+
+### 58. Delete Deck Comment
+DELETE {{baseUrl}}/moderation/decks/{{deckId}}/comments/{{commentId}}
+Authorization: Bearer {{accessToken}}
+
+{
+  "reason": "test test test"
+}
+
+### 59. Issue Warning
+POST {{baseUrl}}/moderation/warnings
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "userId": "{{userId}}",
+  "reason": "Inappropriate content",
+  "timeToResolve": "7 days"
+}
+
+### Test 1: Get all tickets (default: 50 results)
+GET {{baseUrl}}/moderation/tickets
+Authorization: Bearer {{accessToken}}
+
+### Test 2: Get all tickets with custom limit
+GET {{baseUrl}}/moderation/tickets?limit=10
+Authorization: Bearer {{accessToken}}
+
+### Test 3: Get tickets with pagination (page 2, 20 per page)
+GET {{baseUrl}}/moderation/tickets?limit=20&offset=20
+Authorization: Bearer {{accessToken}}
+
+### Test 4: Filter by status - Open tickets only
+GET {{baseUrl}}/moderation/tickets?status=open
+Authorization: Bearer {{accessToken}}
+
+### Test 5: Filter by status - In progress tickets
+GET {{baseUrl}}/moderation/tickets?status=in_progress
+Authorization: Bearer {{accessToken}}
+
+### Test 6: Filter by status - Resolved tickets
+GET {{baseUrl}}/moderation/tickets?status=resolved
+Authorization: Bearer {{accessToken}}
+
+### Test 7: Filter by status - Dismissed tickets
+GET {{baseUrl}}/moderation/tickets?status=dismissed
+Authorization: Bearer {{accessToken}}
+
+### Test 8: Filter by priority - Critical priority only
+GET {{baseUrl}}/moderation/tickets?priority=critical
+Authorization: Bearer {{accessToken}}
+
+### Test 9: Filter by priority - High priority
+GET {{baseUrl}}/moderation/tickets?priority=high
+Authorization: Bearer {{accessToken}}
+
+### Test 10: Filter by priority - Medium priority
+GET {{baseUrl}}/moderation/tickets?priority=medium
+Authorization: Bearer {{accessToken}}
+
+### Test 11: Filter by priority - Low priority
+GET {{baseUrl}}/moderation/tickets?priority=low
+Authorization: Bearer {{accessToken}}
+
+### Test 12: Filter by category - User reports
+GET {{baseUrl}}/moderation/tickets?category=user_report
+Authorization: Bearer {{accessToken}}
+
+### Test 13: Filter by category - Content violations
+GET {{baseUrl}}/moderation/tickets?category=content_violation
+Authorization: Bearer {{accessToken}}
+
+### Test 14: Filter by category - Spam
+GET {{baseUrl}}/moderation/tickets?category=spam
+Authorization: Bearer {{accessToken}}
+
+### Test 15: Get only unassigned tickets
+GET {{baseUrl}}/moderation/tickets?unassigned=true
+Authorization: Bearer {{accessToken}}
+
+### Test 16: Get tickets assigned to specific moderator (replace with actual user ID)
+GET {{baseUrl}}/moderation/tickets?assignedTo=YOUR_USER_ID_HERE
+Authorization: Bearer {{accessToken}}
+
+### Test 17: Combined filters - Unassigned high priority tickets
+GET {{baseUrl}}/moderation/tickets?unassigned=true&priority=high
+Authorization: Bearer {{accessToken}}
+
+### Test 18: Combined filters - Open critical priority tickets
+GET {{baseUrl}}/moderation/tickets?status=open&priority=critical
+Authorization: Bearer {{accessToken}}
+
+### Test 19: Combined filters - In progress user reports assigned to me
+GET {{baseUrl}}/moderation/tickets?status=in_progress&category=user_report&assignedTo=YOUR_USER_ID_HERE
+Authorization: Bearer {{accessToken}}
+
+### Test 20: Combined filters - Unassigned open tickets with pagination
+GET {{baseUrl}}/moderation/tickets?status=open&unassigned=true&limit=5&offset=0
+Authorization: Bearer {{accessToken}}
+
+### Test 21: Get resolved tickets with limit
+GET {{baseUrl}}/moderation/tickets?status=resolved&limit=100
+Authorization: Bearer {{accessToken}}
+
+### Test 22: Edge case - Request with offset but no limit (uses default limit 50)
+GET {{baseUrl}}/moderation/tickets?offset=10
+Authorization: Bearer {{accessToken}}
+
+### Test 23: Edge case - All filters combined
+GET {{baseUrl}}/moderation/tickets?status=open&priority=high&category=user_report&unassigned=true&limit=25&offset=0
+Authorization: Bearer {{accessToken}}
+
+### Test 24: Error case - Missing authentication (should return 401)
+GET {{baseUrl}}/moderation/tickets
+
+### Test 25: Error case - Invalid auth token (should return 401)
+GET {{baseUrl}}/moderation/tickets
+Authorization: Bearer invalid_token_here
+
+### 60. Get Moderation Ticket
+GET {{baseUrl}}/moderation/tickets/{{ticketId}}
+Authorization: Bearer {{accessToken}}
+
+### 61. Get Ticket Comments
+GET {{baseUrl}}/moderation/tickets/{{ticketId}}/comments
+Authorization: Bearer {{accessToken}}
+
+### 62. Add Ticket Comment
+POST {{baseUrl}}/moderation/tickets/{{ticketId}}/comments
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "content": "Reviewing this case now"
+}
+
+### 63. Get Ticket Actions
+GET {{baseUrl}}/moderation/tickets/{{ticketId}}/actions
+Authorization: Bearer {{accessToken}}
+
+### 64. Update Ticket Status
+PATCH {{baseUrl}}/moderation/tickets/{{ticketId}}/status
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "status": "in_progress"
+}
+
+### 65. Assign Ticket
+POST {{baseUrl}}/moderation/tickets/{{ticketId}}/assign
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "moderatorId": "{{userId}}"
+}
+
+### 66. Get Moderators
+GET {{baseUrl}}/moderation/moderators
+Authorization: Bearer {{accessToken}}
+
+### ============================================================
+### 👥 FRIENDS
+### ============================================================
+
+### 67. Get Friends
+GET {{baseUrl}}/friends
+Authorization: Bearer {{accessToken}}
+
+### 68. Get Friend Requests
+GET {{baseUrl}}/friends/requests
+Authorization: Bearer {{accessToken}}
+
+### 69. Add Friend (deprecated - use request)
+POST {{baseUrl}}/friends/{{friendId}}
+Authorization: Bearer {{accessToken}}
+
+### 70. Remove Friend
+DELETE {{baseUrl}}/friends/{{friendId}}
+Authorization: Bearer {{accessToken}}
+
+### 71. Send Friend Request
+POST {{baseUrl}}/friends/request/{{friendId}}
+Authorization: Bearer {{accessToken}}
+
+### 72. Get Pending Friend Requests
+GET {{baseUrl}}/friends/pending
+Authorization: Bearer {{accessToken}}
+
+### 73. Accept Friend Request
+POST {{baseUrl}}/friends/accept/{{senderId}}
+Authorization: Bearer {{accessToken}}
+
+### 74. Decline Friend Request
+POST {{baseUrl}}/friends/decline/{{senderId}}
+Authorization: Bearer {{accessToken}}
+
+### ============================================================
+### 🔔 NOTIFICATIONS
+### ============================================================
+
+### 75. Get Notifications
+GET {{baseUrl}}/notifications
+Authorization: Bearer {{accessToken}}
+
+### 76. Mark Notification as Read
+POST {{baseUrl}}/notifications/{{notificationId}}/read
+Authorization: Bearer {{accessToken}}
+
+### 77. Mark All Notifications as Seen (but not read)
+POST {{baseUrl}}/notifications/mark-seen
+Authorization: Bearer {{accessToken}}
+
+### 78. Delete All Notifications
+DELETE {{baseUrl}}/notifications
+Authorization: Bearer {{accessToken}}
+
+### ============================================================
+### 🏆 ACHIEVEMENTS
+### ============================================================
+
+### 79. Create Achievement (or check/award)
+POST {{baseUrl}}/achievements
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "userId": "{{userId}}",
+  "achievementType": "first_deck"
+}
+
+### 80. Get Achievements
+GET {{baseUrl}}/achievements
+Authorization: Bearer {{accessToken}}
+
+### ============================================================
+### 🤖 AI (Premium Feature)
+### ============================================================
+
+### 81. AI Chat Generation
+POST {{baseUrl}}/ai/generate/chat
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "prompt": "Generate 10 flashcards about Spanish greetings",
+  "deckId": "{{deckId}}"
+}
+
+### 82. AI CSV Generation
+POST {{baseUrl}}/ai/generate/csv
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "topic": "Spanish vocabulary",
+  "count": 20
+}
+
+### 83. AI PDF Generation
+POST {{baseUrl}}/ai/generate/pdf
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "content": "Study guide content here",
+  "deckId": "{{deckId}}"
+}
+
+### 84. AI Translate
+POST {{baseUrl}}/ai/translate
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "text": "Hello, how are you?",
+  "targetLanguage": "es"
+}
+
+### 85. AI Text-to-Speech
+POST {{baseUrl}}/ai/tts
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "text": "Hola, ¿cómo estás?",
+  "language": "es"
+}
+
+### ============================================================
+### 💳 SUBSCRIPTIONS
+### ============================================================
+
+### 86. Create Checkout Session
+POST {{baseUrl}}/subscriptions/checkout
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "priceId": "monthly",
+  "planType": "monthly",
+  "successUrl": "http://localhost:3000/success",
+  "cancelUrl": "http://localhost:3000/cancel"
+}
+
+### 87. Stripe Webhook (Test Mode)
+POST {{baseUrl}}/subscriptions/stripe-webhook
+Content-Type: application/json
+Stripe-Signature: test_signature
+X-Test-Mode: true
+
+{
+  "type": "checkout.session.completed",
+  "data": {
+    "object": {
+      "id": "cs_test_123456",
+      "customer": "cus_test_123",
+      "subscription": "sub_test_123",
+      "metadata": {
+        "userId": "{{userId}}",
+        "planType": "monthly"
+      },
+      "payment_status": "paid",
+      "amount_total": 999
+    }
+  }
+}
+
+### 88. Verify Payment
+POST {{baseUrl}}/subscriptions/verify-payment
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "sessionId": "cs_test_a1TUJKmRsXOXmyhO4ZJk6lk9a1OwoLtAtuPtjeixSLywfBkj8xPCVdeMlT"
+}
+
+### 89. Cancel Subscription
+POST {{baseUrl}}/subscriptions/cancel-subscription
+Authorization: Bearer {{accessToken}}
+
+### 90. Change Subscription Plan
+POST {{baseUrl}}/subscriptions/change-subscription-plan
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "newPriceId": "annual"
+}
+
+### 91. Create Portal Session
+POST {{baseUrl}}/subscriptions/create-portal-session
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "returnUrl": "http://localhost:3000/settings"
+}
+
+### ============================================================
+### 📖 STUDY
+### ============================================================
+
+### 92. Create Study Session
+POST {{baseUrl}}/study/sessions
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "deckId": "{{deckId}}",
+  "mode": "flashcards"
+}
+
+### 93. Get Study Sessions
+GET {{baseUrl}}/study/sessions
+Authorization: Bearer {{accessToken}}
+
+### ============================================================
+### 🆘 SUPPORT
+### ============================================================
+
+### 94. Export User Data
+GET {{baseUrl}}/support/export-data
+Authorization: Bearer {{accessToken}}
+
+### 95. Contact Support
+POST {{baseUrl}}/support/contact
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "subject": "Issue with deck",
+  "message": "I'm having trouble publishing my deck",
+  "category": "technical"
+}
+
+### ============================================================
+### 🎁 REFERRALS
+### ============================================================
+
+### 96. Send Referral Invite
+POST {{baseUrl}}/referrals/invite
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "email": "friend@example.com"
+}
+
+### 97. Get Referral Stats
+GET {{baseUrl}}/referrals/stats
+Authorization: Bearer {{accessToken}}
+
+### 98. Apply Referral Code
+POST {{baseUrl}}/referrals/apply
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "referralCode": "9e1ed969-1766011787916",
+  "newUserId": "{{userId}}"
+}
+
+### 99. Send Multiple Referral Invites (Batch Email Sending)
+POST {{baseUrl}}/referrals/send-invite
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "emails": ["friend1@example.com", "friend2@example.com", "friend3@example.com"],
+  "fromName": "John Doe",
+  "referralLink": "https://flashy.app/signup?ref=abc12345"
+}
+
+# Expected Response:
+# {
+#   "success": true,
+#   "message": "All 3 invitation emails sent successfully",
+#   "sent": 3,
+#   "failed": 0,
+#   "results": [
+#     { "email": "friend1@example.com", "success": true, "emailId": "resend-id-1" },
+#     { "email": "friend2@example.com", "success": true, "emailId": "resend-id-2" },
+#     { "email": "friend3@example.com", "success": true, "emailId": "resend-id-3" }
+#   ]
+# }
+#
+# Notes:
+# - Maximum 10 emails per batch
+# - Sends emails in parallel for performance
+# - Returns individual success/failure for each email
+# - If no RESEND_API_KEY configured, returns mock success
+
+### ============================================================
+### 🧪 HEALTH CHECK
+### ============================================================
+
+### 100. Health Check
+GET {{baseUrl}}/health

@@ -20,7 +20,7 @@ import { projectId } from '../../../utils/supabase/info'
 
 export function SettingsScreen() {
   const { darkMode, setDarkMode, userAchievements, setUserAchievements, user, accessToken, updateUser, setAuth, ttsProvider, setTTSProvider } = useStore()
-  const { navigate } = useNavigation()
+  const { navigateTo } = useNavigation()
   const isSuperuser = useIsSuperuser()
   
   // Debug logging
@@ -103,7 +103,8 @@ export function SettingsScreen() {
     setDecksPublic(enabled)
     
     try {
-      await api.updateProfile(accessToken, {
+      if (!user?.id || !accessToken) return
+      await api.updateProfile(user.id, accessToken, {
         decksPublic: enabled
       })
       
@@ -132,7 +133,7 @@ export function SettingsScreen() {
 
     try {
       const response = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/make-server-8a1502a9/export-data`,
+        `https://${projectId}.supabase.co/functions/v1/support/export-data`,
         {
           headers: {
             Authorization: `Bearer ${accessToken}`,
@@ -197,7 +198,7 @@ export function SettingsScreen() {
 
     try {
       const response = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/make-server-8a1502a9/fix-subscription-tier`,
+        `https://${projectId}.supabase.co/functions/v1/stripe/users/fix-subscription-tier`,
         {
           method: 'POST',
           headers: {
@@ -270,20 +271,14 @@ export function SettingsScreen() {
       const result = await api.cancelSubscription(accessToken)
       
       console.log('Subscription cancelled:', result)
-      
-      // Refresh session to get updated metadata
-      const { data: { session }, error } = await api.supabaseClient.auth.refreshSession()
-      
-      if (error) {
-        console.error('Error refreshing session after cancellation:', error)
-      }
-      
-      if (session?.user) {
-        // Update local state with the new metadata
-        updateUser({
-          subscriptionCancelledAtPeriodEnd: session.user.user_metadata?.subscriptionCancelledAtPeriodEnd
-        })
-      }
+
+      // ✅ UPDATE ZUSTAND STORE WITH DATABASE DATA
+      updateUser({
+        subscriptionTier: result.newPlan,
+        subscriptionExpiry: result.subscriptionExpiry,
+        subscriptionCancelledAtPeriodEnd: false,
+        stripeSubscriptionId: result.newPlan === 'lifetime' ? null : user?.stripeSubscriptionId,
+      })
       
       toast.success('Subscription cancelled. You\'ll have access until the end of your billing period.')
       setShowCancelDialog(false)
@@ -303,30 +298,22 @@ export function SettingsScreen() {
       // Change subscription via Stripe API
       const result = await api.changeSubscriptionPlan(accessToken, selectedPlan)
       
-      console.log('Subscription changed:', result)
+      console.log('✅ Subscription changed:', result)
       
-      // Refresh session to get updated metadata
-      const { data: { session }, error } = await api.supabaseClient.auth.refreshSession()
-      
-      if (error) {
-        console.error('Error refreshing session after change:', error)
-      }
-      
-      if (session?.user) {
-        // Update local state with the new metadata
-        updateUser({
-          subscriptionTier: session.user.user_metadata?.subscriptionTier,
-          subscriptionExpiry: session.user.user_metadata?.subscriptionExpiry,
-          subscriptionCancelledAtPeriodEnd: false
-        })
-      }
+      // ✅ UPDATE ZUSTAND STORE WITH DATABASE DATA
+      updateUser({
+        subscriptionTier: result.newPlan,
+        subscriptionExpiry: result.subscriptionExpiry,
+        subscriptionCancelledAtPeriodEnd: false,
+        stripeSubscriptionId: result.newPlan === 'lifetime' ? null : user?.stripeSubscriptionId,
+      })
       
       const planNames = { monthly: 'Monthly', annual: 'Annual', lifetime: 'Lifetime' }
       toast.success(`Successfully changed to ${planNames[selectedPlan]} Premium!`)
       setShowChangePlanDialog(false)
       setShowPlanSelectionDialog(false)
     } catch (error: any) {
-      console.error('Failed to change subscription:', error)
+      console.error('❌ Failed to change subscription:', error)
       toast.error(error.message || 'Failed to change subscription. Please try again.')
     } finally {
       setChangingPlan(false)
@@ -401,7 +388,7 @@ export function SettingsScreen() {
               isPremiumSubscription={isPremiumSubscription}
               canCancelSubscription={canCancelSubscription}
               subscriptionInfo={subscriptionInfo}
-              onUpgrade={() => navigate('upgrade')}
+              onUpgrade={() => navigateTo('upgrade')}
               onCancelSubscription={() => setShowCancelDialog(true)}
               onChangePlan={() => setShowPlanSelectionDialog(true)}
             />

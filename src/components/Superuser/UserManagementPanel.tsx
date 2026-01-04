@@ -94,6 +94,15 @@ export function UserManagementPanel({ accessToken }: UserManagementPanelProps) {
     try {
       setLoading(true)
       const allUsers = await getAllUsers(accessToken)
+      
+      // Debug: Log the first few users to see the subscription tier data
+      console.log('🔍 User data sample:', allUsers.slice(0, 3).map(u => ({
+        id: u.id,
+        email: u.email,
+        subscriptionTier: u.subscriptionTier,
+        subscriptionExpiry: u.subscriptionExpiry
+      })))
+      
       setUsers(allUsers)
     } catch (error: any) {
       console.error('Failed to load users:', error)
@@ -120,9 +129,9 @@ export function UserManagementPanel({ accessToken }: UserManagementPanelProps) {
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase()
       filtered = filtered.filter(u => 
-        u.displayName.toLowerCase().includes(query) ||
-        u.email.toLowerCase().includes(query) ||
-        u.id.toLowerCase().includes(query)
+        (u.displayName || '').toLowerCase().includes(query) ||
+        (u.email || '').toLowerCase().includes(query) ||
+        (u.id || '').toLowerCase().includes(query)
       )
     }
 
@@ -611,10 +620,10 @@ function UserCard({ user, onAction, actionInProgress, formatDate, getSubscriptio
             <span className="truncate">{user.email}</span>
           </div>
 
-          {/* Subscription Tier */}
+          {/* Subscription Tier - FIXED HERE */}
           <div className="flex items-center gap-2 flex-wrap">
-            <Badge className={getSubscriptionBadgeColor(user.subscriptionTier)}>
-              {user.subscriptionTier.charAt(0).toUpperCase() + user.subscriptionTier.slice(1)}
+            <Badge className={getSubscriptionBadgeColor(user.subscriptionTier || 'free')}>
+              {user.subscriptionTier ? user.subscriptionTier.charAt(0).toUpperCase() + user.subscriptionTier.slice(1) : 'Free'}
             </Badge>
             
             {/* Subscription Expiry */}

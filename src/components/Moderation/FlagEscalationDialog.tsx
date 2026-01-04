@@ -16,7 +16,7 @@ interface FlagEscalationDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   onEscalate: (reason: string) => Promise<void>
-  flagDetails: {
+  flagDetails?: {
     targetType: string
     targetName: string
     reason: string
@@ -44,7 +44,7 @@ export function FlagEscalationDialog({
       setEscalationReason('')
       onOpenChange(false)
     } catch (error) {
-      console.error('Failed to escalate flag:', error)
+      console.error('Failed to escalate:', error)
     } finally {
       setIsSubmitting(false)
     }
@@ -61,51 +61,53 @@ export function FlagEscalationDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <AlertTriangle className="w-5 h-5 text-orange-600" />
-            Escalate Flag to Admin
+            Escalate Ticket to Admin
           </DialogTitle>
           <DialogDescription>
-            This will escalate the flag to administrators/superusers for review
+            Add a high-priority comment to notify administrators/superusers
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-4">
-          {/* Flag Details Summary */}
-          <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 space-y-2">
-            <div className="text-sm">
-              <span className="text-gray-500 dark:text-gray-400">Target Type:</span>{' '}
-              <span className="font-medium text-gray-900 dark:text-gray-100 capitalize">
-                {flagDetails.targetType}
-              </span>
+          {/* Ticket Details Summary */}
+          {flagDetails && (
+            <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 space-y-2">
+              <div className="text-sm">
+                <span className="text-gray-500 dark:text-gray-400">Target Type:</span>{' '}
+                <span className="font-medium text-gray-900 dark:text-gray-100 capitalize">
+                  {flagDetails.targetType}
+                </span>
+              </div>
+              <div className="text-sm">
+                <span className="text-gray-500 dark:text-gray-400">Target:</span>{' '}
+                <span className="font-medium text-gray-900 dark:text-gray-100">
+                  {flagDetails.targetName}
+                </span>
+              </div>
+              <div className="text-sm">
+                <span className="text-gray-500 dark:text-gray-400">Original Reason:</span>{' '}
+                <span className="font-medium text-gray-900 dark:text-gray-100 capitalize">
+                  {flagDetails.reason.replace('_', ' ')}
+                </span>
+              </div>
             </div>
-            <div className="text-sm">
-              <span className="text-gray-500 dark:text-gray-400">Target:</span>{' '}
-              <span className="font-medium text-gray-900 dark:text-gray-100">
-                {flagDetails.targetName}
-              </span>
-            </div>
-            <div className="text-sm">
-              <span className="text-gray-500 dark:text-gray-400">Original Reason:</span>{' '}
-              <span className="font-medium text-gray-900 dark:text-gray-100 capitalize">
-                {flagDetails.reason.replace('_', ' ')}
-              </span>
-            </div>
-          </div>
+          )}
 
           {/* Escalation Reason */}
           <div className="space-y-2">
             <Label htmlFor="escalation-reason">
-              Escalation Reason <span className="text-red-500">*</span>
+              Why does this need admin attention? <span className="text-red-500">*</span>
             </Label>
             <Textarea
               id="escalation-reason"
-              placeholder="Explain why this flag needs admin attention (e.g., 'Requires policy decision', 'Need higher authority to ban user', 'Complex legal concern', etc.)"
+              placeholder="Explain why this ticket needs admin attention (e.g., 'Requires policy decision', 'Need higher authority to ban user', 'Complex legal concern', etc.)"
               value={escalationReason}
               onChange={(e) => setEscalationReason(e.target.value)}
               rows={4}
               className="resize-none"
             />
             <p className="text-xs text-gray-500 dark:text-gray-400">
-              Be specific about why you need admin/superuser assistance with this case
+              This will add a comment to the ticket and change its priority to alert admins
             </p>
           </div>
         </div>

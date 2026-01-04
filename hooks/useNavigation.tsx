@@ -26,7 +26,7 @@ const viewToRoute: Record<string, string> = {
 
 export function useNavigation() {
   const navigate = useNavigate()
-  const { selectedDeckId, temporaryStudyDeck, studyAllCards } = useStore()
+  const { selectedDeckId } = useStore()
 
   const navigateTo = (view: keyof typeof viewToRoute, options?: { skipDeckIdCheck?: boolean }) => {
     const route = viewToRoute[view]

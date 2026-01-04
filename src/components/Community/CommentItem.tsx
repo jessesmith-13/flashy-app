@@ -19,7 +19,7 @@ import * as api from '../../../utils/api'
 
 export interface Comment {
   id: string
-  deckId: string
+  communityDeckId: string
   userId: string
   userName: string
   userAvatar: string | null
@@ -93,7 +93,7 @@ export function CommentItem({
 
     setDeleteLoading(true)
     try {
-      await api.deleteDeckComment(accessToken, comment.deckId, comment.id, fullReason)
+      await api.deleteDeckComment(accessToken, comment.communityDeckId, comment.id, fullReason)
       toast.success('Comment deleted successfully')
       setShowDeleteDialog(false)
       setDeleteReason('')
@@ -128,7 +128,7 @@ export function CommentItem({
     setLocalLikes(newLikes)
 
     try {
-      await api.likeComment(accessToken, comment.deckId, comment.id)
+      await api.likeComment(accessToken, comment.communityDeckId, comment.id)
     } catch (error) {
       console.error('Failed to like comment:', error)
       // Revert on error

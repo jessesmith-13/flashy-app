@@ -20,7 +20,7 @@ export interface Card {
   frontAudioUrl?: string  // Optional audio for the question (premium feature)
   backAudioUrl?: string  // Optional audio for the answer (premium feature)
   // For multiple-choice card type
-  options?: string[]  // Array of incorrect options
+  incorrectAnswers?: string[]
   correctAnswers?: string[]  // Array of correct answers for multiple choice (if undefined, 'back' is the single correct answer)
   // For type-answer card type
   acceptedAnswers?: string[]  // Array of alternative acceptable answers
@@ -51,6 +51,9 @@ export interface Deck {
   communityDeckVersion?: number   // Track version of imported community deck
   cannotRepublish?: boolean  // Flag if deck cannot be republished (set by superuser)
   cannotRepublishReason?: string  // Reason why deck cannot be republished
+  isDeleted?: boolean  // Soft-delete flag
+  deletedAt?: string  // When the deck was deleted
+  lastSyncedAt?: string  // When the deck was last synced with community version
 }
 
 // CommunityDeck extends Deck and adds community-specific fields
@@ -66,6 +69,7 @@ export interface CommunityDeck extends Omit<Deck, 'userId' | 'position' | 'favor
   averageRating?: number // Average rating from users
   ratingCount?: number // Number of ratings
   commentCount?: number // Number of comments
+  isPublished: boolean
 }
 
 export interface StudyOptions {
@@ -77,11 +81,15 @@ export interface StudyOptions {
 }
 
 export interface StudySession {
-  id: string
   deckId: string
-  date: string
-  correctAnswers: number
-  totalQuestions: number
+  startedAt: string
+  endedAt: string
+  cardsStudied: number
+  correctCount: number
+  incorrectCount: number
+  skippedCount: number
+  mode: string
+  timeSpentSeconds: number
   score: number
 }
 
@@ -138,33 +146,22 @@ export interface FriendRequest {
 export interface Notification {
   id: string
   userId: string
-  type: 'friend_request' | 'comment' | 'reply' | 'deck_comment'
+  type: "friend_request" | "comment" | "reply" | "deck_comment" | "warning" | "mention" | "comment_like" | "ticket_mention" | "ticket_comment" | "ticket_assigned";
   message: string
+  relatedUserId: string
+  requesterDisplayName: string
+  requesterAvatar: string | null
   createdAt: string
-  read: boolean
-  seen: boolean
-  // Friend request fields
+  relatedDeckId: string | null
+  relatedCommentId: string | null
+  relatedReplyId: string | null
   fromUserId?: string
   fromUserName?: string
   fromUserAvatar?: string
-  // Comment/reply fields
-  deckId?: string
   deckName?: string
-  commentId?: string
   commentText?: string
-  parentCommentId?: string
-  // Legacy data field (kept for backwards compatibility)
-  data?: {
-    requesterId?: string
-    requesterName?: string
-    requesterDisplayName?: string
-    requesterAvatar?: string
-    deckId?: string
-    deckName?: string
-    commentId?: string
-    replyId?: string
-    commentText?: string
-  }
+  isRead: boolean
+  isSeen: boolean
 }
 
 export interface TemporaryStudyDeck {
@@ -232,6 +229,10 @@ interface AppState {
   addCard: (card: Card) => void
   updateCard: (cardId: string, updates: Partial<Card>) => void
   removeCard: (cardId: string) => void
+
+  communityDecks: CommunityDeck[]
+  setCommunityDecks: (decks: CommunityDeck[]) => void
+  updateCommunityDeck: (deckId: string, updates: Partial<CommunityDeck>) => void
 
   // Study sessions
   studySessions: StudySession[]
@@ -393,6 +394,15 @@ export const useStore = create<AppState>((set, get) => ({
       cards: state.cards.filter((card) => card.id !== cardId),
     })),
 
+  communityDecks: [],
+  setCommunityDecks: (decks) => set({ communityDecks: decks }),
+  updateCommunityDeck: (deckId, updates) =>
+    set((state) => ({
+      communityDecks: state.communityDecks.map((deck) =>
+        deck.id === deckId ? { ...deck, ...updates } : deck
+      ),
+    })),
+
   // Study sessions
   studySessions: [],
   setStudySessions: (sessions) => set({ studySessions: sessions }),
@@ -402,13 +412,13 @@ export const useStore = create<AppState>((set, get) => ({
     // Persist to backend
     const state = get()
     if (state.accessToken) {
-      fetch(`https://${projectId}.supabase.co/functions/v1/make-server-8a1502a9/study-sessions`, {
+      fetch(`https://${projectId}.supabase.co/functions/v1/server/study/sessions`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${state.accessToken}`,
         },
-        body: JSON.stringify({ session }),
+        body: JSON.stringify({ session })
       })
         .then(response => {
           if (!response.ok) {
@@ -433,15 +443,22 @@ export const useStore = create<AppState>((set, get) => ({
     const newAchievements = state.userAchievements
       ? {
           ...state.userAchievements,
-          unlockedAchievementIds: [...state.userAchievements.unlockedAchievementIds, achievementId]
+          unlockedAchievementIds: [...state.userAchievements.unlockedAchievementIds, achievementId],
+          // ADD THIS LINE - backend expects this field name:
+          unlockedAchievements: [...state.userAchievements.unlockedAchievementIds, achievementId]
         }
       : null
+
+        console.log('💾 [UNLOCK] Achievement ID:', achievementId)
+        console.log('💾 [UNLOCK] New achievements object:', newAchievements)
+        console.log('💾 [UNLOCK] unlockedAchievementIds:', newAchievements?.unlockedAchievementIds)
+        console.log('💾 [UNLOCK] unlockedAchievements:', newAchievements?.unlockedAchievements)
     
     set({ userAchievements: newAchievements })
     
     // Persist to backend
     if (state.accessToken && newAchievements) {
-      fetch(`https://${projectId}.supabase.co/functions/v1/make-server-8a1502a9/achievements`, {
+      fetch(`https://${projectId}.supabase.co/functions/v1/server/achievements`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -449,14 +466,6 @@ export const useStore = create<AppState>((set, get) => ({
         },
         body: JSON.stringify({ achievements: newAchievements }),
       })
-        .then(response => {
-          if (!response.ok) {
-            console.error('Failed to save achievements to backend')
-          }
-        })
-        .catch(error => {
-          console.error('Error saving achievements:', error)
-        })
     }
   },
 

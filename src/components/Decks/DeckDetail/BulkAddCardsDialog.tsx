@@ -22,9 +22,11 @@ interface CardFormData {
   backImageFile: File | null
   frontAudioUrl?: string
   backAudioUrl?: string
-  options: string[]
-  correctIndices: number[]
-  acceptedAnswers: string
+  // Multiple-choice uses correctAnswers + incorrectAnswers arrays
+  correctAnswers: string[]
+  incorrectAnswers: string[]
+  // Type-answer uses acceptedAnswers array
+  acceptedAnswers: string[]
 }
 
 interface BulkAddCardsDialogProps {
@@ -76,9 +78,9 @@ export function BulkAddCardsDialog({
       frontImageFile: null,
       backImageUrl: '',
       backImageFile: null,
-      options: ['', ''],
-      correctIndices: [0],
-      acceptedAnswers: '',
+      correctAnswers: [''],
+      incorrectAnswers: ['', '', ''],
+      acceptedAnswers: [''],
     }))
     
     setCards(newCards)
@@ -111,9 +113,9 @@ export function BulkAddCardsDialog({
       frontImageFile: null,
       backImageUrl: '',
       backImageFile: null,
-      options: ['', ''],
-      correctIndices: [0],
-      acceptedAnswers: '',
+      correctAnswers: [''],
+      incorrectAnswers: ['', '', ''],
+      acceptedAnswers: [''],
     }])
   }
 
@@ -167,48 +169,85 @@ export function BulkAddCardsDialog({
     }
   }
 
-  const handleOptionChange = (cardId: string, index: number, value: string) => {
+  // Multiple-choice: Update correct answers array
+  const handleCorrectAnswerChange = (cardId: string, index: number, value: string) => {
     const card = cards.find(c => c.id === cardId)
     if (!card) return
 
-    const newOptions = [...card.options]
-    newOptions[index] = value
-    handleCardChange(cardId, { options: newOptions })
+    const newCorrectAnswers = [...card.correctAnswers]
+    newCorrectAnswers[index] = value
+    handleCardChange(cardId, { correctAnswers: newCorrectAnswers })
   }
 
-  const handleAddOption = (cardId: string) => {
-    const card = cards.find(c => c.id === cardId)
-    if (!card || card.options.length >= 6) return
-
-    handleCardChange(cardId, { options: [...card.options, ''] })
-  }
-
-  const handleRemoveOption = (cardId: string, index: number) => {
-    const card = cards.find(c => c.id === cardId)
-    if (!card || card.options.length <= 2) return
-
-    const newOptions = card.options.filter((_, i) => i !== index)
-    const newCorrectIndices = card.correctIndices
-      .filter(i => i !== index)
-      .map(i => i > index ? i - 1 : i)
-    
-    handleCardChange(cardId, { 
-      options: newOptions, 
-      correctIndices: newCorrectIndices.length > 0 ? newCorrectIndices : [0] 
-    })
-  }
-
-  const handleToggleCorrectAnswer = (cardId: string, index: number) => {
+  // Multiple-choice: Update incorrect answers array
+  const handleIncorrectAnswerChange = (cardId: string, index: number, value: string) => {
     const card = cards.find(c => c.id === cardId)
     if (!card) return
 
-    const newCorrectIndices = card.correctIndices.includes(index)
-      ? card.correctIndices.filter(i => i !== index)
-      : [...card.correctIndices, index]
+    const newIncorrectAnswers = [...card.incorrectAnswers]
+    newIncorrectAnswers[index] = value
+    handleCardChange(cardId, { incorrectAnswers: newIncorrectAnswers })
+  }
 
-    if (newCorrectIndices.length > 0) {
-      handleCardChange(cardId, { correctIndices: newCorrectIndices })
-    }
+  // Multiple-choice: Add correct answer
+  const handleAddCorrectAnswer = (cardId: string) => {
+    const card = cards.find(c => c.id === cardId)
+    if (!card || card.correctAnswers.length >= 3) return
+
+    handleCardChange(cardId, { correctAnswers: [...card.correctAnswers, ''] })
+  }
+
+  // Multiple-choice: Remove correct answer
+  const handleRemoveCorrectAnswer = (cardId: string, index: number) => {
+    const card = cards.find(c => c.id === cardId)
+    if (!card || card.correctAnswers.length <= 1) return
+
+    const newCorrectAnswers = card.correctAnswers.filter((_, i) => i !== index)
+    handleCardChange(cardId, { correctAnswers: newCorrectAnswers })
+  }
+
+  // Multiple-choice: Add incorrect answer
+  const handleAddIncorrectAnswer = (cardId: string) => {
+    const card = cards.find(c => c.id === cardId)
+    if (!card || card.incorrectAnswers.length >= 5) return
+
+    handleCardChange(cardId, { incorrectAnswers: [...card.incorrectAnswers, ''] })
+  }
+
+  // Multiple-choice: Remove incorrect answer
+  const handleRemoveIncorrectAnswer = (cardId: string, index: number) => {
+    const card = cards.find(c => c.id === cardId)
+    if (!card || card.incorrectAnswers.length <= 1) return
+
+    const newIncorrectAnswers = card.incorrectAnswers.filter((_, i) => i !== index)
+    handleCardChange(cardId, { incorrectAnswers: newIncorrectAnswers })
+  }
+
+  // Type-answer: Update accepted answers array
+  const handleAcceptedAnswerChange = (cardId: string, index: number, value: string) => {
+    const card = cards.find(c => c.id === cardId)
+    if (!card) return
+
+    const newAcceptedAnswers = [...card.acceptedAnswers]
+    newAcceptedAnswers[index] = value
+    handleCardChange(cardId, { acceptedAnswers: newAcceptedAnswers })
+  }
+
+  // Type-answer: Add accepted answer
+  const handleAddAcceptedAnswer = (cardId: string) => {
+    const card = cards.find(c => c.id === cardId)
+    if (!card || card.acceptedAnswers.length >= 10) return
+
+    handleCardChange(cardId, { acceptedAnswers: [...card.acceptedAnswers, ''] })
+  }
+
+  // Type-answer: Remove accepted answer
+  const handleRemoveAcceptedAnswer = (cardId: string, index: number) => {
+    const card = cards.find(c => c.id === cardId)
+    if (!card || card.acceptedAnswers.length <= 1) return
+
+    const newAcceptedAnswers = card.acceptedAnswers.filter((_, i) => i !== index)
+    handleCardChange(cardId, { acceptedAnswers: newAcceptedAnswers })
   }
 
   const handleAudioUpload = async (cardId: string, field: 'front' | 'back', file: File) => {
@@ -231,10 +270,22 @@ export function BulkAddCardsDialog({
   }
 
   const handleSubmit = async () => {
+    // Filter out cards based on card type requirements
     const filledCards = cards.filter(card => {
       const hasFront = card.front.trim() || card.frontImageFile
-      const hasBack = card.back.trim() || card.backImageFile || card.cardType === 'multiple-choice'
-      return hasFront && hasBack
+      
+      if (card.cardType === 'multiple-choice') {
+        const hasCorrect = card.correctAnswers.some(a => a.trim())
+        const hasIncorrect = card.incorrectAnswers.some(a => a.trim())
+        return hasFront && hasCorrect && hasIncorrect
+      } else if (card.cardType === 'type-answer') {
+        const hasBack = card.back.trim() || card.backImageFile
+        return hasFront && hasBack
+      } else {
+        // classic-flip
+        const hasBack = card.back.trim() || card.backImageFile
+        return hasFront && hasBack
+      }
     })
     
     if (filledCards.length === 0) {
@@ -463,8 +514,8 @@ export function BulkAddCardsDialog({
                         )}
 
                         {/* Front Audio Section */}
-                        {canAddImageToCard(userTier) && onUploadAudio && (
-                          <div>
+                        {canAddImageToCard(userTier) && onUploadAudio && card.cardType === 'classic-flip' && (
+                          <div className="mt-2">
                             <AudioRecorder
                               onAudioSave={(url) => handleCardChange(card.id, { frontAudioUrl: url })}
                               currentAudioUrl={card.frontAudioUrl}
@@ -477,56 +528,178 @@ export function BulkAddCardsDialog({
                         )}
                       </div>
 
-                      {/* Back (Answer) or Multiple Choice Options */}
+                      {/* Card Type Specific Fields */}
                       {card.cardType === 'multiple-choice' ? (
-                        <div>
-                          <Label className="text-sm">Answer Options</Label>
-                          <div className="space-y-2 mt-1">
-                            {card.options.map((option, optIndex) => (
-                              <div key={optIndex} className="flex items-center gap-2">
-                                <Checkbox
-                                  checked={card.correctIndices.includes(optIndex)}
-                                  onCheckedChange={() => handleToggleCorrectAnswer(card.id, optIndex)}
-                                  id={`${card.id}-option-${optIndex}`}
-                                />
-                                <Input
-                                  placeholder={`Option ${optIndex + 1}...`}
-                                  value={option}
-                                  onChange={(e) => handleOptionChange(card.id, optIndex, e.target.value)}
-                                  className="flex-1 text-sm"
-                                />
-                                {card.options.length > 2 && (
-                                  <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => handleRemoveOption(card.id, optIndex)}
-                                    className="h-8 w-8 p-0 text-red-600"
-                                  >
-                                    <Trash2 className="w-3 h-3" />
-                                  </Button>
-                                )}
-                              </div>
-                            ))}
+                        <>
+                          {/* Correct Answers */}
+                          <div>
+                            <Label className="text-sm text-emerald-600 dark:text-emerald-400">
+                              Correct Answer(s) ✓
+                            </Label>
+                            <div className="space-y-2 mt-1">
+                              {card.correctAnswers.map((answer, ansIndex) => (
+                                <div key={ansIndex} className="flex items-center gap-2">
+                                  <Input
+                                    placeholder={`Correct answer ${ansIndex + 1}...`}
+                                    value={answer}
+                                    onChange={(e) => handleCorrectAnswerChange(card.id, ansIndex, e.target.value)}
+                                    className="flex-1 text-sm border-emerald-300 dark:border-emerald-700"
+                                  />
+                                  {card.correctAnswers.length > 1 && (
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => handleRemoveCorrectAnswer(card.id, ansIndex)}
+                                      className="h-8 w-8 p-0 text-red-600"
+                                    >
+                                      <Trash2 className="w-3 h-3" />
+                                    </Button>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                            {card.correctAnswers.length < 3 && (
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleAddCorrectAnswer(card.id)}
+                                className="mt-2 text-xs text-emerald-600 border-emerald-300"
+                              >
+                                <Plus className="w-3 h-3 mr-1" />
+                                Add Correct Answer
+                              </Button>
+                            )}
                           </div>
-                          {card.options.length < 6 && (
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleAddOption(card.id)}
-                              className="mt-2 text-xs"
-                            >
-                              <Plus className="w-3 h-3 mr-1" />
-                              Add Option
-                            </Button>
-                          )}
-                        </div>
+
+                          {/* Incorrect Answers */}
+                          <div>
+                            <Label className="text-sm text-red-600 dark:text-red-400">
+                              Incorrect Options ✗
+                            </Label>
+                            <div className="space-y-2 mt-1">
+                              {card.incorrectAnswers.map((answer, ansIndex) => (
+                                <div key={ansIndex} className="flex items-center gap-2">
+                                  <Input
+                                    placeholder={`Incorrect option ${ansIndex + 1}...`}
+                                    value={answer}
+                                    onChange={(e) => handleIncorrectAnswerChange(card.id, ansIndex, e.target.value)}
+                                    className="flex-1 text-sm border-red-300 dark:border-red-700"
+                                  />
+                                  {card.incorrectAnswers.length > 1 && (
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => handleRemoveIncorrectAnswer(card.id, ansIndex)}
+                                      className="h-8 w-8 p-0 text-red-600"
+                                    >
+                                      <Trash2 className="w-3 h-3" />
+                                    </Button>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                            {card.incorrectAnswers.length < 5 && (
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleAddIncorrectAnswer(card.id)}
+                                className="mt-2 text-xs text-red-600 border-red-300"
+                              >
+                                <Plus className="w-3 h-3 mr-1" />
+                                Add Incorrect Option
+                              </Button>
+                            )}
+                          </div>
+                        </>
+                      ) : card.cardType === 'type-answer' ? (
+                        <>
+                          {/* Correct Answer (back field) */}
+                          <div>
+                            <div className="flex items-center justify-between mb-1">
+                              <Label htmlFor={`${card.id}-back`} className="text-sm">
+                                Correct Answer
+                              </Label>
+                              {isPremium && deckBackLanguage && (
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleTranslate(card.id, 'back')}
+                                  disabled={!card.back.trim() || (translatingCardId === card.id && translatingField === 'back')}
+                                  className="h-6 px-2 text-xs text-amber-600 hover:text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-900/20"
+                                >
+                                  {translatingCardId === card.id && translatingField === 'back' ? (
+                                    <Loader2 className="w-3 h-3 animate-spin" />
+                                  ) : (
+                                    <>
+                                      <Sparkles className="w-3 h-3 mr-1" />
+                                      Translate
+                                    </>
+                                  )}
+                                </Button>
+                              )}
+                            </div>
+                            <Textarea
+                              id={`${card.id}-back`}
+                              placeholder="Enter the correct answer..."
+                              value={card.back}
+                              onChange={(e) => handleCardChange(card.id, { back: e.target.value })}
+                              className="min-h-[60px] text-sm"
+                            />
+                          </div>
+
+                          {/* Accepted Answers (Alternative Spellings) */}
+                          <div>
+                            <Label className="text-sm text-gray-600 dark:text-gray-400">
+                              Accepted Answers (Alternative spellings - optional)
+                            </Label>
+                            <div className="space-y-2 mt-1">
+                              {card.acceptedAnswers.map((answer, ansIndex) => (
+                                <div key={ansIndex} className="flex items-center gap-2">
+                                  <Input
+                                    placeholder={`Alternative answer ${ansIndex + 1}...`}
+                                    value={answer}
+                                    onChange={(e) => handleAcceptedAnswerChange(card.id, ansIndex, e.target.value)}
+                                    className="flex-1 text-sm"
+                                  />
+                                  {card.acceptedAnswers.length > 1 && (
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => handleRemoveAcceptedAnswer(card.id, ansIndex)}
+                                      className="h-8 w-8 p-0 text-red-600"
+                                    >
+                                      <Trash2 className="w-3 h-3" />
+                                    </Button>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                            {card.acceptedAnswers.length < 10 && (
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleAddAcceptedAnswer(card.id)}
+                                className="mt-2 text-xs"
+                              >
+                                <Plus className="w-3 h-3 mr-1" />
+                                Add Alternative Answer
+                              </Button>
+                            )}
+                          </div>
+                        </>
                       ) : (
+                        // Classic Flip - Back field
                         <div>
                           <div className="flex items-center justify-between mb-1">
                             <Label htmlFor={`${card.id}-back`} className="text-sm">
-                              {card.cardType === 'type-answer' ? 'Correct Answer' : 'Back (Answer)'}
+                              Back (Answer)
                             </Label>
                             {isPremium && deckBackLanguage && (
                               <Button
@@ -550,79 +723,77 @@ export function BulkAddCardsDialog({
                           </div>
                           <Textarea
                             id={`${card.id}-back`}
-                            placeholder={card.cardType === 'type-answer' ? 'Enter the correct answer...' : 'Enter answer...'}
+                            placeholder="Enter answer..."
                             value={card.back}
                             onChange={(e) => handleCardChange(card.id, { back: e.target.value })}
                             className="min-h-[60px] text-sm"
                           />
 
                           {/* Back Image Upload (Classic Flip only) */}
-                          {card.cardType === 'classic-flip' && (
-                            <div className="mt-2">
-                              {card.backImageUrl || card.backImageFile ? (
-                                <div className="relative inline-block">
-                                  <img 
-                                    src={card.backImageFile ? URL.createObjectURL(card.backImageFile) : card.backImageUrl} 
-                                    alt="Back" 
-                                    className="max-w-full h-32 object-cover rounded border border-gray-300 dark:border-gray-600"
-                                  />
+                          <div className="mt-2">
+                            {card.backImageUrl || card.backImageFile ? (
+                              <div className="relative inline-block">
+                                <img 
+                                  src={card.backImageFile ? URL.createObjectURL(card.backImageFile) : card.backImageUrl} 
+                                  alt="Back" 
+                                  className="max-w-full h-32 object-cover rounded border border-gray-300 dark:border-gray-600"
+                                />
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleRemoveImage(card.id, 'back')}
+                                  className="absolute top-1 right-1 h-6 w-6 p-0 bg-red-600 hover:bg-red-700 text-white rounded-full"
+                                >
+                                  <X className="w-3 h-3" />
+                                </Button>
+                              </div>
+                            ) : (
+                              <div>
+                                <Input
+                                  type="file"
+                                  accept="image/*"
+                                  onChange={(e) => {
+                                    const file = e.target.files?.[0]
+                                    if (file && onUploadImage) {
+                                      handleImageUpload(card.id, 'back', file)
+                                    }
+                                  }}
+                                  className="hidden"
+                                  id={`${card.id}-back-image`}
+                                  disabled={uploadingImageCardId === card.id && uploadingImageField === 'back'}
+                                />
+                                <Label htmlFor={`${card.id}-back-image`}>
                                   <Button
                                     type="button"
-                                    variant="ghost"
+                                    variant="outline"
                                     size="sm"
-                                    onClick={() => handleRemoveImage(card.id, 'back')}
-                                    className="absolute top-1 right-1 h-6 w-6 p-0 bg-red-600 hover:bg-red-700 text-white rounded-full"
-                                  >
-                                    <X className="w-3 h-3" />
-                                  </Button>
-                                </div>
-                              ) : (
-                                <div>
-                                  <Input
-                                    type="file"
-                                    accept="image/*"
-                                    onChange={(e) => {
-                                      const file = e.target.files?.[0]
-                                      if (file && onUploadImage) {
-                                        handleImageUpload(card.id, 'back', file)
-                                      }
-                                    }}
-                                    className="hidden"
-                                    id={`${card.id}-back-image`}
+                                    className="text-xs"
+                                    asChild
                                     disabled={uploadingImageCardId === card.id && uploadingImageField === 'back'}
-                                  />
-                                  <Label htmlFor={`${card.id}-back-image`}>
-                                    <Button
-                                      type="button"
-                                      variant="outline"
-                                      size="sm"
-                                      className="text-xs"
-                                      asChild
-                                      disabled={uploadingImageCardId === card.id && uploadingImageField === 'back'}
-                                    >
-                                      <span>
-                                        {uploadingImageCardId === card.id && uploadingImageField === 'back' ? (
-                                          <>
-                                            <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-                                            Uploading...
-                                          </>
-                                        ) : (
-                                          <>
-                                            <Upload className="w-3 h-3 mr-1" />
-                                            Add Image (Optional)
-                                          </>
-                                        )}
-                                      </span>
-                                    </Button>
-                                  </Label>
-                                </div>
-                              )}
-                            </div>
-                          )}
+                                  >
+                                    <span>
+                                      {uploadingImageCardId === card.id && uploadingImageField === 'back' ? (
+                                        <>
+                                          <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                                          Uploading...
+                                        </>
+                                      ) : (
+                                        <>
+                                          <Upload className="w-3 h-3 mr-1" />
+                                          Add Image (Optional)
+                                        </>
+                                      )}
+                                    </span>
+                                  </Button>
+                                </Label>
+                              </div>
+                            )}
+                          </div>
 
                           {/* Back Audio Section */}
                           {canAddImageToCard(userTier) && onUploadAudio && (
-                            <div>
+                            <div className="mt-2">
                               <AudioRecorder
                                 onAudioSave={(url) => handleCardChange(card.id, { backAudioUrl: url })}
                                 currentAudioUrl={card.backAudioUrl}
@@ -630,22 +801,6 @@ export function BulkAddCardsDialog({
                                 disabled={submitting || (uploadingAudioCardId === card.id && uploadingAudioField === 'back')}
                                 label="Answer Audio (Optional)"
                                 onUploadAudio={(file) => handleAudioUpload(card.id, 'back', file)}
-                              />
-                            </div>
-                          )}
-
-                          {/* Accepted Answers (Type Answer only) */}
-                          {card.cardType === 'type-answer' && (
-                            <div className="mt-2">
-                              <Label htmlFor={`${card.id}-accepted`} className="text-xs text-gray-600 dark:text-gray-400">
-                                Accepted Answers (comma-separated, optional)
-                              </Label>
-                              <Input
-                                id={`${card.id}-accepted`}
-                                placeholder="e.g., answer, ans, a"
-                                value={card.acceptedAnswers}
-                                onChange={(e) => handleCardChange(card.id, { acceptedAnswers: e.target.value })}
-                                className="mt-1 text-sm"
                               />
                             </div>
                           )}
@@ -692,8 +847,14 @@ export function BulkAddCardsDialog({
                     className="bg-emerald-600 hover:bg-emerald-700 text-white"
                     disabled={submitting || cards.filter(c => {
                       const hasFront = c.front.trim() || c.frontImageFile
-                      const hasBack = c.back.trim() || c.backImageFile || c.cardType === 'multiple-choice'
-                      return hasFront && hasBack
+                      if (c.cardType === 'multiple-choice') {
+                        const hasCorrect = c.correctAnswers.some(a => a.trim())
+                        const hasIncorrect = c.incorrectAnswers.some(a => a.trim())
+                        return hasFront && hasCorrect && hasIncorrect
+                      } else {
+                        const hasBack = c.back.trim() || c.backImageFile
+                        return hasFront && hasBack
+                      }
                     }).length === 0}
                   >
                     {submitting ? (
@@ -704,8 +865,14 @@ export function BulkAddCardsDialog({
                     ) : (
                       `Add ${cards.filter(c => {
                         const hasFront = c.front.trim() || c.frontImageFile
-                        const hasBack = c.back.trim() || c.backImageFile || c.cardType === 'multiple-choice'
-                        return hasFront && hasBack
+                        if (c.cardType === 'multiple-choice') {
+                          const hasCorrect = c.correctAnswers.some(a => a.trim())
+                          const hasIncorrect = c.incorrectAnswers.some(a => a.trim())
+                          return hasFront && hasCorrect && hasIncorrect
+                        } else {
+                          const hasBack = c.back.trim() || c.backImageFile
+                          return hasFront && hasBack
+                        }
                       }).length} Cards`
                     )}
                   </Button>

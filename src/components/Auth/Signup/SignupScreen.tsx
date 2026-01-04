@@ -9,6 +9,14 @@ import { SignupSuccess } from './SignupSuccess'
 import { GoogleLoginButton } from '../Login/GoogleLoginButton'
 import { toast } from 'sonner'
 import { UserPlus } from 'lucide-react'
+import { AccountBannedError } from '@/types/errors'
+
+function isAccountBannedError(err: unknown): err is AccountBannedError {
+  return (
+    err instanceof Error &&
+    err.name === 'ACCOUNT_BANNED'
+  )
+}
 
 export function SignUpScreen() {
   const [loading, setLoading] = useState(false)
@@ -118,24 +126,25 @@ export function SignUpScreen() {
       }
     } catch (err: unknown) {
       console.error('Signup error:', err)
-      console.error('Error message:', err instanceof Error ? err.message : String(err))
-      console.error('Error name:', err instanceof Error ? (err as any).name : 'N/A')
-      
-      const errorMessage = err instanceof Error ? err.message : 'Failed to sign up'
-      
-      // Check if the error is due to a banned account
-      if (err instanceof Error && (err as any).name === 'ACCOUNT_BANNED') {
-        const banReason = (err as any).banReason || ''
-        const description = banReason 
-          ? `Your account has been banned. Reason: ${banReason}` 
+
+      const errorMessage =
+        err instanceof Error ? err.message : 'Failed to sign up'
+
+      if (isAccountBannedError(err)) {
+        const description = err.banReason
+          ? `Your account has been banned. Reason: ${err.banReason}`
           : 'Your account has been banned. Please contact support for more information.'
-        
+
         toast.error('Account Banned', {
           description,
           duration: 8000,
         })
+
         setError(errorMessage)
-      } else if (errorMessage.includes('User already registered') || errorMessage.includes('already registered')) {
+      } else if (
+        errorMessage.includes('User already registered') ||
+        errorMessage.includes('already registered')
+      ) {
         setError('This email is already registered. Try logging in instead.')
       } else {
         setError(errorMessage)

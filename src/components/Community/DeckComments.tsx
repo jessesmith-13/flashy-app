@@ -58,6 +58,7 @@ export function DeckComments({ deckId, deckAuthorId, targetCommentId, onViewUser
     try {
       setLoading(true)
       const fetchedComments = await api.getDeckComments(deckId)
+      console.log('FETCHED COMMENTS:', fetchedComments)
       
       // Sort comments: top 3 by like count, then rest by newest first
       const sortedComments = [...fetchedComments].sort((a, b) => {

@@ -2,7 +2,7 @@ import { Input } from '../../ui/input'
 import { Button } from '../../ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../ui/select'
 import { Tabs, TabsList, TabsTrigger } from '../../ui/tabs'
-import { Search, Filter, X, Star, Users, TrendingUp, StarIcon, Clock, User } from 'lucide-react'
+import { Search, Filter, X, Star, Users, TrendingUp, StarIcon, Clock, User, RefreshCw } from 'lucide-react'
 import { DECK_CATEGORIES } from '../../../utils/categories'
 
 interface CommunityFiltersProps {
@@ -20,6 +20,8 @@ interface CommunityFiltersProps {
   onToggleFlashy: () => void
   showMyPublishedOnly: boolean
   onToggleMyPublished: () => void
+  showUpdatesOnly: boolean
+  onToggleUpdates: () => void
 }
 
 export function CommunityFilters({
@@ -36,7 +38,9 @@ export function CommunityFilters({
   showFlashyDecksOnly,
   onToggleFlashy,
   showMyPublishedOnly,
-  onToggleMyPublished
+  onToggleMyPublished,
+  showUpdatesOnly,
+  onToggleUpdates
 }: CommunityFiltersProps) {
   const availableSubtopics = filterCategory === 'all' 
     ? [] 
@@ -140,6 +144,17 @@ export function CommunityFilters({
           >
             <User className={`w-4 h-4 mr-2`} />
             {showMyPublishedOnly ? 'My Published' : 'My Published'}
+          </Button>
+        </div>
+
+        <div className="w-full sm:w-auto">
+          <Button
+            variant={showUpdatesOnly ? "default" : "outline"}
+            onClick={onToggleUpdates}
+            className={`w-full ${showUpdatesOnly ? 'bg-orange-600 hover:bg-orange-700 text-white' : 'border-orange-300 dark:border-orange-700 text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20'}`}
+          >
+            <RefreshCw className={`w-4 h-4 mr-2`} />
+            {showUpdatesOnly ? 'Updates Only' : 'Show Updates'}
           </Button>
         </div>
 

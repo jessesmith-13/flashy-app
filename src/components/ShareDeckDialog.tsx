@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Button } from '../ui/button'
 import { Share2, Copy, Check, QrCode, Link as LinkIcon, Download } from 'lucide-react'
 import { toast } from 'sonner'
-import * as api from '../../utils/api'
+import * as api from '../../utils/api/decks'
 import { QRCodeSVG } from 'qrcode.react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs'
 

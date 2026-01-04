@@ -11,10 +11,32 @@ import { DeletionDialog } from './DeletionDialog'
 import { toast } from 'sonner'
 import { useStore } from '../../../store/useStore'
 import * as api from '../../../utils/api'
+import type { CommunityDeck, Deck } from '../../../store/useStore'
+
+type FlagTargetType = 'deck' | 'comment' | 'card'
+
+interface FlagTargetDetails {
+  deckId?: string
+  commentText?: string
+  front?: string
+}
+
+interface FlagTarget {
+  type: FlagTargetType
+  id: string
+  name: string
+  details?: FlagTargetDetails
+}
+
+interface CardToDelete {
+  id: string
+  name: string
+  deckId: string
+}
 
 interface CommunityDeckDetailProps {
-  deck: any
-  userDecks: any[]
+  deck: CommunityDeck
+  userDecks: Deck[]
   isSuperuser: boolean
   addingDeckId: string | null
   deletingDeckId: string | null
@@ -27,8 +49,8 @@ interface CommunityDeckDetailProps {
   targetCardIndex?: number | null
   onBack: () => void
   onViewUser: (userId: string) => void
-  onAddDeck: (deck: any) => void
-  onUpdateDeck: (communityDeck: any, importedDeck: any) => void
+  onAddDeck: (deck: CommunityDeck) => void
+  onUpdateDeck: (communityDeck: CommunityDeck, importedDeck: Deck) => void
   onToggleFeatured: (deckId: string) => void
   onDeleteDeck: (deckId: string, deckName: string) => void
   onDeleteCard?: (cardId: string, cardName: string, deckId: string) => void
@@ -36,7 +58,7 @@ interface CommunityDeckDetailProps {
   onFlagCard: (cardId: string, cardName: string) => void
   onFlagComment: (commentId: string, commentText: string, deckId: string) => void
   onFlagUser: (userId: string, userName: string) => void
-  onStudyDeck: (deck: any) => void
+  onStudyDeck: (deck: CommunityDeck) => void
   onDeckDetailPageChange: (page: number) => void
   onRatingChange: () => void
 }
@@ -59,40 +81,33 @@ export function CommunityDeckDetail({
   onAddDeck,
   onUpdateDeck,
   onToggleFeatured,
-  onDeleteDeck,
-  onDeleteCard,
-  onFlagDeck,
-  onFlagCard,
-  onFlagComment,
-  onFlagUser,
   onStudyDeck,
   onDeckDetailPageChange,
   onRatingChange
 }: CommunityDeckDetailProps) {
-  const { accessToken, setTargetCardIndex } = useStore()
+  const { accessToken, setTargetCardIndex, setTargetCommentId } = useStore()
   const importedDeck = userDecks.find(d => d.sourceCommunityDeckId === deck.id)
   const isAdded = !!importedDeck
-  const updateAvailable = importedDeck && (deck.version || 1) > (importedDeck.communityDeckVersion || 1)
+  const updateAvailable = importedDeck && (deck.version || 1) > (importedDeck.importedFromVersion || 1)
   const hasCards = deck.cards && deck.cards.length > 0
 
   // Local flag dialog state
   const [flagDialogOpen, setFlagDialogOpen] = useState(false)
-  const [flagTarget, setFlagTarget] = useState<{ type: 'deck' | 'comment' | 'card', id: string, name: string, details?: any } | null>(null)
+  const [flagTarget, setFlagTarget] = useState<FlagTarget | null>(null)
 
   // Local deletion dialog state
   const [deleteDeckDialogOpen, setDeleteDeckDialogOpen] = useState(false)
   const [deleteCardDialogOpen, setDeleteCardDialogOpen] = useState(false)
-  const [deckToDelete, setDeckToDelete] = useState<{ id: string, name: string } | null>(null)
-  const [cardToDelete, setCardToDelete] = useState<{ id: string, name: string, deckId: string } | null>(null)
+  const [cardToDelete, setCardToDelete] = useState<CardToDelete | null>(null)
 
-  const flagDialogRef = useRef(null)
   const hasNavigatedToCard = useRef(false)
+  const hasNavigatedToComment = useRef(false)
 
   // Handle navigating to a specific card from a flag
   useEffect(() => {
     if (targetCardIndex !== null && hasCards && !hasNavigatedToCard.current) {
       // Calculate which page the card is on
-      const targetPage = Math.floor(targetCardIndex / cardsPerPage) + 1
+      const targetPage = Math.floor((targetCardIndex ?? 0) / cardsPerPage) + 1
       console.log(`🎴 Navigating to card at index ${targetCardIndex}, page ${targetPage}, current page: ${deckDetailPage}`)
       
       // Change to the target page
@@ -108,10 +123,25 @@ export function CommunityDeckDetail({
     }
   }, [targetCardIndex, hasCards, cardsPerPage, deckDetailPage, onDeckDetailPageChange, setTargetCardIndex])
 
-  const handleOpenFlagDialog = (type: 'deck' | 'card' | 'comment', id: string, name: string, details?: any) => {
+  // Handle navigating to a specific comment from a notification
+  useEffect(() => {
+    if (targetCommentId && !hasNavigatedToComment.current) {
+      console.log(`💬 Target comment detected: ${targetCommentId}`)
+      hasNavigatedToComment.current = true
+      
+      // Clear the target after scrolling is complete (DeckComments component handles the actual scroll)
+      setTimeout(() => {
+        console.log('💬 Clearing targetCommentId')
+        setTargetCommentId(null)
+        hasNavigatedToComment.current = false
+      }, 3000) // Give 3 seconds for highlight to be visible
+    }
+  }, [targetCommentId, setTargetCommentId])
+
+  const handleOpenFlagDialog = (type: FlagTargetType, id: string, name: string, details?: FlagTargetDetails) => {
     console.log('🚩 Flag button clicked!', { type, id, name, details })
     setFlagTarget({ 
-      type: type as 'deck' | 'comment' | 'card',
+      type,
       id, 
       name,
       details
@@ -122,7 +152,7 @@ export function CommunityDeckDetail({
 
   const handleFlagComment = (commentId: string, commentText: string) => {
     const commentPreview = commentText.length > 40 ? commentText.substring(0, 40) + '...' : commentText
-    handleOpenFlagDialog('comment', commentId, `Comment: \"${commentPreview}\"`, { 
+    handleOpenFlagDialog('comment', commentId, `Comment: "${commentPreview}"`, { 
       deckId: deck.id,
       commentText: commentText  // Store full comment text for moderator review
     })
@@ -142,9 +172,10 @@ export function CommunityDeckDetail({
       setDeleteDeckDialogOpen(false)
       // Navigate back to community since the deck is deleted
       onBack()
-    } catch (error: any) {
+    } catch (error) {
       console.error('Failed to delete deck:', error)
-      toast.error(error.message || 'Failed to delete deck')
+      const errorMessage = error instanceof Error ? error.message : 'Failed to delete deck'
+      toast.error(errorMessage)
     }
   }
 
@@ -160,9 +191,40 @@ export function CommunityDeckDetail({
       // Reload the page or refresh the deck to show updated cards
       // For now, just navigate back and let parent handle reload
       onRatingChange() // This triggers a reload in the parent
-    } catch (error: any) {
+    } catch (error) {
       console.error('Failed to delete card:', error)
-      toast.error(error.message || 'Failed to delete card')
+      const errorMessage = error instanceof Error ? error.message : 'Failed to delete card'
+      toast.error(errorMessage)
+    }
+  }
+
+  const getDifficultyEmoji = (difficulty?: string): string => {
+    switch (difficulty) {
+      case 'beginner': return '🟢'
+      case 'intermediate': return '🟡'
+      case 'advanced': return '🟠'
+      case 'expert': return '🔴'
+      default: return '🌈'
+    }
+  }
+
+  const getDifficultyLabel = (difficulty?: string): string => {
+    if (!difficulty) return ''
+    return difficulty.charAt(0).toUpperCase() + difficulty.slice(1)
+  }
+
+  const getDifficultyClassName = (difficulty?: string): string => {
+    switch (difficulty) {
+      case 'beginner':
+        return 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
+      case 'intermediate':
+        return 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400'
+      case 'advanced':
+        return 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400'
+      case 'expert':
+        return 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
+      default:
+        return 'bg-gradient-to-r from-purple-100 to-pink-100 dark:from-purple-900/30 dark:to-pink-900/30 text-purple-700 dark:text-purple-400'
     }
   }
 
@@ -290,7 +352,7 @@ export function CommunityDeckDetail({
                   <Star className="w-4 h-4 mr-2" />
                   Study Now
                 </Button>
-                {updateAvailable ? (
+                {updateAvailable && importedDeck ? (
                   <Button
                     onClick={() => onUpdateDeck(deck, importedDeck)}
                     disabled={addingDeckId === deck.id}
@@ -329,24 +391,19 @@ export function CommunityDeckDetail({
             </div>
 
             <div className="flex flex-wrap gap-2 mb-3 sm:mb-4">
-              <span className="inline-flex items-center px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-xs sm:text-sm bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400">
-                {deck.category}
-              </span>
-              <span className="inline-flex items-center px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-xs sm:text-sm bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400">
-                {deck.subtopic}
-              </span>
+              {deck.category && (
+                <span className="inline-flex items-center px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-xs sm:text-sm bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400">
+                  {deck.category}
+                </span>
+              )}
+              {deck.subtopic && (
+                <span className="inline-flex items-center px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-xs sm:text-sm bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400">
+                  {deck.subtopic}
+                </span>
+              )}
               {deck.difficulty && (
-                <span className={`inline-flex items-center px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-xs sm:text-sm ${
-                  deck.difficulty === 'beginner' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' :
-                  deck.difficulty === 'intermediate' ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400' :
-                  deck.difficulty === 'advanced' ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400' :
-                  deck.difficulty === 'expert' ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400' :
-                  'bg-gradient-to-r from-purple-100 to-pink-100 dark:from-purple-900/30 dark:to-pink-900/30 text-purple-700 dark:text-purple-400'
-                }`}>
-                  {deck.difficulty === 'beginner' ? '🟢' :
-                   deck.difficulty === 'intermediate' ? '🟡' :
-                   deck.difficulty === 'advanced' ? '🟠' :
-                   deck.difficulty === 'expert' ? '🔴' : '🌈'} {deck.difficulty.charAt(0).toUpperCase() + deck.difficulty.slice(1)}
+                <span className={`inline-flex items-center px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-xs sm:text-sm ${getDifficultyClassName(deck.difficulty)}`}>
+                  {getDifficultyEmoji(deck.difficulty)} {getDifficultyLabel(deck.difficulty)}
                 </span>
               )}
             </div>

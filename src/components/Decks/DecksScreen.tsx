@@ -1,13 +1,15 @@
 import { useEffect, useState } from 'react'
 import { useStore } from '../../../store/useStore'
 import { useNavigation } from '../../../hooks/useNavigation'
-import * as api from '../../../utils/api'
-import { projectId } from '../../../utils/supabase/info'
+import { fetchDecks, createDeck, updateDeck, updateDeckPositions, deleteDeck, fetchCards } from '../../../utils/api/decks'
+import { publishDeck, unpublishDeck, updateCommunityDeck } from '../../../utils/api/community'
+import { fetchStudySessions } from '../../../utils/api/study'
+import { API_BASE } from '../../../utils/supabase/info'
 import { AppLayout } from '../Layout/AppLayout'
 import { Button } from '../../ui/button'
 import { Pagination } from '../Pagination/Pagination'
 import { Input } from '../../ui/input'
-import { Plus, BookOpen, GripVertical, Trash2, Star, CheckCircle, ArrowUpDown, Search, X, Filter, FileEdit, Crown, Download, User, Share2, Upload, EyeOff } from 'lucide-react'
+import { Plus, BookOpen, GripVertical, Trash2, Star, CheckCircle, ArrowUpDown, Search, X, Filter, FileEdit, Crown, Download, User, Share2, Upload } from 'lucide-react'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../../ui/dialog'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../../ui/alert-dialog'
 import { Tabs, TabsList, TabsTrigger } from '../../ui/tabs'
@@ -21,11 +23,11 @@ import { EditDeckDialog } from './DeckDetail/EditDeckDialog'
 type SortOption = 'custom' | 'alphabetical-asc' | 'alphabetical-desc' | 'newest' | 'oldest' | 'recently-studied' | 'most-studied' | 'least-studied'
 
 import { UpgradeModal } from '../UpgradeModal'
-import { canCreateDeck, isPremiumUser, canPublishToCommunity } from '../../../utils/subscription'
+import { canCreateDeck, canPublishToCommunity } from '../../../utils/subscription'
 import { useIsSuperuser } from '../../../utils/userUtils'
 
 export function DecksScreen() {
-  const { user, accessToken, decks, setDecks, addDeck, updateDeck, removeDeck, setSelectedDeckId, userAchievements, setUserAchievements, studySessions, setStudySessions, shouldReloadDecks, invalidateDecksCache } = useStore()
+  const { user, accessToken, decks, setDecks, addDeck, updateDeck: updateDeckInStore, removeDeck, setSelectedDeckId, userAchievements, setUserAchievements, studySessions, setStudySessions, shouldReloadDecks } = useStore()
   const { navigateTo, navigate } = useNavigation()
   const isSuperuser = useIsSuperuser()
   const [loading, setLoading] = useState(true)
@@ -64,7 +66,6 @@ export function DecksScreen() {
       return
     }
     
-    // Check if we need to reload decks
     if (!shouldReloadDecks()) {
       console.log('📦 Using cached decks, skipping reload')
       setLoading(false)
@@ -73,11 +74,11 @@ export function DecksScreen() {
     
     console.log('🔄 Cache stale or invalidated, reloading decks...')
     try {
-      const fetchedDecks = await api.fetchDecks(accessToken)
+      const fetchedDecks = await fetchDecks(accessToken)
+      console.log('FETCHED DECKS:', fetchedDecks)
       setDecks(fetchedDecks)
     } catch (error) {
       console.error('Failed to load decks:', error)
-      // Don't show error toast on initial mount - user might not be logged in yet
       if (accessToken && user) {
         toast.error('Failed to load decks. Please try refreshing the page.')
       }
@@ -90,7 +91,7 @@ export function DecksScreen() {
     if (!accessToken) return
     
     try {
-      const response = await fetch(`https://${projectId}.supabase.co/functions/v1/make-server-8a1502a9/achievements`, {
+      const response = await fetch(`${API_BASE}/achievements`, {
         headers: {
           Authorization: `Bearer ${accessToken}`,
         },
@@ -98,6 +99,8 @@ export function DecksScreen() {
       
       if (response.ok) {
         const data = await response.json()
+        console.log('🎯 Achievements loaded from backend:', data.achievements)
+        console.log('🎯 Unlocked IDs:', data.achievements?.unlockedAchievementIds)
         if (data.achievements) {
           setUserAchievements(data.achievements)
         }
@@ -111,7 +114,7 @@ export function DecksScreen() {
     if (!accessToken) return
     
     try {
-      const sessions = await api.fetchStudySessions(accessToken)
+      const sessions = await fetchStudySessions(accessToken)
       setStudySessions(sessions)
       console.log('Loaded study sessions:', sessions.length)
     } catch (error) {
@@ -120,7 +123,6 @@ export function DecksScreen() {
   }
 
   const handleCreateDeckClick = () => {
-    // Check if user can create more decks
     if (!canCreateDeck(decks.length, user?.subscriptionTier, isSuperuser)) {
       setUpgradeFeature('unlimited decks')
       setUpgradeModalOpen(true)
@@ -139,10 +141,9 @@ export function DecksScreen() {
   }) => {
     if (!accessToken) return
 
-    const deck = await api.createDeck(accessToken, data)
+    const deck = await createDeck(accessToken, data)
     addDeck(deck)
     
-    // Track deck customization achievement
     if ((data.emoji !== '📚' || data.color !== '#10B981') && userAchievements) {
       setUserAchievements({
         ...userAchievements,
@@ -169,12 +170,10 @@ export function DecksScreen() {
 
     if (draggedIndex === -1 || targetIndex === -1) return
 
-    // Reorder decks array
     const newDecks = [...decks]
     const [removed] = newDecks.splice(draggedIndex, 1)
     newDecks.splice(targetIndex, 0, removed)
 
-    // Update positions
     const updatedDecks = newDecks.map((deck, index) => ({
       ...deck,
       position: index,
@@ -183,9 +182,8 @@ export function DecksScreen() {
     setDecks(updatedDecks)
     setDraggedDeck(null)
 
-    // Update positions in backend
     try {
-      await api.updateDeckPositions(accessToken, updatedDecks.map(d => ({ id: d.id, position: d.position })))
+      await updateDeckPositions(accessToken, updatedDecks.map(d => ({ id: d.id, position: d.position })))
     } catch (error) {
       console.error('Failed to update deck positions:', error)
     }
@@ -193,7 +191,6 @@ export function DecksScreen() {
 
   const handleDeckClick = (deckId: string) => {
     setSelectedDeckId(deckId)
-    // Navigate directly with deckId to avoid state update timing issues
     navigate(`/deck-detail/${deckId}`)
   }
 
@@ -202,10 +199,12 @@ export function DecksScreen() {
 
     setDeletingDeckId(deckId)
     try {
-      const result = await api.deleteDeck(accessToken, deckId)
-      removeDeck(deckId)
+      const result = await deleteDeck(accessToken, deckId)
+      updateDeckInStore(deckId, { 
+        isDeleted: true, 
+        deletedAt: new Date().toISOString() 
+      })
       
-      // Show appropriate success message
       if (result.deletedFromCommunity) {
         toast.success('Deck deleted from your collection and unpublished from community')
       } else {
@@ -226,17 +225,20 @@ export function DecksScreen() {
     const deck = decks.find(d => d.id === deckId)
     if (!deck) return
 
-    const newFavoriteStatus = !deck.favorite
+    // 🔧 FIX: Read from isFavorite (API field name)
+    const newFavoriteStatus = !deck.isFavorite
+    console.log('NEW FAVORITE STATUS', newFavoriteStatus)
 
-    // Optimistically update UI
-    updateDeck(deckId, { favorite: newFavoriteStatus })
+    // 🔧 FIX: Update store with 'isFavorite' (matching API)
+    updateDeckInStore(deckId, { isFavorite: newFavoriteStatus })
 
     try {
-      await api.updateDeck(accessToken, deckId, { favorite: newFavoriteStatus })
+      // Send to API with 'isFavorite' (database naming)
+      await updateDeck(accessToken, deckId, { isFavorite: newFavoriteStatus })
     } catch (error) {
       console.error('Failed to toggle favorite:', error)
       // Revert on error
-      updateDeck(deckId, { favorite: !newFavoriteStatus })
+      updateDeckInStore(deckId, { isFavorite: !newFavoriteStatus })
       toast.error('Failed to update favorite status')
     }
   }
@@ -248,17 +250,19 @@ export function DecksScreen() {
     const deck = decks.find(d => d.id === deckId)
     if (!deck) return
 
-    const newLearnedStatus = !deck.learned
+    // 🔧 FIX: Read from isLearned (API field name)
+    const newLearnedStatus = !deck.isLearned
 
-    // Optimistically update UI
-    updateDeck(deckId, { learned: newLearnedStatus })
+    // 🔧 FIX: Update store with 'isLearned' (matching API)
+    updateDeckInStore(deckId, { isLearned: newLearnedStatus })
 
     try {
-      await api.updateDeck(accessToken, deckId, { learned: newLearnedStatus })
+      // Send to API with 'isLearned' (database naming)
+      await updateDeck(accessToken, deckId, { isLearned: newLearnedStatus })
     } catch (error) {
       console.error('Failed to toggle learned:', error)
       // Revert on error
-      updateDeck(deckId, { learned: !newLearnedStatus })
+      updateDeckInStore(deckId, { isLearned: !newLearnedStatus })
       toast.error('Failed to update learned status')
     }
   }
@@ -269,13 +273,18 @@ export function DecksScreen() {
     console.log('=== PUBLISH/UPDATE ATTEMPT ===')
     console.log('Deck ID:', publishingDeck.id)
     console.log('Deck name:', publishingDeck.name)
-    console.log('Has communityPublishedId:', !!publishingDeck.communityPublishedId)
-    console.log('communityPublishedId value:', publishingDeck.communityPublishedId)
-    console.log('Card count:', publishingDeck.cardCount)
+    console.log('Category:', publishingDeck.category)
+    console.log('Subtopic:', publishingDeck.subtopic)
 
-    // Validate minimum card count
     if (!publishingDeck.cardCount || publishingDeck.cardCount === 0) {
       toast.error('Cannot publish an empty deck')
+      setPublishDialogOpen(false)
+      return
+    }
+
+
+    if (publishingDeck.isShared) {
+      toast.error('Cannot publish a shared deck to the community')
       setPublishDialogOpen(false)
       return
     }
@@ -288,20 +297,53 @@ export function DecksScreen() {
 
     setPublishing(true)
     try {
-      // Publish to community using the correct API format
-      const result = await api.publishDeckToCommunity(accessToken, {
+      console.log('📤 Calling publishDeck with:', {
         deckId: publishingDeck.id,
-        category: publishingDeck.category,
-        subtopic: publishingDeck.subtopic,
+        publishData: {
+          category: publishingDeck.category,
+          subtopic: publishingDeck.subtopic,
+        }
       })
 
-      // Update local deck with community reference and version
-      updateDeck(publishingDeck.id, {
-        communityPublishedId: result.publishedDeck?.id,
-        communityDeckVersion: result.publishedDeck?.version,
+      const result = await publishDeck(
+        accessToken,
+        publishingDeck.id,
+        {
+          category: publishingDeck.category,
+          subtopic: publishingDeck.subtopic,
+        }
+      )
+
+      console.log('✅ Publish result:', result)
+      console.log('✅ Published deck ID:', result.deck?.id)
+      console.log('✅ Published deck version:', result.deck?.version)
+
+      // 🔧 FIX: Update local state AND reload decks to ensure sync
+      updateDeckInStore(publishingDeck.id, {
+        communityPublishedId: result.deck?.id,
+        communityDeckVersion: result.deck?.version,
       })
 
-      if (result.updated) {
+      console.log('✅ Updated deck in store with communityPublishedId:', result.deck?.id)
+
+      // Force reload decks to ensure we have the latest from backend
+      setTimeout(async () => {
+        try {
+          const freshDecks = await fetchDecks(accessToken)
+          console.log('🔄 Reloaded decks after publish:', 
+            freshDecks.filter(d => d.communityPublishedId).map(d => ({
+              name: d.name,
+              communityPublishedId: d.communityPublishedId
+            }))
+          )
+          setDecks(freshDecks)
+          console.log('FRESH DECKS', freshDecks)
+        } catch (error) {
+          console.error('Failed to reload decks:', error)
+        }
+      }, 500)
+
+      if (result.updated || result.republished) {
         toast.success('Published deck updated successfully!')
       } else {
         toast.success('Deck published to community successfully!')
@@ -309,9 +351,8 @@ export function DecksScreen() {
       setPublishDialogOpen(false)
       setPublishingDeck(null)
     } catch (error: any) {
-      console.error('Failed to publish deck:', error)
-      if (error.message?.includes('already been published')) {
-        // Just show the info message, don't show error
+      console.error('❌ Failed to publish deck:', error)
+      if (error.message?.includes('No changes detected')) {
         toast.info('This deck is already published with no changes. Make edits to the deck to publish an update.')
       } else {
         toast.error(error.message || 'Failed to publish deck to community')
@@ -328,7 +369,6 @@ export function DecksScreen() {
       return
     }
 
-    // Open unpublish dialog
     const deck = decks.find(d => d.id === deckId)
     if (deck) {
       setUnpublishingDeck(deck)
@@ -341,10 +381,9 @@ export function DecksScreen() {
 
     setUnpublishingDeckId(unpublishingDeck.id)
     try {
-      await api.unpublishDeck(accessToken, unpublishingDeck.communityPublishedId)
+      await unpublishDeck(accessToken, unpublishingDeck.communityPublishedId)
       
-      // Update local deck to remove community reference
-      updateDeck(unpublishingDeck.id, {
+      updateDeckInStore(unpublishingDeck.id, {
         communityPublishedId: null
       })
       
@@ -375,16 +414,14 @@ export function DecksScreen() {
   }) => {
     if (!accessToken || !editingDeck) return
 
-    // Update the local deck
-    await api.updateDeck(accessToken, editingDeck.id, data)
+    await updateDeck(accessToken, editingDeck.id, data)
 
-    updateDeck(editingDeck.id, data)
+    updateDeckInStore(editingDeck.id, data)
 
-    // If this is a deck the user created and published to community, also update the community version
     if (editingDeck.communityPublishedId && !editingDeck.sourceCommunityDeckId) {
       try {
-        const deckCards = await api.fetchCards(accessToken, editingDeck.id)
-        await api.updateCommunityDeck(accessToken, editingDeck.communityPublishedId, {
+        const deckCards = await fetchCards(accessToken, editingDeck.id)
+        await updateCommunityDeck(accessToken, editingDeck.communityPublishedId, {
           ...data,
           cards: deckCards
         })
@@ -400,38 +437,55 @@ export function DecksScreen() {
     setEditingDeck(null)
   }
 
-  // Filter decks based on active tab, search query, and category/subtopic
   const filteredDecks = decks.filter(deck => {
-    // First filter by tab
+    // Filter deleted decks out
+    if (deck.isDeleted) return false
+
+    // 🔧 FIX: Log each deck's published status
+    if (deck.isPublished) {
+      console.log(`🔍 Deck "${deck.name}" has isPublished:`, deck.isPublished)
+    }
+    
     const tabFilter = (() => {
-      if (activeTab === 'favorites') return deck.favorite
-      if (activeTab === 'learned') return deck.learned
+      // 🔧 FIX: Use API field names (isFavorite, isLearned) to match what's returned
+      if (activeTab === 'favorites') return !!deck.isFavorite
+      if (activeTab === 'learned') return !!deck.isLearned
       if (activeTab === 'added') {
-        // Imported from community AND not the user's own published deck
-        return !!deck.sourceCommunityDeckId && !deck.communityPublishedId
+        return deck.isCommunity || deck.isShared
       }
       if (activeTab === 'created') {
-        // Created by user OR re-added their own published deck from community
-        return !deck.sourceCommunityDeckId || !!deck.communityPublishedId
+        return (!deck.isCommunity) && !deck.isShared
       }
-      if (activeTab === 'published') return !!deck.communityPublishedId // Published to community
-      return true // 'all' tab shows everything
+      if (activeTab === 'published') {
+        const isPublished = !!deck.isPublished
+        console.log(`🔍 Checking deck "${deck.name}" for published tab: ${isPublished}`)
+        return isPublished
+      }
+      return true
     })()
     
-    // Then filter by search query
     const searchFilter = searchQuery.trim() === '' || 
       deck.name.toLowerCase().includes(searchQuery.toLowerCase())
 
-    // Filter by category
     const categoryFilter = filterCategory === 'all' || deck.category === filterCategory
 
-    // Filter by subtopic
     const subtopicFilter = filterSubtopic === 'all' || deck.subtopic === filterSubtopic
     
-    return tabFilter && searchFilter && categoryFilter && subtopicFilter
+    const result = tabFilter && searchFilter && categoryFilter && subtopicFilter
+    
+    if (activeTab === 'published' && deck.isPublished) {
+      console.log(`🔍 Deck "${deck.name}\" published filter result:`, {
+        tabFilter,
+        searchFilter,
+        categoryFilter,
+        subtopicFilter,
+        finalResult: result
+      })
+    }
+    
+    return result
   })
 
-  // Get study statistics for each deck
   const getDeckStudyStats = (deckId: string) => {
     const deckSessions = studySessions.filter(s => s.deckId === deckId)
     const studyCount = deckSessions.length
@@ -441,7 +495,6 @@ export function DecksScreen() {
     return { studyCount, lastStudyDate }
   }
 
-  // Sort decks based on selected option
   const sortedDecks = [...filteredDecks].sort((a, b) => {
     switch (sortOption) {
       case 'custom':
@@ -474,12 +527,15 @@ export function DecksScreen() {
     }
   })
 
-  // Pagination
   const totalPages = Math.ceil(sortedDecks.length / ITEMS_PER_PAGE)
   const paginatedDecks = sortedDecks.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
     currentPage * ITEMS_PER_PAGE
   )
+
+  // 🔧 FIX: Calculate counts correctly
+  const publishedCount = decks.filter(d => !!d.isPublished).length
+  console.log('🔍 Published decks count:', publishedCount)
 
   return (
     <AppLayout>
@@ -489,7 +545,6 @@ export function DecksScreen() {
         </div>
       ) : (
       <div className="min-h-screen bg-gray-100 dark:bg-gray-900 px-3 pt-5 pb-3 sm:px-6 sm:pt-6 lg:p-8 overflow-x-hidden">
-        {/* Welcome Section */}
         <div className="mb-4 sm:mb-6 flex items-center justify-between flex-wrap gap-2 sm:gap-4">
           <div className="min-w-0 flex-shrink overflow-hidden">
             <h1 className="text-xl sm:text-2xl lg:text-3xl mb-1 sm:mb-2 dark:text-gray-100 truncate">My Decks</h1>
@@ -520,7 +575,6 @@ export function DecksScreen() {
           />
         </div>
 
-        {/* Edit Deck Dialog */}
         <EditDeckDialog
           open={editDialogOpen}
           onOpenChange={setEditDialogOpen}
@@ -528,7 +582,6 @@ export function DecksScreen() {
           onUpdateDeck={handleUpdateDeck}
         />
 
-        {/* Search bar and filters */}
         <div className="mb-4 space-y-3 sm:space-y-4">
           <div className="relative w-full sm:max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
@@ -549,7 +602,6 @@ export function DecksScreen() {
             )}
           </div>
 
-          {/* Category and Subtopic Filters */}
           <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
             <div className="flex-1 min-w-0">
               <Select value={filterCategory} onValueChange={(value) => {
@@ -591,9 +643,7 @@ export function DecksScreen() {
           </div>
         </div>
 
-        {/* Tabs for filtering and sorting */}
         <div className="mb-4 sm:mb-6 flex flex-col gap-3 sm:gap-4">
-          {/* Mobile: Dropdown Filter */}
           <div className="sm:hidden">
             <Select value={activeTab} onValueChange={(value) => setActiveTab(value as 'all' | 'favorites' | 'learned' | 'added' | 'created' | 'published')}>
               <SelectTrigger className="bg-white dark:bg-gray-800 text-sm w-full">
@@ -601,29 +651,16 @@ export function DecksScreen() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">
-                  All ({decks.length})
-                </SelectItem>
-                <SelectItem value="favorites">
-                  Favorites ({decks.filter(d => d.favorite).length})
-                </SelectItem>
-                <SelectItem value="learned">
-                  Learned ({decks.filter(d => d.learned).length})
-                </SelectItem>
-                <SelectItem value="added">
-                  Added ({decks.filter(d => d.sourceCommunityDeckId && !d.communityPublishedId).length})
-                </SelectItem>
-                <SelectItem value="created">
-                  Your Decks ({decks.filter(d => !d.sourceCommunityDeckId || d.communityPublishedId).length})
-                </SelectItem>
-                <SelectItem value="published">
-                  Published ({decks.filter(d => d.communityPublishedId).length})
-                </SelectItem>
+                <SelectItem value="all">All ({decks.length})</SelectItem>
+                <SelectItem value="favorites">Favorites ({decks.filter(d => d.isFavorite).length})</SelectItem>
+                <SelectItem value="learned">Learned ({decks.filter(d => d.isLearned).length})</SelectItem>
+                <SelectItem value="added">Added ({decks.filter(d => (d.sourceCommunityDeckId && !d.communityPublishedId) || d.isShared).length})</SelectItem>
+                <SelectItem value="created">Your Decks ({decks.filter(d => (!d.sourceCommunityDeckId || d.communityPublishedId) && !d.isShared).length})</SelectItem>
+                <SelectItem value="published">Published ({publishedCount})</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
-          {/* Desktop: Tab List */}
           <div className="hidden sm:block">
             <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'all' | 'favorites' | 'learned' | 'added' | 'created' | 'published')}>
               <TabsList className="bg-white dark:bg-gray-800 shadow-sm inline-flex">
@@ -637,42 +674,41 @@ export function DecksScreen() {
                   <Star className="w-4 h-4 mr-1" />
                   Favorites
                   <span className="ml-2 text-xs bg-gray-200 dark:bg-gray-700 px-2 py-0.5 rounded-full">
-                    {decks.filter(d => d.favorite).length}
+                    {decks.filter(d => d.isFavorite).length}
                   </span>
                 </TabsTrigger>
                 <TabsTrigger value="learned" className="data-[state=active]:bg-emerald-100 dark:data-[state=active]:bg-emerald-900/30 data-[state=active]:text-emerald-700 dark:data-[state=active]:text-emerald-400 text-sm whitespace-nowrap">
                   <CheckCircle className="w-4 h-4 mr-1" />
                   Learned
                   <span className="ml-2 text-xs bg-gray-200 dark:bg-gray-700 px-2 py-0.5 rounded-full">
-                    {decks.filter(d => d.learned).length}
+                    {decks.filter(d => d.isLearned).length}
                   </span>
                 </TabsTrigger>
                 <TabsTrigger value="added" className="data-[state=active]:bg-emerald-100 dark:data-[state=active]:bg-emerald-900/30 data-[state=active]:text-emerald-700 dark:data-[active]:text-emerald-400 text-sm whitespace-nowrap">
                   <Download className="w-4 h-4 mr-1" />
                   Added
                   <span className="ml-2 text-xs bg-gray-200 dark:bg-gray-700 px-2 py-0.5 rounded-full">
-                    {decks.filter(d => d.sourceCommunityDeckId && !d.communityPublishedId).length}
+                    {decks.filter(d => (d.sourceCommunityDeckId && !d.communityPublishedId) || d.isShared).length}
                   </span>
                 </TabsTrigger>
                 <TabsTrigger value="created" className="data-[state=active]:bg-emerald-100 dark:data-[state=active]:bg-emerald-900/30 data-[state=active]:text-emerald-700 dark:data-[state=active]:text-emerald-400 text-sm whitespace-nowrap">
                   <User className="w-4 h-4 mr-1" />
                   Your Decks
                   <span className="ml-2 text-xs bg-gray-200 dark:bg-gray-700 px-2 py-0.5 rounded-full">
-                    {decks.filter(d => !d.sourceCommunityDeckId || d.communityPublishedId).length}
+                    {decks.filter(d => (!d.sourceCommunityDeckId || d.communityPublishedId) && !d.isShared).length}
                   </span>
                 </TabsTrigger>
                 <TabsTrigger value="published" className="data-[state=active]:bg-emerald-100 dark:data-[state=active]:bg-emerald-900/30 data-[state=active]:text-emerald-700 dark:data-[state=active]:text-emerald-400 text-sm whitespace-nowrap">
                   <Upload className="w-4 h-4 mr-1" />
                   Published
                   <span className="ml-2 text-xs bg-gray-200 dark:bg-gray-700 px-2 py-0.5 rounded-full">
-                    {decks.filter(d => d.communityPublishedId).length}
+                    {publishedCount}
                   </span>
                 </TabsTrigger>
               </TabsList>
             </Tabs>
           </div>
 
-          {/* Sort dropdown */}
           <div className="flex items-center gap-2">
             <ArrowUpDown className="w-4 h-4 text-gray-500 dark:text-gray-400 flex-shrink-0" />
             <Select value={sortOption} onValueChange={(value) => setSortOption(value as SortOption)}>
@@ -693,16 +729,26 @@ export function DecksScreen() {
           </div>
         </div>
 
-        {/* Decks Grid */}
         {sortedDecks.length === 0 ? (
           <div className="text-center py-24 bg-white dark:bg-gray-800 rounded-2xl shadow-sm">
-            {searchQuery ? (
+            {searchQuery || filterCategory !== 'all' || filterSubtopic !== 'all' ? (
               <>
                 <Search className="w-20 h-20 mx-auto text-gray-400 dark:text-gray-600 mb-4" />
                 <p className="text-gray-600 dark:text-gray-400 mb-2">No decks found</p>
                 <p className="text-sm text-gray-500 dark:text-gray-500">
                   Try adjusting your search query or filters
                 </p>
+                {(filterCategory !== 'all' || filterSubtopic !== 'all') && (
+                  <Button
+                    onClick={() => {
+                      setFilterCategory('all')
+                      setFilterSubtopic('all')
+                    }}
+                    className="mt-4 bg-emerald-600 hover:bg-emerald-700 text-white"
+                  >
+                    Clear Filters
+                  </Button>
+                )}
               </>
             ) : (
               <>
@@ -729,171 +775,189 @@ export function DecksScreen() {
         ) : (
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-4 lg:gap-6">
-              {paginatedDecks.map((deck) => {
-                // DEBUG: Log deck properties for "Bugs" deck
-                if (deck.name === 'Bugs') {
-                  console.log('=== BUGS DECK RENDER ===')
-                  console.log('Deck ID:', deck.id)
-                  console.log('communityPublishedId:', deck.communityPublishedId)
-                  console.log('sourceCommunityDeckId:', deck.sourceCommunityDeckId)
-                  console.log('creatorId:', deck.creatorId)
-                  console.log('user.id:', user?.id)
-                  console.log('Should show green publish?', !deck.communityPublishedId && deck.creatorId === user?.id && !deck.sourceCommunityDeckId && deck.category && deck.subtopic)
-                  console.log('Should show blue update?', deck.communityPublishedId && deck.creatorId === user?.id)
-                }
-                
-                return (
-                  <div
-                    key={deck.id}
-                    draggable={sortOption === 'custom'}
-                    onDragStart={() => handleDragStart(deck.id)}
-                    onDragOver={handleDragOver}
-                    onDrop={() => handleDrop(deck.id)}
-                    className={`bg-white dark:bg-gray-800 rounded-lg sm:rounded-xl lg:rounded-2xl p-3 sm:p-4 lg:p-6 shadow-md hover:shadow-xl transition-all group relative overflow-hidden w-full border border-transparent dark:border-gray-700 ${
-                      sortOption === 'custom' ? 'cursor-move' : 'cursor-pointer'
-                    }`}
-                  >
-                    {/* Top action button - drag only when in custom mode */}
-                    {sortOption === 'custom' && (
-                      <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <GripVertical className="w-5 h-5 text-gray-400" />
-                      </div>
-                    )}
-                    <div className="w-full">
-                      <button
-                        onClick={() => handleDeckClick(deck.id)}
-                        className="w-full text-left"
+              {paginatedDecks.map((deck) => (
+                <div
+                  key={deck.id}
+                  draggable={sortOption === 'custom'}
+                  onDragStart={() => handleDragStart(deck.id)}
+                  onDragOver={handleDragOver}
+                  onDrop={() => handleDrop(deck.id)}
+                  className={`bg-white dark:bg-gray-800 rounded-lg sm:rounded-xl lg:rounded-2xl p-3 sm:p-4 lg:p-6 shadow-md hover:shadow-xl transition-all group relative overflow-hidden w-full border border-transparent dark:border-gray-700 ${
+                    sortOption === 'custom' ? 'cursor-move' : 'cursor-pointer'
+                  }`}
+                >
+                  {sortOption === 'custom' && (
+                    <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <GripVertical className="w-5 h-5 text-gray-400" />
+                    </div>
+                  )}
+                  <div className="w-full">
+                    <button
+                      onClick={() => handleDeckClick(deck.id)}
+                      className="w-full text-left"
+                    >
+                      <div
+                        className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl flex items-center justify-center text-2xl sm:text-3xl mb-3 sm:mb-4 group-hover:scale-110 transition-transform"
+                        style={{ backgroundColor: deck.color }}
                       >
-                        <div
-                          className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl flex items-center justify-center text-2xl sm:text-3xl mb-3 sm:mb-4 group-hover:scale-110 transition-transform"
-                          style={{ backgroundColor: deck.color }}
-                        >
-                          {deck.emoji}
-                        </div>
-                        <h3 className="mb-2 truncate dark:text-gray-100">{deck.name}</h3>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">
-                          {deck.cardCount || 0} {deck.cardCount === 1 ? 'card' : 'cards'}
-                        </p>
-                        
-                        {/* Ownership indicator */}
-                        <div className="mt-2 flex flex-wrap gap-1">
-                          {deck.creatorId === user?.id ? (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400">
-                              Your Deck
-                            </span>
-                          ) : deck.sourceCommunityDeckId ? (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400">
-                              From Community
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400">
-                              Your Deck
-                            </span>
-                          )}
-                          {/* Published badge */}
-                          {deck.communityPublishedId && (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400">
-                              <Upload className="w-3 h-3 mr-1" />
-                              Published
-                            </span>
-                          )}
-                        </div>
-                        
-                        {(deck.category || deck.difficulty) && (
-                          <div className="mt-2 flex flex-wrap gap-1">
-                            {deck.category && (
-                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
-                                {deck.category}
-                              </span>
-                            )}
-                            {deck.subtopic && (
-                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400">
-                                {deck.subtopic}
-                              </span>
-                            )}
-                            {deck.difficulty && (
-                              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs ${
-                                deck.difficulty === 'beginner' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' :
-                                deck.difficulty === 'intermediate' ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400' :
-                                deck.difficulty === 'advanced' ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400' :
-                                deck.difficulty === 'expert' ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400' :
-                                'bg-gradient-to-r from-purple-100 to-pink-100 dark:from-purple-900/30 dark:to-pink-900/30 text-purple-700 dark:text-purple-400'
-                              }`}>
-                                {deck.difficulty === 'beginner' ? '🟢' :
-                                 deck.difficulty === 'intermediate' ? '🟡' :
-                                 deck.difficulty === 'advanced' ? '🟠' :
-                                 deck.difficulty === 'expert' ? '🔴' : '🌈'} {deck.difficulty.charAt(0).toUpperCase() + deck.difficulty.slice(1)}
-                              </span>
-                            )}
-                          </div>
-                        )}
-                      </button>
+                        {deck.emoji}
+                      </div>
+                      <h3 className="mb-2 truncate dark:text-gray-100">{deck.name}</h3>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        {deck.cardCount || 0} {deck.cardCount === 1 ? 'card' : 'cards'}
+                      </p>
                       
-                      {/* Action buttons - favorite, learned, edit, delete, publish, and share */}
-                      <div className="flex items-center gap-1 mt-3">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={(e) => handleToggleFavorite(e, deck.id)}
-                          className={`h-7 w-7 transition-colors ${
-                            deck.favorite 
-                              ? 'text-yellow-500 hover:text-yellow-600 hover:bg-yellow-50' 
-                              : 'text-gray-400 hover:text-yellow-500 hover:bg-yellow-50'
-                          }`}
-                        >
-                          <Star className={`w-4 h-4 ${deck.favorite ? 'fill-yellow-500' : ''}`} />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={(e) => handleToggleLearned(e, deck.id)}
-                          className={`h-7 w-7 transition-colors ${
-                            deck.learned 
-                              ? 'text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50' 
-                              : 'text-gray-400 hover:text-emerald-600 hover:bg-emerald-50'
-                          }`}
-                        >
-                          <CheckCircle className={`w-4 h-4 ${deck.learned ? 'fill-emerald-600' : ''}`} />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={(e) => handleOpenEditDialog(e, deck)}
-                          className="h-7 w-7 transition-colors text-gray-400 hover:text-blue-600 hover:bg-blue-50"
-                        >
-                          <FileEdit className="w-4 h-4" />
-                        </Button>
-                        <AlertDialog key={`delete-${deck.id}`}>
-                          <AlertDialogTrigger asChild onClick={(e) => e.stopPropagation()}>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7 transition-colors text-gray-400 hover:text-red-600 hover:bg-red-50"
+                      <div className="mt-2 flex flex-wrap gap-1">
+                        {deck.sourceCommunityDeckId ? (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400">
+                            From Community
+                          </span>
+                        ) : deck.isShared ? (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-yellow-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400">
+                            Shared
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400">
+                            Your Deck
+                          </span>
+                        )}
+                        {deck.isPublished && (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400">
+                            <Upload className="w-3 h-3 mr-1" />
+                            Published
+                          </span>
+                        )}
+                      </div>
+                      
+                      {(deck.category || deck.difficulty) && (
+                        <div className="mt-2 flex flex-wrap gap-1">
+                          {deck.category && (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
+                              {deck.category}
+                            </span>
+                          )}
+                          {deck.subtopic && (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400">
+                              {deck.subtopic}
+                            </span>
+                          )}
+                          {deck.difficulty && (
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs ${
+                              deck.difficulty === 'beginner' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' :
+                              deck.difficulty === 'intermediate' ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400' :
+                              deck.difficulty === 'advanced' ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400' :
+                              deck.difficulty === 'expert' ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400' :
+                              'bg-gradient-to-r from-purple-100 to-pink-100 dark:from-purple-900/30 dark:to-pink-900/30 text-purple-700 dark:text-purple-400'
+                            }`}>
+                              {deck.difficulty === 'beginner' ? '🟢' :
+                               deck.difficulty === 'intermediate' ? '🟡' :
+                               deck.difficulty === 'advanced' ? '🟠' :
+                               deck.difficulty === 'expert' ? '🔴' : '🌈'} {deck.difficulty.charAt(0).toUpperCase() + deck.difficulty.slice(1)}
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </button>
+                    
+                    <div className="flex items-center gap-1 mt-3">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={(e) => handleToggleFavorite(e, deck.id)}
+                        className={`h-7 w-7 transition-colors ${
+                          deck.isFavorite 
+                            ? 'text-yellow-500 hover:text-yellow-600 hover:bg-yellow-50' 
+                            : 'text-gray-400 hover:text-yellow-500 hover:bg-yellow-50'
+                        }`}
+                      >
+                        <Star className={`w-4 h-4 ${deck.isFavorite ? 'fill-yellow-500' : ''}`} />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={(e) => handleToggleLearned(e, deck.id)}
+                        className={`h-7 w-7 transition-colors ${
+                          deck.isLearned 
+                            ? 'text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50' 
+                            : 'text-gray-400 hover:text-emerald-600 hover:bg-emerald-50'
+                        }`}
+                      >
+                        <CheckCircle className={`w-4 h-4 ${deck.isLearned ? 'fill-emerald-600' : ''}`} />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={(e) => handleOpenEditDialog(e, deck)}
+                        className="h-7 w-7 transition-colors text-gray-400 hover:text-blue-600 hover:bg-blue-50"
+                      >
+                        <FileEdit className="w-4 h-4" />
+                      </Button>
+                      <AlertDialog key={`delete-${deck.id}`}>
+                        <AlertDialogTrigger asChild onClick={(e) => e.stopPropagation()}>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 transition-colors text-gray-400 hover:text-red-600 hover:bg-red-50"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Delete Deck?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              This will permanently delete "{deck.name}" and all its cards. This action cannot be undone.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => handleDeleteDeck(deck.id)}
+                              disabled={deletingDeckId === deck.id}
+                              className="bg-red-600 hover:bg-red-700"
                             >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Delete Deck?</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                This will permanently delete "{deck.name}" and all its cards. This action cannot be undone.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction
-                                onClick={() => handleDeleteDeck(deck.id)}
-                                disabled={deletingDeckId === deck.id}
-                                className="bg-red-600 hover:bg-red-700"
-                              >
-                                {deletingDeckId === deck.id ? 'Deleting...' : 'Delete'}
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                        {/* Only show publish button for decks created by user with category and subtopic, and not already published */}
-                        {!deck.communityPublishedId && deck.creatorId === user?.id && !deck.sourceCommunityDeckId && deck.category && deck.subtopic && (
+                              {deletingDeckId === deck.id ? 'Deleting...' : 'Delete'}
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                      {!deck.isPublished && deck.userId === user?.id && !deck.sourceCommunityDeckId && deck.category && deck.subtopic && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            if (!canPublishToCommunity(user?.subscriptionTier, user?.isSuperuser, user?.isModerator)) {
+                              setUpgradeFeature('community publishing')
+                              setUpgradeModalOpen(true)
+                            } else {
+                              setPublishingDeck(deck)
+                              setPublishDialogOpen(true)
+                            }
+                          }}
+                          className="h-7 w-7 transition-colors text-gray-400 hover:text-emerald-600 hover:bg-emerald-50"
+                          title="Publish to Community"
+                        >
+                          <Upload className="w-4 h-4" />
+                        </Button>
+                      )}
+                      {!deck.isPublished && deck.userId === user?.id && !deck.sourceCommunityDeckId && (!deck.category || !deck.subtopic) && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            toast.info(`Add ${!deck.category ? 'a category' : 'a subtopic'} to publish this deck`)
+                            handleOpenEditDialog(e, deck)
+                          }}
+                          className="h-7 w-7 transition-colors text-gray-300 dark:text-gray-600 hover:text-amber-500 hover:bg-amber-50"
+                          title={`Add ${!deck.category ? 'category' : 'subtopic'} to publish`}
+                        >
+                          <Upload className="w-4 h-4 opacity-50" />
+                        </Button>
+                      )}
+                      {deck.isPublished && deck.userId === user?.id && (
+                        <>
                           <Button
                             variant="ghost"
                             size="icon"
@@ -903,45 +967,6 @@ export function DecksScreen() {
                                 setUpgradeFeature('community publishing')
                                 setUpgradeModalOpen(true)
                               } else {
-                                // Open publish dialog
-                                setPublishingDeck(deck)
-                                setPublishDialogOpen(true)
-                              }
-                            }}
-                            className="h-7 w-7 transition-colors text-gray-400 hover:text-emerald-600 hover:bg-emerald-50"
-                            title="Publish to Community"
-                          >
-                            <Upload className="w-4 h-4" />
-                          </Button>
-                        )}
-                        {/* Show "incomplete" publish button for decks missing category or subtopic */}
-                        {!deck.communityPublishedId && deck.creatorId === user?.id && !deck.sourceCommunityDeckId && (!deck.category || !deck.subtopic) && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              toast.info(`Add ${!deck.category ? 'a category' : 'a subtopic'} to publish this deck`)
-                              handleOpenEditDialog(e, deck)
-                            }}
-                            className="h-7 w-7 transition-colors text-gray-300 dark:text-gray-600 hover:text-amber-500 hover:bg-amber-50"
-                            title={`Add ${!deck.category ? 'category' : 'subtopic'} to publish`}
-                          >
-                            <Upload className="w-4 h-4 opacity-50" />
-                          </Button>
-                        )}
-                        {/* Show update button for published decks created by user */}
-                        {deck.communityPublishedId && deck.creatorId === user?.id && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              if (!canPublishToCommunity(user?.subscriptionTier, user?.isSuperuser, user?.isModerator)) {
-                                setUpgradeFeature('community publishing')
-                                setUpgradeModalOpen(true)
-                              } else {
-                                // Open publish dialog (will update existing)
                                 setPublishingDeck(deck)
                                 setPublishDialogOpen(true)
                               }
@@ -951,9 +976,6 @@ export function DecksScreen() {
                           >
                             <Upload className="w-4 h-4" />
                           </Button>
-                        )}
-                        {/* Show unpublish button for published decks created by user */}
-                        {deck.communityPublishedId && deck.creatorId === user?.id && (
                           <Button
                             variant="ghost"
                             size="icon"
@@ -963,28 +985,27 @@ export function DecksScreen() {
                           >
                             <Upload className="w-4 h-4 rotate-180" />
                           </Button>
-                        )}
-                        {/* Show share button for decks created by user */}
-                        {deck.creatorId === user?.id && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              setSharingDeck(deck)
-                              setShareDialogOpen(true)
-                            }}
-                            className="h-7 w-7 transition-colors text-gray-400 hover:text-blue-600 hover:bg-blue-50"
-                            title="Share Deck"
-                          >
-                            <Share2 className="w-4 h-4" />
-                          </Button>
-                        )}
-                      </div>
+                        </>
+                      )}
+                      {deck.userId === user?.id && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setSharingDeck(deck)
+                            setShareDialogOpen(true)
+                          }}
+                          className="h-7 w-7 transition-colors text-gray-400 hover:text-blue-600 hover:bg-blue-50"
+                          title="Share Deck"
+                        >
+                          <Share2 className="w-4 h-4" />
+                        </Button>
+                      )}
                     </div>
                   </div>
-                )
-              })}
+                </div>
+              ))}
             </div>
             
             <Pagination
@@ -1005,7 +1026,6 @@ export function DecksScreen() {
         accessToken={accessToken}
       />
 
-      {/* Publish to Community Dialog */}
       <Dialog open={publishDialogOpen} onOpenChange={setPublishDialogOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
@@ -1069,7 +1089,6 @@ export function DecksScreen() {
         </DialogContent>
       </Dialog>
 
-      {/* Unpublish from Community Dialog */}
       <Dialog open={unpublishDialogOpen} onOpenChange={setUnpublishDialogOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>

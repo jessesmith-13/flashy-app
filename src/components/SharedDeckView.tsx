@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useStore } from '../../store/useStore'
 import { useNavigation } from '../../hooks/useNavigation'
-import * as api from '../../utils/api'
+import { getSharedDeck, addSharedDeckToLibrary } from '../../utils/api/decks'
 import { Button } from '../ui/button'
 import { ArrowLeft, BookOpen, Check } from 'lucide-react'
 import { toast } from 'sonner'
@@ -19,7 +19,6 @@ export function SharedDeckView({ shareId, onBack }: SharedDeckViewProps) {
   const [saving, setSaving] = useState(false)
   const { setTemporaryStudyDeck, user, accessToken, setStudyOptions, setReturnToSharedDeckId } = useStore()
   const { navigateTo } = useNavigation()
-  const [navigatingToAuth, setNavigatingToAuth] = useState(false)
 
   useEffect(() => {
     console.log('SharedDeckView mounted/updated - shareId:', shareId, 'user:', user ? `logged in as ${user.email}` : 'not logged in')
@@ -35,7 +34,7 @@ export function SharedDeckView({ shareId, onBack }: SharedDeckViewProps) {
     try {
       setLoading(true)
       console.log('Loading shared deck with shareId:', shareId)
-      const deck = await api.getSharedDeck(shareId)
+      const deck = await getSharedDeck(shareId)
       console.log('Loaded shared deck:', deck)
       setDeckData(deck)
     } catch (error: any) {
@@ -64,6 +63,9 @@ export function SharedDeckView({ shareId, onBack }: SharedDeckViewProps) {
     // Mark that we should return to this shared deck after studying
     setReturnToSharedDeckId(shareId)
 
+    // 🔧 FIX: Use the actual deck type from the data, not hardcoded 'classic-flip'
+    const actualDeckType = deckData.deckType || 'classic-flip'
+
     // Set up temporary study deck in store
     setTemporaryStudyDeck({
       deck: {
@@ -71,7 +73,7 @@ export function SharedDeckView({ shareId, onBack }: SharedDeckViewProps) {
         name: deckData.name,
         color: deckData.color,
         emoji: deckData.emoji,
-        deckType: 'classic-flip',
+        deckType: actualDeckType, // 🔧 FIX: Use actual deck type
         cardCount: deckData.cards.length,
         category: deckData.category,
         subtopic: deckData.subtopic,
@@ -85,7 +87,7 @@ export function SharedDeckView({ shareId, onBack }: SharedDeckViewProps) {
       cards: deckData.cards,
     })
 
-    console.log('Temporary study deck set, navigating to study screen')
+    console.log('Temporary study deck set with type:', actualDeckType, 'navigating to study screen')
 
     // Clear the shared deck view
     onBack()
@@ -99,15 +101,8 @@ export function SharedDeckView({ shareId, onBack }: SharedDeckViewProps) {
 
     setSaving(true)
     try {
-      await api.addDeckFromCommunity(accessToken, {
-        communityDeckId: shareId, // Use shareId as identifier
-        name: deckData.name,
-        color: deckData.color,
-        emoji: deckData.emoji,
-        cards: deckData.cards,
-        category: deckData.category,
-        subtopic: deckData.subtopic,
-      })
+      // 🔧 FIX: Use new addSharedDeckToLibrary API that properly handles shared decks
+      const newDeck = await addSharedDeckToLibrary(accessToken, shareId)
 
       toast.success('Deck saved to your library!')
       
@@ -124,6 +119,127 @@ export function SharedDeckView({ shareId, onBack }: SharedDeckViewProps) {
       }
     } finally {
       setSaving(false)
+    }
+  }
+
+  // 🔧 NEW: Helper function to render card preview based on card type
+  const renderCardPreview = (card: any, index: number) => {
+    const cardType = card.cardType || 'classic-flip'
+
+    if (cardType === 'multiple-choice') {
+      // Multiple-choice cards: front + correctAnswers + incorrectAnswers
+      const correctAnswers = Array.isArray(card.correctAnswers) ? card.correctAnswers : []
+      const incorrectAnswers = Array.isArray(card.incorrectAnswers) ? card.incorrectAnswers : []
+      const allOptions = [...correctAnswers, ...incorrectAnswers].slice(0, 4) // Show max 4 options
+
+      return (
+        <div
+          key={card.id || index}
+          className="p-4 rounded-lg bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600"
+        >
+          <div className="flex items-start justify-between gap-4 mb-3">
+            <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+              {card.front}
+            </p>
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <span className="text-xs px-2 py-0.5 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400">
+                Multiple Choice
+              </span>
+              <span className="text-xs text-gray-500 dark:text-gray-500">
+                Card {index + 1}
+              </span>
+            </div>
+          </div>
+          <div className="space-y-1">
+            {allOptions.map((option, i) => {
+              const isCorrect = correctAnswers.includes(option)
+              return (
+                <div
+                  key={i}
+                  className={`text-xs px-2 py-1 rounded ${
+                    isCorrect
+                      ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400'
+                      : 'bg-gray-100 dark:bg-gray-600 text-gray-600 dark:text-gray-300'
+                  }`}
+                >
+                  {isCorrect && '✓ '}{option}
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )
+    } else if (cardType === 'type-answer') {
+      // Type-answer cards: front + back + acceptedAnswers
+      const acceptedAnswers = Array.isArray(card.acceptedAnswers) ? card.acceptedAnswers : []
+      
+      return (
+        <div
+          key={card.id || index}
+          className="p-4 rounded-lg bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600"
+        >
+          <div className="flex items-start justify-between gap-4 mb-2">
+            <div className="flex-1">
+              <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
+                {card.front}
+              </p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                {card.back}
+              </p>
+            </div>
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <span className="text-xs px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400">
+                Type Answer
+              </span>
+              <span className="text-xs text-gray-500 dark:text-gray-500">
+                Card {index + 1}
+              </span>
+            </div>
+          </div>
+          {acceptedAnswers.length > 0 && (
+            <div className="mt-2 pt-2 border-t border-gray-200 dark:border-gray-600">
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Also accepts:</p>
+              <div className="flex flex-wrap gap-1">
+                {acceptedAnswers.map((answer, i) => (
+                  <span
+                    key={i}
+                    className="text-xs px-2 py-0.5 rounded bg-gray-100 dark:bg-gray-600 text-gray-600 dark:text-gray-300"
+                  >
+                    {answer}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )
+    } else {
+      // Classic flip cards: front + back
+      return (
+        <div
+          key={card.id || index}
+          className="p-4 rounded-lg bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600"
+        >
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex-1">
+              <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
+                {card.front}
+              </p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                {card.back}
+              </p>
+            </div>
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400">
+                Classic Flip
+              </span>
+              <span className="text-xs text-gray-500 dark:text-gray-500">
+                Card {index + 1}
+              </span>
+            </div>
+          </div>
+        </div>
+      )
     }
   }
 
@@ -232,7 +348,7 @@ export function SharedDeckView({ shareId, onBack }: SharedDeckViewProps) {
             </div>
           </div>
 
-          {/* Cards Preview */}
+          {/* Cards Preview - 🔧 FIX: Now handles all card types */}
           <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700 mb-6">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
               Cards Preview
@@ -244,26 +360,9 @@ export function SharedDeckView({ shareId, onBack }: SharedDeckViewProps) {
               </p>
             ) : (
               <div className="space-y-3">
-                {deckData.cards.slice(0, 10).map((card: any, index: number) => (
-                  <div
-                    key={card.id || index}
-                    className="p-4 rounded-lg bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600"
-                  >
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1">
-                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
-                          {card.front}
-                        </p>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">
-                          {card.back}
-                        </p>
-                      </div>
-                      <span className="text-xs text-gray-500 dark:text-gray-500 flex-shrink-0">
-                        Card {index + 1}
-                      </span>
-                    </div>
-                  </div>
-                ))}
+                {deckData.cards.slice(0, 10).map((card: any, index: number) => 
+                  renderCardPreview(card, index)
+                )}
                 
                 {deckData.cards.length > 10 && (
                   <p className="text-center text-sm text-gray-500 dark:text-gray-400 pt-2">

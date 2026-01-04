@@ -1,16 +1,16 @@
 import { useState, useEffect, useRef } from 'react'
 import { useStore } from '../../../store/useStore'
 import { useNavigation } from '../../../hooks/useNavigation'
-import * as api from '../../../utils/api'
 import { toast } from 'sonner'
 import { Button } from '../../ui/button'
 import { Textarea } from '../../ui/textarea'
-import { ArrowLeft, Send, Flag, CheckCircle, XCircle, Clock, User, MessageSquare, AtSign, AlertTriangle, ArrowUpCircle, Eye } from 'lucide-react'
+import { ArrowLeft, Send, Flag, CheckCircle, XCircle, Clock, MessageSquare, AtSign, AlertTriangle, ArrowUpCircle, Eye } from 'lucide-react'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../ui/select'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../../ui/dialog'
-import { FlagResolutionDialog } from './FlagResolutionDialog'
 import { UserWarningDialog } from './UserWarningDialog'
 import { FlagEscalationDialog } from './FlagEscalationDialog'
+import { FlagResolutionDialog } from './FlagResolutionDialog'
+import * as api from '../../../utils/api/moderation'
 
 interface TicketComment {
   id: string
@@ -25,7 +25,7 @@ interface TicketComment {
 interface TicketAction {
   id: string
   ticketId: string
-  actionType: 'status_change' | 'assignment' | 'unassignment' | 'resolution' | 'creation' | 'escalation'
+  actionType: 'status_change' | 'assignment' | 'unassignment' | 'resolution' | 'creation' | 'escalation' | 'warning'
   performedBy: string
   performedById: string
   timestamp: string
@@ -36,31 +36,51 @@ interface TicketAction {
     assignedTo?: string
     assignedToId?: string
     previouslyAssignedTo?: string
+    previouslyAssignedToId?: string
     escalationReason?: string
+    // Warning-specific fields
+    warningId?: string
+    customMessage?: string
+    timeToResolve?: number
+    deadline?: string
+    targetType?: string
+    targetId?: string
+    targetName?: string
+    warnedUserId?: string
   }
 }
 
 interface TicketDetails {
   id: string
-  itemType: 'deck' | 'card'
-  itemId: string
-  itemName: string
-  reason: string
-  details: string
-  reportedBy: string
-  reportedById: string
-  reportedAt: string
-  status: 'pending' | 'under_review' | 'resolved' | 'dismissed'
-  assignedTo?: string
-  assignedToId?: string
-  resolvedAt?: string
-  resolutionNote?: string
-  deckId?: string
-  isEscalated?: boolean
-  escalatedBy?: string
-  escalatedByName?: string
-  escalationReason?: string
-  escalatedAt?: string
+  title: string | null
+  category: string
+  priority: string
+  status: string
+  description: string
+  targetType: string | null
+  targetId: string | null
+  createdBy: string | null
+  createdById: string | null
+  createdByDisplayName: string | null
+  assignedTo: string | null
+  assignedToId: string | null
+  resolvedAt: string | null
+  resolvedBy: string | null
+  resolvedById: string | null
+  resolvedByDisplayName: string | null
+  resolutionNote: string | null
+  relatedFlagId: string | null
+  relatedUserId: string | null
+  relatedDeckId: string | null
+  relatedCardId: string | null
+  relatedCommentId: string | null
+  isEscalated: boolean | null
+  relatedUserDisplayName: string | null
+  flaggedUserDisplayName: string | null
+  flagReason: string | null
+  flagAdditionalDetails: string | null
+  createdAt: string
+  updatedAt: string
 }
 
 interface TimelineItem {
@@ -76,7 +96,7 @@ interface TicketDetailViewProps {
 }
 
 export function TicketDetailView({ ticketId, onBack }: TicketDetailViewProps) {
-  const { user, accessToken, setViewingCommunityDeckId, setTargetCardIndex, setTargetCommentId } = useStore()
+  const { user, accessToken, setViewingCommunityDeckId, setTargetCardIndex, setViewingUserId } = useStore()
   const { navigateTo } = useNavigation()
   const [ticket, setTicket] = useState<TicketDetails | null>(null)
   const [comments, setComments] = useState<TicketComment[]>([])
@@ -92,8 +112,8 @@ export function TicketDetailView({ ticketId, onBack }: TicketDetailViewProps) {
   const [resolutionDialogOpen, setResolutionDialogOpen] = useState(false)
   const [resolutionNote, setResolutionNote] = useState('')
   const [resolutionAction, setResolutionAction] = useState<'resolved' | 'dismissed'>('resolved')
-  const [escalationDialogOpen, setEscalationDialogOpen] = useState(false)
-  const [warnUserDialogOpen, setWarnUserDialogOpen] = useState(false)
+  const [warnDialogOpen, setWarnDialogOpen] = useState(false)
+  const [escalateDialogOpen, setEscalateDialogOpen] = useState(false)
   const [flagResolutionDialogOpen, setFlagResolutionDialogOpen] = useState(false)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
@@ -103,6 +123,8 @@ export function TicketDetailView({ ticketId, onBack }: TicketDetailViewProps) {
   }, [ticketId])
 
   const loadTicketDetails = async () => {
+    if (!accessToken) return
+
     try {
       setLoading(true)
       const [ticketData, commentsData, actionsData] = await Promise.all([
@@ -110,10 +132,23 @@ export function TicketDetailView({ ticketId, onBack }: TicketDetailViewProps) {
         api.getTicketComments(accessToken, ticketId),
         api.getTicketActions(accessToken, ticketId)
       ])
+      console.log(`Ticket Data:`, ticketData)
+      console.log('Comments GET response:', commentsData)
+      console.log('Comments data keys:', Object.keys(commentsData))
+      console.log('Actions GET response:', actionsData)
+      console.log('Actions data keys:', Object.keys(actionsData))
       
       setTicket(ticketData)
-      setComments(commentsData)
-      setActions(actionsData)
+      
+      // Handle different response formats for comments
+      const commentsList = commentsData.comments || commentsData.data || commentsData || []
+      console.log('Setting comments to:', commentsList)
+      setComments(Array.isArray(commentsList) ? commentsList : [])
+      
+      // Handle different response formats for actions
+      const actionsList = actionsData.actions || actionsData.data || actionsData || []
+      console.log('Setting actions to:', actionsList)
+      setActions(Array.isArray(actionsList) ? actionsList : [])
     } catch (error) {
       console.error('Failed to load ticket details:', error)
       toast.error('Failed to load ticket details')
@@ -123,9 +158,18 @@ export function TicketDetailView({ ticketId, onBack }: TicketDetailViewProps) {
   }
 
   const loadModerators = async () => {
+    if (!accessToken) return
+    
     try {
-      const moderators = await api.getModerators(accessToken)
-      setAvailableModerators(moderators)
+      const data = await api.getModerators(accessToken)
+      console.log('Moderators API response:', data)
+      console.log('Moderators array:', data.moderators)
+      console.log('Full data keys:', Object.keys(data))
+      
+      // Handle different response formats
+      const moderatorsList = data.moderators || data.data || data || []
+      console.log('Setting moderators to:', moderatorsList)
+      setAvailableModerators(Array.isArray(moderatorsList) ? moderatorsList : [])
     } catch (error) {
       console.error('Failed to load moderators:', error)
     }
@@ -134,17 +178,15 @@ export function TicketDetailView({ ticketId, onBack }: TicketDetailViewProps) {
   const handleCommentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const value = e.target.value
     const cursor = e.target.selectionStart
-    
+
     setCommentText(value)
     setCursorPosition(cursor)
 
-    // Check if user typed @ to trigger mention menu
     const textBeforeCursor = value.substring(0, cursor)
     const lastAtIndex = textBeforeCursor.lastIndexOf('@')
-    
+
     if (lastAtIndex !== -1) {
       const textAfterAt = textBeforeCursor.substring(lastAtIndex + 1)
-      // Only show menu if there's no space after @ (still typing the mention)
       if (!textAfterAt.includes(' ')) {
         setMentionSearch(textAfterAt)
         setShowMentionMenu(true)
@@ -160,16 +202,15 @@ export function TicketDetailView({ ticketId, onBack }: TicketDetailViewProps) {
     const textBeforeCursor = commentText.substring(0, cursorPosition)
     const textAfterCursor = commentText.substring(cursorPosition)
     const lastAtIndex = textBeforeCursor.lastIndexOf('@')
-    
-    const newText = 
-      commentText.substring(0, lastAtIndex) + 
-      `@${moderator.name} ` + 
+
+    const newText =
+      commentText.substring(0, lastAtIndex) +
+      `@${moderator.name} ` +
       textAfterCursor
-    
+
     setCommentText(newText)
     setShowMentionMenu(false)
-    
-    // Focus back on textarea
+
     setTimeout(() => {
       textareaRef.current?.focus()
     }, 0)
@@ -179,7 +220,7 @@ export function TicketDetailView({ ticketId, onBack }: TicketDetailViewProps) {
     const mentionRegex = /@(\w+)/g
     const mentions: string[] = []
     let match
-    
+
     while ((match = mentionRegex.exec(text)) !== null) {
       const mentionedName = match[1]
       const moderator = availableModerators.find(m => m.name === mentionedName)
@@ -187,24 +228,38 @@ export function TicketDetailView({ ticketId, onBack }: TicketDetailViewProps) {
         mentions.push(moderator.id)
       }
     }
-    
+
     return mentions
   }
 
   const handleSubmitComment = async () => {
-    if (!commentText.trim()) return
+    if (!commentText.trim() || !accessToken) return
 
     setSubmitting(true)
     try {
       const mentions = extractMentions(commentText)
-      const newComment = await api.addTicketComment(accessToken, ticketId, {
+      console.log('Submitting comment:', { content: commentText, mentions })
+      
+      const data = await api.addTicketComment(accessToken, ticketId, {
         content: commentText,
         mentions
       })
       
-      setComments([...comments, newComment])
-      setCommentText('')
-      toast.success('Comment added')
+      console.log('Comment response:', data)
+      console.log('Comment data keys:', Object.keys(data))
+
+      // Handle different response formats
+      const newComment = data.comment || data.data || data
+      console.log('New comment:', newComment)
+      
+      if (newComment) {
+        setComments([...comments, newComment])
+        setCommentText('')
+        toast.success('Comment added')
+      } else {
+        console.error('No comment in response')
+        toast.error('Comment response missing data')
+      }
     } catch (error) {
       console.error('Failed to add comment:', error)
       toast.error('Failed to add comment')
@@ -220,12 +275,11 @@ export function TicketDetailView({ ticketId, onBack }: TicketDetailViewProps) {
       return
     }
 
+    if (!accessToken) return
+
     setUpdatingStatus(true)
     try {
-      await api.updateTicketStatus(accessToken, ticketId, {
-        status: newStatus as any,
-      })
-      
+      await api.updateTicketStatus(accessToken, ticketId, { status: newStatus as any })
       await loadTicketDetails()
       toast.success('Status updated')
     } catch (error) {
@@ -242,13 +296,15 @@ export function TicketDetailView({ ticketId, onBack }: TicketDetailViewProps) {
       return
     }
 
+    if (!accessToken) return
+
     setUpdatingStatus(true)
     try {
       await api.updateTicketStatus(accessToken, ticketId, {
-        status: resolutionAction,
+        status: resolutionAction as any,
         resolutionNote
       })
-      
+
       await loadTicketDetails()
       setResolutionDialogOpen(false)
       setResolutionNote('')
@@ -262,6 +318,8 @@ export function TicketDetailView({ ticketId, onBack }: TicketDetailViewProps) {
   }
 
   const handleAssignTicket = async (moderatorId: string) => {
+    if (!accessToken) return
+    
     setUpdatingStatus(true)
     try {
       await api.assignTicket(accessToken, ticketId, moderatorId)
@@ -275,78 +333,107 @@ export function TicketDetailView({ ticketId, onBack }: TicketDetailViewProps) {
     }
   }
 
-  const handleUnassignTicket = async () => {
-    setUpdatingStatus(true)
-    try {
-      await api.unassignTicket(accessToken, ticketId)
-      await loadTicketDetails()
-      toast.success('Ticket unassigned')
-    } catch (error) {
-      console.error('Failed to unassign ticket:', error)
-      toast.error('Failed to unassign ticket')
-    } finally {
-      setUpdatingStatus(false)
-    }
-  }
-
-  const handleEscalate = async (reason: string) => {
-    try {
-      await api.escalateFlag(accessToken, ticketId, reason)
-      await loadTicketDetails()
-      toast.success('Flag escalated to administrators')
-    } catch (error) {
-      console.error('Failed to escalate flag:', error)
-      toast.error('Failed to escalate flag')
-      throw error
-    }
-  }
-
-  const handleWarnUser = async (warning: {
-    reason: string
-    customReason?: string
-    message?: string
-    timeToResolve: string
-    customTime?: string
-  }) => {
-    try {
-      await api.warnUser(accessToken, ticketId, warning)
-      await loadTicketDetails()
-      toast.success('Warning sent to user')
-    } catch (error) {
-      console.error('Failed to warn user:', error)
-      toast.error('Failed to send warning')
-      throw error
-    }
-  }
-
-  const handleResolveFlag = async (resolutionReason: 'approved' | 'rejected' | 'removed', moderatorNotes: string) => {
-    try {
-      await api.resolveFlag(accessToken, ticketId, resolutionReason, moderatorNotes)
-      await loadTicketDetails()
-      toast.success('Flag resolved')
-    } catch (error) {
-      console.error('Failed to resolve flag:', error)
-      toast.error('Failed to resolve flag')
-      throw error
-    }
-  }
-
   const handleViewTarget = () => {
-    if (ticket?.itemType === 'deck') {
-      setViewingCommunityDeckId(ticket.itemId)
+    if (!ticket) return
+
+    const targetType = ticket.targetType
+    console.log('navigating to target', ticket)
+    
+    if (targetType === 'deck' && ticket.relatedDeckId) {
+      setViewingCommunityDeckId(ticket.relatedDeckId)
       setTargetCardIndex(null)
       navigateTo('community')
-      toast.info(`Viewing flagged deck: ${ticket.itemName}`)
-    } else if (ticket?.itemType === 'card' && ticket.deckId) {
-      setViewingCommunityDeckId(ticket.deckId)
-      // Extract card index if available from itemId
-      const cardIndexMatch = ticket.itemId.match(/-card-(\d+)/)
+      toast.info(`Viewing flagged deck`)
+    } else if (targetType === 'user' && ticket.relatedUserId) {
+      setViewingUserId(ticket.relatedUserId)
+      navigateTo('community')
+      toast.info('Viewing flagged user')
+    } else if (targetType === 'card' && ticket.relatedDeckId) {
+      setViewingCommunityDeckId(ticket.relatedDeckId)
+      // Extract card index if available from targetId
+      const cardIndexMatch = ticket.relatedCardId?.match(/-card-(\d+)/)
       if (cardIndexMatch) {
         const cardIndex = parseInt(cardIndexMatch[1])
         setTargetCardIndex(cardIndex)
         toast.info(`Viewing card #${cardIndex + 1} in deck`)
       }
       navigateTo('community')
+    } else if (targetType === 'comment' && ticket.relatedDeckId) {
+      // Navigate to the deck with the comment
+      setViewingCommunityDeckId(ticket.relatedDeckId)
+      setTargetCardIndex(null)
+      navigateTo('community')
+      toast.info('Viewing deck with flagged comment')
+    } else {
+      toast.error('Cannot navigate to target')
+    }
+  }
+
+  const handleWarnUser = () => {
+    setWarnDialogOpen(true)
+  }
+
+  const handleEscalate = () => {
+    setEscalateDialogOpen(true)
+  }
+
+  const handleResolveFlag = () => {
+    setFlagResolutionDialogOpen(true)
+  }
+
+  const handleWarnSubmit = async (warning: {
+    reason: string
+    customReason?: string
+    message?: string
+    timeToResolve: string
+    customTime?: string
+  }) => {
+    if (!accessToken || !ticket) return
+    
+    try {
+      await api.warnUser(accessToken, ticket.id, warning)
+      toast.success('Warning sent to user')
+      setWarnDialogOpen(false)
+      await loadTicketDetails()
+    } catch (error: any) {
+      console.error('❌ Failed to warn user:', error)
+      toast.error(error.message || 'Failed to warn user')
+      throw error
+    }
+  }
+
+  const handleEscalateSubmit = async (reason: string) => {
+    if (!accessToken || !ticket) return
+    
+    try {
+      await api.escalateTicket(accessToken, ticket.id, reason)
+      toast.success('Ticket escalated to admin')
+      setEscalateDialogOpen(false)
+      await loadTicketDetails()
+    } catch (error: any) {
+      console.error('❌ Failed to escalate ticket:', error)
+      toast.error(error.message || 'Failed to escalate ticket')
+      throw error
+    }
+  }
+
+  const handleResolveSubmit = async (resolutionReason: 'approved' | 'rejected' | 'removed', moderatorNotes: string) => {
+    if (!accessToken || !ticket) return
+    
+    try {
+      await api.updateTicketStatus(accessToken, ticket.id, {
+        status: 'resolved',
+        resolutionNote: moderatorNotes || 'Resolved',
+        resolutionReason: resolutionReason
+      })
+
+      toast.success('Ticket resolved')
+      setFlagResolutionDialogOpen(false)
+      await loadTicketDetails()
+    } catch (error: any) {
+      console.error('❌ Failed to resolve ticket:', error)
+      toast.error(error.message || 'Failed to resolve ticket')
+      throw error
     }
   }
 
@@ -367,13 +454,13 @@ export function TicketDetailView({ ticketId, onBack }: TicketDetailViewProps) {
   ].sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
 
   const filteredModerators = availableModerators.filter(mod =>
-    mod.name.toLowerCase().includes(mentionSearch.toLowerCase())
+    mod && mod.name && mod.name.toLowerCase().includes(mentionSearch.toLowerCase())
   )
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'pending': return 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400'
-      case 'under_review': return 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400'
+      case 'open': return 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400'
+      case 'reviewing': return 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400'
       case 'resolved': return 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
       case 'dismissed': return 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-400'
       default: return 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-400'
@@ -382,12 +469,24 @@ export function TicketDetailView({ ticketId, onBack }: TicketDetailViewProps) {
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'pending': return <Clock className="w-4 h-4" />
-      case 'under_review': return <Flag className="w-4 h-4" />
+      case 'open': return <Clock className="w-4 h-4" />
+      case 'reviewing': return <Flag className="w-4 h-4" />
       case 'resolved': return <CheckCircle className="w-4 h-4" />
       case 'dismissed': return <XCircle className="w-4 h-4" />
       default: return <Flag className="w-4 h-4" />
     }
+  }
+
+  const getReasonLabel = (reason: string) => {
+    const labels: Record<string, string> = {
+      inappropriate: 'Inappropriate content',
+      spam: 'Spam',
+      harassment: 'Harassment / hate',
+      misinformation: 'Misinformation',
+      copyright: 'Copyright violation',
+      other: 'Other'
+    }
+    return labels[reason] || reason
   }
 
   const renderActionDescription = (action: TicketAction) => {
@@ -402,11 +501,10 @@ export function TicketDetailView({ ticketId, onBack }: TicketDetailViewProps) {
           </span>
         )
       case 'assignment':
-        // Check if the person who performed the action is the same as who it's assigned to
         const isSelfAssignment = action.performedById === action.details.assignedToId
         const isReassignment = action.details.previouslyAssignedTo
         const assignedToName = action.details.assignedToId === user?.id ? 'you' : action.details.assignedTo
-        const previouslyAssignedToName = action.details.previouslyAssignedTo // We don't have the ID for this, so can't check
+        const previouslyAssignedToName = action.details.previouslyAssignedTo
         return (
           <span>
             {isReassignment ? (
@@ -451,6 +549,65 @@ export function TicketDetailView({ ticketId, onBack }: TicketDetailViewProps) {
                 {action.details.escalationReason}
               </div>
             )}
+          </div>
+        )
+      case 'warning':
+        // Calculate time remaining
+        const deadline = action.details.deadline ? new Date(action.details.deadline) : null
+        const now = new Date()
+        const timeRemaining = deadline ? Math.max(0, deadline.getTime() - now.getTime()) : 0
+        const hoursRemaining = Math.floor(timeRemaining / (1000 * 60 * 60))
+        const minutesRemaining = Math.floor((timeRemaining % (1000 * 60 * 60)) / (1000 * 60))
+        
+        return (
+          <div className="space-y-2">
+            <span>issued a warning to the user</span>
+            
+            {/* Warning Details Card */}
+            <div className="mt-2 p-3 bg-orange-50 dark:bg-orange-900/20 border-l-4 border-orange-500 dark:border-orange-600 rounded">
+              {/* Reason */}
+              <div className="mb-2">
+                <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">Reason:</span>
+                <p className="text-sm text-gray-900 dark:text-gray-100 mt-0.5">
+                  {action.details.reason}
+                </p>
+              </div>
+
+              {/* Custom Message */}
+              {action.details.customMessage && (
+                <div className="mb-2">
+                  <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">Message:</span>
+                  <p className="text-sm text-gray-900 dark:text-gray-100 mt-0.5">
+                    {action.details.customMessage}
+                  </p>
+                </div>
+              )}
+
+              {/* Time Remaining */}
+              <div className="pt-2 border-t border-orange-200 dark:border-orange-800">
+                {timeRemaining > 0 ? (
+                  <div className="flex items-center gap-2">
+                    <AlertTriangle className="w-4 h-4 text-orange-600 dark:text-orange-400" />
+                    <span className="text-sm font-medium text-orange-700 dark:text-orange-400">
+                      {hoursRemaining > 0 && `${hoursRemaining}h `}
+                      {minutesRemaining}m remaining to address
+                    </span>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <XCircle className="w-4 h-4 text-red-600 dark:text-red-400" />
+                    <span className="text-sm font-medium text-red-700 dark:text-red-400">
+                      Deadline expired
+                    </span>
+                  </div>
+                )}
+                {deadline && (
+                  <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                    Deadline: {deadline.toLocaleString()}
+                  </p>
+                )}
+              </div>
+            </div>
           </div>
         )
       default:
@@ -506,7 +663,7 @@ export function TicketDetailView({ ticketId, onBack }: TicketDetailViewProps) {
               <div className="flex-1">
                 <div className="flex items-center gap-3 mb-2">
                   <h1 className="text-2xl text-gray-900 dark:text-gray-100">
-                    {ticket.itemName}
+                    {ticket.title || ticket.description || 'Untitled Ticket'}
                   </h1>
                   <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs ${getStatusColor(ticket.status)}`}>
                     {getStatusIcon(ticket.status)}
@@ -521,21 +678,20 @@ export function TicketDetailView({ ticketId, onBack }: TicketDetailViewProps) {
                 </div>
                 <div className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
                   <div>
-                    <span className="font-medium">Type:</span> {ticket.itemType}
+                    <span className="font-medium">Type:</span> {ticket.targetType || ticket.category}
                   </div>
                   <div>
-                    <span className="font-medium">Reported by:</span> {ticket.reportedBy} •{' '}
-                    {new Date(ticket.reportedAt).toLocaleString()}
+                    <span className="font-medium">Reported by:</span> {ticket.flaggedUserDisplayName || ticket.createdBy || 'System'} •{' '}
+                    {new Date(ticket.createdAt).toLocaleString()}
                   </div>
+                  {ticket.title && (
+                    <div>
+                      <span className="font-medium">Reason:</span> {ticket.title}
+                    </div>
+                  )}
                   {ticket.assignedTo && (
                     <div>
                       <span className="font-medium">Assigned to:</span> {ticket.assignedToId === user?.id ? 'you' : ticket.assignedTo}
-                    </div>
-                  )}
-                  {ticket.isEscalated && (
-                    <div>
-                      <span className="font-medium">Escalated by:</span> {ticket.escalatedByName} •{' '}
-                      {ticket.escalatedAt && new Date(ticket.escalatedAt).toLocaleString()}
                     </div>
                   )}
                 </div>
@@ -553,17 +709,11 @@ export function TicketDetailView({ ticketId, onBack }: TicketDetailViewProps) {
             {/* Ticket Details */}
             <div className="space-y-3">
               <div>
-                <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Reason</div>
-                <div className="text-sm text-gray-900 dark:text-gray-100">{ticket.reason}</div>
-              </div>
-              {ticket.details && (
-                <div>
-                  <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Details</div>
-                  <div className="text-sm text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-gray-900/50 rounded p-3">
-                    {ticket.details}
-                  </div>
+                <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Details</div>
+                <div className="text-sm text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-gray-900/50 rounded p-3">
+                  {ticket.description || ticket.flagAdditionalDetails || 'No additional details provided'}
                 </div>
-              )}
+              </div>
             </div>
 
             {/* Actions */}
@@ -578,8 +728,8 @@ export function TicketDetailView({ ticketId, onBack }: TicketDetailViewProps) {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="pending">Pending</SelectItem>
-                      <SelectItem value="under_review">Under Review</SelectItem>
+                      <SelectItem value="open">Open</SelectItem>
+                      <SelectItem value="reviewing">Reviewing</SelectItem>
                       <SelectItem value="resolved">Resolved</SelectItem>
                       <SelectItem value="dismissed">Dismissed</SelectItem>
                     </SelectContent>
@@ -590,8 +740,8 @@ export function TicketDetailView({ ticketId, onBack }: TicketDetailViewProps) {
                   <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">
                     Assign To
                   </label>
-                  <Select 
-                    value={ticket.assignedToId || 'unassigned'} 
+                  <Select
+                    value={ticket.assignedToId || 'unassigned'}
                     onValueChange={(value) => {
                       if (value !== 'unassigned') {
                         handleAssignTicket(value)
@@ -614,35 +764,37 @@ export function TicketDetailView({ ticketId, onBack }: TicketDetailViewProps) {
                 </div>
               </div>
             )}
-            
-            {/* Additional Action Buttons for Under Review tickets */}
-            {ticket.status === 'under_review' && (
-              <div className="flex flex-wrap gap-3 mt-4">
+
+            {/* Action Buttons */}
+            {ticket.status !== 'resolved' && ticket.status !== 'dismissed' && (
+              <div className="flex flex-wrap gap-2 mt-4">
                 <Button
-                  variant="outline"
-                  onClick={() => setFlagResolutionDialogOpen(true)}
-                  className="flex items-center gap-2 border-blue-300 dark:border-blue-700 text-blue-700 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                  onClick={handleResolveFlag}
+                  className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2"
                 >
                   <CheckCircle className="w-4 h-4" />
                   Resolve Flag
                 </Button>
-                {!ticket.isEscalated && (
-                  <Button
-                    variant="outline"
-                    onClick={() => setEscalationDialogOpen(true)}
-                    className="flex items-center gap-2 border-orange-300 dark:border-orange-700 text-orange-700 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20"
-                  >
-                    <ArrowUpCircle className="w-4 h-4" />
-                    Escalate to Admin
-                  </Button>
-                )}
+
                 <Button
-                  variant="outline"
-                  onClick={() => setWarnUserDialogOpen(true)}
-                  className="flex items-center gap-2 border-yellow-300 dark:border-yellow-700 text-yellow-700 dark:text-yellow-400 hover:bg-yellow-50 dark:hover:bg-yellow-900/20"
+                  onClick={handleWarnUser}
+                  className="bg-orange-600 hover:bg-orange-700 text-white flex items-center gap-2"
                 >
                   <AlertTriangle className="w-4 h-4" />
                   Warn User
+                </Button>
+
+                <Button
+                  onClick={handleEscalate}
+                  disabled={ticket.isEscalated}
+                  className={`flex items-center gap-2 ${
+                    ticket.isEscalated 
+                      ? 'bg-gray-400 hover:bg-gray-400 cursor-not-allowed text-white' 
+                      : 'bg-red-600 hover:bg-red-700 text-white'
+                  }`}
+                >
+                  <ArrowUpCircle className="w-4 h-4" />
+                  {ticket.isEscalated ? 'Escalated' : 'Escalate'}
                 </Button>
               </div>
             )}
@@ -672,6 +824,10 @@ export function TicketDetailView({ ticketId, onBack }: TicketDetailViewProps) {
                     <div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
                       <MessageSquare className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                     </div>
+                  ) : (item.data as TicketAction).actionType === 'warning' ? (
+                    <div className="w-8 h-8 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center">
+                      <AlertTriangle className="w-4 h-4 text-orange-600 dark:text-orange-400" />
+                    </div>
                   ) : (
                     <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
                       <Flag className="w-4 h-4 text-blue-600 dark:text-blue-400" />
@@ -700,7 +856,10 @@ export function TicketDetailView({ ticketId, onBack }: TicketDetailViewProps) {
                         <div className="flex items-center justify-between mb-1">
                           <span className="text-sm text-gray-600 dark:text-gray-400">
                             <span className="font-medium text-gray-900 dark:text-gray-100">
-                              {(item.data as TicketAction).performedBy}
+                              {(item.data as TicketAction).actionType === 'creation' 
+                                ? (ticket.createdByDisplayName || ticket.createdBy || 'System')
+                                : (item.data as TicketAction).performedBy
+                              }
                             </span>{' '}
                             {renderActionDescription(item.data as TicketAction)}
                           </span>
@@ -728,7 +887,7 @@ export function TicketDetailView({ ticketId, onBack }: TicketDetailViewProps) {
                   className="min-h-[100px] bg-white dark:bg-gray-800"
                   disabled={submitting}
                 />
-                
+
                 {/* Mention Menu */}
                 {showMentionMenu && filteredModerators.length > 0 && (
                   <div className="absolute z-10 mt-1 w-64 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg max-h-48 overflow-y-auto">
@@ -789,8 +948,8 @@ export function TicketDetailView({ ticketId, onBack }: TicketDetailViewProps) {
               <Button
                 onClick={handleResolveOrDismiss}
                 disabled={updatingStatus || !resolutionNote.trim()}
-                className={resolutionAction === 'resolved' 
-                  ? 'bg-green-600 hover:bg-green-700' 
+                className={resolutionAction === 'resolved'
+                  ? 'bg-green-600 hover:bg-green-700'
                   : 'bg-gray-600 hover:bg-gray-700'
                 }
               >
@@ -801,50 +960,56 @@ export function TicketDetailView({ ticketId, onBack }: TicketDetailViewProps) {
         </DialogContent>
       </Dialog>
 
-      {/* Escalation Dialog */}
-      {ticket && (
-        <FlagEscalationDialog
-          open={escalationDialogOpen}
-          onOpenChange={setEscalationDialogOpen}
-          onEscalate={handleEscalate}
-          flagDetails={{
-            targetType: ticket.itemType,
-            targetName: ticket.itemName,
-            reason: ticket.reason,
-            reporterNotes: ticket.details
-          }}
-        />
-      )}
+      {/* Warning Dialog */}
+      <UserWarningDialog
+        open={warnDialogOpen}
+        onOpenChange={setWarnDialogOpen}
+        onSubmit={handleWarnSubmit}
+        flagDetails={
+          ticket
+            ? {
+                targetType: ticket.targetType || 'unknown',
+                targetName: ticket.relatedUserDisplayName || ticket.description || 'Unknown',
+                reason: ticket.flagReason || ticket.category,
+                reporterNotes: ticket.flagAdditionalDetails || ticket.description || '',
+              }
+            : undefined
+        }
+      />
 
-      {/* Warn User Dialog */}
-      {ticket && (
-        <UserWarningDialog
-          open={warnUserDialogOpen}
-          onOpenChange={setWarnUserDialogOpen}
-          onSubmit={handleWarnUser}
-          flagDetails={{
-            targetType: ticket.itemType,
-            targetName: ticket.itemName,
-            reason: ticket.reason,
-            reporterNotes: ticket.details
-          }}
-        />
-      )}
+      {/* Escalation Dialog */}
+      <FlagEscalationDialog
+        open={escalateDialogOpen}
+        onOpenChange={setEscalateDialogOpen}
+        onEscalate={handleEscalateSubmit}
+        flagDetails={
+          ticket
+            ? {
+                targetType: ticket.targetType || 'unknown',
+                targetName: ticket.title || ticket.description || 'Unknown',
+                reason: ticket.flagReason || ticket.category,
+                reporterNotes: ticket.flagAdditionalDetails || ticket.description,
+              }
+            : undefined
+        }
+      />
 
       {/* Flag Resolution Dialog */}
-      {ticket && (
-        <FlagResolutionDialog
-          open={flagResolutionDialogOpen}
-          onOpenChange={setFlagResolutionDialogOpen}
-          onResolve={handleResolveFlag}
-          flagDetails={{
-            targetType: ticket.itemType,
-            targetName: ticket.itemName,
-            reason: ticket.reason,
-            reporterNotes: ticket.details
-          }}
-        />
-      )}
+      <FlagResolutionDialog
+        open={flagResolutionDialogOpen}
+        onOpenChange={setFlagResolutionDialogOpen}
+        onResolve={handleResolveSubmit}
+        flagDetails={
+          ticket
+            ? {
+                targetType: ticket.targetType || 'unknown',
+                targetName: ticket.title || ticket.description || 'Unknown',
+                reason: ticket.flagReason || ticket.category,
+                reporterNotes: ticket.flagAdditionalDetails || ticket.description,
+              }
+            : undefined
+        }
+      />
     </div>
   )
 }

@@ -153,11 +153,16 @@ export function ProfileScreen() {
     
     setSaving(true)
     try {
-      const updatedUser = await api.updateProfile(accessToken, {
-        displayName: displayName.trim() || undefined,
-        avatarUrl: avatarUrl.trim() || undefined,
-        decksPublic,
-      })
+      if (!user?.id || !accessToken) return
+      const updatedUser = await api.updateProfile(
+        user.id,
+        accessToken,
+        {
+          displayName: displayName.trim() || undefined,
+          avatarUrl: avatarUrl.trim() || undefined,
+          decksPublic,
+        }
+      )
       
       updateUser({
         displayName: updatedUser.displayName,
