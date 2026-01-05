@@ -192,7 +192,7 @@ export function AddCardModal({
               }
               value={front}
               onChange={(e) => onFrontChange(e.target.value)}
-              className="mt-1 min-h-[80px]"
+              className="mt-1 min-h-[80px] text-gray-900 dark:text-gray-100"
             />
             {onTranslateFront && (
               <Button
@@ -253,7 +253,7 @@ export function AddCardModal({
                       onFrontImageChange(file, previewUrl)
                     }
                   }}
-                  className="mt-1"
+                  className="mt-1 text-gray-900 dark:text-gray-100"
                   disabled={uploadingImage}
                 />
                 {uploadingImage && (
@@ -309,7 +309,7 @@ export function AddCardModal({
                         value={answer}
                         onChange={(e) => handleCorrectAnswerChange(index, e.target.value)}
                         placeholder={`Correct answer ${index + 1}`}
-                        className="flex-1"
+                        className="flex-1 text-gray-900 dark:text-gray-100"
                       />
                       {correctAnswers.length > 1 && (
                         <Button
@@ -349,7 +349,7 @@ export function AddCardModal({
                         value={answer}
                         onChange={(e) => handleIncorrectAnswerChange(index, e.target.value)}
                         placeholder={`Incorrect option ${index + 1}`}
-                        className="flex-1"
+                        className="flex-1 text-gray-900 dark:text-gray-100"
                       />
                       {incorrectAnswers.length > 0 && (
                         <Button
@@ -389,7 +389,7 @@ export function AddCardModal({
                   placeholder="Paris (or add an image below)"
                   value={back}
                   onChange={(e) => onBackChange(e.target.value)}
-                  className="mt-1 min-h-[80px]"
+                  className="mt-1 min-h-[80px] text-gray-900 dark:text-gray-100"
                 />
                 {onTranslateBack && (
                   <Button
@@ -426,7 +426,7 @@ export function AddCardModal({
                         onBackImageChange(file, previewUrl)
                       }
                     }}
-                    className="mt-1"
+                    className="mt-1 text-gray-900 dark:text-gray-100"
                     disabled={uploadingBackImage}
                   />
                   {uploadingBackImage && (
@@ -478,7 +478,7 @@ export function AddCardModal({
                   placeholder="The correct answer (e.g., 'Paris')"
                   value={back}
                   onChange={(e) => onBackChange(e.target.value)}
-                  className="mt-1 min-h-[80px]"
+                  className="mt-1 min-h-[80px] text-gray-900 dark:text-gray-100"
                 />
                 {onTranslateBack && (
                   <Button
@@ -515,7 +515,7 @@ export function AddCardModal({
                         onBackImageChange(file, previewUrl)
                       }
                     }}
-                    className="mt-1"
+                    className="mt-1 text-gray-900 dark:text-gray-100"
                     disabled={uploadingBackImage}
                   />
                   {uploadingBackImage && (
@@ -554,7 +554,7 @@ export function AddCardModal({
                           value={answer}
                           onChange={(e) => handleTypeAnswerChange(index, e.target.value)}
                           placeholder={`Alternative answer ${index + 1} (e.g., "paris", "París")`}
-                          className="flex-1"
+                          className="flex-1 text-gray-900 dark:text-gray-100"
                         />
                         <Button
                           type="button"

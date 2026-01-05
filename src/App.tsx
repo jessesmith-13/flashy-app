@@ -27,7 +27,6 @@ import { SharedDeckView } from './components/SharedDeckView'
 import { NotificationsScreen } from './components/Notifications/NotificationsScreen'
 import ProtectedRoute from './components/ProtectedRoute'
 import { Toaster } from './ui/sonner'
-import { useAchievementTracking } from '../hooks/useAchievements'
 import { toast } from 'sonner'
 import { SetDisplayModal } from './components/Auth/Signup/SetDisplayModal'
 
@@ -95,9 +94,6 @@ function AppContent() {
   const [isSettingDisplayName, setIsSettingDisplayName] = useState(false)
   const [sessionToken, setSessionToken] = useState<string | null>(null)
   const navigate = useNavigate()
-
-  // Track achievements
-  useAchievementTracking()
 
   // Apply dark mode class to document
   useEffect(() => {

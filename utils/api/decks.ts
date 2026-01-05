@@ -1,4 +1,7 @@
 import { API_BASE, publicAnonKey } from '../supabase/info'
+import { useStore } from '../../store/useStore'
+
+const { fetchUserAchievements } = useStore.getState()
 
 // ============================================================
 // DECKS API
@@ -51,6 +54,9 @@ export const createDeck = async (
     throw new Error(data.error || 'Failed to create deck')
   }
 
+    // ✅ REFETCH ACHIEVEMENTS TO CHECK FOR NEW UNLOCKS
+  await fetchUserAchievements()
+
   return data.deck
 }
 
@@ -86,6 +92,8 @@ export const updateDeck = async (
     console.error('Failed to update deck:', data.error)
     throw new Error(data.error || 'Failed to update deck')
   }
+
+  await fetchUserAchievements()
 
   return data.deck
 }
@@ -213,6 +221,8 @@ export const createCard = async (
     throw new Error(data.error || 'Failed to create card')
   }
 
+  await fetchUserAchievements()
+
   return data.card
 }
 
@@ -247,6 +257,8 @@ export const createCardsBatch = async (
     console.error('Failed to create cards batch:', data.error)
     throw new Error(data.error || 'Failed to create cards')
   }
+
+  await fetchUserAchievements()
 
   return data.cards
 }

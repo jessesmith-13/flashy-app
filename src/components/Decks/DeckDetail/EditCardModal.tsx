@@ -191,7 +191,7 @@ export function EditCardModal({
               }
               value={front}
               onChange={(e) => onFrontChange(e.target.value)}
-              className="mt-1 min-h-[80px]"
+              className="mt-1 min-h-[80px] text-gray-900 dark:text-gray-100"
             />
             {onTranslateFront && (
               <Button
@@ -388,7 +388,7 @@ export function EditCardModal({
                   placeholder="Paris (or add an image below)"
                   value={back}
                   onChange={(e) => onBackChange(e.target.value)}
-                  className="mt-1 min-h-[80px]"
+                  className="mt-1 min-h-[80px] text-gray-900 dark:text-gray-100"
                 />
                 {onTranslateBack && (
                   <Button
@@ -477,7 +477,7 @@ export function EditCardModal({
                   placeholder="The correct answer (e.g., 'Paris')"
                   value={back}
                   onChange={(e) => onBackChange(e.target.value)}
-                  className="mt-1 min-h-[80px]"
+                  className="mt-1 min-h-[80px] text-gray-900 dark:text-gray-100"
                 />
                 {onTranslateBack && (
                   <Button

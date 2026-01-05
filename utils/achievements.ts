@@ -381,14 +381,6 @@ export const ACHIEVEMENTS: Achievement[] = [
     checkCondition: (stats) => stats.decksPublished >= 5,
   },
   {
-    id: 'community-favorite',
-    icon: '⭐',
-    title: 'Community Favorite',
-    description: 'Get 10 favorites on your published decks',
-    category: 'community',
-    checkCondition: (stats) => stats.deckFavorites >= 10,
-  },
-  {
     id: 'popular-creator',
     icon: '🌟',
     title: 'Popular Creator',
