@@ -81,3 +81,40 @@ export type CommunityCard = {
   created_at: string
   updated_at: string
 }
+
+export type Comment = {
+  id: string
+  communityDeckId: string
+  userId: string
+  content: string
+  userName: string
+  userDisplayName: string
+  userAvatar: string | null
+  createdAt: string
+  updatedAt: string | null
+  isDeleted: boolean
+  isFlagged: boolean
+  deletedAt: string | null
+  deletedBy: string | null
+  deletedReason: string | null
+  likes: number
+  replies: Reply[]
+}
+
+export type Reply = {
+  id: string
+  commentId: string
+  userId: string
+  content: string
+  userName: string
+  userDisplayName: string
+  userAvatar: string | null
+  createdAt: string
+  updatedAt: string | null
+  isDeleted: boolean
+  isFlagged: boolean
+  deletedAt: string | null
+  deletedBy: string | null
+  deletedReason: string | null
+  communityDeckId: string
+}

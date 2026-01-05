@@ -3,7 +3,7 @@ import { useStore } from '../../../store/useStore'
 import { useNavigation } from '../../../hooks/useNavigation'
 import * as api from '../../../utils/api'
 import { toast } from 'sonner'
-import { getAchievementsByCategory, CATEGORY_LABELS, AchievementCategory } from '../../../utils/achievements'
+import { getAchievementsByCategory } from '../../../utils/achievements'
 import { AppLayout } from '../Layout/AppLayout'
 import { ProfileHeader } from './ProfileHeader'
 import { ProfileStats } from './ProfileStats'
@@ -15,7 +15,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../ui/tabs'
 import { BarChart3, Trophy, Users } from 'lucide-react'
 
 export function ProfileScreen() {
-  const { user, accessToken, decks, studySessions, userStats, userAchievements, setUserStats, updateUser, friends, removeFriend, setViewingUserId, setUserProfileReturnView } = useStore()
+  const { user, accessToken, decks, studySessions, userStats, userAchievements, setUserStats, updateUser, friends, removeFriend, setViewingUserId, setUserProfileReturnView, fetchUserAchievements } = useStore()
   const { navigateTo } = useNavigation()
   const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [inviteFriendDialogOpen, setInviteFriendDialogOpen] = useState(false)
@@ -26,6 +26,13 @@ export function ProfileScreen() {
   const [uploading, setUploading] = useState(false)
   const [userFriends, setUserFriends] = useState<any[]>([])
   const [friendsLoading, setFriendsLoading] = useState(false)
+
+    useEffect(() => {
+    if (accessToken && !userAchievements) {
+      console.log('📊 Fetching achievements for profile...')
+      fetchUserAchievements()
+    }
+  }, [accessToken, userAchievements, fetchUserAchievements])
 
   useEffect(() => {
     loadUserFriends()
@@ -120,7 +127,7 @@ export function ProfileScreen() {
       : ''
 
     // Calculate cards reviewed and perfect scores
-    const cardsReviewed = studySessions.reduce((sum, session) => sum + session.totalQuestions, 0)
+    const cardsReviewed = studySessions.reduce((sum, session) => sum + session.cardsStudied, 0)
     const perfectScores = studySessions.filter(s => s.score === 100).length
 
     setUserStats({

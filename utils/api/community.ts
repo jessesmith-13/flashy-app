@@ -1,5 +1,11 @@
 import { API_BASE, publicAnonKey } from '../supabase/info'
 import { CommunityCard } from '../../src/types/community'
+import { toast } from 'sonner'
+import { ACHIEVEMENTS } from '../../utils/achievements'
+import type { Comment, Reply } from '../../src/types/community'
+import { useStore } from '../../store/useStore'
+
+const { fetchUserAchievements } = useStore.getState()
 
 // ============================================================
 // COMMUNITY DECKS
@@ -106,6 +112,20 @@ export const publishDeck = async (
     throw new Error(data.error || 'Failed to publish deck')
   }
 
+  await fetchUserAchievements()  // ✅ Refresh achievements
+
+  // ✅ Show toasts for newly unlocked achievements
+  if (data.achievementsUnlocked && data.achievementsUnlocked.length > 0) {
+    data.achievementsUnlocked.forEach((achievementId: string) => {
+      const achievement = ACHIEVEMENTS.find(a => a.id === achievementId)
+      if (achievement) {
+        toast.success(`🎉 Achievement Unlocked: ${achievement.title}!`, {
+          description: achievement.description
+        })
+      }
+    })
+  }
+
   return data
 }
 
@@ -168,6 +188,20 @@ export const addDeckFromCommunity = async (
   if (!response.ok) {
     console.error('Failed to add deck from community:', data.error)
     throw new Error(data.error || 'Failed to add deck from community')
+  }
+
+  await fetchUserAchievements()
+
+  // ✅ Show toasts for newly unlocked achievements
+  if (data.achievementsUnlocked && data.achievementsUnlocked.length > 0) {
+    data.achievementsUnlocked.forEach((achievementId: string) => {
+      const achievement = ACHIEVEMENTS.find(a => a.id === achievementId)
+      if (achievement) {
+        toast.success(`🎉 Achievement Unlocked: ${achievement.title}!`, {
+          description: achievement.description
+        })
+      }
+    })
   }
 
   return data.deck
@@ -280,6 +314,20 @@ export const rateDeck = async (
     throw new Error(data.error || 'Failed to rate deck')
   }
 
+  await fetchUserAchievements() 
+
+  // ✅ Show toasts for newly unlocked achievements
+  if (data.achievementsUnlocked && data.achievementsUnlocked.length > 0) {
+    data.achievementsUnlocked.forEach((achievementId: string) => {
+      const achievement = ACHIEVEMENTS.find(a => a.id === achievementId)
+      if (achievement) {
+        toast.success(`🎉 Achievement Unlocked: ${achievement.title}!`, {
+          description: achievement.description
+        })
+      }
+    })
+  }
+
   return data
 }
 
@@ -328,7 +376,7 @@ export const getDeckComments = async (deckId: string) => {
   }
 
     // Map backend response (content, userId, etc.) to frontend format (text, userId, etc.)
-    const comments = (data.comments || []).map((comment: any) => ({
+    const comments = (data.comments || []).map((comment: Comment) => ({
       id: comment.id,
       userId: comment.userId,
       userName: comment.userName,
@@ -338,7 +386,7 @@ export const getDeckComments = async (deckId: string) => {
       createdAt: comment.createdAt,
       updatedAt: comment.updatedAt,
       communityDeckId: comment.communityDeckId,
-      replies: (comment.replies || []).map((reply: any) => ({
+      replies: (comment.replies || []).map((reply: Reply) => ({
         id: reply.id,
         userId: reply.userId,
         userName: reply.userName,
@@ -378,6 +426,19 @@ export const postDeckComment = async (
   if (!response.ok) {
     console.error('Failed to post comment:', data.error)
     throw new Error(data.error || 'Failed to post comment')
+  }
+
+  await fetchUserAchievements()
+
+  if (data.achievementsUnlocked && data.achievementsUnlocked.length > 0) {
+    data.achievementsUnlocked.forEach((achievementId: string) => {
+      const achievement = ACHIEVEMENTS.find(a => a.id === achievementId)
+      if (achievement) {
+        toast.success(`🎉 Achievement Unlocked: ${achievement.title}!`, {
+          description: achievement.description
+        })
+      }
+    })
   }
 
   return data.comment

@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { projectId } from '../utils/supabase/info'
+import { fetchUserAchievements } from '../utils/api/achievements'
 
 export type CardType = 'classic-flip' | 'multiple-choice' | 'type-answer'
 
@@ -246,7 +247,7 @@ interface AppState {
   // User achievements
   userAchievements: UserAchievements | null
   setUserAchievements: (achievements: UserAchievements) => void
-  unlockAchievement: (achievementId: string) => void
+  fetchUserAchievements: () => Promise<void>
 
   // UI state
   currentView: 'landing' | 'login' | 'signup' | 'decks' | 'deck-detail' | 'study' | 'study-options' | 'community' | 'profile' | 'ai-generate' | 'upgrade' | 'all-cards' | 'settings' | 'privacy' | 'terms' | 'contact' | 'notifications'
@@ -291,14 +292,17 @@ export const useStore = create<AppState>((set, get) => ({
   user: null,
   accessToken: null,
   setAuth: (user, accessToken) => {
-    // Invalidate decks cache when setting auth (login)
-    // This ensures decks reload when switching users
     set({ 
       user, 
       accessToken, 
       decksCacheInvalidated: true,
       decksLastLoaded: null 
     })
+    
+    // ✅ Fetch achievements on login
+    if (user && accessToken) {
+      get().fetchUserAchievements()
+    }
   },
   updateUser: (updates) => set((state) => ({
     user: state.user ? { ...state.user, ...updates } : null
@@ -406,28 +410,66 @@ export const useStore = create<AppState>((set, get) => ({
   // Study sessions
   studySessions: [],
   setStudySessions: (sessions) => set({ studySessions: sessions }),
-  addStudySession: (session) => {
+  addStudySession: async (session) => {
     set((state) => ({ studySessions: [...state.studySessions, session] }))
     
-    // Persist to backend
     const state = get()
     if (state.accessToken) {
-      fetch(`https://${projectId}.supabase.co/functions/v1/server/study/sessions`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${state.accessToken}`,
-        },
-        body: JSON.stringify({ session })
-      })
-        .then(response => {
-          if (!response.ok) {
-            console.error('Failed to save study session to backend')
+      try {
+        console.log('📤 Sending study session to backend:', session)
+        
+        const response = await fetch(`https://${projectId}.supabase.co/functions/v1/server/study/sessions`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${state.accessToken}`,
+          },
+          body: JSON.stringify({ session })
+        })
+        
+        if (!response.ok) {
+          console.error('Failed to save study session to backend')
+          return
+        }
+        
+        const result = await response.json()
+        console.log('📥 Backend response:', result)
+        
+        // ✅ Show toasts for new achievements
+        if (result.newAchievements && result.newAchievements.length > 0) {
+          const { toast } = await import('sonner')
+          
+          result.newAchievements.forEach(achievement => {
+            toast.success(`🎉 ${achievement.icon} ${achievement.title}!`, {
+              description: achievement.description
+            })
+          })
+        }
+        
+        // ✅ FETCH fresh achievements from backend (source of truth!)
+        const achievementsResponse = await fetch(
+          `https://${projectId}.supabase.co/functions/v1/server/achievements`,
+          {
+            headers: { Authorization: `Bearer ${state.accessToken}` }
           }
-        })
-        .catch(error => {
-          console.error('Error saving study session:', error)
-        })
+        )
+        
+        if (achievementsResponse.ok) {
+          const achievementsData = await achievementsResponse.json()
+          console.log('✅ Fresh achievements from DB:', achievementsData)
+          
+          if (achievementsData.achievements) {
+            set({ userAchievements: achievementsData.achievements })
+          }
+        }
+        
+        // ✅ Log achievement stats
+        if (result.achievementStats) {
+          console.log('🔥 Achievement stats:', result.achievementStats)
+        }
+      } catch (error) {
+        console.error('Error saving study session:', error)
+      }
     }
   },
 
@@ -438,36 +480,56 @@ export const useStore = create<AppState>((set, get) => ({
   // User achievements
   userAchievements: null,
   setUserAchievements: (achievements) => set({ userAchievements: achievements }),
-  unlockAchievement: (achievementId) => {
-    const state = get()
-    const newAchievements = state.userAchievements
-      ? {
-          ...state.userAchievements,
-          unlockedAchievementIds: [...state.userAchievements.unlockedAchievementIds, achievementId],
-          // ADD THIS LINE - backend expects this field name:
-          unlockedAchievements: [...state.userAchievements.unlockedAchievementIds, achievementId]
+  fetchUserAchievements: async () => {
+  const state = get()
+  
+  if (!state.accessToken) {
+    console.log('⚠️ No access token, skipping achievement fetch')
+    return
+  }
+  
+  try {
+    const achievements = await fetchUserAchievements(state.accessToken)
+    
+    if (achievements) {
+      console.log('✅ Synced achievements to store:', achievements)
+      set({ userAchievements: achievements })
+    } else {
+      console.error('❌ Failed to fetch achievements, using defaults')
+      // Set defaults if fetch failed
+      set({
+        userAchievements: {
+          unlockedAchievementIds: [],
+          customizedDeckTheme: false,
+          hasProfilePicture: false,
+          decksPublished: 0,
+          decksImported: 0,
+          studiedBeforeEightAM: false,
+          studiedAfterMidnight: false,
+          studiedSixtyMinutesNonstop: false,
+          studiedThreeHoursInOneDay: false,
+          flippedCardFiveTimes: false,
+          studiedOnLowBattery: false,
+          slowCardReview: false,
+          createdMultipleChoiceCard: false,
+          createdTrueFalseCard: false,
+          createdImageCard: false,
+          completedBeginnerDeck: false,
+          completedIntermediateDeck: false,
+          completedAdvancedDeck: false,
+          completedExpertDeck: false,
+          completedMasterDeck: false,
+          usedAI: false,
+          aiCardsGenerated: 0,
+          commentsLeft: 0,
+          ratingsGiven: 0,
         }
-      : null
-
-        console.log('💾 [UNLOCK] Achievement ID:', achievementId)
-        console.log('💾 [UNLOCK] New achievements object:', newAchievements)
-        console.log('💾 [UNLOCK] unlockedAchievementIds:', newAchievements?.unlockedAchievementIds)
-        console.log('💾 [UNLOCK] unlockedAchievements:', newAchievements?.unlockedAchievements)
-    
-    set({ userAchievements: newAchievements })
-    
-    // Persist to backend
-    if (state.accessToken && newAchievements) {
-      fetch(`https://${projectId}.supabase.co/functions/v1/server/achievements`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${state.accessToken}`,
-        },
-        body: JSON.stringify({ achievements: newAchievements }),
       })
     }
-  },
+  } catch (error) {
+    console.error('❌ Error fetching achievements:', error)
+  }
+},
 
   // UI state
   currentView: 'landing',

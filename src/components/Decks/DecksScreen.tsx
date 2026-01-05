@@ -4,7 +4,6 @@ import { useNavigation } from '../../../hooks/useNavigation'
 import { fetchDecks, createDeck, updateDeck, updateDeckPositions, deleteDeck, fetchCards } from '../../../utils/api/decks'
 import { publishDeck, unpublishDeck, updateCommunityDeck } from '../../../utils/api/community'
 import { fetchStudySessions } from '../../../utils/api/study'
-import { API_BASE } from '../../../utils/supabase/info'
 import { AppLayout } from '../Layout/AppLayout'
 import { Button } from '../../ui/button'
 import { Pagination } from '../Pagination/Pagination'
@@ -27,7 +26,7 @@ import { canCreateDeck, canPublishToCommunity } from '../../../utils/subscriptio
 import { useIsSuperuser } from '../../../utils/userUtils'
 
 export function DecksScreen() {
-  const { user, accessToken, decks, setDecks, addDeck, updateDeck: updateDeckInStore, removeDeck, setSelectedDeckId, userAchievements, setUserAchievements, studySessions, setStudySessions, shouldReloadDecks } = useStore()
+  const { user, accessToken, decks, setDecks, addDeck, updateDeck: updateDeckInStore, setSelectedDeckId, userAchievements, studySessions, setStudySessions, shouldReloadDecks, fetchUserAchievements } = useStore()
   const { navigateTo, navigate } = useNavigation()
   const isSuperuser = useIsSuperuser()
   const [loading, setLoading] = useState(true)
@@ -56,8 +55,11 @@ export function DecksScreen() {
 
   useEffect(() => {
     loadDecks()
-    loadAchievements()
     loadStudySessions()
+    // ✅ Fetch achievements from backend if not already loaded
+    if (accessToken && !userAchievements) {
+      fetchUserAchievements()
+    }
   }, [])
 
   const loadDecks = async () => {
@@ -84,29 +86,6 @@ export function DecksScreen() {
       }
     } finally {
       setLoading(false)
-    }
-  }
-
-  const loadAchievements = async () => {
-    if (!accessToken) return
-    
-    try {
-      const response = await fetch(`${API_BASE}/achievements`, {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      })
-      
-      if (response.ok) {
-        const data = await response.json()
-        console.log('🎯 Achievements loaded from backend:', data.achievements)
-        console.log('🎯 Unlocked IDs:', data.achievements?.unlockedAchievementIds)
-        if (data.achievements) {
-          setUserAchievements(data.achievements)
-        }
-      }
-    } catch (error) {
-      console.error('Failed to load achievements:', error)
     }
   }
 
@@ -144,13 +123,7 @@ export function DecksScreen() {
     const deck = await createDeck(accessToken, data)
     addDeck(deck)
     
-    if ((data.emoji !== '📚' || data.color !== '#10B981') && userAchievements) {
-      setUserAchievements({
-        ...userAchievements,
-        customizedDeckTheme: true,
-      })
-    }
-    
+    // ✅ No need to manually update achievements - backend tracks this
     toast.success('Deck created successfully!')
   }
 
@@ -225,19 +198,15 @@ export function DecksScreen() {
     const deck = decks.find(d => d.id === deckId)
     if (!deck) return
 
-    // 🔧 FIX: Read from isFavorite (API field name)
     const newFavoriteStatus = !deck.isFavorite
     console.log('NEW FAVORITE STATUS', newFavoriteStatus)
 
-    // 🔧 FIX: Update store with 'isFavorite' (matching API)
     updateDeckInStore(deckId, { isFavorite: newFavoriteStatus })
 
     try {
-      // Send to API with 'isFavorite' (database naming)
       await updateDeck(accessToken, deckId, { isFavorite: newFavoriteStatus })
     } catch (error) {
       console.error('Failed to toggle favorite:', error)
-      // Revert on error
       updateDeckInStore(deckId, { isFavorite: !newFavoriteStatus })
       toast.error('Failed to update favorite status')
     }
@@ -250,18 +219,14 @@ export function DecksScreen() {
     const deck = decks.find(d => d.id === deckId)
     if (!deck) return
 
-    // 🔧 FIX: Read from isLearned (API field name)
     const newLearnedStatus = !deck.isLearned
 
-    // 🔧 FIX: Update store with 'isLearned' (matching API)
     updateDeckInStore(deckId, { isLearned: newLearnedStatus })
 
     try {
-      // Send to API with 'isLearned' (database naming)
       await updateDeck(accessToken, deckId, { isLearned: newLearnedStatus })
     } catch (error) {
       console.error('Failed to toggle learned:', error)
-      // Revert on error
       updateDeckInStore(deckId, { isLearned: !newLearnedStatus })
       toast.error('Failed to update learned status')
     }
@@ -281,7 +246,6 @@ export function DecksScreen() {
       setPublishDialogOpen(false)
       return
     }
-
 
     if (publishingDeck.isShared) {
       toast.error('Cannot publish a shared deck to the community')
@@ -318,7 +282,6 @@ export function DecksScreen() {
       console.log('✅ Published deck ID:', result.deck?.id)
       console.log('✅ Published deck version:', result.deck?.version)
 
-      // 🔧 FIX: Update local state AND reload decks to ensure sync
       updateDeckInStore(publishingDeck.id, {
         communityPublishedId: result.deck?.id,
         communityDeckVersion: result.deck?.version,
@@ -326,7 +289,6 @@ export function DecksScreen() {
 
       console.log('✅ Updated deck in store with communityPublishedId:', result.deck?.id)
 
-      // Force reload decks to ensure we have the latest from backend
       setTimeout(async () => {
         try {
           const freshDecks = await fetchDecks(accessToken)
@@ -438,16 +400,13 @@ export function DecksScreen() {
   }
 
   const filteredDecks = decks.filter(deck => {
-    // Filter deleted decks out
     if (deck.isDeleted) return false
 
-    // 🔧 FIX: Log each deck's published status
     if (deck.isPublished) {
       console.log(`🔍 Deck "${deck.name}" has isPublished:`, deck.isPublished)
     }
     
     const tabFilter = (() => {
-      // 🔧 FIX: Use API field names (isFavorite, isLearned) to match what's returned
       if (activeTab === 'favorites') return !!deck.isFavorite
       if (activeTab === 'learned') return !!deck.isLearned
       if (activeTab === 'added') {
@@ -533,10 +492,8 @@ export function DecksScreen() {
     currentPage * ITEMS_PER_PAGE
   )
 
-  // 🔧 FIX: Calculate counts correctly
   const publishedCount = decks.filter(d => !!d.isPublished).length
   console.log('🔍 Published decks count:', publishedCount)
-
   return (
     <AppLayout>
       {loading ? (
