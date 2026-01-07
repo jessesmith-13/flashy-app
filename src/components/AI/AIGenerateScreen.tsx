@@ -107,6 +107,11 @@ export function AIGenerateScreen() {
           setGeneratingStatus('Processing audio for musical content...')
         }
         const processedCards = generateAudio ? await processCardsWithAudio(response.cards) : response.cards
+        console.log('=== FINAL PROCESSED CARDS ===', processedCards.map(c => ({ 
+          front: c.front, 
+          frontAudio: c.frontAudio,
+          backAudio: c.backAudio 
+        })))
         setGeneratedCards(processedCards)
         toast.success(`Generated ${processedCards.length} flashcards!`)
       } else {

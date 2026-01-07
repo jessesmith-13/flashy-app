@@ -41,8 +41,8 @@ interface CardData {
   cardType: string
   frontImageUrl?: string | null
   backImageUrl?: string | null
-  frontAudioUrl?: string | null
-  backAudioUrl?: string | null
+  frontAudio?: string | null
+  backAudio?: string | null
   correctAnswers?: string[]
   acceptedAnswers?: string[]
   incorrectAnswers?: string[]
@@ -101,8 +101,8 @@ export function DeckDetailScreen() {
   const [newCardImageFile, setNewCardImageFile] = useState<File | null>(null)
   const [newCardBackImageUrl, setNewCardBackImageUrl] = useState('')
   const [newCardBackImageFile, setNewCardBackImageFile] = useState<File | null>(null)
-  const [newCardFrontAudioUrl, setNewCardFrontAudioUrl] = useState('')
-  const [newCardBackAudioUrl, setNewCardBackAudioUrl] = useState('')
+  const [newCardFrontAudio, setNewCardFrontAudio] = useState('')
+  const [newCardBackAudio, setNewCardBackAudio] = useState('')
   
   // New API structure for multiple-choice
   const [newCardCorrectAnswers, setNewCardCorrectAnswers] = useState<string[]>([''])
@@ -133,8 +133,8 @@ export function DeckDetailScreen() {
   const [editCardImageFile, setEditCardImageFile] = useState<File | null>(null)
   const [editCardBackImageUrl, setEditCardBackImageUrl] = useState('')
   const [editCardBackImageFile, setEditCardBackImageFile] = useState<File | null>(null)
-  const [editCardFrontAudioUrl, setEditCardFrontAudioUrl] = useState('')
-  const [editCardBackAudioUrl, setEditCardBackAudioUrl] = useState('')
+  const [editCardFrontAudio, setEditCardFrontAudio] = useState('')
+  const [editCardBackAudio, setEditCardBackAudio] = useState('')
   
   // New API structure for edit - multiple-choice
   const [editCardAcceptedAnswers, setEditCardAcceptedAnswers] = useState<string[]>([''])
@@ -305,11 +305,11 @@ export function DeckDetailScreen() {
         }
         
         // Handle audio URLs
-        if (newCardFrontAudioUrl.trim()) {
-          cardData.frontAudioUrl = newCardFrontAudioUrl.trim()
+        if (newCardFrontAudio.trim()) {
+          cardData.frontAudio = newCardFrontAudio.trim()
         }
-        if (newCardBackAudioUrl.trim()) {
-          cardData.backAudioUrl = newCardBackAudioUrl.trim()
+        if (newCardBackAudio.trim()) {
+          cardData.backAudio = newCardBackAudio.trim()
         }
       } else if (newCardType === 'multiple-choice') {
         // Filter out empty answers - multiple-choice uses correctAnswers + incorrectAnswers
@@ -340,14 +340,14 @@ export function DeckDetailScreen() {
       }
 
       // Convert to API format with correct field names
-      const { correctAnswers, acceptedAnswers, incorrectAnswers, frontImageUrl, backImageUrl, frontAudioUrl, backAudioUrl, ...rest } = cardData
+      const { correctAnswers, acceptedAnswers, incorrectAnswers, frontImageUrl, backImageUrl, frontAudio, backAudio, ...rest } = cardData
       
       const apiData: ApiCardData = {
         ...rest,
         ...(frontImageUrl !== null && frontImageUrl !== undefined ? { frontImageUrl } : {}),
         ...(backImageUrl !== null && backImageUrl !== undefined ? { backImageUrl } : {}),
-        ...(frontAudioUrl !== null && frontAudioUrl !== undefined ? { frontAudio: frontAudioUrl } : {}),
-        ...(backAudioUrl !== null && backAudioUrl !== undefined ? { backAudio: backAudioUrl } : {}),
+        ...(frontAudio !== null && frontAudio !== undefined ? { frontAudio: frontAudio } : {}),
+        ...(backAudio !== null && backAudio !== undefined ? { backAudio: backAudio } : {}),
       }
       
       // Add answer arrays with correct field names based on card type
@@ -373,8 +373,8 @@ export function DeckDetailScreen() {
       setNewCardImageFile(null)
       setNewCardBackImageUrl('')
       setNewCardBackImageFile(null)
-      setNewCardFrontAudioUrl('')
-      setNewCardBackAudioUrl('')
+      setNewCardFrontAudio('')
+      setNewCardBackAudio('')
       setNewCardAcceptedAnswers([''])
       setNewCardCorrectAnswers([''])
       setNewCardIncorrectAnswers(['', '', ''])
@@ -406,8 +406,8 @@ export function DeckDetailScreen() {
     setEditCardImageFile(null)
     setEditCardBackImageUrl(card.backImageUrl || '')
     setEditCardBackImageFile(null)
-    setEditCardFrontAudioUrl(card.frontAudioUrl || '')
-    setEditCardBackAudioUrl(card.backAudioUrl || '')
+    setEditCardFrontAudio(card.frontAudio || '')
+    setEditCardBackAudio(card.backAudio || '')
     
     if (card.cardType === 'multiple-choice') {
       // Parse from new API structure
@@ -521,16 +521,16 @@ export function DeckDetailScreen() {
         }
         
         // Handle audio URLs
-        if (editCardFrontAudioUrl.trim()) {
-          cardData.frontAudioUrl = editCardFrontAudioUrl.trim()
+        if (editCardFrontAudio.trim()) {
+          cardData.frontAudio = editCardFrontAudio.trim()
         } else {
-          cardData.frontAudioUrl = null
+          cardData.frontAudio = null
         }
         
-        if (editCardBackAudioUrl.trim()) {
-          cardData.backAudioUrl = editCardBackAudioUrl.trim()
+        if (editCardBackAudio.trim()) {
+          cardData.backAudio = editCardBackAudio.trim()
         } else {
-          cardData.backAudioUrl = null
+          cardData.backAudio = null
         }
       } else if (editCardType === 'multiple-choice') {
         // Filter out empty answers - multiple-choice uses correctAnswers + incorrectAnswers
@@ -563,14 +563,14 @@ export function DeckDetailScreen() {
       }
 
       // Convert to API format with correct field names
-      const { correctAnswers, acceptedAnswers, incorrectAnswers, frontImageUrl, backImageUrl, frontAudioUrl, backAudioUrl, ...rest } = cardData
+      const { correctAnswers, acceptedAnswers, incorrectAnswers, frontImageUrl, backImageUrl, frontAudio, backAudio, ...rest } = cardData
       
       const apiData: ApiCardData = {
         ...rest,
         ...(frontImageUrl !== null && frontImageUrl !== undefined ? { frontImageUrl } : {}),
         ...(backImageUrl !== null && backImageUrl !== undefined ? { backImageUrl } : {}),
-        ...(frontAudioUrl !== null && frontAudioUrl !== undefined ? { frontAudio: frontAudioUrl } : {}),
-        ...(backAudioUrl !== null && backAudioUrl !== undefined ? { backAudio: backAudioUrl } : {}),
+        ...(frontAudio !== null && frontAudio !== undefined ? { frontAudio: frontAudio } : {}),
+        ...(backAudio !== null && backAudio !== undefined ? { backAudio: backAudio } : {}),
       }
       
       // Add answer arrays with correct field names based on card type
@@ -595,8 +595,8 @@ export function DeckDetailScreen() {
       setEditCardImageFile(null)
       setEditCardBackImageUrl('')
       setEditCardBackImageFile(null)
-      setEditCardFrontAudioUrl('')
-      setEditCardBackAudioUrl('')
+      setEditCardFrontAudio('')
+      setEditCardBackAudio('')
       setEditCardAcceptedAnswers([''])
       setEditCardIncorrectAnswers(['', '', ''])
       setEditCardTypeAnswerAcceptedAnswers([''])
@@ -616,8 +616,12 @@ export function DeckDetailScreen() {
       await apiDeleteCard(accessToken, deck.id, cardId)
       removeCard(cardId)
       
-      if (deck) {
-        updateDeck(deck.id, { cardCount: Math.max(0, (deck.cardCount || 0) - 1) })
+      // ✅ Get FRESH deck from store
+      const freshDeck = decks.find(d => d.id === deck.id)
+      if (freshDeck) {
+        const newCardCount = Math.max(0, (freshDeck.cardCount || 0) - 1)
+        console.log(`🗑️ Delete: ${freshDeck.cardCount} - 1 = ${newCardCount}`)
+        updateDeck(deck.id, { cardCount: newCardCount })
       }
       
       toast.success('Card deleted successfully!')
@@ -637,9 +641,12 @@ export function DeckDetailScreen() {
       
       cardIds.forEach(id => removeCard(id))
       
-      if (deck) {
-        updateDeck(deck.id, { cardCount: Math.max(0, (deck.cardCount || 0) - cardIds.length) })
-      }
+      // ✅ Calculate actual remaining cards after deletion
+      const remainingCards = deckCards.filter(c => !cardIds.includes(c.id))
+      const newCardCount = remainingCards.length
+      
+      console.log(`🗑️ Bulk delete: ${deckCards.length} cards -> ${newCardCount} remaining`)
+      updateDeck(deck.id, { cardCount: newCardCount })
       
       setSelectedCards(new Set())
       setSelectionMode(false)
@@ -1050,12 +1057,12 @@ export function DeckDetailScreen() {
             }
 
             // Handle audio files
-            if (cardInput.frontAudioUrl) {
-              cardData.frontAudioUrl = cardInput.frontAudioUrl
+            if (cardInput.frontAudio) {
+              cardData.frontAudio = cardInput.frontAudio
             }
 
-            if (cardInput.backAudioUrl) {
-              cardData.backAudioUrl = cardInput.backAudioUrl
+            if (cardInput.backAudio) {
+              cardData.backAudio = cardInput.backAudio
             }
           } else if (cardInput.cardType === 'multiple-choice') {
             // Multiple-choice: use correctAnswers and incorrectAnswers arrays
@@ -1068,14 +1075,14 @@ export function DeckDetailScreen() {
           }
 
           // Convert to API format with correct field names
-          const { correctAnswers, acceptedAnswers, incorrectAnswers, frontImageUrl, backImageUrl, frontAudioUrl, backAudioUrl, ...rest } = cardData
+          const { correctAnswers, acceptedAnswers, incorrectAnswers, frontImageUrl, backImageUrl, frontAudio, backAudio, ...rest } = cardData
           
           const apiData: ApiCardData = {
             ...rest,
             ...(frontImageUrl !== null && frontImageUrl !== undefined ? { frontImageUrl } : {}),
             ...(backImageUrl !== null && backImageUrl !== undefined ? { backImageUrl } : {}),
-            ...(frontAudioUrl !== null && frontAudioUrl !== undefined ? { frontAudio: frontAudioUrl } : {}),
-            ...(backAudioUrl !== null && backAudioUrl !== undefined ? { backAudio: backAudioUrl } : {}),
+            ...(frontAudio !== null && frontAudio !== undefined ? { frontAudio: frontAudio } : {}),
+            ...(backAudio !== null && backAudio !== undefined ? { backAudio: backAudio } : {}),
           }
 
           // Add answer arrays based on card type
@@ -1245,8 +1252,8 @@ export function DeckDetailScreen() {
             frontImageFile={newCardImageFile}
             backImageUrl={newCardBackImageUrl}
             backImageFile={newCardBackImageFile}
-            frontAudioUrl={newCardFrontAudioUrl}
-            backAudioUrl={newCardBackAudioUrl}
+            frontAudio={newCardFrontAudio}
+            backAudio={newCardBackAudio}
             correctAnswers={newCardCorrectAnswers}
             incorrectAnswers={newCardIncorrectAnswers}
             acceptedAnswers={newCardAcceptedAnswers}
@@ -1267,8 +1274,8 @@ export function DeckDetailScreen() {
               setNewCardBackImageFile(file)
               setNewCardBackImageUrl(url)
             }}
-            onFrontAudioChange={setNewCardFrontAudioUrl}
-            onBackAudioChange={setNewCardBackAudioUrl}
+            onFrontAudioChange={setNewCardFrontAudio}
+            onBackAudioChange={setNewCardBackAudio}
             onCorrectAnswersChange={setNewCardCorrectAnswers}
             onIncorrectAnswersChange={setNewCardIncorrectAnswers}
             onAcceptedAnswersChange={setNewCardAcceptedAnswers}
@@ -1291,8 +1298,8 @@ export function DeckDetailScreen() {
             frontImageFile={editCardImageFile}
             backImageUrl={editCardBackImageUrl}
             backImageFile={editCardBackImageFile}
-            frontAudioUrl={editCardFrontAudioUrl}
-            backAudioUrl={editCardBackAudioUrl}
+            frontAudio={editCardFrontAudio}
+            backAudio={editCardBackAudio}
             correctAnswers={editCardCorrectAnswers}
             incorrectAnswers={editCardIncorrectAnswers}
             acceptedAnswers={editCardTypeAnswerAcceptedAnswers}
@@ -1313,8 +1320,8 @@ export function DeckDetailScreen() {
               setEditCardBackImageFile(file)
               setEditCardBackImageUrl(url)
             }}
-            onFrontAudioChange={setEditCardFrontAudioUrl}
-            onBackAudioChange={setEditCardBackAudioUrl}
+            onFrontAudioChange={setEditCardFrontAudio}
+            onBackAudioChange={setEditCardBackAudio}
             onCorrectAnswersChange={setEditCardCorrectAnswers}
             onIncorrectAnswersChange={setEditCardIncorrectAnswers}
             onAcceptedAnswersChange={setEditCardTypeAnswerAcceptedAnswers}

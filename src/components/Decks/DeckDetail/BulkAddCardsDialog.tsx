@@ -5,7 +5,6 @@ import { Input } from '../../../ui/input'
 import { Label } from '../../../ui/label'
 import { Textarea } from '../../../ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../ui/select'
-import { Checkbox } from '../../../ui/checkbox'
 import { Loader2, Plus, Trash2, Sparkles, Upload, X } from 'lucide-react'
 import type { CardType } from '../../../../store/useStore'
 import { AudioRecorder } from './AudioRecorder'
@@ -20,8 +19,8 @@ interface CardFormData {
   frontImageFile: File | null
   backImageUrl: string
   backImageFile: File | null
-  frontAudioUrl?: string
-  backAudioUrl?: string
+  frontAudio?: string
+  backAudio?: string
   // Multiple-choice uses correctAnswers + incorrectAnswers arrays
   correctAnswers: string[]
   incorrectAnswers: string[]
@@ -259,9 +258,9 @@ export function BulkAddCardsDialog({
     try {
       const audioUrl = await onUploadAudio(file)
       if (field === 'front') {
-        handleCardChange(cardId, { frontAudioUrl: audioUrl })
+        handleCardChange(cardId, { frontAudio: audioUrl })
       } else {
-        handleCardChange(cardId, { backAudioUrl: audioUrl })
+        handleCardChange(cardId, { backAudio: audioUrl })
       }
     } finally {
       setUploadingAudioCardId(null)
@@ -517,9 +516,9 @@ export function BulkAddCardsDialog({
                         {canAddImageToCard(userTier) && onUploadAudio && card.cardType === 'classic-flip' && (
                           <div className="mt-2">
                             <AudioRecorder
-                              onAudioSave={(url) => handleCardChange(card.id, { frontAudioUrl: url })}
-                              currentAudioUrl={card.frontAudioUrl}
-                              onAudioRemove={() => handleCardChange(card.id, { frontAudioUrl: '' })}
+                              onAudioSave={(url) => handleCardChange(card.id, { frontAudio: url })}
+                              currentAudioUrl={card.frontAudio}
+                              onAudioRemove={() => handleCardChange(card.id, { frontAudio: '' })}
                               disabled={submitting || (uploadingAudioCardId === card.id && uploadingAudioField === 'front')}
                               label="Question Audio (Optional)"
                               onUploadAudio={(file) => handleAudioUpload(card.id, 'front', file)}
@@ -795,9 +794,9 @@ export function BulkAddCardsDialog({
                           {canAddImageToCard(userTier) && onUploadAudio && (
                             <div className="mt-2">
                               <AudioRecorder
-                                onAudioSave={(url) => handleCardChange(card.id, { backAudioUrl: url })}
-                                currentAudioUrl={card.backAudioUrl}
-                                onAudioRemove={() => handleCardChange(card.id, { backAudioUrl: '' })}
+                                onAudioSave={(url) => handleCardChange(card.id, { backAudio: url })}
+                                currentAudioUrl={card.backAudio}
+                                onAudioRemove={() => handleCardChange(card.id, { backAudio: '' })}
                                 disabled={submitting || (uploadingAudioCardId === card.id && uploadingAudioField === 'back')}
                                 label="Answer Audio (Optional)"
                                 onUploadAudio={(file) => handleAudioUpload(card.id, 'back', file)}

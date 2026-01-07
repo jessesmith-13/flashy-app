@@ -25,8 +25,8 @@ interface EditCardModalProps {
   frontImageFile: File | null
   backImageUrl: string
   backImageFile: File | null
-  frontAudioUrl?: string
-  backAudioUrl?: string
+  frontAudio?: string
+  backAudio?: string
   // New structure for multiple-choice
   correctAnswers: string[]  // Array of correct answers
   incorrectAnswers: string[]  // Array of incorrect options
@@ -64,8 +64,8 @@ export function EditCardModal({
   back,
   frontImageUrl,
   backImageUrl,
-  frontAudioUrl,
-  backAudioUrl,
+  frontAudio,
+  backAudio,
   correctAnswers,
   incorrectAnswers,
   acceptedAnswers,
@@ -285,7 +285,7 @@ export function EditCardModal({
             <div>
               <AudioRecorder
                 onAudioSave={(url) => onFrontAudioChange(url)}
-                currentAudioUrl={frontAudioUrl}
+                currentAudioUrl={frontAudio}
                 onAudioRemove={() => onFrontAudioChange('')}
                 disabled={updating}
                 label="Question Audio (Optional)"
@@ -457,7 +457,7 @@ export function EditCardModal({
                 <div>
                   <AudioRecorder
                     onAudioSave={(url) => onBackAudioChange(url)}
-                    currentAudioUrl={backAudioUrl}
+                    currentAudioUrl={backAudio}
                     onAudioRemove={() => onBackAudioChange('')}
                     disabled={updating}
                     label="Answer Audio (Optional)"
