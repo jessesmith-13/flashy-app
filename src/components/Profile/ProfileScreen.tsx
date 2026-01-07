@@ -201,7 +201,7 @@ export function ProfileScreen() {
   }
 
   const handleFileUpload = async (file: File) => {
-    if (!accessToken) return
+    if (!accessToken || !user?.id) return
 
     // Validate file size
     if (file.size > 5242880) {
@@ -223,7 +223,7 @@ export function ProfileScreen() {
       console.log('Avatar uploaded:', url)
       
       // Update profile with new avatar URL
-      const updatedUser = await api.updateProfile(accessToken, {
+      const updatedUser = await api.updateProfile(user.id, accessToken, {
         avatarUrl: url,
       })
       
