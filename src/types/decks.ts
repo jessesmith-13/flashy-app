@@ -23,7 +23,8 @@ export type ApiCard = {
   accepted_answers: string[] | null
   front_image_url: string | null
   back_image_url: string | null
-  audio_url: string | null
+  front_audio: string | null
+  back_audio: string | null
   position: number
   favorite: boolean
   is_ignored: boolean

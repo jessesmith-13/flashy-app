@@ -25,8 +25,8 @@ interface AddCardModalProps {
   frontImageFile: File | null
   backImageUrl: string
   backImageFile: File | null
-  frontAudioUrl?: string
-  backAudioUrl?: string
+  frontAudio?: string
+  backAudio?: string
   // New structure for multiple-choice
   correctAnswers: string[]  // Array of correct answers
   incorrectAnswers: string[]  // Array of incorrect options
@@ -65,8 +65,8 @@ export function AddCardModal({
   back,
   frontImageUrl,
   backImageUrl,
-  frontAudioUrl,
-  backAudioUrl,
+  frontAudio,
+  backAudio,
   correctAnswers,
   incorrectAnswers,
   acceptedAnswers,
@@ -286,7 +286,7 @@ export function AddCardModal({
             <div>
               <AudioRecorder
                 onAudioSave={(url) => onFrontAudioChange(url)}
-                currentAudioUrl={frontAudioUrl}
+                currentAudioUrl={frontAudio}
                 onAudioRemove={() => onFrontAudioChange('')}
                 disabled={creating}
                 label="Question Audio (Optional)"
@@ -458,7 +458,7 @@ export function AddCardModal({
                 <div>
                   <AudioRecorder
                     onAudioSave={(url) => onBackAudioChange(url)}
-                    currentAudioUrl={backAudioUrl}
+                    currentAudioUrl={backAudio}
                     onAudioRemove={() => onBackAudioChange('')}
                     disabled={creating}
                     label="Answer Audio (Optional)"

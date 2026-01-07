@@ -39,16 +39,11 @@ const cardTypeLabels: Record<CardType, string> = {
 
 export function GeneratedCardItem({ card, index, onEdit, onRemove }: GeneratedCardItemProps) {
   const [isEditing, setIsEditing] = useState(false)
-
   const [front, setFront] = useState(card.front)
   const [back, setBack] = useState(card.back)
-
   const [correctAnswers, setCorrectAnswers] = useState<string[]>(card.correctAnswers ?? [])
   const [incorrectAnswers, setIncorrectAnswers] = useState<string[]>(card.incorrectAnswers ?? [])
   const [acceptedAnswers, setAcceptedAnswers] = useState<string[]>(card.acceptedAnswers ?? [])
-
-  const [frontAudio, setFrontAudio] = useState(card.frontAudio)
-  const [backAudio, setBackAudio] = useState(card.backAudio)
 
   const startEdit = () => setIsEditing(true)
 
@@ -60,8 +55,6 @@ export function GeneratedCardItem({ card, index, onEdit, onRemove }: GeneratedCa
       correctAnswers,
       incorrectAnswers,
       acceptedAnswers,
-      frontAudio,
-      backAudio,
     })
     setIsEditing(false)
   }
@@ -190,6 +183,10 @@ export function GeneratedCardItem({ card, index, onEdit, onRemove }: GeneratedCa
       <div className="px-4 pb-3">
         <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Front:</div>
         <div className="text-sm text-gray-900 dark:text-gray-100">{card.front}</div>
+          {/* 🎵 SHOW AUDIO IF PRESENT */}
+          {card.frontAudio && (
+            <audio controls src={card.frontAudio} className="mt-2 w-full h-8" />
+          )}
       </div>
 
       {/* Divider */}

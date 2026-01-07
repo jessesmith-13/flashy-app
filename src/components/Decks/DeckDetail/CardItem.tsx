@@ -100,6 +100,15 @@ export function CardItem({
                 />
               </div>
             )}
+            {/* Front Audio */}
+            {card.frontAudio && (
+              <div className="mt-2">
+                <audio controls className="w-full">
+                  <source src={card.frontAudio} type="audio/wav" />
+                  <source src={card.frontAudio} type="audio/mpeg" />
+                </audio>
+              </div>
+            )}
           </div>
 
           {/* Answer section - varies by card type */}
@@ -114,6 +123,15 @@ export function CardItem({
                     alt="Answer image" 
                     className="w-full h-32 object-cover"
                   />
+                </div>
+              )}
+              {/* Back Audio */}
+              {card.backAudio && (
+                <div className="mt-2">
+                  <audio controls className="w-full">
+                    <source src={card.backAudio} type="audio/wav" />
+                    <source src={card.backAudio} type="audio/mpeg" />
+                  </audio>
                 </div>
               )}
             </div>

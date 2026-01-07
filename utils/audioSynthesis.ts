@@ -64,15 +64,33 @@ const NOTE_FREQUENCIES: Record<string, number> = {
 
 // Chord definitions (intervals from root note)
 const CHORD_INTERVALS: Record<string, number[]> = {
+  // 3-note triads
   'major': [0, 4, 7],
   'minor': [0, 3, 7],
   'diminished': [0, 3, 6],
   'augmented': [0, 4, 8],
+  'sus2': [0, 2, 7],
+  'sus4': [0, 5, 7],
+  
+  // 4-note chords (7th chords and extensions)
   'major7': [0, 4, 7, 11],
   'minor7': [0, 3, 7, 10],
   'dominant7': [0, 4, 7, 10],
-  'sus2': [0, 2, 7],
-  'sus4': [0, 5, 7],
+  'diminished7': [0, 3, 6, 9],
+  'halfdiminished7': [0, 3, 6, 10],     // ✅ NEW: m7♭5
+  'augmented7': [0, 4, 8, 10],          // ✅ NEW
+  '6': [0, 4, 7, 9],                    // ✅ NEW: Major 6th
+  'minor6': [0, 3, 7, 9],               // ✅ NEW: Minor 6th
+  'add9': [0, 4, 7, 14],                // ✅ NEW: Major add9
+  'minoradd9': [0, 3, 7, 14],           // ✅ NEW: Minor add9
+  
+  // 5-note chords (9th chords and beyond)
+  '9': [0, 4, 7, 10, 14],               // ✅ NEW: Dominant 9th
+  'major9': [0, 4, 7, 11, 14],          // ✅ NEW: Major 9th
+  'minor9': [0, 3, 7, 10, 14],          // ✅ NEW: Minor 9th
+  'add11': [0, 4, 7, 14, 17],           // ✅ NEW: Add11 (with 9th)
+  '11': [0, 4, 7, 10, 14, 17],          // ✅ NEW: Dominant 11th (6 notes!)
+  '13': [0, 4, 7, 10, 14, 21],          // ✅ NEW: Dominant 13th (6 notes!)
 }
 
 /**
@@ -153,7 +171,7 @@ export function getChordFrequencies(rootNote: string, chordType: string = 'major
 
 /**
  * Parse a note/chord request from text
- * Examples: "A4", "C major", "D minor chord", "G#5 note"
+ * Examples: "A4", "C major", "D minor chord", "C7", "Dm7", "Cadd9", "Gmaj9"
  */
 export function parseMusicRequest(text: string): {
   type: 'note' | 'chord'
@@ -162,18 +180,84 @@ export function parseMusicRequest(text: string): {
 } | null {
   const normalized = text.trim().toLowerCase()
   
-  // Check for chord patterns - MUST have a note letter (A-G) at the start
-  // This prevents matching standalone words like "major" or "minor" without a note
-  const chordPattern = /\b([a-g][#b]?[0-9]?)\s*(major|minor|diminished|augmented|maj7|min7|dom7|sus2|sus4|m|M)(\s+chord)?\b/i
+  // Priority 1: Chord shorthand with numbers (e.g., "C7", "Dm7", "Gmaj7", "Cadd9", "C9", "C11")
+  const shorthandPattern = /\b([a-g][#b]?)(m|maj|min|dim|aug|sus|add)?(6|7|9|11|13)?(\s+chord)?\b/i
+  const shorthandMatch = normalized.match(shorthandPattern)
+  
+  if (shorthandMatch) {
+    const root = shorthandMatch[1].toUpperCase()
+    const modifier = (shorthandMatch[2] || '').toLowerCase()
+    const extension = shorthandMatch[3]
+    
+    let chordType = 'major'
+    
+    // Handle add9, add11
+    if (modifier === 'add') {
+      if (extension === '9') {
+        chordType = 'add9'
+      } else if (extension === '11') {
+        chordType = 'add11'
+      } else {
+        chordType = 'major' // Default if no extension specified
+      }
+    }
+    // Handle 7th chords
+    else if (extension === '7') {
+      if (modifier === 'm' || modifier === 'min') {
+        chordType = 'minor7'
+      } else if (modifier === 'maj') {
+        chordType = 'major7'
+      } else if (modifier === 'dim') {
+        chordType = 'diminished7'
+      } else if (modifier === 'aug') {
+        chordType = 'augmented7'
+      } else {
+        chordType = 'dominant7'
+      }
+    }
+    // Handle 9th chords
+    else if (extension === '9') {
+      if (modifier === 'm' || modifier === 'min') {
+        chordType = 'minor9'
+      } else if (modifier === 'maj') {
+        chordType = 'major9'
+      } else {
+        chordType = '9' // Dominant 9
+      }
+    }
+    // Handle 11th chords
+    else if (extension === '11') {
+      chordType = '11'
+    }
+    // Handle 13th chords
+    else if (extension === '13') {
+      chordType = '13'
+    }
+    // Handle 6th chords
+    else if (extension === '6') {
+      chordType = (modifier === 'm' || modifier === 'min') ? 'minor6' : '6'
+    }
+    // Handle modifiers without extensions
+    else {
+      if (modifier === 'dim') chordType = 'diminished'
+      if (modifier === 'aug') chordType = 'augmented'
+      if (modifier === 'sus') chordType = 'sus4' // Default sus to sus4
+      if (modifier === 'm' || modifier === 'min') chordType = 'minor'
+    }
+    
+    const rootWithOctave = root + '4'
+    return { type: 'chord', root: rootWithOctave, chordType }
+  }
+  
+  // Priority 2: Full chord names (e.g., "C major", "D minor chord", "E# major chord", "C add9")
+  const chordPattern = /\b([a-g][#b]?[0-9]?)\s+(major9|minor9|major7|minor7|dominant7|diminished7|halfdiminished7|augmented7|minoradd9|add9|add11|major6|minor6|major|minor|diminished|augmented|dom7|maj7|min7|sus2|sus4|6|9|11|13)(\s+chord)?\b/i
   const chordMatch = normalized.match(chordPattern)
   
-  if (chordMatch && chordMatch[2]) {
+  if (chordMatch) {
     const root = chordMatch[1].toUpperCase()
-    let chordType = chordMatch[2]
+    let chordType = chordMatch[2].toLowerCase()
     
-    // Normalize chord type
-    if (chordType === 'm') chordType = 'minor'
-    if (chordType === 'M') chordType = 'major'
+    // Normalize chord type aliases
     if (chordType === 'maj7') chordType = 'major7'
     if (chordType === 'min7') chordType = 'minor7'
     if (chordType === 'dom7') chordType = 'dominant7'
@@ -184,13 +268,12 @@ export function parseMusicRequest(text: string): {
     return { type: 'chord', root: rootWithOctave, chordType }
   }
   
-  // Check for note pattern - MUST have note letter
+  // Priority 3: Single note (e.g., "A4", "C# note")
   const notePattern = /\b([a-g][#b]?[0-9]?)(\s+note)?\b/i
   const noteMatch = normalized.match(notePattern)
   
   if (noteMatch) {
     const root = noteMatch[1].toUpperCase()
-    // Add octave if not present
     const rootWithOctave = /[0-9]/.test(root) ? root : root + '4'
     
     return { type: 'note', root: rootWithOctave }

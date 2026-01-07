@@ -253,11 +253,11 @@ export function MultipleChoiceMode({
             </div>
           )}
           
-          {currentCard.frontAudioUrl && (
+          {currentCard.frontAudio && (
             <div className="mb-6 w-full max-w-md mx-auto">
               <audio controls className="w-full">
-                <source src={currentCard.frontAudioUrl} type="audio/wav" />
-                <source src={currentCard.frontAudioUrl} type="audio/mpeg" />
+                <source src={currentCard.frontAudio} type="audio/wav" />
+                <source src={currentCard.frontAudio} type="audio/mpeg" />
                 Your browser does not support the audio element.
               </audio>
             </div>

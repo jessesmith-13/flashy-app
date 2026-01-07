@@ -18,8 +18,8 @@ export interface Card {
   ignored?: boolean   // Mark card as ignored
   frontImageUrl?: string  // Optional image for the question (premium feature)
   backImageUrl?: string  // Optional image for the answer (premium feature, classic-flip only)
-  frontAudioUrl?: string  // Optional audio for the question (premium feature)
-  backAudioUrl?: string  // Optional audio for the answer (premium feature)
+  frontAudio?: string  // Optional audio for the question (premium feature)
+  backAudio?: string  // Optional audio for the answer (premium feature)
   // For multiple-choice card type
   incorrectAnswers?: string[]
   correctAnswers?: string[]  // Array of correct answers for multiple choice (if undefined, 'back' is the single correct answer)
@@ -353,13 +353,24 @@ export const useStore = create<AppState>((set, get) => ({
   decks: [],
   setDecks: (decks) => set({ decks, decksLastLoaded: Date.now(), decksCacheInvalidated: false }),
   addDeck: (deck) => set((state) => ({ decks: [...state.decks, deck], decksCacheInvalidated: true })),
-  updateDeck: (deckId, updates) =>
-    set((state) => ({
-      decks: state.decks.map((deck) =>
+  updateDeck: (deckId, updates) => {
+    console.log('🔧 updateDeck called:', { deckId, updates })
+    
+    set((state) => {
+      console.log('   Current deck count:', state.decks.find(d => d.id === deckId)?.cardCount)
+      
+      const newDecks = state.decks.map((deck) =>
         deck.id === deckId ? { ...deck, ...updates } : deck
-      ),
-      decksCacheInvalidated: true
-    })),
+      )
+      
+      console.log('   New deck count:', newDecks.find(d => d.id === deckId)?.cardCount)
+      
+      return {
+        decks: newDecks,
+        decksCacheInvalidated: true
+      }
+    })
+  },
   removeDeck: (deckId) =>
     set((state) => ({
       decks: state.decks.filter((deck) => deck.id !== deckId),

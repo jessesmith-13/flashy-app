@@ -26,7 +26,7 @@ import { canCreateDeck, canPublishToCommunity } from '../../../utils/subscriptio
 import { useIsSuperuser } from '../../../utils/userUtils'
 
 export function DecksScreen() {
-  const { user, accessToken, decks, setDecks, addDeck, updateDeck: updateDeckInStore, setSelectedDeckId, userAchievements, studySessions, setStudySessions, shouldReloadDecks, fetchUserAchievements } = useStore()
+  const { user, accessToken, decks, setDecks, addDeck, updateDeck: updateDeckInStore, setSelectedDeckId, userAchievements, studySessions, setStudySessions, shouldReloadDecks, fetchUserAchievements, decksCacheInvalidated } = useStore()
   const { navigateTo, navigate } = useNavigation()
   const isSuperuser = useIsSuperuser()
   const [loading, setLoading] = useState(true)
@@ -53,14 +53,36 @@ export function DecksScreen() {
   const [unpublishDialogOpen, setUnpublishDialogOpen] = useState(false)
   const [unpublishingDeck, setUnpublishingDeck] = useState<any>(null)
 
+  // Separate mount effect (with caching)
   useEffect(() => {
     loadDecks()
     loadStudySessions()
-    // ✅ Fetch achievements from backend if not already loaded
     if (accessToken && !userAchievements) {
       fetchUserAchievements()
     }
-  }, [])
+  }, []) // Only on mount
+
+  // Separate invalidation effect (bypass cache)
+  useEffect(() => {
+    if (decksCacheInvalidated) {
+      console.log('🔄 Cache invalidated, forcing reload...')
+      forceReloadDecks()
+    }
+  }, [decksCacheInvalidated])
+
+  const forceReloadDecks = async () => {
+    if (!accessToken || !user) return
+    
+    console.log('🔄 FORCE reloading decks (bypassing cache)...')
+    try {
+      const fetchedDecks = await fetchDecks(accessToken)
+      console.log('FETCHED DECKS:', fetchedDecks)
+      setDecks(fetchedDecks) // This will set decksCacheInvalidated to false
+    } catch (error) {
+      console.error('Failed to force reload decks:', error)
+      toast.error('Failed to reload decks')
+    }
+  }
 
   const loadDecks = async () => {
     if (!accessToken || !user) {
@@ -74,16 +96,14 @@ export function DecksScreen() {
       return
     }
     
-    console.log('🔄 Cache stale or invalidated, reloading decks...')
+    console.log('🔄 Cache stale, reloading decks...')
     try {
       const fetchedDecks = await fetchDecks(accessToken)
       console.log('FETCHED DECKS:', fetchedDecks)
       setDecks(fetchedDecks)
     } catch (error) {
       console.error('Failed to load decks:', error)
-      if (accessToken && user) {
-        toast.error('Failed to load decks. Please try refreshing the page.')
-      }
+      toast.error('Failed to load decks')
     } finally {
       setLoading(false)
     }

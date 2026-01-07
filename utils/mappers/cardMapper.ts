@@ -24,7 +24,8 @@ export function mapApiCardToStoreCard(
 
     // You only have ONE audio_url in DB
     // Decide where it belongs (usually back)
-    backAudioUrl: api.audio_url ?? undefined,
+    backAudio: api.back_audio ?? undefined,
+    frontAudio: api.front_audio ?? undefined,
 
     incorrectAnswers: api.incorrect_answers ?? undefined,
 
