@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from '../../ui/button'
 import { Input } from '../../ui/input'
 import { Label } from '../../ui/label'
-import { X, Mail, Gift, Copy, Check } from 'lucide-react'
+import { Mail, Gift, Copy, Check } from 'lucide-react'
 import { toast } from 'sonner'
 import * as api from '../../../utils/api'
 

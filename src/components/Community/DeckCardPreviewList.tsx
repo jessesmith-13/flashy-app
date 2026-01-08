@@ -77,7 +77,7 @@ export function DeckCardPreviewList({
           return (
             <div
               key={card.id}
-              ref={(el) => (cardRefs.current[cardIndex] = el)}
+              ref={(el) => { cardRefs.current[cardIndex] = el }}
               className={`border rounded-lg p-4 transition ${
                 isTarget
                   ? 'bg-emerald-50 dark:bg-emerald-900/20 ring-2 ring-emerald-500'
@@ -181,7 +181,7 @@ export function DeckCardPreviewList({
                     size="icon"
                     variant="ghost"
                     onClick={() =>
-                      onFlagCard(cardId, `Card ${cardIndex + 1}`, card.front)
+                      onFlagCard(cardId, `Card ${cardIndex + 1}`, card.front || '')
                     }
                     className="text-orange-600 dark:text-orange-400"
                   >

@@ -28,4 +28,5 @@ export type CreateFlagPayload = {
   /** For faster moderation views */
   targetOwnerId?: string        // maps to `target_owner_id`
   targetOwnerName?: string      // maps to `target_owner_name`
+  notes: string
 }

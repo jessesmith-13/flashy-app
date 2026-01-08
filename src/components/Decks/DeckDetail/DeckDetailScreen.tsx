@@ -200,8 +200,8 @@ export function DeckDetailScreen() {
       
       if (communityDeck) {
         setCommunityDeckAuthor({
-          id: communityDeck.authorId,
-          name: communityDeck.author
+          id: communityDeck.ownerId,
+          name: communityDeck.ownerDisplayName || 'Unknown'
         })
       }
     } catch (error) {
@@ -401,7 +401,7 @@ export function DeckDetailScreen() {
 
     setEditingCardId(cardId)
     setEditCardType(card.cardType)
-    setEditCardFront(card.front)
+    setEditCardFront(card.front || '')
     setEditCardBack(card.back || '')
     setEditCardFrontImageUrl(card.frontImageUrl || '')
     setEditCardImageFile(null)

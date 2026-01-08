@@ -14,7 +14,6 @@ import {
   AlertCircle,
   ChevronDown,
   User,
-  Mail,
   Crown
 } from 'lucide-react'
 import { getUserActivity, getAllUsers } from '../../../utils/api'
@@ -71,7 +70,6 @@ export function UserActivityPanel({ accessToken }: UserActivityPanelProps) {
   const [allUsers, setAllUsers] = useState<UserSearchResult[]>([])
   const [searchResults, setSearchResults] = useState<UserSearchResult[]>([])
   const [showDropdown, setShowDropdown] = useState(false)
-  const [loadingUsers, setLoadingUsers] = useState(false)
 
   // Load all users on mount
   useEffect(() => {
@@ -97,14 +95,11 @@ export function UserActivityPanel({ accessToken }: UserActivityPanelProps) {
 
   const loadAllUsers = async () => {
     try {
-      setLoadingUsers(true)
       const users = await getAllUsers(accessToken)
       setAllUsers(users)
     } catch (error: any) {
       console.error('Failed to load users for search:', error)
       // Don't show error to user, they can still search by typing
-    } finally {
-      setLoadingUsers(false)
     }
   }
 

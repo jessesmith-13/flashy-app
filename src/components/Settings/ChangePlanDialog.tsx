@@ -10,22 +10,24 @@ import {
 } from '../../ui/alert-dialog'
 import { Crown } from 'lucide-react'
 
+type PlanType = 'monthly' | 'annual' | 'lifetime'
+
 interface ChangePlanDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  currentPlan: string
-  newPlan: string
+  currentPlan: PlanType
+  newPlan: PlanType
   changing: boolean
   onConfirm: () => void
 }
 
-const planNames: Record<string, string> = {
+const planNames: Record<PlanType, string> = {
   monthly: 'Monthly Premium',
   annual: 'Annual Premium',
   lifetime: 'Lifetime Premium'
 }
 
-const planPrices: Record<string, string> = {
+const planPrices: Record<PlanType, string> = {
   monthly: '$6.99/month',
   annual: '$29.99/year',
   lifetime: '$89.99 one-time'

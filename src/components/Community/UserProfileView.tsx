@@ -19,7 +19,7 @@ import {
   AlertDialogTitle,
 } from '../../ui/alert-dialog'
 import { useStore } from '../../../store/useStore'
-import { CommunityDeck } from '@/types/community'
+import { UICommunityDeck } from '@/types/community'
 
 interface UserProfileViewProps {
   userId: string
@@ -30,7 +30,7 @@ interface UserProfileViewProps {
 }
 
 export function UserProfileView({ userId, onBack, onViewDeck, onViewUser, onFlagUser }: UserProfileViewProps) {
-  const { accessToken, friends, pendingFriendRequests, addFriend: addFriendToStore, removeFriend: removeFriendFromStore, addPendingFriendRequest, user } = useStore()
+  const { accessToken, friends, pendingFriendRequests, removeFriend: removeFriendFromStore, addPendingFriendRequest, user } = useStore()
   const [profileUser, setProfileUser] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [actionLoading, setActionLoading] = useState(false)
@@ -210,17 +210,13 @@ export function UserProfileView({ userId, onBack, onViewDeck, onViewUser, onFlag
   // Get user's achievements and decks
   const userAchievementIds = profileUser.achievements || []
   const achievementsByCategory = getAchievementsByCategory(userAchievementIds)
-  const totalAchievements = Object.values(achievementsByCategory).reduce(
-    (sum, cat) => sum + cat.unlocked.length + cat.locked.length,
-    0
-  )
   const unlockedCount = userAchievementIds.length
 
   const userDecks = profileUser.decks || []
   const showDecks = profileUser.decksPublic !== false
   
   // Filter out any null or undefined decks as a safety measure
-  const validDecks = userDecks.filter((deck: CommunityDeck) => deck && deck.id && deck.name)
+  const validDecks = userDecks.filter((deck: UICommunityDeck) => deck && deck.id && deck.name)
   
   // Debug logging
   console.log('UserProfileView - Computed values:')
@@ -475,7 +471,7 @@ export function UserProfileView({ userId, onBack, onViewDeck, onViewUser, onFlag
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {validDecks.map((deck) => (
+                    {validDecks.map((deck: UICommunityDeck) => (
                       <div
                         key={deck.id}
                         onClick={() => onViewDeck?.(deck.id, userId)}

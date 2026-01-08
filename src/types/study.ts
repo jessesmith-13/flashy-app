@@ -1,4 +1,4 @@
-import { CommunityCard, CommunityDeck } from './community'
+import { UIDeck, UICard } from './decks'
 
 export interface StudySession {
   id: string
@@ -52,7 +52,24 @@ export interface StudyOptions {
   favoritesOnly: boolean
 }
 
+export interface UISharedDeck {
+        id: string
+
+        name: string
+        color: string
+        emoji: string
+        cardCount: number
+        category: string
+        subtopic: string
+        ownerId: string
+        ownerDisplayName: string
+        cards: UICard[]
+        publishedAt: string
+        downloadCount: number
+        createdAt: string
+}
+
 export interface TemporaryStudyDeck {
-  deck: CommunityDeck
-  cards: CommunityCard[]
+  deck: UISharedDeck
+  cards: UICard[]
 }

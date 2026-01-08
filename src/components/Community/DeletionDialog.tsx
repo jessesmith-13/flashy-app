@@ -29,8 +29,7 @@ export function DeletionDialog({
   onOpenChange,
   title,
   description,
-  targetType = 'item',
-  targetId,
+  targetType,
   targetName,
   onConfirm
 }: DeletionDialogProps) {

@@ -127,7 +127,7 @@ export function ProfileScreen() {
       : ''
 
     // Calculate cards reviewed and perfect scores
-    const cardsReviewed = studySessions.reduce((sum, session) => sum + session.cardsStudied, 0)
+    const cardsReviewed = studySessions.reduce((sum, session) => sum + (session.cardsStudied || 0), 0)
     const perfectScores = studySessions.filter(s => s.score === 100).length
 
     setUserStats({

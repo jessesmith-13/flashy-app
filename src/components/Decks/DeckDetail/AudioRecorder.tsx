@@ -11,6 +11,7 @@ interface AudioRecorderProps {
   onAudioRemove?: () => void
   disabled?: boolean
   label?: string
+  onUploadAudio?: (file: File) => Promise<void>
 }
 
 export function AudioRecorder({ 

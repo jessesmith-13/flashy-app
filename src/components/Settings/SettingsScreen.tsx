@@ -1,11 +1,11 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useStore } from '../../../store/useStore'
 import { useNavigation } from '../../../hooks/useNavigation'
 import * as api from '../../../utils/api'
 import { toast } from 'sonner'
 import { AppLayout } from '../Layout/AppLayout'
 import { Button } from '../../ui/button'
-import { ArrowLeft, Crown, Download, AlertCircle } from 'lucide-react'
+import { ArrowLeft, Crown, AlertCircle } from 'lucide-react'
 import { SubscriptionSection } from './SubscriptionSection'
 import { NotificationsSection } from './NotificationsSection'
 import { AppearanceSection } from './AppearanceSection'
@@ -15,13 +15,11 @@ import { CancelSubscriptionDialog } from './CancelSubscriptionDialog'
 import { ChangePlanDialog } from './ChangePlanDialog'
 import { PlanSelectionDialog } from './PlanSelectionDialog'
 import { DeleteAccountDialog } from './DeleteAccountDialog'
-import { useIsSuperuser } from '../../../utils/userUtils'
 import { projectId } from '../../../utils/supabase/info'
 
 export function SettingsScreen() {
   const { darkMode, setDarkMode, userAchievements, setUserAchievements, user, accessToken, updateUser, setAuth, ttsProvider, setTTSProvider } = useStore()
   const { navigateTo } = useNavigation()
-  const isSuperuser = useIsSuperuser()
   
   // Debug logging
   console.log('🔐 Settings - User:', user)
@@ -44,46 +42,10 @@ export function SettingsScreen() {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [cancelling, setCancelling] = useState(false)
   const [changingPlan, setChangingPlan] = useState(false)
-  const [settingUpSuperuser, setSettingUpSuperuser] = useState(false)
   const [exporting, setExporting] = useState(false)
   const [fixingTier, setFixingTier] = useState(false)
 
-  // Handle superuser setup (one-time)
-  const handleSetupSuperuser = async () => {
-    if (!accessToken) {
-      toast.error('No access token available')
-      return
-    }
     
-    setSettingUpSuperuser(true)
-    try {
-      console.log('🔐 Step 1: Setting isSuperuser=true via updateProfile...')
-      
-      // Use the existing updateProfile API which now supports isSuperuser for flashy@flashy.app
-      const updatedUserData = await api.updateProfile(accessToken, { isSuperuser: true } as any)
-      
-      console.log('✅ Step 2: Profile updated with isSuperuser=true', updatedUserData)
-      
-      // Update local state immediately
-      const updatedUser = {
-        ...user!,
-        isSuperuser: true,
-      }
-      
-      // Update store
-      setAuth(updatedUser, accessToken)
-      
-      toast.success('Superuser privileges granted! Please refresh the page to see changes.')
-      
-      // Don't force reload - let user manually refresh when ready
-      // The state has been updated so UI should reflect isSuperuser=true now
-    } catch (error: any) {
-      console.error('❌ Setup superuser error:', error)
-      toast.error(error.message || 'Failed to setup superuser')
-    } finally {
-      setSettingUpSuperuser(false)
-    }
-  }
 
   const handleDarkModeToggle = (enabled: boolean) => {
     setDarkMode(enabled)
@@ -344,7 +306,7 @@ export function SettingsScreen() {
           <div className="mb-6">
             <Button
               variant="ghost"
-              onClick={() => navigate(-1)}
+              onClick={() => window.history.back()}
               className="mb-4 -ml-2"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
@@ -437,7 +399,7 @@ export function SettingsScreen() {
       <ChangePlanDialog
         open={showChangePlanDialog}
         onOpenChange={setShowChangePlanDialog}
-        currentPlan={user?.subscriptionTier || 'monthly'}
+        currentPlan={user?.subscriptionTier as 'monthly' | 'annual' | 'lifetime'}
         newPlan={selectedPlan}
         changing={changingPlan}
         onConfirm={handleChangePlan}

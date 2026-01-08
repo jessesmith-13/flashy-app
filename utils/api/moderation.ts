@@ -227,7 +227,8 @@ export const updateTicketStatus = async (
   ticketId: string,
   statusData: {
     status: 'open' | 'reviewing' | 'resolved' | 'dismissed'
-    resolutionNote?: string
+    resolutionNote?: string,
+    resolutionReason: 'approved' | 'rejected' | 'removed'
   }
 ) => {
   const response = await fetch(
