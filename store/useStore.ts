@@ -1,5 +1,4 @@
 import { create } from 'zustand'
-import { projectId } from '../utils/supabase/info'
 import { fetchUserAchievements } from '../utils/api/achievements'
 import { UIDeck, UICard } from '../src/types/decks'
 import { UICommunityDeck } from '@/types/community'
@@ -254,7 +253,7 @@ export const useStore = create<AppState>((set, get) => ({
       try {
         console.log('📤 Sending study session to backend:', session)
         
-        const response = await fetch(`https://${projectId}.supabase.co/functions/v1/server/study/sessions`, {
+        const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/server/study/sessions`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -284,7 +283,7 @@ export const useStore = create<AppState>((set, get) => ({
         
         // ✅ FETCH fresh achievements from backend (source of truth!)
         const achievementsResponse = await fetch(
-          `https://${projectId}.supabase.co/functions/v1/server/achievements`,
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/server/achievements`,
           {
             headers: { Authorization: `Bearer ${state.accessToken}` }
           }
