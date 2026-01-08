@@ -61,7 +61,7 @@ export interface Deck {
   category?: string | null
   subtopic?: string | null
 
-  owner_id: string
+  user_id: string
   is_public: boolean
   created_at: string
   updated_at: string
@@ -91,7 +91,7 @@ export interface UIDeck {
   color: string
   category?: string | null
   subtopic?: string | null
-  ownerId: string
+  userId: string
   isPublic: boolean
   createdAt: string
   updatedAt: string

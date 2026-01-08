@@ -1,5 +1,5 @@
 import type { ApiCard } from '../../src/types/decks'
-import type { Card as StoreCard } from '../../store/useStore'
+import type { UICard as StoreCard } from '../../src/types/decks'
 
 export function mapApiCardToStoreCard(
   api: ApiCard

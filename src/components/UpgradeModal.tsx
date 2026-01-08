@@ -3,7 +3,7 @@ import { Button } from '../ui/button'
 import { Check, Sparkles, Crown, Infinity as InfinityIcon, Image, Brain, Users, Upload } from 'lucide-react'
 import { SUBSCRIPTION_PRICES } from '../../utils/subscription'
 import { useStore } from '../../store/useStore'
-import { createCheckoutSession } from '../../utils/api'
+import { createCheckoutSession } from '../../utils/api/subscriptions'
 import { useState } from 'react'
 import { toast } from 'sonner'
 

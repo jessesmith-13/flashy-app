@@ -6,7 +6,7 @@ import { Textarea } from '../../ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../ui/select'
 import { AlertTriangle } from 'lucide-react'
 import { toast } from 'sonner'
-import { createFlag } from '../../../utils/api'
+import { createFlag } from '../../../utils/api/moderation'
 
 interface FlagDialogProps {
   open: boolean
@@ -58,8 +58,8 @@ export function FlagDialog({
         targetType,
         targetId,
         reason: reason as any,
-        notes: notes.trim() || undefined,
-        targetDetails
+        ...(notes.trim() && { notes: notes.trim() }),
+        ...(targetDetails && { targetDetails })
       })
       
       toast.success('Report submitted successfully. Thank you for helping keep our community safe!')

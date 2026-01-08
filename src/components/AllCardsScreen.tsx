@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useStore } from '../../store/useStore'
 import { useNavigation } from '../../hooks/useNavigation'
-import * as api from '../../utils/api'
+import { fetchDecks, fetchCards } from '../../utils/api/decks'
 import { AppLayout } from './Layout/AppLayout'
 import { Button } from '../ui/button'
 import { ArrowLeft, Play, FlipVertical, CheckCircle, Keyboard } from 'lucide-react'
@@ -29,11 +29,11 @@ export function AllCardsScreen() {
     try {
       setLoading(true)
       // Fetch all decks first
-      const allDecks = await api.fetchDecks(accessToken)
+      const allDecks = await fetchDecks(accessToken)
       
       // Then fetch cards for each deck
       const allCardsPromises = allDecks.map((deck: Deck) => 
-        api.fetchCards(accessToken, deck.id)
+        fetchCards(accessToken, deck.id)
       )
       const cardsArrays = await Promise.all(allCardsPromises)
       

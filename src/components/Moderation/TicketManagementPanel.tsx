@@ -585,7 +585,7 @@ export function TicketManagementPanel() {
                       <Button
                         size="sm"
                         onClick={(e) => ticket.isEscalated ? e.stopPropagation() : handleEscalate(e, ticket)}
-                        disabled={ticket.isEscalated}
+                        disabled={ticket.isEscalated ?? false}
                         className={`w-full flex items-center justify-center gap-1 ${
                           ticket.isEscalated 
                             ? 'bg-gray-400 hover:bg-gray-400 cursor-not-allowed text-white' 

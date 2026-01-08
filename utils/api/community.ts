@@ -70,7 +70,7 @@ export const fetchFeaturedCommunityDecks = async (): Promise<UICommunityDeck> =>
 export const publishDeck = async (
   accessToken: string,
   deckId: string,
-  publishData: { category: string; subtopic: string | undefined }
+  publishData: { category: string | undefined; subtopic: string | undefined }
 ) => {
   console.log('📤 publishDeck called with:')
   console.log('  - deckId:', deckId)
@@ -170,8 +170,8 @@ export const addDeckFromCommunity = async (
       incorrectAnswers?: string[]
       acceptedAnswers?: string[]
     }[]
-    category?: string
-    subtopic?: string
+    category?: string | null
+    subtopic?: string | null
     version?: number
   }
 ) => {

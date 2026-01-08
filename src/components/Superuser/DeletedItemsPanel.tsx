@@ -73,6 +73,7 @@ interface DeletedCard {
   deletedAt: string
   deckName?: string
   ownerDisplayName?: string
+  deckEmoji?: string
 }
 
 interface DeletedItemsPanelProps {

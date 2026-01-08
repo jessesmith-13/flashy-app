@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { Mic, Square, Play, Pause, Trash2, Upload, Loader2, Info } from 'lucide-react'
 import { Button } from '../../../ui/button'
 import { toast } from 'sonner'
-import * as api from '../../../../utils/api'
+import { uploadCardAudio } from '../../../../utils/api/storage'
 import { MicrophonePermissionHelp } from './MicrophonePermissionHelp'
 
 interface AudioRecorderProps {
@@ -243,7 +243,7 @@ export function AudioRecorder({
 
     setIsUploading(true)
     try {
-      const uploadedUrl = await api.uploadCardAudio(file)
+      const uploadedUrl = await uploadCardAudio(file)
       setAudioUrl(uploadedUrl)
       setAudioBlob(null)
       onAudioSave(uploadedUrl)
@@ -265,7 +265,7 @@ export function AudioRecorder({
       const extension = audioBlob.type.includes('webm') ? 'webm' : 'wav'
       const file = new File([audioBlob], `recording.${extension}`, { type: audioBlob.type })
       
-      const uploadedUrl = await api.uploadCardAudio(file)
+      const uploadedUrl = await uploadCardAudio(file)
       setAudioUrl(uploadedUrl)
       setAudioBlob(null)
       onAudioSave(uploadedUrl)

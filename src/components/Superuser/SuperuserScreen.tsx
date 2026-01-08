@@ -97,7 +97,7 @@ export function SuperuserScreen() {
 
             <TabsContent value="flags" className="space-y-6">
               <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 sm:p-6 shadow-md border border-gray-200 dark:border-gray-700">
-                {accessToken && <TicketManagementPanel accessToken={accessToken} />}
+                {accessToken && <TicketManagementPanel />}
               </div>
             </TabsContent>
 

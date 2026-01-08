@@ -5,7 +5,7 @@ import { ChevronLeft, X, Check, Star, EyeOff, Volume2 } from 'lucide-react'
 import { useStore } from '../../../store/useStore'
 import { UICard } from '@/types/decks'
 import { toast } from 'sonner'
-import * as api from '../../../utils/api'
+import { updateCard as updateCardApi } from '../../../utils/api/decks'
 import { speak } from '../../../utils/textToSpeech'
 
 interface ClassicFlipModeProps {
@@ -79,7 +79,7 @@ export function ClassicFlipMode({ cards, onNext, onPrevious, currentIndex, isTem
     updateCard(currentCard.id, { favorite: newFavoriteValue })
 
     try {
-      await api.updateCard(accessToken, selectedDeckId, currentCard.id, { favorite: newFavoriteValue })
+      await updateCardApi(accessToken, selectedDeckId, currentCard.id, { favorite: newFavoriteValue })
       toast.success(newFavoriteValue ? 'Added to favorites' : 'Removed from favorites')
     } catch (error) {
       // Revert on error
@@ -99,7 +99,7 @@ export function ClassicFlipMode({ cards, onNext, onPrevious, currentIndex, isTem
     updateCard(currentCard.id, { isIgnored: newIgnoredValue })
 
     try {
-      await api.updateCard(accessToken, selectedDeckId, currentCard.id, { isIgnored: newIgnoredValue })
+      await updateCardApi(accessToken, selectedDeckId, currentCard.id, { isIgnored: newIgnoredValue })
       toast.success(newIgnoredValue ? 'Card ignored - will be excluded from future study sessions' : 'Card unignored')
     } catch (error) {
       // Revert on error

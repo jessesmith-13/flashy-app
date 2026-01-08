@@ -8,12 +8,12 @@ import { DECK_CATEGORIES } from '../../../../utils/categories'
 import { DECK_LANGUAGES } from '../../../../utils/languages'
 import { ColorPicker } from '../../ColorPicker'
 import { EmojiPicker } from '../../EmojiPicker'
-import { Deck } from '@/types/decks'
+import { UIDeck } from '@/types/decks'
 
 interface EditDeckDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  deck: Deck | null
+  deck: UIDeck | null
   onUpdateDeck: (data: {
     name: string
     emoji: string

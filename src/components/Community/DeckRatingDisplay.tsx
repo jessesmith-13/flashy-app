@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Star } from 'lucide-react'
-import * as api from '../../../utils/api'
+import { getDeckRatings } from '../../../utils/api/community'
 
 interface DeckRatingDisplayProps {
   deckId: string
@@ -18,7 +18,7 @@ export function DeckRatingDisplay({ deckId, className = '' }: DeckRatingDisplayP
 
   const loadRating = async () => {
     try {
-      const data = await api.getDeckRatings(deckId)
+      const data = await getDeckRatings(deckId)
       setAverageRating(data.averageRating)
       setTotalRatings(data.totalRatings)
     } catch (error) {

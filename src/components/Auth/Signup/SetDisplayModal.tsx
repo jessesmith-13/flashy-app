@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { X } from 'lucide-react'
 
 interface DisplayNameModalProps {
   onSubmit: (displayName: string) => void

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useStore } from '../../../store/useStore'
 import { Button } from '../../ui/button'
 import { MessageCircle, Send, Reply } from 'lucide-react'
-import * as api from '../../../utils/api'
+import { getDeckComments, postDeckComment } from '../../../utils/api/community'
 import { toast } from 'sonner'
 import { CommentItem, Comment } from './CommentItem'
 
@@ -56,7 +56,7 @@ export function DeckComments({ deckId, deckAuthorId, targetCommentId, onViewUser
   const loadComments = async () => {
     try {
       setLoading(true)
-      const fetchedComments = await api.getDeckComments(deckId)
+      const fetchedComments = await getDeckComments(deckId)
       console.log('FETCHED COMMENTS:', fetchedComments)
       
       // Sort comments: top 3 by like count, then rest by newest first
@@ -102,7 +102,7 @@ export function DeckComments({ deckId, deckAuthorId, targetCommentId, onViewUser
 
     setPosting(true)
     try {
-      await api.postDeckComment(
+      await postDeckComment(
         accessToken,
         deckId,
         commentText.trim(),

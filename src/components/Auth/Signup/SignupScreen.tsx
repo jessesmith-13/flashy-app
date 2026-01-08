@@ -2,7 +2,9 @@ import { useState } from 'react'
 import { useStore } from '../../../../store/useStore'
 import { useNavigation } from '../../../../hooks/useNavigation'
 import { useLocation } from 'react-router-dom'
-import * as api from '../../../../utils/api'
+import { signUp, signIn, signInWithGoogle } from '../../../../utils/api/auth'
+import { applyReferralCode } from '../../../../utils/api/referrals'
+
 import { AuthHeader } from '../Login/AuthHeader'
 import { SignupForm } from './SignupForm'
 import { SignupSuccess } from './SignupSuccess'
@@ -48,12 +50,12 @@ export function SignUpScreen() {
       console.log('Creating account with email:', email, 'display name:', displayName)
       
       // Create user
-      await api.signUp(email, password, displayName)
+      await signUp(email, password, displayName)
       console.log('Account created successfully')
       
       // Auto-login after signup
       console.log('Logging in with new credentials...')
-      const { session, user } = await api.signIn(email, password)
+      const { session, user } = await signIn(email, password)
       
       console.log('Login successful, session:', session ? 'exists' : 'null')
       console.log('User data:', user)
@@ -66,7 +68,7 @@ export function SignUpScreen() {
         if (referralCode) {
           try {
             console.log('Applying referral code:', referralCode)
-            const referralResult = await api.applyReferralCode(referralCode, user.id)
+            const referralResult = await applyReferralCode(referralCode, user.id)
             console.log('Referral applied:', referralResult)
             
             // Show success message
@@ -76,7 +78,7 @@ export function SignUpScreen() {
             })
             
             // Re-fetch user data to get updated subscription
-            const { user: updatedUser } = await api.signIn(email, password)
+            const { user: updatedUser } = await signIn(email, password)
             if (updatedUser) {
               finalUser = updatedUser
             }
@@ -169,7 +171,7 @@ export function SignUpScreen() {
       // Store terms acceptance for processing after OAuth callback
       sessionStorage.setItem('termsAccepted', 'true')
       sessionStorage.setItem('termsAcceptedAt', new Date().toISOString())
-      await api.signInWithGoogle()
+      await signInWithGoogle()
       // The redirect will be handled by Supabase
     } catch (err: unknown) {
       console.error('Google sign-up error:', err)

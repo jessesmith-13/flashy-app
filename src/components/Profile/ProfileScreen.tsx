@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react'
 import { useStore } from '../../../store/useStore'
 import { useNavigation } from '../../../hooks/useNavigation'
-import * as api from '../../../utils/api'
+import { updateProfile, getUserFriends } from '../../../utils/api/users'
+import { uploadAvatar } from '../../../utils/api/storage'
+import { removeFriend as removeFriendApi } from '../../../utils/api/friends'
 import { toast } from 'sonner'
 import { getAchievementsByCategory } from '../../../utils/achievements'
 import { AppLayout } from '../Layout/AppLayout'
@@ -161,7 +163,7 @@ export function ProfileScreen() {
     setSaving(true)
     try {
       if (!user?.id || !accessToken) return
-      const updatedUser = await api.updateProfile(
+      const updatedUser = await updateProfile(
         user.id,
         accessToken,
         {
@@ -219,11 +221,11 @@ export function ProfileScreen() {
     setUploading(true)
     try {
       console.log('Uploading avatar...')
-      const url = await api.uploadAvatar(accessToken, file)
+      const url = await uploadAvatar(accessToken, file)
       console.log('Avatar uploaded:', url)
       
       // Update profile with new avatar URL
-      const updatedUser = await api.updateProfile(user.id, accessToken, {
+      const updatedUser = await updateProfile(user.id, accessToken, {
         avatarUrl: url,
       })
       
@@ -249,7 +251,7 @@ export function ProfileScreen() {
     
     setFriendsLoading(true)
     try {
-      const friendsData = await api.getUserFriends(accessToken, user.id)
+      const friendsData = await getUserFriends(accessToken, user.id)
       setUserFriends(friendsData)
     } catch (error) {
       console.error('Failed to load user friends:', error)
@@ -267,7 +269,7 @@ export function ProfileScreen() {
     if (!accessToken) return
 
     try {
-      await api.removeFriend(accessToken, friendId)
+      await removeFriendApi(accessToken, friendId)
       
       // Update Zustand store
       removeFriend(friendId)

@@ -775,7 +775,7 @@ export function TicketDetailView({ ticketId, onBack }: TicketDetailViewProps) {
 
                 <Button
                   onClick={handleEscalate}
-                  disabled={ticket.isEscalated}
+                  disabled={ticket.isEscalated ?? false}
                   className={`flex items-center gap-2 ${
                     ticket.isEscalated 
                       ? 'bg-gray-400 hover:bg-gray-400 cursor-not-allowed text-white' 
