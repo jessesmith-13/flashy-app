@@ -4,7 +4,7 @@ import { Input } from '../../../ui/input'
 import { Label } from '../../../ui/label'
 import { TermsAcceptanceCheckboxes } from './TermsAcceptanceCheckboxes'
 import { Check, X, Loader2 } from 'lucide-react'
-import { projectId, publicAnonKey } from '../../../../utils/supabase/info'
+const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
 interface SignupFormProps {
   onSubmit: (displayName: string, email: string, password: string) => Promise<void>
@@ -47,10 +47,10 @@ export function SignupForm({
     const timeoutId = setTimeout(async () => {
       try {
         const response = await fetch(
-          `https://${projectId}.supabase.co/functions/v1/server/auth/check-displayname/${encodeURIComponent(displayName)}`,
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/server/auth/check-displayname/${encodeURIComponent(displayName)}`,
           {
             headers: {
-              'Authorization': `Bearer ${publicAnonKey}`,
+              'Authorization': `Bearer ${anonKey}`,
             },
           }
         )

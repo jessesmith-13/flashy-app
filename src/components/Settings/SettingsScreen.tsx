@@ -17,7 +17,6 @@ import { CancelSubscriptionDialog } from './CancelSubscriptionDialog'
 import { ChangePlanDialog } from './ChangePlanDialog'
 import { PlanSelectionDialog } from './PlanSelectionDialog'
 import { DeleteAccountDialog } from './DeleteAccountDialog'
-import { projectId } from '../../../utils/supabase/info'
 
 export function SettingsScreen() {
   const { darkMode, setDarkMode, userAchievements, setUserAchievements, user, accessToken, updateUser, ttsProvider, setTTSProvider } = useStore()
@@ -95,7 +94,7 @@ export function SettingsScreen() {
 
     try {
       const response = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/support/export-data`,
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/server/support/export-data`,
         {
           headers: {
             Authorization: `Bearer ${accessToken}`,
@@ -158,7 +157,7 @@ export function SettingsScreen() {
 
     try {
       const response = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/stripe/users/fix-subscription-tier`,
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/server/stripe/users/fix-subscription-tier`,
         {
           method: 'POST',
           headers: {
