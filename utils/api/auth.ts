@@ -66,6 +66,17 @@ export const signIn = async (
     throw new Error('Login failed - no session returned')
   }
 
+  // 🔍 DEBUG: verify which Supabase project issued this token
+  const token = data.session.access_token
+  const payload = JSON.parse(atob(token.split('.')[1]))
+
+  console.log(
+    'JWT DEBUG → ref:',
+    payload.ref,
+    'iss:',
+    payload.iss
+  )
+
   // Step 2: Fetch fresh user profile from database (includes ban status)
   const response = await fetch(
     `${API_BASE}/auth/login`,
