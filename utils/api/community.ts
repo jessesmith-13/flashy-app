@@ -4,6 +4,7 @@ import { toast } from 'sonner'
 import { ACHIEVEMENTS } from '../../utils/achievements'
 import type { Comment, Reply } from '../../src/types/community'
 import { useStore } from '../../store/useStore'
+import type { UICommunityDeck } from '../../src/types/community'
 
 const { fetchUserAchievements } = useStore.getState()
 
@@ -11,7 +12,7 @@ const { fetchUserAchievements } = useStore.getState()
 // COMMUNITY DECKS
 // ============================================================
 
-export const fetchCommunityDecks = async () => {
+export const fetchCommunityDecks = async (): Promise<UICommunityDeck[]> => {
   const response = await fetch(`${API_BASE}/community/decks`, {
     headers: {
       Authorization: `Bearer ${publicAnonKey}`,
@@ -28,7 +29,7 @@ export const fetchCommunityDecks = async () => {
   return data.decks || []
 }
 
-export const getCommunityDeck = async (deckId: string) => {
+export const getCommunityDeck = async (deckId: string): Promise<UICommunityDeck | null> => {
   const response = await fetch(`${API_BASE}/community/decks/${deckId}`, {
       headers: {
       Authorization: `Bearer ${publicAnonKey}`,
@@ -45,7 +46,7 @@ export const getCommunityDeck = async (deckId: string) => {
   return data.deck || null
 }
 
-export const fetchFeaturedCommunityDecks = async () => {
+export const fetchFeaturedCommunityDecks = async (): Promise<UICommunityDeck> => {
   const response = await fetch(`${API_BASE}/community/decks/featured`, {
     headers: {
       Authorization: `Bearer ${publicAnonKey}`,

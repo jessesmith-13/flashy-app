@@ -95,7 +95,7 @@ export function AIGenerateScreen() {
       if (response.cards && response.cards.length > 0) {
         // DEBUG: Check if any cards have note fields
         const cardsWithNotes = (response.cards as AIGeneratedCardWithNotes[])
-          .filter(c => c.note !== undefined || c.notes !== undefined)
+          .filter((c: AIGeneratedCardWithNotes) => c.note !== undefined || c.notes !== undefined)
         if (cardsWithNotes.length > 0) {
           console.warn('⚠️ WARNING: OpenAI generated cards with note fields:', cardsWithNotes)
         }
@@ -107,7 +107,7 @@ export function AIGenerateScreen() {
           setGeneratingStatus('Processing audio for musical content...')
         }
         const processedCards = generateAudio ? await processCardsWithAudio(response.cards) : response.cards
-        console.log('=== FINAL PROCESSED CARDS ===', processedCards.map(c => ({ 
+        console.log('=== FINAL PROCESSED CARDS ===', processedCards.map((c: AIGeneratedCardWithNotes) => ({ 
           front: c.front, 
           frontAudio: c.frontAudio,
           backAudio: c.backAudio 

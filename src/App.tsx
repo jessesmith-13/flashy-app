@@ -29,6 +29,7 @@ import ProtectedRoute from './components/ProtectedRoute'
 import { Toaster } from './ui/sonner'
 import { toast } from 'sonner'
 import { SetDisplayModal } from './components/Auth/Signup/SetDisplayModal'
+import { SubscriptionTier } from '@/types/users'
 
 // Suppress Supabase auth errors from console
 const originalConsoleError = console.error
@@ -88,11 +89,10 @@ async function fetchUserRole(userId: string): Promise<{ isSuperuser: boolean; is
 
 // Main app component that handles session checking
 function AppContent() {
-  const { setAuth, setFriends, setFriendRequests, darkMode, user, token } = useStore()
+  const { setAuth, setFriends, setFriendRequests, darkMode, user } = useStore()
   const [checkingSession, setCheckingSession] = useState(true)
   const [showDisplayNameModal, setShowDisplayNameModal] = useState(false)
   const [isSettingDisplayName, setIsSettingDisplayName] = useState(false)
-  const [sessionToken, setSessionToken] = useState<string | null>(null)
   const navigate = useNavigate()
 
   // Apply dark mode class to document
@@ -159,8 +159,8 @@ function AppContent() {
                 displayName: session.user.user_metadata?.displayName || session.user.user_metadata?.name || '',
                 avatarUrl: session.user.user_metadata?.avatarUrl,
                 decksPublic: session.user.user_metadata?.decksPublic ?? false,
-                subscriptionTier: session.user.user_metadata?.subscriptionTier || 'free',
-                subscriptionExpiry: session.user.user_metadata?.subscriptionExpiry,
+                subscriptionTier: (session.user.user_metadata?.subscriptionTier || 'free') as SubscriptionTier,
+                subscriptionExpiry: session.user.user_metadata?.subscriptionExpiry || undefined,
                 isSuperuser,
                 isModerator,
               },
@@ -213,8 +213,8 @@ function AppContent() {
           displayName: userProfile.display_name || '',
           avatarUrl: userProfile.avatar_url || session.user.user_metadata?.avatarUrl,
           decksPublic: userProfile.decks_public ?? false,
-          subscriptionTier: userProfile.subscription_tier || 'free',
-          subscriptionExpiry: userProfile.subscription_expiry,
+          subscriptionTier: (session.user.user_metadata?.subscriptionTier || 'free') as SubscriptionTier,
+          subscriptionExpiry: session.user.user_metadata?.subscriptionExpiry || undefined,
           isSuperuser,
           isModerator,
         },
@@ -330,8 +330,8 @@ function AppContent() {
                   displayName: '',
                   avatarUrl: userProfile.avatar_url || session.user.user_metadata?.avatarUrl,
                   decksPublic: userProfile.decks_public ?? false,
-                  subscriptionTier: userProfile.subscription_tier || 'free',
-                  subscriptionExpiry: userProfile.subscription_expiry,
+                  subscriptionTier: (session.user.user_metadata?.subscriptionTier || 'free') as SubscriptionTier,
+                  subscriptionExpiry: session.user.user_metadata?.subscriptionExpiry || undefined,
                   isSuperuser,
                   isModerator,
                 },
@@ -353,8 +353,8 @@ function AppContent() {
                   displayName: userProfile.display_name || session.user.user_metadata?.displayName || session.user.user_metadata?.name || '',
                   avatarUrl: userProfile.avatar_url || session.user.user_metadata?.avatarUrl,
                   decksPublic: userProfile.decks_public ?? session.user.user_metadata?.decksPublic ?? false,
-                  subscriptionTier: userProfile.subscription_tier || 'free',
-                  subscriptionExpiry: userProfile.subscription_expiry || session.user.user_metadata?.subscriptionExpiry,
+                  subscriptionTier: (session.user.user_metadata?.subscriptionTier || 'free') as SubscriptionTier,
+                  subscriptionExpiry: session.user.user_metadata?.subscriptionExpiry || undefined,
                   isSuperuser,
                   isModerator,
                 },

@@ -48,7 +48,55 @@ export interface CommunityDeck {
 
   // UI-derived / aggregated fields (safe & optional)
   commentCount?: number
+  source_content_updated_at: string | null
 }
+
+export type UICommunityDeck = CommunityDeck & {
+  id: string
+  ownerId: string
+
+  originalDeckId: string | null
+
+  name: string
+  description: string | null
+  category: string | null
+  subtopic: string | null
+
+  cardCount: number
+  importCount: number
+
+  featured: boolean
+  isFlagged: boolean
+  isPublished: boolean
+  isDeleted: boolean
+
+  version: number
+
+  ownerName: string | null
+  ownerDisplayName: string | null
+  ownerAvatar: string | null
+
+  averageRating: number | null
+  ratingCount: number
+
+  frontLanguage: string | null
+  backLanguage: string | null
+  color: string | null
+  emoji: string | null
+  difficulty: CommunityDeckDifficulty
+
+  publishedAt: string | null
+  createdAt: string
+  updatedAt: string
+
+  downloadCount: number
+
+  // UI-derived / aggregated fields (safe & optional)
+  commentCount?: number
+  cards: UICommunityCard[]
+  sourceContentUpdatedAt: string | null
+}
+
 export type CommunityCard = {
   id: string
   community_deck_id: string
@@ -58,7 +106,7 @@ export type CommunityCard = {
 
   card_type: 'classic-flip' | 'multiple-choice' | 'type-answer'
 
-  correct_answer: string | null
+  correct_answers: string[] | null
   incorrect_answers: string[] | null
   accepted_answers: string[] | null
 
@@ -80,6 +128,42 @@ export type CommunityCard = {
   deleted_by_name: string | null
   created_at: string
   updated_at: string
+}
+
+export type UICommunityCard = {
+  id: string
+  communityDeckId: string
+
+  front: string | null
+  back: string | null
+
+  cardType: 'classic-flip' | 'multiple-choice' | 'type-answer'
+
+  correctAnswers: string[] | null
+  incorrectAnswers: string[] | null
+  acceptedAnswers: string[] | null
+
+  audioUrl: string | null
+
+  frontImage_url: string | null
+  backImage_url: string | null
+
+  frontAudio: string | null
+  backAudio: string | null
+
+  position: number
+
+  isFlagged: boolean
+  isDeleted: boolean
+  deletedAt: string | null
+  deletedReason: string | null
+  deletedBy: string | null
+  deletedByName: string | null
+  createdAt: string
+  updatedAt: string
+  favorite: boolean
+  isIgnored: boolean
+  deckId: string
 }
 
 export type Comment = {

@@ -36,16 +36,16 @@ export type ApiCard = {
 // types/ui.ts (or types/cards-ui.ts)
 export interface UICard {
   id: string
-  front: string
-  back: string
+  front: string | null
+  back: string | null
   cardType: 'classic-flip' | 'multiple-choice' | 'type-answer'
-  correctAnswers?: string[]
-  incorrectAnswers?: string[]
-  acceptedAnswers?: string[]
-  frontAudio?: string
-  backAudio?: string
-  frontImageUrl?: string
-  backImageUrl?: string
+  correctAnswers?: string[] | null
+  incorrectAnswers?: string[] | null
+  acceptedAnswers?: string[] | null
+  frontAudio?: string | null
+  backAudio?: string | null
+  frontImageUrl?: string | null
+  backImageUrl?: string | null
   position: number
   favorite: boolean
   isIgnored: boolean
@@ -79,6 +79,7 @@ export interface Deck {
   is_shared?: boolean
   position?: number
   deleted_at?: string | null
+  last_synced_at?: string | null
 }
 
 export interface UIDeck {
@@ -107,6 +108,8 @@ export interface UIDeck {
   position?: number
   deletedAt?: string | null
   communityDeckVersion?: number | null
+  importedFromVersion?: number | null
+  lastSyncedAt?: string | null
 }
 
 export type DifficultyLevel = 'beginner' | 'intermediate' | 'advanced' | 'expert' | 'mixed';

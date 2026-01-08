@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React from 'react'
 import { Button } from '../../ui/button'
 import { Input } from '../../ui/input'
 import { Label } from '../../ui/label'
@@ -40,7 +40,6 @@ export function PDFUploadTab({
   onIncludeImagesChange,
   onSubmit
 }: PDFUploadTabClientProps) {
-  const [extracting, setExtracting] = useState(false)
 
   const handleFileChange = async (file: File | null) => {
     if (!file) {
@@ -74,7 +73,7 @@ export function PDFUploadTab({
             className="flex flex-col items-center justify-center w-full h-48 border-2 border-gray-300 dark:border-gray-600 border-dashed rounded-lg cursor-pointer bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
           >
             <div className="flex flex-col items-center justify-center pt-5 pb-6">
-              {extracting ? (
+              {loading ? (
                 <>
                   <Loader2 className="w-10 h-10 mb-3 text-blue-500 animate-spin" />
                   <p className="text-sm text-blue-600 dark:text-blue-400">
@@ -107,7 +106,7 @@ export function PDFUploadTab({
               type="file"
               accept=".pdf"
               className="hidden"
-              disabled={loading || extracting}
+              disabled={loading}
               onChange={(e) => handleFileChange(e.target.files?.[0] || null)}
             />
           </label>
@@ -252,7 +251,7 @@ export function PDFUploadTab({
       {/* Submit Button */}
       <Button
         type="submit"
-        disabled={!pdfFile || loading || extracting}
+        disabled={!pdfFile || loading}
         className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white h-12"
       >
         {loading ? (

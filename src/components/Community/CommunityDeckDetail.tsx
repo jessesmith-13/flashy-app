@@ -11,8 +11,9 @@ import { DeletionDialog } from './DeletionDialog'
 import { toast } from 'sonner'
 import { useStore } from '../../../store/useStore'
 import * as api from '../../../utils/api'
-import { Deck } from '@/types/decks'
-import { CommunityDeck } from '@/types/community'
+import { UIDeck } from '@/types/decks'
+import { UICommunityDeck, UICommunityCard } from '@/types/community'
+import { UICard } from '@/types/decks'
 
 type FlagTargetType = 'deck' | 'comment' | 'card'
 
@@ -36,8 +37,9 @@ interface CardToDelete {
 }
 
 interface CommunityDeckDetailProps {
-  deck: CommunityDeck
-  userDecks: Deck[]
+  cards: UICard[] | UICommunityCard[]  // ✅ Accept both types
+  deck: UICommunityDeck
+  userDecks: UIDeck[]
   isSuperuser: boolean
   addingDeckId: string | null
   deletingDeckId: string | null
@@ -50,8 +52,8 @@ interface CommunityDeckDetailProps {
   targetCardIndex?: number | null
   onBack: () => void
   onViewUser: (userId: string) => void
-  onAddDeck: (deck: CommunityDeck) => void
-  onUpdateDeck: (communityDeck: CommunityDeck, importedDeck: Deck) => void
+  onAddDeck: (deck: UICommunityDeck) => void
+  onUpdateDeck: (communityDeck: UICommunityDeck, importedDeck: UIDeck) => void
   onToggleFeatured: (deckId: string) => void
   onDeleteDeck: (deckId: string, deckName: string) => void
   onDeleteCard?: (cardId: string, cardName: string, deckId: string) => void
@@ -59,7 +61,7 @@ interface CommunityDeckDetailProps {
   onFlagCard: (cardId: string, cardName: string) => void
   onFlagComment: (commentId: string, commentText: string, deckId: string) => void
   onFlagUser: (userId: string, userName: string) => void
-  onStudyDeck: (deck: CommunityDeck) => void
+  onStudyDeck: (deck: UICommunityDeck) => void
   onDeckDetailPageChange: (page: number) => void
   onRatingChange: () => void
 }
@@ -90,7 +92,7 @@ export function CommunityDeckDetail({
   const importedDeck = userDecks.find(d => d.sourceCommunityDeckId === deck.id)
   const isAdded = !!importedDeck
   const updateAvailable = importedDeck && (deck.version || 1) > (importedDeck.importedFromVersion || 1)
-  const hasCards = deck.cards && deck.cards.length > 0
+  const hasCards = deck.cardCount && deck.cardCount > 0
 
   // Local flag dialog state
   const [flagDialogOpen, setFlagDialogOpen] = useState(false)
@@ -245,7 +247,7 @@ export function CommunityDeckDetail({
               <div className="flex items-start gap-3 sm:gap-4 min-w-0 flex-1">
                 <div
                   className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl flex items-center justify-center text-2xl sm:text-3xl flex-shrink-0"
-                  style={{ backgroundColor: deck.color }}
+                  style={{ backgroundColor: deck.color || undefined }}
                 >
                   {deck.emoji}
                 </div>
@@ -267,16 +269,16 @@ export function CommunityDeckDetail({
                   </div>
                   <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs sm:text-sm text-gray-600 dark:text-gray-400">
                     <button
-                      onClick={() => onViewUser(deck.authorId)}
+                      onClick={() => onViewUser(deck.ownerId)}
                       className="flex items-center gap-1 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
                     >
                       <Users className="w-4 h-4" />
-                      <span>by {deck.author}</span>
+                      <span>by {deck.ownerDisplayName}</span>
                     </button>
                     <DeckRatingDisplay deckId={deck.id} />
                     <div className="flex items-center gap-1">
                       <Plus className="w-4 h-4" />
-                      <span>{deck.downloads} downloads</span>
+                      <span>{deck.downloadCount} downloads</span>
                     </div>
                   </div>
                   {/* Date Information */}
@@ -410,7 +412,7 @@ export function CommunityDeckDetail({
             </div>
 
             <p className="text-gray-600 dark:text-gray-400 text-sm sm:text-base mb-0">
-              {deck.cards?.length || deck.cardCount || 0} {(deck.cards?.length || deck.cardCount || 0) === 1 ? 'card' : 'cards'} in this deck
+              {deck.cardCount || 0} {( deck.cardCount || 0) === 1 ? 'card' : 'cards'} in this deck
             </p>
           </div>
 
@@ -438,7 +440,7 @@ export function CommunityDeckDetail({
           {/* Comment Section */}
           <DeckComments 
             deckId={deck.id} 
-            deckAuthorId={deck.authorId} 
+            deckAuthorId={deck.ownerId} 
             targetCommentId={targetCommentId}
             onViewUser={onViewUser}
             onFlagComment={handleFlagComment}

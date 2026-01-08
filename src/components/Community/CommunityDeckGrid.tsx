@@ -1,27 +1,27 @@
 import { Star, RefreshCw } from 'lucide-react'
 import { CommunityDeckCard } from './CommunityDeckCard'
-import { Deck } from '@/types/decks'
-import { CommunityDeck } from '@/types/community'
+import { UIDeck } from '@/types/decks'
+import { UICommunityDeck } from '@/types/community'
 
 interface CommunityDeckGridProps {
-  decks: CommunityDeck[]
-  featuredDecks: CommunityDeck[]
+  decks: UICommunityDeck[]
+  featuredDecks: UICommunityDeck[]
   showFeaturedSection: boolean
   showFeaturedOnly: boolean
   showUpdatesOnly: boolean
   searchQuery: string
   filterCategory: string
-  userDecks: Deck[]
+  userDecks: UIDeck[]
   userId: string | null
   isSuperuser: boolean
   addingDeckId: string | null
   deletingDeckId: string | null
   featuringDeckId: string | null
   unpublishingDeckId: string | null
-  onViewDeck: (deck: CommunityDeck) => void
+  onViewDeck: (deck: UICommunityDeck) => void
   onViewUser: (userId: string) => void
-  onAddDeck: (deck: CommunityDeck) => void
-  onUpdateDeck: (communityDeck: CommunityDeck, importedDeck: Deck) => void
+  onAddDeck: (deck: UICommunityDeck) => void
+  onUpdateDeck: (communityDeck: UICommunityDeck, importedDeck: UIDeck) => void
   onToggleFeatured: (deckId: string) => void
   onDeleteDeck: (deckId: string, deckName: string) => void
   onUnpublishDeck: (deckId: string, deckName: string) => void
@@ -50,7 +50,7 @@ export function CommunityDeckGrid({
   onDeleteDeck,
   onUnpublishDeck
 }: CommunityDeckGridProps) {
-  const renderDeckCard = (deck: CommunityDeck, isFeatured: boolean) => {
+  const renderDeckCard = (deck: UICommunityDeck, isFeatured: boolean) => {
     const importedDeck = userDecks.find(d => d.sourceCommunityDeckId === deck.id)
     const ownDeck = userDecks.find(d => d.id === deck.originalDeckId)
     console.log(`OWN DECK`, ownDeck);
@@ -59,7 +59,7 @@ export function CommunityDeckGrid({
     // Is it currently in your decks (not deleted)?
     const isAdded = !!(
       (importedDeck && !importedDeck.isDeleted) || 
-      (isOwnDeck && !isOwnDeck.isDeleted)
+      (isOwnDeck && ownDeck && !ownDeck.isDeleted)
     )
 
     // Did you delete your own published deck?
@@ -103,7 +103,7 @@ export function CommunityDeckGrid({
   }
 
   // Filter decks based on update availability
-  const getFilteredDecks = (deckList: CommunityDeck[]) => {
+  const getFilteredDecks = (deckList: UICommunityDeck[]) => {
     if (!showUpdatesOnly) return deckList
 
     return deckList.filter(deck => {
