@@ -1,4 +1,3 @@
-import { useStore } from '../../../store/useStore'
 import { useNavigation } from '../../../hooks/useNavigation'
 import { AppLayout } from '../Layout/AppLayout'
 import { Button } from '../../ui/button'
@@ -7,7 +6,6 @@ import { TicketManagementPanel } from './TicketManagementPanel'
 import { useIsModerator } from '../../../utils/userUtils'
 
 export function ModeratorScreen() {
-  const { accessToken } = useStore()
   const { navigateTo } = useNavigation()
   const isModerator = useIsModerator()
   

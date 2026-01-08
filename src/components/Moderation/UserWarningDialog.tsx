@@ -3,7 +3,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Button } from '../../ui/button'
 import { Label } from '../../ui/label'
 import { Textarea } from '../../ui/textarea'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select'
 import { RadioGroup, RadioGroupItem } from '../../ui/radio-group'
 import { AlertTriangle } from 'lucide-react'
 
@@ -26,7 +25,7 @@ interface UserWarningDialogProps {
   targetUserName?: string
 }
 
-export function UserWarningDialog({ open, onOpenChange, onSubmit, flagDetails, targetUserName }: UserWarningDialogProps) {
+export function UserWarningDialog({ open, onOpenChange, onSubmit, targetUserName }: UserWarningDialogProps) {
   const [reason, setReason] = useState<string>('inaccurate')
   const [customReason, setCustomReason] = useState('')
   const [message, setMessage] = useState('')

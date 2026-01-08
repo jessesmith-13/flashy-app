@@ -3,13 +3,14 @@ import { motion } from 'motion/react'
 import { Button } from '../../ui/button'
 import { Input } from '../../ui/input'
 import { ChevronRight, Check, X, Star, EyeOff, Volume2 } from 'lucide-react'
-import { Card, useStore } from '../../../store/useStore'
+import { useStore } from '../../../store/useStore'
+import { UICard } from '@/types/decks'
 import { toast } from 'sonner'
 import * as api from '../../../utils/api'
 import { speak } from '../../../utils/textToSpeech'
 
 interface TypeAnswerModeProps {
-  cards: Card[]
+  cards: UICard[]
   onNext: (wasCorrect?: boolean) => void
   currentIndex: number
   isLastCard: boolean
@@ -17,7 +18,7 @@ interface TypeAnswerModeProps {
   frontLanguage?: string
 }
 
-export function TypeAnswerMode({ cards, onNext, currentIndex, isLastCard, isTemporaryStudy = false, frontLanguage }: TypeAnswerModeProps) {
+export function TypeAnswerMode({ cards, onNext, currentIndex, isTemporaryStudy = false, frontLanguage }: TypeAnswerModeProps) {
   const [userAnswer, setUserAnswer] = useState('')
   const [hasAnswered, setHasAnswered] = useState(false)
   const [isCorrect, setIsCorrect] = useState(false)
@@ -34,7 +35,8 @@ export function TypeAnswerMode({ cards, onNext, currentIndex, isLastCard, isTemp
     setIsCorrect(false)
   }, [currentIndex])
 
-  const handleSpeak = (text: string) => {
+  const handleSpeak = (text: string | null) => {
+    if (!text) return
     const result = speak({
       text,
       language: frontLanguage,
@@ -48,14 +50,22 @@ export function TypeAnswerMode({ cards, onNext, currentIndex, isLastCard, isTemp
       }
     })
 
-    if (!result.success && result.error) {
-      toast.error(result.error)
+    if (result instanceof Promise) {
+      result.then(res => {
+        if (!res.success && res.error) {
+          toast.error(res.error)
+        }
+      })
+    } else {
+      if (!result.success && result.error) {
+        toast.error(result.error)
+      }
     }
   }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!userAnswer.trim() || hasAnswered) return
+    if (!userAnswer.trim() || hasAnswered || !currentCard.back) return
 
     // Case-insensitive comparison, trimming whitespace
     const normalizedAnswer = userAnswer.trim().toLowerCase()

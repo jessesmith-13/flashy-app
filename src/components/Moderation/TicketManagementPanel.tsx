@@ -3,7 +3,7 @@ import { Button } from '../../ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../ui/select'
 import { Card } from '../../ui/card'
 import { Badge } from '../../ui/badge'
-import { AlertTriangle, CheckCircle, Clock, Eye, Flag, ExternalLink, ChevronLeft, ChevronRight, ArrowUpCircle, RefreshCw, Shield } from 'lucide-react'
+import { AlertTriangle, CheckCircle, Clock, Eye, Flag, ExternalLink, ChevronLeft, ChevronRight, ArrowUpCircle, RefreshCw } from 'lucide-react'
 import { toast } from 'sonner'
 import { Tabs, TabsList, TabsTrigger } from '../../ui/tabs'
 import { useNavigation } from '../../../hooks/useNavigation'
@@ -233,7 +233,8 @@ export function TicketManagementPanel() {
     try {
       await api.updateTicketStatus(accessToken, ticketId, {
         status: newStatus as any,
-        resolutionNote: newStatus === 'resolved' ? 'Resolved from ticket list' : undefined
+        resolutionNote: newStatus === 'resolved' ? 'Resolved from ticket list' : undefined,
+        resolutionReason: newStatus === 'resolved' ? 'approved' : 'rejected'
       })
 
       toast.success(`Status changed to ${newStatus}`)
@@ -444,7 +445,7 @@ export function TicketManagementPanel() {
                         {getReasonLabel(ticket.title)}
                       </Badge>
                     )}
-                    {ticket.isEscalated && (
+                    {(ticket.isEscalated === true) && (
                       <Badge className="bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 border-red-300 dark:border-red-700 border">
                         <ArrowUpCircle className="w-3 h-3 mr-1" />
                         Escalated

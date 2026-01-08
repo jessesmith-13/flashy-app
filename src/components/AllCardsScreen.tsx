@@ -50,8 +50,8 @@ export function AllCardsScreen() {
 
   const filteredCards = cards.filter((card) => {
     const matchesSearch =
-      card.front.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      card.back.toLowerCase().includes(searchQuery.toLowerCase())
+      (card.front?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false) ||
+      (card.back?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false)
     return matchesSearch
   })
 

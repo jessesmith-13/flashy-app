@@ -1,11 +1,12 @@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../../../ui/dialog'
 import { Button } from '../../../ui/button'
-import type { Deck } from '../../../../store/useStore'
+// import type { Deck } from '../../../../store/useStore'
+import { UIDeck } from '@/types/decks'
 
 interface PublishDeckDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  deck: Deck
+  deck: UIDeck
   cardCount: number
   publishing: boolean
   onPublish: () => void
@@ -22,7 +23,7 @@ export function PublishDeckDialog({
   onOpenSettings
 }: PublishDeckDialogProps) {
   const hasRequiredSettings = deck.category && deck.subtopic
-  const cannotRepublish = deck.cannotRepublish === true
+  const cannotRepublish = deck.publishBanned === true
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -40,9 +41,9 @@ export function PublishDeckDialog({
               <p className="text-sm text-red-700 dark:text-red-300">
                 This deck was removed from the community by a moderator and cannot be republished.
               </p>
-              {deck.cannotRepublishReason && (
+              {deck.publishBannedReason && (
                 <p className="text-sm text-red-700 dark:text-red-300 mt-2">
-                  <span className="font-medium">Reason:</span> {deck.cannotRepublishReason}
+                  <span className="font-medium">Reason:</span> {deck.publishBannedReason}
                 </p>
               )}
             </div>

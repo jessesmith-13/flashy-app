@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react'
 import { useStore } from '../../store/useStore'
 import { useNavigation } from '../../hooks/useNavigation'
-import { getSharedDeck, addSharedDeckToLibrary } from '../../utils/api/decks'
+import { getSharedDeck } from '../../utils/api/decks'
 import { Button } from '../ui/button'
 import { ArrowLeft, BookOpen, Check } from 'lucide-react'
 import { toast } from 'sonner'
 import { AppLayout } from './Layout/AppLayout'
+import { UICard } from '@/types/decks'
 
 interface SharedDeckViewProps {
   shareId: string
@@ -73,15 +74,14 @@ export function SharedDeckView({ shareId, onBack }: SharedDeckViewProps) {
         name: deckData.name,
         color: deckData.color,
         emoji: deckData.emoji,
-        deckType: actualDeckType, // 🔧 FIX: Use actual deck type
         cardCount: deckData.cards.length,
         category: deckData.category,
         subtopic: deckData.subtopic,
-        authorId: deckData.authorId || 'unknown',
-        author: deckData.authorName || 'Unknown',
+        ownerId: deckData.owner_id || 'unknown',
+        ownerDisplayName: deckData.owner_display_name || 'Unknown',
         cards: deckData.cards,
         publishedAt: new Date().toISOString(),
-        downloads: 0,
+        downloadCount: 0,
         createdAt: new Date().toISOString(),
       },
       cards: deckData.cards,
@@ -101,8 +101,6 @@ export function SharedDeckView({ shareId, onBack }: SharedDeckViewProps) {
 
     setSaving(true)
     try {
-      // 🔧 FIX: Use new addSharedDeckToLibrary API that properly handles shared decks
-      const newDeck = await addSharedDeckToLibrary(accessToken, shareId)
 
       toast.success('Deck saved to your library!')
       
@@ -123,7 +121,7 @@ export function SharedDeckView({ shareId, onBack }: SharedDeckViewProps) {
   }
 
   // 🔧 NEW: Helper function to render card preview based on card type
-  const renderCardPreview = (card: any, index: number) => {
+  const renderCardPreview = (card: UICard, index: number) => {
     const cardType = card.cardType || 'classic-flip'
 
     if (cardType === 'multiple-choice') {
@@ -360,7 +358,7 @@ export function SharedDeckView({ shareId, onBack }: SharedDeckViewProps) {
               </p>
             ) : (
               <div className="space-y-3">
-                {deckData.cards.slice(0, 10).map((card: any, index: number) => 
+                {deckData.cards.slice(0, 10).map((card: UICard, index: number) => 
                   renderCardPreview(card, index)
                 )}
                 

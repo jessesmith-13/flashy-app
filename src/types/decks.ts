@@ -80,6 +80,8 @@ export interface Deck {
   position?: number
   deleted_at?: string | null
   last_synced_at?: string | null
+  publish_banned?: boolean
+  publish_banned_reason?: string | null
 }
 
 export interface UIDeck {
@@ -110,6 +112,8 @@ export interface UIDeck {
   communityDeckVersion?: number | null
   importedFromVersion?: number | null
   lastSyncedAt?: string | null
+  publishBanned?: boolean
+  publishBannedReason?: string | null
 }
 
 export type DifficultyLevel = 'beginner' | 'intermediate' | 'advanced' | 'expert' | 'mixed';

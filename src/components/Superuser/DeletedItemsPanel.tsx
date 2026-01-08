@@ -15,7 +15,6 @@ import {
   CheckCircle
 } from 'lucide-react'
 import { getDeletedItems, restoreDeletedItem } from '../../../utils/api/admin'
-import { getCommunityDeck } from '../../../utils/api'
 import { toast } from 'sonner'
 import {
   AlertDialog,
@@ -39,6 +38,11 @@ interface DeletedComment {
   deletedReason: string
   deletedAt: string
   deckName?: string
+  content: string
+  userDisplayName: string
+  communityDeckName?: string
+  communityDeckEmoji?: string
+  deletedByDisplayName: string
 }
 
 interface DeletedDeck {
@@ -53,6 +57,7 @@ interface DeletedDeck {
   deletedReason: string
   deletedAt: string
   cardCount?: number
+  ownerDisplayName: string
 }
 
 interface DeletedCard {
@@ -67,6 +72,7 @@ interface DeletedCard {
   deletedReason: string
   deletedAt: string
   deckName?: string
+  ownerDisplayName?: string
 }
 
 interface DeletedItemsPanelProps {
@@ -80,7 +86,6 @@ export function DeletedItemsPanel({ accessToken }: DeletedItemsPanelProps) {
   const [loading, setLoading] = useState(true)
   const [restoring, setRestoring] = useState<string | null>(null)
   const [restoreDialogOpen, setRestoreDialogOpen] = useState(false)
-  const [communityDeck, setCommunityDeck] = useState<boolean>(false)
   const [selectedItem, setSelectedItem] = useState<{
     id: string
     type: 'comment' | 'deck' | 'card'
@@ -342,7 +347,7 @@ export function DeletedItemsPanel({ accessToken }: DeletedItemsPanelProps) {
                       <div className="flex flex-wrap gap-2 text-xs text-gray-600 dark:text-gray-400">
                         <div className="flex items-center gap-1 bg-blue-50 dark:bg-blue-900/20 px-2 py-1 rounded">
                           <User className="w-3 h-3 text-blue-600 dark:text-blue-400" />
-                          <span className="font-medium text-blue-700 dark:text-blue-300">Author: {deck.ownerName}</span>
+                          <span className="font-medium text-blue-700 dark:text-blue-300">Author: {deck.ownerDisplayName}</span>
                         </div>
                         <div className="flex items-center gap-1">
                           <Trash2 className="w-3 h-3" />
@@ -415,13 +420,13 @@ export function DeletedItemsPanel({ accessToken }: DeletedItemsPanelProps) {
                       </div>
                       
                       <div className="flex flex-wrap gap-2 text-xs text-gray-600 dark:text-gray-400">
-                        {card.authorName && (
+                        {card.ownerDisplayName && (
                           <div className="flex items-center gap-1 bg-blue-50 dark:bg-blue-900/20 px-2 py-1 rounded">
                             <User className="w-3 h-3 text-blue-600 dark:text-blue-400" />
-                            <span className="font-medium text-blue-700 dark:text-blue-300">Author: {card.authorName}</span>
+                            <span className="font-medium text-blue-700 dark:text-blue-300">Author: {card.ownerDisplayName}</span>
                           </div>
                         )}
-                        {!card.authorName && (
+                        {!card.ownerDisplayName && (
                           <div className="flex items-center gap-1 bg-gray-50 dark:bg-gray-700 px-2 py-1 rounded">
                             <User className="w-3 h-3" />
                             <span className="italic">Author unknown</span>

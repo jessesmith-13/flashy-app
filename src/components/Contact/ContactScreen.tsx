@@ -55,8 +55,6 @@ export function ContactScreen() {
         const error = await response.json()
         throw new Error(error.error || 'Failed to submit contact form')
       }
-
-      const data = await response.json()
       
       toast.success('Message sent successfully! We\'ll get back to you soon.')
       

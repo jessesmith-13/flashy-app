@@ -48,6 +48,7 @@ export interface Notification {
   requesterAvatar?: string
   deckName?: string
   commentText?: string
+  ticketId?: string
 }
 
 /**

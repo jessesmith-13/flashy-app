@@ -3,7 +3,6 @@ import { useStore } from '../../../store/useStore'
 import { useNavigation } from '../../../hooks/useNavigation'
 import { Zap, Brain, Users, Trophy, Sparkles, ArrowRight, Check, Moon, Sun } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import flashcardImage from 'figma:asset/e73c8dfe5e26842fe3139a3d5e1c9d5176ac2592.png'
 
 export function LandingPage() {
   const { darkMode, toggleDarkMode } = useStore()

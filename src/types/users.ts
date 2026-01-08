@@ -51,6 +51,7 @@ export interface User {
   isSuperuser?: boolean // Superuser role for "Flashy" admin account (full admin privileges)
   isModerator?: boolean // Moderator role (can manage flags, has premium features)
   isBanned?: boolean // User ban status (managed by superuser)
+  stripeSubscriptionId?: string | null // Stripe subscription ID
 }
 
 export type SubscriptionTier = 'free' | 'monthly' | 'annual' | 'lifetime'

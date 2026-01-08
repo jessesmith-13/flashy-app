@@ -1,4 +1,4 @@
-import { SubscriptionTier } from '../store/useStore'
+import { SubscriptionTier } from '@/types/users'
 
 export const SUBSCRIPTION_LIMITS = {
   free: {

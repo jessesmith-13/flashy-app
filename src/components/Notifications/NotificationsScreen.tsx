@@ -3,7 +3,7 @@ import { useStore } from '../../../store/useStore'
 import { useNavigation } from '../../../hooks/useNavigation'
 import { markAllNotificationsSeen, getNotifications, clearAllNotifications, markNotificationRead } from '../../../utils/api/notifications'
 import { acceptFriendRequest, declineFriendRequest } from '../../../utils/api/friends'
-import { ArrowLeft, Bell, UserPlus, Check, X, Trash2, Reply, FileText, MessageCircle, Shield, Heart, AlertTriangle, ShieldCheck, ShieldOff, Ticket, AlertCircle } from 'lucide-react'
+import { ArrowLeft, Bell, UserPlus, Check, X, Trash2, Reply, FileText, MessageCircle, Heart, AlertTriangle, Ticket, AlertCircle } from 'lucide-react'
 import { Button } from '../../ui/button'
 import { toast } from 'sonner'
 
@@ -615,12 +615,12 @@ export function NotificationsScreen() {
                       {notification.requesterAvatar ? (
                         <img
                           src={notification.requesterAvatar}
-                          alt={notification.fromUserName || 'Moderator'}
+                          alt={notification.requesterDisplayName || 'Moderator'}
                           className="w-12 h-12 rounded-full object-cover flex-shrink-0"
                         />
                       ) : (
                         <div className="w-12 h-12 rounded-full bg-gradient-to-br from-orange-400 to-red-500 flex items-center justify-center text-white flex-shrink-0">
-                          {(notification.fromUserName || 'M').charAt(0).toUpperCase()}
+                          {(notification.requesterDisplayName || 'M').charAt(0).toUpperCase()}
                         </div>
                       )}
 
@@ -628,7 +628,7 @@ export function NotificationsScreen() {
                         <div className="flex items-start justify-between gap-2 mb-2">
                           <div>
                             <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                              {notification.fromUserName}
+                              {notification.requesterDisplayName}
                             </p>
                             <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">
                               mentioned you in a ticket
@@ -784,6 +784,7 @@ export function NotificationsScreen() {
                   warningData = notification.commentText ? JSON.parse(notification.commentText) : {}
                 } catch (e) {
                   warningData = {}
+                  console.log(e)
                 }
 
                 const reason = warningData.reason || 'Unknown reason'

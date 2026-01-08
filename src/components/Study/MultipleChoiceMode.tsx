@@ -53,9 +53,9 @@ export function MultipleChoiceMode({
     }
   }, [currentIndex, currentCard])
 
-  const handleSpeak = (text: string) => {
+  const handleSpeak = (text: string | null) => {
     const result = speak({
-      text,
+      text: text!,
       language: frontLanguage,
       provider: ttsProvider,
       accessToken: accessToken || undefined,
@@ -67,8 +67,16 @@ export function MultipleChoiceMode({
       }
     })
 
-    if (!result.success && result.error) {
-      toast.error(result.error)
+    if (result instanceof Promise) {
+      result.then(res => {
+        if (!res.success && res.error) {
+          toast.error(res.error)
+        }
+      })
+    } else {
+      if (!result.success && result.error) {
+        toast.error(result.error)
+      }
     }
   }
 

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { useStore } from '../../../store/useStore'
 import { Button } from '../../ui/button'
 import { MessageCircle, Send, Reply } from 'lucide-react'
@@ -22,7 +22,6 @@ export function DeckComments({ deckId, deckAuthorId, targetCommentId, onViewUser
   const [posting, setPosting] = useState(false)
   const [replyingTo, setReplyingTo] = useState<{ id: string; userName: string } | null>(null)
   const [visibleComments, setVisibleComments] = useState(10)
-  const commentRef = useRef<HTMLDivElement | null>(null)
 
   const hasMoreComments = comments.length > visibleComments
 
@@ -122,7 +121,7 @@ export function DeckComments({ deckId, deckAuthorId, targetCommentId, onViewUser
     }
   }
 
-  const handleReply = (commentId: string, userName: string, rootCommentId: string) => {
+  const handleReply = (commentId: string, userName: string) => {
     setReplyingTo({ id: commentId, userName })
     setCommentText(`@${userName} `)
     // Focus on textarea

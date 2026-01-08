@@ -31,10 +31,12 @@ export function ClassicFlipMode({ cards, onNext, onPrevious, currentIndex, isTem
     setIsFlipped(!isFlipped)
   }
 
-  const handleSpeak = (text: string, language: string | undefined, e?: React.MouseEvent) => {
+  const handleSpeak = (text: string | null, language: string | undefined, e?: React.MouseEvent) => {
     if (e) {
       e.stopPropagation() // Prevent card flip when clicking speaker button
     }
+
+    if (!text) return
 
     const result = speak({
       text,
@@ -49,8 +51,16 @@ export function ClassicFlipMode({ cards, onNext, onPrevious, currentIndex, isTem
       }
     })
 
-    if (!result.success && result.error) {
-      toast.error(result.error)
+    if (result instanceof Promise) {
+      result.then(res => {
+        if (!res.success && res.error) {
+          toast.error(res.error)
+        }
+      })
+    } else {
+      if (!result.success && result.error) {
+        toast.error(result.error)
+      }
     }
   }
 

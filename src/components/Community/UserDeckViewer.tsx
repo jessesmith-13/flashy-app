@@ -28,7 +28,11 @@ interface UserDeckViewerProps {
     subtopic?: string | null
     owner_id: string
     is_public: boolean
-    created_at: string
+    created_at: string,
+    updated_at: string,
+    card_count: number,
+    difficulty?: string | null,
+    is_published?: boolean,
   }
   cards: ViewerCard[]
   ownerId: string
@@ -94,7 +98,13 @@ export function UserDeckViewer({
 
               {!isOwner && cards.length > 0 && (
                 <Button
-                  onClick={() => onStudy(deck, cards)}
+                  onClick={() => onStudy({
+                    ...deck,
+                    updated_at: deck.created_at,
+                    card_count: cards.length,
+                    difficulty: 'mixed',
+                    is_published: false
+                  } as Deck, cards)}
                   className="bg-emerald-600 hover:bg-emerald-700 text-white w-full sm:w-auto"
                 >
                   <Play className="w-4 h-4 mr-2" />

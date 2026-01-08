@@ -1,10 +1,10 @@
 import { Button } from '../../../ui/button'
 import { ArrowLeft, FileEdit, Upload, Trash2, Play, Plus, Crown, Users, Sparkles, BarChart3, Target, LayoutGrid, UploadCloud } from 'lucide-react'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../../../ui/alert-dialog'
-import type { Deck } from '../../../../store/useStore'
+import type { UIDeck } from '@/types/decks'
 
 interface DeckHeaderProps {
-  deck: Deck
+  deck: UIDeck
   cardCount: number
   onBack: () => void
   onOpenSettings: () => void

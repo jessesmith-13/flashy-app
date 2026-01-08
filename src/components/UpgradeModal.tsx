@@ -14,7 +14,6 @@ interface UpgradeModalProps {
 }
 
 export function UpgradeModal({ open, onOpenChange, feature }: UpgradeModalProps) {
-  const user = useStore((state) => state.user)
   const accessToken = useStore((state) => state.accessToken)
   const [loading, setLoading] = useState<string | null>(null)
 

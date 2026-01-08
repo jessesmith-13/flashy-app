@@ -302,7 +302,8 @@ export function TicketDetailView({ ticketId, onBack }: TicketDetailViewProps) {
     try {
       await api.updateTicketStatus(accessToken, ticketId, {
         status: resolutionAction as any,
-        resolutionNote
+        resolutionNote,
+        resolutionReason: resolutionAction === 'resolved' ? 'approved' : 'rejected' 
       })
 
       await loadTicketDetails()
@@ -475,18 +476,6 @@ export function TicketDetailView({ ticketId, onBack }: TicketDetailViewProps) {
       case 'dismissed': return <XCircle className="w-4 h-4" />
       default: return <Flag className="w-4 h-4" />
     }
-  }
-
-  const getReasonLabel = (reason: string) => {
-    const labels: Record<string, string> = {
-      inappropriate: 'Inappropriate content',
-      spam: 'Spam',
-      harassment: 'Harassment / hate',
-      misinformation: 'Misinformation',
-      copyright: 'Copyright violation',
-      other: 'Other'
-    }
-    return labels[reason] || reason
   }
 
   const renderActionDescription = (action: TicketAction) => {
@@ -669,7 +658,7 @@ export function TicketDetailView({ ticketId, onBack }: TicketDetailViewProps) {
                     {getStatusIcon(ticket.status)}
                     {ticket.status.replace('_', ' ')}
                   </span>
-                  {ticket.isEscalated && (
+                  {(ticket.isEscalated === true) && (
                     <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400">
                       <ArrowUpCircle className="w-3 h-3" />
                       Escalated

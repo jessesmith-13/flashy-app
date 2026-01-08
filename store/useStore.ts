@@ -274,7 +274,7 @@ export const useStore = create<AppState>((set, get) => ({
         if (result.newAchievements && result.newAchievements.length > 0) {
           const { toast } = await import('sonner')
           
-          result.newAchievements.forEach(achievement => {
+          result.newAchievements.forEach((achievement: { icon: string, title: string, description: string} ) => {
             toast.success(`🎉 ${achievement.icon} ${achievement.title}!`, {
               description: achievement.description
             })
