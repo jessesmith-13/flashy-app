@@ -1,4 +1,6 @@
-import { API_BASE, publicAnonKey } from '../supabase/info'
+import { API_BASE } from '../../src/supabase/runtime'
+const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+
 
 /**
  * ============================================================
@@ -101,7 +103,7 @@ export const applyReferralCode = async (
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${publicAnonKey}`,
+      Authorization: `Bearer ${anonKey}`,
     },
     body: JSON.stringify({ referralCode, newUserId }),
   })

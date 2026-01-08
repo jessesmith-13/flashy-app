@@ -1,7 +1,6 @@
-// api/auth.ts
-
-import { API_BASE, publicAnonKey } from '../supabase/info'
+import { API_BASE } from '../../src/supabase/runtime'
 import { supabase } from '../../src/lib/supabase'
+const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
 // ============================================================
 // AUTH – SIGN UP / SIGN IN
@@ -16,7 +15,7 @@ export const signUp = async (
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${publicAnonKey}`,
+      Authorization: `Bearer ${anonKey}`,
     },
     body: JSON.stringify({ email, password, name }),
   })

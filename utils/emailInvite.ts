@@ -5,8 +5,6 @@
  * This utility makes it easy to trigger invitation emails from the frontend.
  */
 
-import { projectId } from './supabase/info'
-
 interface SendReferralInviteParams {
   toEmail: string
   fromName: string
@@ -28,7 +26,7 @@ export async function sendReferralInviteEmail({
 }: SendReferralInviteParams): Promise<{ success: boolean; error?: string }> {
   try {
     const response = await fetch(
-      `https://${projectId}.supabase.co/functions/v1/referrals/send-invite`,
+      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/server/referrals/send-invite`,
       {
         method: 'POST',
         headers: {

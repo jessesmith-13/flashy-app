@@ -1,4 +1,4 @@
-import { API_BASE } from '../../utils/supabase/info'
+import { API_BASE } from '../../src/supabase/runtime'
 
 // ========================================
 // TYPES

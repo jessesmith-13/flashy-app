@@ -1,4 +1,4 @@
-import { STRIPE_API_BASE } from '../supabase/info'
+import { STRIPE_API_BASE } from '../../src/supabase/runtime'
 
 /**
  * ============================================================

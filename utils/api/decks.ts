@@ -1,7 +1,8 @@
-import { API_BASE, publicAnonKey } from '../supabase/info'
+import { API_BASE } from '../../src/supabase/runtime'
 import { useStore } from '../../store/useStore'
 
 const { fetchUserAchievements } = useStore.getState()
+const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
 // ============================================================
 // DECKS API
@@ -421,7 +422,7 @@ export const getSharedDeck = async (shareId: string) => {
   
   const response = await fetch(`${API_BASE}/decks/shared/${shareId}`, {
     headers: {
-      Authorization: `Bearer ${publicAnonKey}`,
+      Authorization: `Bearer ${anonKey}`,
     },
   })
 
