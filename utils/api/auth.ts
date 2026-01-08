@@ -1,16 +1,7 @@
 // api/auth.ts
 
-import { createClient } from '@supabase/supabase-js'
-import { API_BASE, publicAnonKey, projectId } from '../supabase/info'
-
-// ============================================================
-// SUPABASE CLIENT
-// ============================================================
-
-export const supabaseClient = createClient(
-  `https://${projectId}.supabase.co`,
-  publicAnonKey
-)
+import { API_BASE, publicAnonKey } from '../supabase/info'
+import { supabase } from '../../src/lib/supabase'
 
 // ============================================================
 // AUTH – SIGN UP / SIGN IN
@@ -62,7 +53,7 @@ export const signIn = async (
   }
 }> => {
   // Step 1: Authenticate with Supabase Auth
-  const { data, error } = await supabaseClient.auth.signInWithPassword({
+  const { data, error } = await supabase.auth.signInWithPassword({
     email,
     password,
   })
@@ -99,7 +90,7 @@ export const signIn = async (
       console.log('==================')
       
       // Sign out the user
-      await supabaseClient.auth.signOut()
+      await supabase.auth.signOut()
       
       // Throw custom banned error
       class BannedError extends Error {
@@ -144,7 +135,7 @@ export const signIn = async (
 
 export const signInWithGoogle = async () => {
   const { data, error } =
-    await supabaseClient.auth.signInWithOAuth({
+    await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
         redirectTo: window.location.origin,
@@ -164,7 +155,7 @@ export const signInWithGoogle = async () => {
 
 export const resetPassword = async (email: string) => {
   const { data, error } =
-    await supabaseClient.auth.resetPasswordForEmail(email, {
+    await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: `${window.location.origin}/#/reset-password`,
     })
 
@@ -177,7 +168,7 @@ export const resetPassword = async (email: string) => {
 
 export const updatePassword = async (newPassword: string) => {
   const { data, error } =
-    await supabaseClient.auth.updateUser({
+    await supabase.auth.updateUser({
       password: newPassword,
     })
 
@@ -195,7 +186,7 @@ export const updatePassword = async (newPassword: string) => {
 export const getSession = async () => {
   try {
     const { data, error } =
-      await supabaseClient.auth.getSession()
+      await supabase.auth.getSession()
 
     if (error) {
       if (
@@ -219,7 +210,7 @@ export const getSession = async () => {
 export const signOut = async () => {
   try {
     const { error } =
-      await supabaseClient.auth.signOut()
+      await supabase.auth.signOut()
 
     if (
       error &&
