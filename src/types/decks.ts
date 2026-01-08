@@ -51,6 +51,7 @@ export interface UICard {
   favorite: boolean
   isIgnored: boolean
   deckId: string
+  createdAt: string
 }
 
 export interface Deck {

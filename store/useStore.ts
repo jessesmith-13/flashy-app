@@ -246,7 +246,7 @@ export const useStore = create<AppState>((set, get) => ({
   // Study sessions
   studySessions: [],
   setStudySessions: (sessions) => set({ studySessions: sessions }),
-  addStudySession: async (session) => {
+  addStudySession: async (session: StudySession) => {
     set((state) => ({ studySessions: [...state.studySessions, session] }))
     
     const state = get()
@@ -359,6 +359,7 @@ export const useStore = create<AppState>((set, get) => ({
           aiCardsGenerated: 0,
           commentsLeft: 0,
           ratingsGiven: 0,
+          studiedInDarkMode: false,
         }
       })
     }

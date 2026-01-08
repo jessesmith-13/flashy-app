@@ -221,64 +221,6 @@ export const deleteCommunityCard = async (
 }
 
 /**
- * Delete a deck (Superuser only)
- */
-export const deleteDeck = async (
-  accessToken: string,
-  deckId: string,
-  reason?: string
-) => {
-  const response = await fetch(`${API_BASE}/admin/decks/${deckId}`, {
-    method: 'DELETE',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${accessToken}`,
-    },
-    ...(reason && { body: JSON.stringify({ reason }) }),
-  })
-
-  const data = await response.json()
-
-  if (!response.ok) {
-    console.error('Failed to delete deck:', data.error)
-    throw new Error(data.error || 'Failed to delete deck')
-  }
-
-  return data
-}
-
-/**
- * Delete a card (Superuser only)
- */
-export const deleteCard = async (
-  accessToken: string,
-  deckId: string,
-  cardId: string,
-  reason?: string
-) => {
-  const response = await fetch(
-    `${API_BASE}/admin/decks/${deckId}/cards/${cardId}`,
-    {
-      method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${accessToken}`,
-      },
-      ...(reason && { body: JSON.stringify({ reason }) }),
-    }
-  )
-
-  const data = await response.json()
-
-  if (!response.ok) {
-    console.error('Failed to delete card:', data.error)
-    throw new Error(data.error || 'Failed to delete card')
-  }
-
-  return data
-}
-
-/**
  * Feature / unfeature a community deck (Superuser only)
  */
 export const toggleCommunityDeckFeatured = async (

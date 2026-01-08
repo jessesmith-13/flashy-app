@@ -38,7 +38,6 @@ interface TicketAction {
     previouslyAssignedTo?: string
     previouslyAssignedToId?: string
     escalationReason?: string
-    // Warning-specific fields
     warningId?: string
     customMessage?: string
     timeToResolve?: number
@@ -72,7 +71,9 @@ interface TicketDetails {
   relatedFlagId: string | null
   relatedUserId: string | null
   relatedDeckId: string | null
+  relatedDeckTitle: string | null
   relatedCardId: string | null
+  relatedCardTitle: string | null
   relatedCommentId: string | null
   isEscalated: boolean | null
   relatedUserDisplayName: string | null
@@ -96,7 +97,7 @@ interface TicketDetailViewProps {
 }
 
 export function TicketDetailView({ ticketId, onBack }: TicketDetailViewProps) {
-  const { user, accessToken, setViewingCommunityDeckId, setTargetCardIndex, setViewingUserId } = useStore()
+  const { user, accessToken, setViewingCommunityDeckId, setTargetCardIndex, setViewingUserId, setTargetCommentId } = useStore()
   const { navigateTo } = useNavigation()
   const [ticket, setTicket] = useState<TicketDetails | null>(null)
   const [comments, setComments] = useState<TicketComment[]>([])
@@ -140,12 +141,10 @@ export function TicketDetailView({ ticketId, onBack }: TicketDetailViewProps) {
       
       setTicket(ticketData)
       
-      // Handle different response formats for comments
       const commentsList = commentsData.comments || commentsData.data || commentsData || []
       console.log('Setting comments to:', commentsList)
       setComments(Array.isArray(commentsList) ? commentsList : [])
       
-      // Handle different response formats for actions
       const actionsList = actionsData.actions || actionsData.data || actionsData || []
       console.log('Setting actions to:', actionsList)
       setActions(Array.isArray(actionsList) ? actionsList : [])
@@ -166,7 +165,6 @@ export function TicketDetailView({ ticketId, onBack }: TicketDetailViewProps) {
       console.log('Moderators array:', data.moderators)
       console.log('Full data keys:', Object.keys(data))
       
-      // Handle different response formats
       const moderatorsList = data.moderators || data.data || data || []
       console.log('Setting moderators to:', moderatorsList)
       setAvailableModerators(Array.isArray(moderatorsList) ? moderatorsList : [])
@@ -248,7 +246,6 @@ export function TicketDetailView({ ticketId, onBack }: TicketDetailViewProps) {
       console.log('Comment response:', data)
       console.log('Comment data keys:', Object.keys(data))
 
-      // Handle different response formats
       const newComment = data.comment || data.data || data
       console.log('New comment:', newComment)
       
@@ -337,32 +334,38 @@ export function TicketDetailView({ ticketId, onBack }: TicketDetailViewProps) {
   const handleViewTarget = () => {
     if (!ticket) return
 
-    const targetType = ticket.targetType
+    // ✅ Use category instead of targetType
+    const targetType = ticket.category
     console.log('navigating to target', ticket)
     
     if (targetType === 'deck' && ticket.relatedDeckId) {
       setViewingCommunityDeckId(ticket.relatedDeckId)
       setTargetCardIndex(null)
       navigateTo('community')
-      toast.info(`Viewing flagged deck`)
+      toast.info('Viewing flagged deck')
     } else if (targetType === 'user' && ticket.relatedUserId) {
       setViewingUserId(ticket.relatedUserId)
       navigateTo('community')
       toast.info('Viewing flagged user')
-    } else if (targetType === 'card' && ticket.relatedDeckId) {
-      setViewingCommunityDeckId(ticket.relatedDeckId)
-      // Extract card index if available from targetId
-      const cardIndexMatch = ticket.relatedCardId?.match(/-card-(\d+)/)
-      if (cardIndexMatch) {
-        const cardIndex = parseInt(cardIndexMatch[1])
-        setTargetCardIndex(cardIndex)
-        toast.info(`Viewing card #${cardIndex + 1} in deck`)
+    } else if (targetType === 'card' && ticket.relatedDeckId && ticket.relatedCardTitle) {
+      // ✅ Parse card number from title like "Card #1: ..."
+      const cardMatch = ticket.relatedCardTitle.match(/Card #(\d+)/)
+      if (!cardMatch) {
+        toast.error('Could not parse card number')
+        return
       }
+      
+      const cardNumber = parseInt(cardMatch[1])
+      const cardIndex = cardNumber - 1 // Convert to 0-based index
+      
+      setViewingCommunityDeckId(ticket.relatedDeckId)
+      setTargetCardIndex(cardIndex)
       navigateTo('community')
+      toast.info(`Viewing flagged card #${cardNumber}`)
     } else if (targetType === 'comment' && ticket.relatedDeckId) {
-      // Navigate to the deck with the comment
       setViewingCommunityDeckId(ticket.relatedDeckId)
       setTargetCardIndex(null)
+      setTargetCommentId(ticket.relatedCommentId)
       navigateTo('community')
       toast.info('Viewing deck with flagged comment')
     } else {
@@ -438,7 +441,6 @@ export function TicketDetailView({ ticketId, onBack }: TicketDetailViewProps) {
     }
   }
 
-  // Combine comments and actions into timeline
   const timeline: TimelineItem[] = [
     ...comments.map(comment => ({
       id: comment.id,
@@ -541,7 +543,6 @@ export function TicketDetailView({ ticketId, onBack }: TicketDetailViewProps) {
           </div>
         )
       case 'warning':
-        // Calculate time remaining
         const deadline = action.details.deadline ? new Date(action.details.deadline) : null
         const now = new Date()
         const timeRemaining = deadline ? Math.max(0, deadline.getTime() - now.getTime()) : 0
@@ -552,9 +553,7 @@ export function TicketDetailView({ ticketId, onBack }: TicketDetailViewProps) {
           <div className="space-y-2">
             <span>issued a warning to the user</span>
             
-            {/* Warning Details Card */}
             <div className="mt-2 p-3 bg-orange-50 dark:bg-orange-900/20 border-l-4 border-orange-500 dark:border-orange-600 rounded">
-              {/* Reason */}
               <div className="mb-2">
                 <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">Reason:</span>
                 <p className="text-sm text-gray-900 dark:text-gray-100 mt-0.5">
@@ -562,7 +561,6 @@ export function TicketDetailView({ ticketId, onBack }: TicketDetailViewProps) {
                 </p>
               </div>
 
-              {/* Custom Message */}
               {action.details.customMessage && (
                 <div className="mb-2">
                   <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">Message:</span>
@@ -572,7 +570,6 @@ export function TicketDetailView({ ticketId, onBack }: TicketDetailViewProps) {
                 </div>
               )}
 
-              {/* Time Remaining */}
               <div className="pt-2 border-t border-orange-200 dark:border-orange-800">
                 {timeRemaining > 0 ? (
                   <div className="flex items-center gap-2">
@@ -667,10 +664,10 @@ export function TicketDetailView({ ticketId, onBack }: TicketDetailViewProps) {
                 </div>
                 <div className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
                   <div>
-                    <span className="font-medium">Type:</span> {ticket.targetType || ticket.category}
+                    <span className="font-medium">Type:</span> {ticket.category}
                   </div>
                   <div>
-                    <span className="font-medium">Reported by:</span> {ticket.flaggedUserDisplayName || ticket.createdBy || 'System'} •{' '}
+                    <span className="font-medium">Reported by:</span> {ticket.createdByDisplayName || ticket.createdBy || 'System'} •{' '}
                     {new Date(ticket.createdAt).toLocaleString()}
                   </div>
                   {ticket.title && (
@@ -957,7 +954,7 @@ export function TicketDetailView({ ticketId, onBack }: TicketDetailViewProps) {
         flagDetails={
           ticket
             ? {
-                targetType: ticket.targetType || 'unknown',
+                targetType: ticket.category,
                 targetName: ticket.relatedUserDisplayName || ticket.description || 'Unknown',
                 reason: ticket.flagReason || ticket.category,
                 reporterNotes: ticket.flagAdditionalDetails || ticket.description || '',
@@ -974,7 +971,7 @@ export function TicketDetailView({ ticketId, onBack }: TicketDetailViewProps) {
         flagDetails={
           ticket
             ? {
-                targetType: ticket.targetType || 'unknown',
+                targetType: ticket.category,
                 targetName: ticket.title || ticket.description || 'Unknown',
                 reason: ticket.flagReason || ticket.category,
                 reporterNotes: ticket.flagAdditionalDetails || ticket.description,
@@ -991,7 +988,7 @@ export function TicketDetailView({ ticketId, onBack }: TicketDetailViewProps) {
         flagDetails={
           ticket
             ? {
-                targetType: ticket.targetType || 'unknown',
+                targetType: ticket.category,
                 targetName: ticket.title || ticket.description || 'Unknown',
                 reason: ticket.flagReason || ticket.category,
                 reporterNotes: ticket.flagAdditionalDetails || ticket.description,

@@ -4,7 +4,7 @@ import { useStore } from '../store/useStore'
 import { supabaseClient, signOut, getSession, recordTermsAcceptance } from '../utils/api/auth'
 import { getFriends, getFriendRequests } from '../utils/api/friends'
 import { updateProfile } from '../utils/api/users'
-import { getUserProfile } from '../utils/api/auth'
+import { getUserProfileOnLogin } from '../utils/api/auth'
 import { LandingPage } from './components/Landing/LandingPage'
 import { LoginScreen } from './components/Auth/Login/LoginScreen'
 import { SignUpScreen } from './components/Auth/Signup/SignupScreen'
@@ -201,7 +201,7 @@ function AppContent() {
       setShowDisplayNameModal(false)
       
       // Refresh user data
-      const userProfile = await getUserProfile(session.access_token)
+      const userProfile = await getUserProfileOnLogin(session.access_token)
       
       // Fetch user role from database instead of metadata
       const { isSuperuser, isModerator } = await fetchUserRole(session.user.id)
@@ -316,7 +316,7 @@ function AppContent() {
 
           // Check if user needs to set display name (OAuth users with NULL display_name)
           try {
-            const userProfile = await getUserProfile(session.access_token)
+            const userProfile = await getUserProfileOnLogin(session.access_token)
             console.log('User profile from database:', userProfile)
             
             // Check if display_name is NULL in the database

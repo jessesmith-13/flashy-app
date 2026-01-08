@@ -29,6 +29,7 @@ export interface UserAchievements {
   aiCardsGenerated: number
   commentsLeft: number
   ratingsGiven: number
+  studiedInDarkMode: boolean
 }
 
 // ========================================

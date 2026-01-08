@@ -71,7 +71,7 @@ export function TicketManagementPanel() {
   const [selectedTicket, setSelectedTicket] = useState<TicketData | null>(null)
   
   const { navigateTo } = useNavigation()
-  const { setViewingCommunityDeckId, setViewingUserId, setTargetCardIndex, user, viewingTicketId, setViewingTicketId, accessToken } = useStore()
+  const { setViewingCommunityDeckId, setViewingUserId, setTargetCardIndex, user, viewingTicketId, setViewingTicketId, accessToken, setTargetCommentId } = useStore()
 
   useEffect(() => {
     loadAllTickets()
@@ -82,21 +82,30 @@ export function TicketManagementPanel() {
   }, [statusFilter, typeFilter, showMyTicketsOnly])
 
   const getTargetType = (ticket: TicketData): string | null => {
+    if (ticket.category) return ticket.category
     if (ticket.targetType) return ticket.targetType
     if (ticket.relatedUserId) return 'user'
-    if (ticket.relatedDeckId) return 'deck'
     if (ticket.relatedCardId) return 'card'
     if (ticket.relatedCommentId) return 'comment'
-
+    if (ticket.relatedDeckId) return 'deck'
     return null
   }
 
   const getTargetId = (ticket: TicketData): string | null => {
+    // ✅ Use category to determine which related ID to return
+    const category = ticket.category
+    
+    if (category === 'card') return ticket.relatedCardId || null
+    if (category === 'comment') return ticket.relatedCommentId || null
+    if (category === 'deck') return ticket.relatedDeckId || null
+    if (category === 'user') return ticket.relatedUserId || null
+    
+    // Fallback to old logic if category doesn't match
     if (ticket.targetId) return ticket.targetId
     if (ticket.relatedUserId) return ticket.relatedUserId
-    if (ticket.relatedDeckId) return ticket.relatedDeckId
     if (ticket.relatedCardId) return ticket.relatedCardId
     if (ticket.relatedCommentId) return ticket.relatedCommentId
+    if (ticket.relatedDeckId) return ticket.relatedDeckId
     return null
   }
 
@@ -197,30 +206,68 @@ export function TicketManagementPanel() {
   const handleViewTarget = (e: React.MouseEvent, ticket: TicketData) => {
     e.stopPropagation()
     const targetType = getTargetType(ticket)
-    const targetId = getTargetId(ticket)
     
-    if (!targetType || !targetId) {
+    if (!targetType) {
       toast.error('Cannot navigate - missing target information')
       return
     }
     
     switch (targetType) {
       case 'deck':
-        setViewingCommunityDeckId(targetId)
+        if (!ticket.relatedDeckId) {
+          toast.error('Deck ID not found')
+          return
+        }
+        setViewingCommunityDeckId(ticket.relatedDeckId)
         setTargetCardIndex(null)
         navigateTo('community')
-        toast.info(`Viewing flagged deck`)
+        toast.info('Viewing flagged deck')
         break
-      case 'user':
-        setViewingUserId(targetId)
-        navigateTo('community')
-        break
-      case 'comment':
-        toast.error('Comment navigation requires deck context')
-        break
+        
       case 'card':
-        toast.error('Card navigation requires deck context')
+        if (!ticket.relatedDeckId || !ticket.relatedCardTitle) {
+          toast.error('Card information incomplete')
+          return
+        }
+        
+        // Parse card number from title like "Card #1: ..."
+        const cardMatch = ticket.relatedCardTitle.match(/Card #(\d+)/)
+        if (!cardMatch) {
+          toast.error('Could not parse card number')
+          return
+        }
+        
+        const cardNumber = parseInt(cardMatch[1])
+        const cardIndex = cardNumber - 1 // Convert to 0-based index
+        
+        setViewingCommunityDeckId(ticket.relatedDeckId)
+        setTargetCardIndex(cardIndex)
+        navigateTo('community')
+        toast.info(`Viewing flagged card #${cardNumber}`)
         break
+        
+      case 'comment':
+        if (!ticket.relatedDeckId) {
+          toast.error('Comment deck context not found')
+          return
+        }
+        setViewingCommunityDeckId(ticket.relatedDeckId)
+        setTargetCardIndex(null)
+        setTargetCommentId(ticket.relatedCommentId || null) 
+        navigateTo('community')
+        toast.info('Viewing deck with flagged comment')
+        break
+        
+      case 'user':
+        if (!ticket.relatedUserId) {
+          toast.error('User ID not found')
+          return
+        }
+        setViewingUserId(ticket.relatedUserId)
+        navigateTo('community')
+        toast.info('Viewing flagged user profile')
+        break
+        
       default:
         toast.error('Unknown target type')
     }

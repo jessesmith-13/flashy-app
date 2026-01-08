@@ -248,7 +248,7 @@ export const setDisplayName = async (token: string, displayName: string): Promis
   }
 }
 
-export const getUserProfile = async (token: string): Promise<{
+export const getUserProfileOnLogin = async (token: string): Promise<{
   display_name: string | null
   avatar_url: string | null
   decks_public: boolean

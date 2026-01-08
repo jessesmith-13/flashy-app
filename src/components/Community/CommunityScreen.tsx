@@ -243,10 +243,6 @@ export function CommunityScreen() {
         fetchFeaturedCommunityDecks()
       ])
       
-      console.log('  ✅ Published decks:', publishedDecks.length)
-      console.log('  ✅ Featured decks:', featuredPublishedDecks.length)
-      console.log('  Published decks data:', publishedDecks)
-      
       // Use only real published decks
       const allDecks = publishedDecks
       
@@ -277,9 +273,9 @@ export function CommunityScreen() {
       }))
       
       // Update featured decks with ratings and download counts
-      const updatedFeaturedDecks = (Array.isArray(featuredPublishedDecks) ? featuredPublishedDecks : [featuredPublishedDecks]).map((deck: any) => ({
+      const updatedFeaturedDecks = (Array.isArray(featuredPublishedDecks) ? featuredPublishedDecks : [featuredPublishedDecks]).map((deck: UICommunityDeck) => ({
         ...deck,
-        downloads: downloadCounts[deck.id] || deck.downloads || 0,
+        downloads: downloadCounts[deck.id] || deck.downloadCount || 0,
         rating: ratingsMap[deck.id]?.averageRating || 0,
         ratingCount: ratingsMap[deck.id]?.totalRatings || 0
       }))
@@ -509,7 +505,7 @@ export function CommunityScreen() {
     }
   }
 
-  const openFlagDialog = (type: 'deck' | 'card', id: string, name: string, deckId?: string) => {
+  const openFlagDialog = (type: 'deck' | 'card' | 'comment' | 'user', id: string, name: string, deckId?: string) => {
     setFlagItemType(type)
     setFlagItemId(id)
     setFlagItemName(name)
@@ -519,6 +515,8 @@ export function CommunityScreen() {
       setFlagItemDetails(undefined)
     }
     setFlagDialogOpen(true)
+      if (type === 'deck') setFlaggedDecks(new Set([...flaggedDecks, id]))
+      if (type === 'card') setFlaggedCards(new Set([...flaggedCards, id]))
   }
 
   const handleDeleteCommunityDeck = async (deckId: string, deckName: string) => {
@@ -581,7 +579,7 @@ export function CommunityScreen() {
     }
   }
 
-  const handleUnpublishDeck = async (deckId: string, deckName: string) => {
+  const handleUnpublishDeck = async (deckId: string) => {
     if (!accessToken) {
       toast.error('Please log in to unpublish decks')
       return
@@ -689,8 +687,17 @@ export function CommunityScreen() {
   if (viewingUserDeck) {
     return (
       <UserDeckViewer
-        deck={viewingUserDeck.deck}
-        cards={viewingUserDeck.cards}
+        deck={{ 
+          ...viewingUserDeck.deck, 
+          is_public: viewingUserDeck.deck.isPublished || false,
+          emoji: viewingUserDeck.deck.emoji || '📚',
+          color: viewingUserDeck.deck.color || '#10B981'
+        }}
+        cards={viewingUserDeck.cards.map(card => ({
+          ...card,
+          front: card.front || '',
+          back: card.back || ''
+        }))}
         ownerId={viewingUserDeck.ownerId}
         isOwner={user?.id === viewingUserDeck.ownerId}
         onBack={() => {
@@ -699,10 +706,38 @@ export function CommunityScreen() {
           setReturnToUserDeck(null)
         }}
         onStudy={(deck, cards) => {
-          setTemporaryStudyDeck({ deck, cards })
-          setReturnToUserDeck(viewingUserDeck)
-          navigateTo('study')
-        }}
+          const mappedCards = cards.map((card, index) => ({
+            ...card,
+            favorite: false,
+            isIgnored: false,
+            deckId: deck.id,
+            createdAt: new Date().toISOString(),
+            position: card.position ?? index
+          }))
+          
+          setTemporaryStudyDeck({ 
+            deck: {
+              id: deck.id,
+              name: deck.name,
+              color: deck.color,
+              emoji: deck.emoji,
+              cardCount: viewingUserDeck.deck.card_count,
+              category: deck.category || '',
+              subtopic: deck.subtopic || '',
+              ownerId: viewingUserDeck.ownerId,
+              ownerDisplayName: viewingUserDeck.deck.owner_display_name || 'Unknown',
+              cards: mappedCards,
+              publishedAt: viewingUserDeck.deck.published_at || new Date().toISOString(),
+              downloadCount: viewingUserDeck.deck.download_count || 0,
+              createdAt: viewingUserDeck.deck.created_at,
+              frontLanguage: deck.front_language,
+              backLanguage: deck.back_language
+            }, 
+            cards: mappedCards
+          })
+  setReturnToUserDeck(viewingUserDeck)
+  navigateTo('study')
+}}
       />
     )
   }
@@ -712,6 +747,7 @@ export function CommunityScreen() {
     return (
       <CommunityDeckDetail
         deck={viewingDeck}
+        cards={viewingDeck.cards || []}
         userDecks={decks}
         isSuperuser={isSuperuser}
         addingDeckId={addingDeckId}
@@ -733,8 +769,10 @@ export function CommunityScreen() {
         onUpdateDeck={handleUpdateDeck}
         onToggleFeatured={handleToggleFeatured}
         onDeleteDeck={handleDeleteCommunityDeck}
-        onFlagDeck={openFlagDialog}
-        onFlagCard={openFlagDialog}
+        onFlagDeck={(deckId, deckName) => openFlagDialog('deck', deckId, deckName)}
+        onFlagCard={(cardId, cardName) => openFlagDialog('card', cardId, cardName, viewingDeck.id)} 
+        onFlagComment={(commentId, commentText) => openFlagDialog('comment', commentId, commentText)}
+        onFlagUser={(userId, userName) => openFlagDialog('user', userId, userName)}
         onStudyDeck={handleStudyDeck}
         onDeckDetailPageChange={setDeckDetailPage}
         onRatingChange={loadCommunityDecks}
@@ -1056,7 +1094,13 @@ export function CommunityScreen() {
       <UpdateDeckWarningDialog
         open={updateWarningOpen}
         onOpenChange={setUpdateWarningOpen}
-        communityDeck={pendingUpdate?.communityDeck || null}
+        communityDeck={pendingUpdate?.communityDeck ? {
+          id: pendingUpdate.communityDeck.id,
+          name: pendingUpdate.communityDeck.name,
+          emoji: pendingUpdate.communityDeck.emoji || '📚',
+          color: pendingUpdate.communityDeck.color || '#10B981',
+        } : null}
+
         importedDeck={pendingUpdate?.importedDeck || null}
         onCancel={() => {
           setUpdateWarningOpen(false)
@@ -1086,7 +1130,7 @@ export function CommunityScreen() {
                 <div className="flex items-center gap-2">
                   <div 
                     className="w-12 h-12 rounded-lg flex items-center justify-center text-2xl"
-                    style={{ backgroundColor: unpublishingDeck.color }}
+                    style={{ backgroundColor: unpublishingDeck.color || '#10B981' }}
                   >
                     {unpublishingDeck.emoji}
                   </div>
