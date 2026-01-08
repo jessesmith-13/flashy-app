@@ -1,14 +1,7 @@
 import { AI_API_BASE } from '../supabase/info'
-import { createClient } from '@supabase/supabase-js'
-import { publicAnonKey, projectId } from '../supabase/info'
 import type { GeneratedCardType } from '../../src/types/ai'
 import * as pdfjsLib from 'pdfjs-dist'
-
-// Supabase client (used for session-based AI endpoints)
-const supabaseClient = createClient(
-  `https://${projectId}.supabase.co`,
-  publicAnonKey
-)
+import { supabase } from '../../src/lib/supabase'
 
 // Configure PDF.js worker - import from node_modules
 if (typeof window !== 'undefined' && !pdfjsLib.GlobalWorkerOptions.workerSrc) {
@@ -45,7 +38,7 @@ export const generateCardsWithAI = async (
 ) => {
   const {
     data: { session },
-  } = await supabaseClient.auth.getSession()
+  } = await supabase.auth.getSession()
 
   if (!session?.access_token) {
     throw new Error('Not authenticated')
@@ -174,7 +167,7 @@ export const generateCardsFromPDF = async (
   }
 
   // Get auth token
-  const { data: { session } } = await supabaseClient.auth.getSession()
+  const { data: { session } } = await supabase.auth.getSession()
 
   if (!session?.access_token) {
     throw new Error('Not authenticated')

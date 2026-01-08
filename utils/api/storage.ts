@@ -1,6 +1,6 @@
 import { API_BASE } from '../supabase/info'
-import { supabaseClient } from './auth' // or wherever your auth client lives
 
+import { supabase } from '../../src/lib/supabase'
 /**
  * ============================================================
  * STORAGE API
@@ -73,7 +73,7 @@ export const uploadCardAudio = async (
 ): Promise<string> => {
   const {
     data: { session },
-  } = await supabaseClient.auth.getSession()
+  } = await supabase.auth.getSession()
 
   if (!session?.access_token) {
     throw new Error('Not authenticated')

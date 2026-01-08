@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useStore } from '../../../store/useStore'
 import { useNavigation } from '../../../hooks/useNavigation'
 import { updateProfile } from '../../../utils/api/users'
-import { supabaseClient } from '../../../utils/api/auth'
+import { supabase } from '../../lib/supabase'
 import { toast } from 'sonner'
 import { AppLayout } from '../Layout/AppLayout'
 import { Button } from '../../ui/button'
@@ -175,7 +175,7 @@ export function SettingsScreen() {
       const data = await response.json()
       
       // Refresh session to get updated metadata
-      const { data: { session }, error } = await supabaseClient.auth.refreshSession()
+      const { data: { session }, error } = await supabase.auth.refreshSession()
       
       if (error) {
         console.error('Error refreshing session after fix:', error)

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { HashRouter, Routes, Route, Navigate, useNavigate, useParams } from 'react-router-dom'
 import { useStore } from '../store/useStore'
-import { supabaseClient, signOut, getSession, recordTermsAcceptance } from '../utils/api/auth'
+import { signOut, getSession, recordTermsAcceptance } from '../utils/api/auth'
 import { getFriends, getFriendRequests } from '../utils/api/friends'
 import { updateProfile } from '../utils/api/users'
 import { getUserProfileOnLogin } from '../utils/api/auth'
@@ -32,7 +32,7 @@ import { Toaster } from './ui/sonner'
 import { toast } from 'sonner'
 import { SetDisplayModal } from './components/Auth/Signup/SetDisplayModal'
 import { SubscriptionTier } from '@/types/users'
-console.log('SUPABASE URL AT RUNTIME:', import.meta.env.VITE_SUPABASE_URL)
+import { supabase } from '../src/lib/supabase'
 
 // Suppress Supabase auth errors from console
 const originalConsoleError = console.error
@@ -69,7 +69,7 @@ function SharedDeckRoute() {
 // Helper function to fetch user role from database
 async function fetchUserRole(userId: string): Promise<{ isSuperuser: boolean; isModerator: boolean }> {
   try {
-    const { data, error } = await supabaseClient
+    const { data, error } = await supabase
       .from('users')
       .select('is_superuser, is_moderator')
       .eq('id', userId)
@@ -111,7 +111,7 @@ function AppContent() {
     checkSession()
     
     // Set up automatic session refresh
-    const { data: authListener } = supabaseClient.auth.onAuthStateChange(
+    const { data: authListener } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log('Auth state change:', event)
         
