@@ -8,6 +8,7 @@ export interface StudySession {
   date: string
 
   correctAnswers: number
+  incorrectAnswers: number
   totalQuestions: number
   score: number
 

@@ -156,15 +156,27 @@ export function StudyScreen() {
       // Only save study session for personal decks, not temporary community decks
       if (!isTemporaryStudy && selectedDeckId) {
         addStudySession({
+          id: crypto.randomUUID(), // Generate unique ID
+          userId: '', // Will be set by the store
           deckId: selectedDeckId,
-          startedAt: new Date(sessionStartTime).toISOString(),
-          endedAt: new Date().toISOString(),
+          date: new Date().toISOString(),
+          correctAnswers: correct,
+          incorrectAnswers: wrong,
+          score: score,
+          timeSpent: Math.floor((Date.now() - sessionStartTime) / 1000),
           cardsStudied: studied,
-          correctCount: correct,
-          incorrectCount: wrong,
-          skippedCount: 0,
-          timeSpentSeconds: Math.floor((Date.now() - sessionStartTime) / 1000),
-          score: score
+          totalQuestions: 0,
+          durationMinutes: null,
+          createdAt: '',
+          updatedAt: '',
+          startedAt: null,
+          endedAt: null,
+          correctCount: null,
+          incorrectCount: null,
+          skippedCount: null,
+          studyMode: null,
+          timeSpentSeconds: null,
+          sessionData: null
         })
       }
     }
