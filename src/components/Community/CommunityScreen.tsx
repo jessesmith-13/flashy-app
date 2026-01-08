@@ -132,13 +132,17 @@ export function CommunityScreen() {
 
   // Restore viewing deck when returning from study
   useEffect(() => {
-    if (returnToCommunityDeck) {
-      setViewingDeck(returnToCommunityDeck)
-    }
-    if (returnToUserDeck) {
-      setViewingUserDeck(returnToUserDeck)
-    }
-  }, [])
+  if (returnToCommunityDeck) {
+    setViewingDeck(returnToCommunityDeck)
+  }
+  if (returnToUserDeck) {
+    setViewingUserDeck({ 
+      ...returnToUserDeck, 
+      cards: returnToUserDeck.cards as UICommunityCard[] 
+    })
+  }
+}, [])
+
 
   // Reset to page 1 when filters or sorting changes
   useEffect(() => {
@@ -267,13 +271,13 @@ export function CommunityScreen() {
       // Update decks with real download counts and ratings
       const updatedDecks = allDecks.map(deck => ({
         ...deck,
-        downloads: downloadCounts[deck.id] || deck.downloads || 0,
+        downloads: downloadCounts[deck.id] || deck.downloadCount || 0,
         rating: ratingsMap[deck.id]?.averageRating || 0,
         ratingCount: ratingsMap[deck.id]?.totalRatings || 0
       }))
       
       // Update featured decks with ratings and download counts
-      const updatedFeaturedDecks = featuredPublishedDecks.map((deck: any) => ({
+      const updatedFeaturedDecks = (Array.isArray(featuredPublishedDecks) ? featuredPublishedDecks : [featuredPublishedDecks]).map((deck: any) => ({
         ...deck,
         downloads: downloadCounts[deck.id] || deck.downloads || 0,
         rating: ratingsMap[deck.id]?.averageRating || 0,
@@ -395,15 +399,19 @@ export function CommunityScreen() {
   }
 
   const performUpdate = async (communityDeck: UICommunityDeck, importedDeck: UIDeck) => {
+      if (!accessToken) {
+        toast.error('You must be logged in to update decks')
+        return
+      } 
     setAddingDeckId(communityDeck.id)
     try {
       const updatedDeck = await updateImportedDeck(accessToken, importedDeck.id, {
         name: communityDeck.name,
-        color: communityDeck.color,
-        emoji: communityDeck.emoji,
+        color: communityDeck.color || '#10B981',
+        emoji: communityDeck.emoji || '📚',
         cards: communityDeck.cards || [],
-        category: communityDeck.category,
-        subtopic: communityDeck.subtopic,
+        category: communityDeck.category || '',
+        subtopic: communityDeck.subtopic || '',
         version: communityDeck.version || 1,
       })
 

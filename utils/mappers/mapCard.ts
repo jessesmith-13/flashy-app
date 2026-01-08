@@ -12,5 +12,9 @@ export function mapApiCardToUICard(card: Card): UICard {
     acceptedAnswers: card.accepted_answers ?? undefined,
     frontAudio: card.front_audio ?? undefined,
     backAudio: card.back_audio ?? undefined,
+    position: card.position,
+    favorite: card.favorite ?? false,
+    isIgnored: card.is_ignored ?? false,
+    deckId: card.deck_id,
   }
 }

@@ -1,5 +1,5 @@
 import { DECK_LANGUAGES } from './languages'
-import * as api from './api'
+import { generateTextToSpeech } from './api/ai'
 
 // TTS Provider type
 export type TTSProvider = 'browser' | 'openai'
@@ -149,7 +149,7 @@ const speakWithOpenAI = async ({ text, language, onStart, onEnd, onError, access
     onStart?.()
     
     // Call the server to generate speech
-    const { audioData, format } = await api.generateTextToSpeech(accessToken, text, language)
+    const { audioData, format } = await generateTextToSpeech(accessToken, text, language)
     
     // Convert base64 to blob
     const byteCharacters = atob(audioData)

@@ -12,6 +12,7 @@ export interface Card{
   created_at: string
   is_ignored: boolean
   favorite: boolean
+  position: number
 }
 
 export type ApiCard = {
