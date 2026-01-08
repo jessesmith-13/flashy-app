@@ -163,7 +163,6 @@ export function StudyScreen() {
           correctCount: correct,
           incorrectCount: wrong,
           skippedCount: 0,
-          mode: 'review',
           timeSpentSeconds: Math.floor((Date.now() - sessionStartTime) / 1000),
           score: score
         })

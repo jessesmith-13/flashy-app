@@ -96,7 +96,7 @@ export function UserManagementPanel({ accessToken }: UserManagementPanelProps) {
       const allUsers = await getAllUsers(accessToken)
       
       // Debug: Log the first few users to see the subscription tier data
-      console.log('🔍 User data sample:', allUsers.slice(0, 3).map(u => ({
+      console.log('🔍 User data sample:', allUsers.slice(0, 3).map((u: User) => ({
         id: u.id,
         email: u.email,
         subscriptionTier: u.subscriptionTier,

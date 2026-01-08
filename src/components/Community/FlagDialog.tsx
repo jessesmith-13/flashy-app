@@ -34,7 +34,7 @@ export function FlagDialog({
   targetId,
   targetName,
   accessToken,
-  targetDetails
+  targetDetails,
 }: FlagDialogProps) {
   const [reason, setReason] = useState<string>('')
   const [notes, setNotes] = useState('')

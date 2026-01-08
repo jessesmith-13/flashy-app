@@ -17,22 +17,16 @@ export function mapApiCardToStoreCard(
     cardType: api.card_type,
 
     favorite: api.favorite,
-    ignored: api.is_ignored,
+    isIgnored: api.is_ignored,
 
     frontImageUrl: api.front_image_url ?? undefined,
     backImageUrl: api.back_image_url ?? undefined,
 
-    // You only have ONE audio_url in DB
-    // Decide where it belongs (usually back)
     backAudio: api.back_audio ?? undefined,
     frontAudio: api.front_audio ?? undefined,
 
     incorrectAnswers: api.incorrect_answers ?? undefined,
-
-    correctAnswers: api.correct_answers
-      ? [api.correct_answers]
-      : undefined,
-
+    correctAnswers: api.correct_answers ?? undefined,  // ← Remove the array wrapping
     acceptedAnswers: api.accepted_answers ?? undefined
   }
 }
