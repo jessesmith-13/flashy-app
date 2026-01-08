@@ -1,9 +1,9 @@
-import { Deck } from '../../types/decks'
+import { UIDeck } from '../../types/decks'
 import { Button } from '../../ui/button'
 import { ArrowLeft, RotateCcw, StopCircle } from 'lucide-react'
 
 interface StudyHeaderProps {
-  deck: Deck
+  deck: UIDeck
   studyAllCards: boolean
   isTemporaryStudy: boolean
   continuousShuffle: boolean

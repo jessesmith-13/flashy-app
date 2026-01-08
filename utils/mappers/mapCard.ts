@@ -16,5 +16,6 @@ export function mapApiCardToUICard(card: Card): UICard {
     favorite: card.favorite ?? false,
     isIgnored: card.is_ignored ?? false,
     deckId: card.deck_id,
+    createdAt: card.created_at,
   }
 }

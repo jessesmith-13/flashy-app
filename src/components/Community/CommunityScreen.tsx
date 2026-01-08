@@ -111,7 +111,7 @@ export function CommunityScreen() {
 
   // Flag/Report state
   const [flagDialogOpen, setFlagDialogOpen] = useState(false)
-  const [flagItemType, setFlagItemType] = useState<'deck' | 'card'>('deck')
+  const [flagItemType, setFlagItemType] = useState<'deck' | 'card' | 'comment' | 'user'>('deck')
   const [flagItemId, setFlagItemId] = useState('')
   const [flagItemName, setFlagItemName] = useState('')
   const [flagItemDetails, setFlagItemDetails] = useState<FlagItemDetails | undefined>(undefined)
