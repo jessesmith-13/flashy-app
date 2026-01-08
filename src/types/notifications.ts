@@ -55,7 +55,7 @@ export interface Notification {
 /**
  * Notification type from database (snake_case)
  */
-interface NotificationFromDB {
+export interface NotificationFromDB {
   id: string;
   user_id: string;
   type: string;

@@ -1,6 +1,6 @@
-import { ApiNotification, UINotification } from '../../src/types/notifications'
+import { NotificationFromDB, Notification } from '../../src/types/notifications'
 
-export function mapApiNotificationToUINotification(notification: ApiNotification): UINotification {
+export function mapApiNotificationToUINotification(notification: NotificationFromDB): Notification {
   return {
     id: notification.id,
     userId: notification.user_id,

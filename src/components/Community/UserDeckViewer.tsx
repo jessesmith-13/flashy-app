@@ -100,6 +100,7 @@ export function UserDeckViewer({
                 <Button
                   onClick={() => onStudy({
                     ...deck,
+                    user_id: deck.owner_id,
                     updated_at: deck.created_at,
                     card_count: cards.length,
                     difficulty: 'mixed',
@@ -147,6 +148,15 @@ export function UserDeckViewer({
                       </span>
 
                       <div className="flex-1 min-w-0 space-y-4">
+                        {/* Card Type Badge */}
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs px-2 py-1 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300">
+                            {card.cardType === 'classic-flip' ? 'Classic Flip' : 
+                            card.cardType === 'multiple-choice' ? 'Multiple Choice' : 
+                            'Type Answer'}
+                          </span>
+                        </div>
+
                         {/* FRONT */}
                         <div>
                           <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">
@@ -165,58 +175,91 @@ export function UserDeckViewer({
                           )}
                         </div>
 
-                        {/* BACK */}
-                        <div>
-                          <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">
-                            Back
-                          </p>
-
-                          {/* MULTIPLE CHOICE */}
-                          {card.cardType === 'multiple-choice' ? (
-                            <div className="space-y-2">
-                              {card.correctAnswers?.map((answer, i) => (
-                                <p
-                                  key={`correct-${i}`}
-                                  className="text-emerald-600 dark:text-emerald-400 font-medium"
-                                >
-                                  ✓ {answer}
-                                </p>
-                              ))}
-
-                              {card.incorrectAnswers?.map((answer, i) => (
-                                <p
-                                  key={`incorrect-${i}`}
-                                  className="text-gray-600 dark:text-gray-400"
-                                >
-                                  • {answer}
-                                </p>
-                              ))}
-                            </div>
-                          ) : card.backImageUrl ? (
-                            <img
-                              src={card.backImageUrl}
-                              alt="Card back"
-                              className="w-full max-w-sm rounded-lg border"
-                            />
-                          ) : (
-                            <p className="text-gray-900 dark:text-gray-100">
-                              {card.back}
-                            </p>
-                          )}
-                        </div>
-
-                        {/* TYPE ANSWER */}
-                        {card.cardType === 'type-answer' &&
-                          card.acceptedAnswers?.length ? (
+                        {/* MULTIPLE CHOICE */}
+                        {card.cardType === 'multiple-choice' ? (
+                          <>
+                            {/* DEBUG - Remove this after checking */}
+                            {console.log('MC Card:', card.id, {
+                              correctAnswers: card.correctAnswers,
+                              incorrectAnswers: card.incorrectAnswers,
+                              back: card.back
+                            })}
+                            
                             <div>
                               <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">
-                                Accepted answers
+                                Correct answers
                               </p>
-                              <p className="text-sm text-gray-600 dark:text-gray-400">
-                                {card.acceptedAnswers.join(', ')}
-                              </p>
+                              <div className="space-y-1">
+                                {card.correctAnswers && card.correctAnswers.length > 0 ? (
+                                  card.correctAnswers.map((answer, i) => (
+                                    <p
+                                      key={`correct-${i}`}
+                                      className="text-emerald-600 dark:text-emerald-400 font-medium"
+                                    >
+                                      ✓ {answer}
+                                    </p>
+                                  ))
+                                ) : (
+                                  <p className="text-gray-500 dark:text-gray-400 italic">
+                                    No correct answers defined
+                                  </p>
+                                )}
+                              </div>
                             </div>
-                          ) : null}
+
+                            <div>
+                              <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">
+                                Incorrect answers
+                              </p>
+                              <div className="space-y-1">
+                                {card.incorrectAnswers && card.incorrectAnswers.length > 0 ? (
+                                  card.incorrectAnswers.map((answer, i) => (
+                                    <p
+                                      key={`incorrect-${i}`}
+                                      className="text-gray-600 dark:text-gray-400"
+                                    >
+                                      • {answer}
+                                    </p>
+                                  ))
+                                ) : (
+                                  <p className="text-gray-500 dark:text-gray-400 italic">
+                                    No incorrect answers defined
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          </>
+                        ) : (
+                          /* CLASSIC FLIP & TYPE ANSWER - Back field */
+                          <div>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">
+                              Back
+                            </p>
+                            {card.backImageUrl ? (
+                              <img
+                                src={card.backImageUrl}
+                                alt="Card back"
+                                className="w-full max-w-sm rounded-lg border"
+                              />
+                            ) : (
+                              <p className="text-gray-900 dark:text-gray-100">
+                                {card.back}
+                              </p>
+                            )}
+                          </div>
+                        )}
+
+                        {/* TYPE ANSWER - Accepted answers */}
+                        {card.cardType === 'type-answer' && card.acceptedAnswers?.length ? (
+                          <div>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">
+                              Accepted answers
+                            </p>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">
+                              {card.acceptedAnswers.join(', ')}
+                            </p>
+                          </div>
+                        ) : null}
                       </div>
                     </div>
                   </div>
