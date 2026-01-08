@@ -231,7 +231,7 @@ export const createCardsBatch = async (
   deckId: string,
   cards: Array<{
     front: string
-    back: string
+    back?: string
     cardType: string
     correctAnswers?: string[]
     incorrectAnswers?: string[]
@@ -275,7 +275,7 @@ export const updateCard = async (
     correctAnswers: string[]
     acceptedAnswers?: string[]
     favorite?: boolean
-    ignored?: boolean
+    isIgnored?: boolean
     frontImageUrl?: string
     backImageUrl?: string
     frontAudio?: string

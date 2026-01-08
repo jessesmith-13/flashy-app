@@ -18,6 +18,7 @@ import { DECK_CATEGORIES } from '../../../utils/categories'
 import { ShareDeckDialog } from '../ShareDeckDialog'
 import { CreateDeckDialog } from './DeckDetail/CreateDeckDialog'
 import { EditDeckDialog } from './DeckDetail/EditDeckDialog'
+import type { UIDeck, DifficultyLevel } from '@/types/decks'
 
 type SortOption = 'custom' | 'alphabetical-asc' | 'alphabetical-desc' | 'newest' | 'oldest' | 'recently-studied' | 'most-studied' | 'least-studied'
 
@@ -42,16 +43,16 @@ export function DecksScreen() {
   const [filterCategory, setFilterCategory] = useState<string>('all')
   const [filterSubtopic, setFilterSubtopic] = useState<string>('all')
   const [editDialogOpen, setEditDialogOpen] = useState(false)
-  const [editingDeck, setEditingDeck] = useState<any>(null)
+  const [editingDeck, setEditingDeck] = useState<UIDeck | null>(null)
   const [currentPage, setCurrentPage] = useState(1)
   const ITEMS_PER_PAGE = 12
   const [shareDialogOpen, setShareDialogOpen] = useState(false)
-  const [sharingDeck, setSharingDeck] = useState<any>(null)
+  const [sharingDeck, setSharingDeck] = useState<UIDeck | null>(null)
   const [publishDialogOpen, setPublishDialogOpen] = useState(false)
-  const [publishingDeck, setPublishingDeck] = useState<any>(null)
+  const [publishingDeck, setPublishingDeck] = useState<UIDeck | null>(null)
   const [publishing, setPublishing] = useState(false)
   const [unpublishDialogOpen, setUnpublishDialogOpen] = useState(false)
-  const [unpublishingDeck, setUnpublishingDeck] = useState<any>(null)
+  const [unpublishingDeck, setUnpublishingDeck] = useState<UIDeck | null>(null)
 
   // Separate mount effect (with caching)
   useEffect(() => {
@@ -136,7 +137,7 @@ export function DecksScreen() {
     color: string
     category?: string
     subtopic?: string
-    difficulty?: string
+    difficulty?: DifficultyLevel
   }) => {
     if (!accessToken) return
 
@@ -380,7 +381,7 @@ export function DecksScreen() {
     }
   }
 
-  const handleOpenEditDialog = (e: React.MouseEvent, deck: any) => {
+  const handleOpenEditDialog = (e: React.MouseEvent, deck: UIDeck) => {
     e.stopPropagation()
     setEditingDeck(deck)
     setEditDialogOpen(true)
@@ -453,7 +454,7 @@ export function DecksScreen() {
     const result = tabFilter && searchFilter && categoryFilter && subtopicFilter
     
     if (activeTab === 'published' && deck.isPublished) {
-      console.log(`🔍 Deck "${deck.name}\" published filter result:`, {
+      console.log(`🔍 Deck "${deck.name} published filter result:`, {
         tabFilter,
         searchFilter,
         categoryFilter,

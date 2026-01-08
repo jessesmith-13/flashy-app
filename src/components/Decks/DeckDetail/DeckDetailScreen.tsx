@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useStore } from '../../../../store/useStore'
-import { CardType, UICard, UIDeck } from '@/types/decks'
+import { CardType, UICard } from '@/types/decks'
 import { CommunityDeck } from '@/types/community'
 import { useNavigation } from '../../../../hooks/useNavigation'
 import { 
@@ -27,7 +27,7 @@ import { AppLayout } from '../../Layout/AppLayout'
 import { DeckHeader } from './DeckHeader'
 import { AddCardModal  } from './AddCardModal'
 import { EditCardModal } from './EditCardModal'
-import { BulkAddCardsDialog } from './BulkAddCardsDialog'
+import { BulkAddCardsDialog, type CardFormData } from './BulkAddCardsDialog'
 import { DeckSettingsDialog } from './DeckSettingsDialog'
 import { PublishDeckDialog } from './PublishDeckDialog'
 import { CardList } from './CardList'
@@ -35,6 +35,7 @@ import { UpgradeModal } from '../../UpgradeModal'
 import { toast } from 'sonner'
 import { canPublishToCommunity } from '../../../../utils/subscription'
 import { handleAuthError } from '../../../../utils/authErrorHandler'
+import { DifficultyLevel } from '@/types/decks'
 
 interface CardData {
   id?: string
@@ -139,7 +140,6 @@ export function DeckDetailScreen() {
   const [editCardBackAudio, setEditCardBackAudio] = useState('')
   
   // New API structure for edit - multiple-choice
-  const [editCardAcceptedAnswers, setEditCardAcceptedAnswers] = useState<string[]>([''])
   const [editCardIncorrectAnswers, setEditCardIncorrectAnswers] = useState<string[]>(['', '', ''])
   
   // New API structure for edit - type-answer
@@ -157,7 +157,6 @@ export function DeckDetailScreen() {
   const [editFrontLanguage, setEditFrontLanguage] = useState('')
   const [editBackLanguage, setEditBackLanguage] = useState('')
   const [draggedCard, setDraggedCard] = useState<string | null>(null)
-  const [dragOverCard, setDragOverCard] = useState<string | null>(null)
   
   const [publishDialogOpen, setPublishDialogOpen] = useState(false)
   const [publishing, setPublishing] = useState(false)
@@ -261,7 +260,7 @@ export function DeckDetailScreen() {
 
     setCreating(true)
     try {
-      const cardData: UICard = {
+      const cardData: CardData = {
         front: newCardFront,
         cardType: newCardType,
       }
@@ -423,7 +422,6 @@ export function DeckDetailScreen() {
       setEditCardTypeAnswerAcceptedAnswers(acceptedAnswers.length > 0 ? acceptedAnswers : [''])
     } else {
       // Reset to defaults for classic-flip
-      setEditCardAcceptedAnswers([''])
       setEditCardIncorrectAnswers(['', '', ''])
       setEditCardTypeAnswerAcceptedAnswers([''])
     }
@@ -599,7 +597,6 @@ export function DeckDetailScreen() {
       setEditCardBackImageFile(null)
       setEditCardFrontAudio('')
       setEditCardBackAudio('')
-      setEditCardAcceptedAnswers([''])
       setEditCardIncorrectAnswers(['', '', ''])
       setEditCardTypeAnswerAcceptedAnswers([''])
     } catch (error) {
@@ -612,7 +609,7 @@ export function DeckDetailScreen() {
   }
 
   const handleDeleteCard = async (cardId: string) => {
-    if (!accessToken) return
+      if (!accessToken || !deck || selectedCards.size === 0) return  // ✅ Add !deck check
 
     try {
       await apiDeleteCard(accessToken, deck.id, cardId)
@@ -635,7 +632,7 @@ export function DeckDetailScreen() {
   }
 
   const handleDeleteSelectedCards = async () => {
-    if (!accessToken || selectedCards.size === 0) return
+    if (!accessToken || selectedCards.size === 0 || !deck) return
 
     try {
       const cardIds = Array.from(selectedCards)
@@ -662,7 +659,7 @@ export function DeckDetailScreen() {
 
 const handleToggleFavorite = async (cardId: string) => {
   const card = deckCards.find(c => c.id === cardId)
-  if (!card || !accessToken) return
+  if (!card || !accessToken || !deck) return
 
   try {
     // ✅ Update backend first
@@ -683,7 +680,7 @@ const handleToggleFavorite = async (cardId: string) => {
 
   const handleToggleIgnored = async (cardId: string) => {
     const card = deckCards.find(c => c.id === cardId)
-    if (!card || !accessToken) return
+    if (!card || !accessToken || !deck) return
 
     try {
       // ✅ Update backend first
@@ -745,7 +742,7 @@ const handleToggleFavorite = async (cardId: string) => {
         color: editColor,
         category: editCategory || undefined,
         subtopic: editSubtopic || undefined,
-        difficulty: editDifficulty || undefined,
+        difficulty: (editDifficulty || undefined) as DifficultyLevel | undefined,
         frontLanguage: editFrontLanguage || undefined,
         backLanguage: editBackLanguage || undefined,
       }
@@ -815,7 +812,7 @@ const handleToggleFavorite = async (cardId: string) => {
         deck.id,
         {
           category: deck.category,
-          subtopic: deck.subtopic,
+          subtopic: deck.subtopic || undefined,
         }
       )
       updateDeck(deck.id, { isPublished: true })
@@ -823,10 +820,11 @@ const handleToggleFavorite = async (cardId: string) => {
       toast.success('Deck published to community!')
     } catch (error) {
       console.error('❌ Failed to publish deck:', error)
-      if (error.message?.includes('No changes detected')) {
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      if (errorMessage?.includes('No changes detected')) {
         toast.info('This deck is already published with no changes. Make edits to the deck to publish an update.')
       } else {
-        toast.error(error.message || 'Failed to publish deck to community')
+        toast.error(errorMessage || 'Failed to publish deck to community')
       }
     } finally {
       setPublishing(false)
@@ -1041,14 +1039,14 @@ const handleToggleFavorite = async (cardId: string) => {
   }
 
   // Bulk add cards handler - updated for new API structure
-  const handleBulkAddCards = async (cardsData: any[]) => {
+  const handleBulkAddCards = async (cardsData: CardFormData[]) => {
     if (!accessToken || !selectedDeckId) return
 
     try {
       console.log(`🚀 Starting bulk card creation for ${cardsData.length} cards`)
       
       const cardsToCreate: ApiCardData[] = []
-      const failedCards: any[] = []
+      const failedCards: CardFormData[] = []
 
       // Process each card
       for (const cardInput of cardsData) {
@@ -1136,7 +1134,7 @@ const handleToggleFavorite = async (cardId: string) => {
         const createdCards = await apiCreateCardsBatch(accessToken, selectedDeckId, cardsToCreate)
         
         if (createdCards && Array.isArray(createdCards)) {
-          createdCards.forEach((card: any) => {
+          createdCards.forEach((card: UICard) => {
             addCard(card)
           })
           console.log(`✅ Successfully batch created ${createdCards.length} cards`)
@@ -1291,8 +1289,8 @@ const handleToggleFavorite = async (cardId: string) => {
             uploadingImage={uploadingImage}
             uploadingBackImage={uploadingBackImage}
             userTier={user?.subscriptionTier}
-            deckFrontLanguage={deck?.frontLanguage}
-            deckBackLanguage={deck?.backLanguage}
+            deckFrontLanguage={deck?.frontLanguage || undefined}
+            deckBackLanguage={deck?.backLanguage || undefined}
             onCardTypeChange={setNewCardType}
             onFrontChange={setNewCardFront}
             onBackChange={setNewCardBack}
@@ -1337,8 +1335,8 @@ const handleToggleFavorite = async (cardId: string) => {
             uploadingImage={uploadingEditImage}
             uploadingBackImage={uploadingEditBackImage}
             userTier={user?.subscriptionTier}
-            deckFrontLanguage={deck?.frontLanguage}
-            deckBackLanguage={deck?.backLanguage}
+            deckFrontLanguage={deck?.frontLanguage || undefined}
+            deckBackLanguage={deck?.backLanguage || undefined}
             onCardTypeChange={setEditCardType}
             onFrontChange={setEditCardFront}
             onBackChange={setEditCardBack}
@@ -1367,8 +1365,8 @@ const handleToggleFavorite = async (cardId: string) => {
             open={bulkAddDialogOpen}
             onOpenChange={setBulkAddDialogOpen}
             onSubmit={handleBulkAddCards}
-            deckFrontLanguage={deck?.frontLanguage}
-            deckBackLanguage={deck?.backLanguage}
+            deckFrontLanguage={deck?.frontLanguage || undefined}
+            deckBackLanguage={deck?.backLanguage || undefined}
             userTier={user?.subscriptionTier}
             onTranslate={handleBulkTranslate}
             onUploadImage={handleBulkImageUpload}
