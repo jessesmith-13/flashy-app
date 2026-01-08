@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { motion } from 'motion/react'
 import { Button } from '../../ui/button'
 import { ChevronRight, Clock, X, Check } from 'lucide-react'
-import { Card } from '../../../store/useStore'
+import { Card } from '@/types/decks'
 
 interface TimedModeProps {
   cards: Card[]

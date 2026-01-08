@@ -1,6 +1,7 @@
 import { Star, RefreshCw } from 'lucide-react'
 import { CommunityDeckCard } from './CommunityDeckCard'
-import type { CommunityDeck, Deck } from '../../../store/useStore'
+import { Deck } from '@/types/decks'
+import { CommunityDeck } from '@/types/community'
 
 interface CommunityDeckGridProps {
   decks: CommunityDeck[]

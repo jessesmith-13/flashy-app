@@ -6,7 +6,7 @@ import { Label } from '../../../ui/label'
 import { Textarea } from '../../../ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../ui/select'
 import { Loader2, Plus, Trash2, Sparkles, Upload, X } from 'lucide-react'
-import type { CardType } from '../../../../store/useStore'
+import { CardType } from '@/types/decks'
 import { AudioRecorder } from './AudioRecorder'
 import { canAddImageToCard } from '../../../../utils/subscription'
 

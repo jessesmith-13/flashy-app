@@ -2,7 +2,8 @@ import { Button } from '../../ui/button'
 import { Star, Users, Plus, Check, Upload, X, MessageCircle, EyeOff } from 'lucide-react'
 import { DeckRatingDisplay } from './DeckRatingDisplay'
 import { toast } from 'sonner'
-import type { CommunityDeck, Deck } from '../../../store/useStore'
+import { Deck } from '@/types/decks'
+import { CommunityDeck } from '@/types/community'
 
 interface CommunityDeckCardProps {
   deck: CommunityDeck

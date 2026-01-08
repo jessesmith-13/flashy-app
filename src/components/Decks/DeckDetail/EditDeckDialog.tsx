@@ -8,7 +8,7 @@ import { DECK_CATEGORIES } from '../../../../utils/categories'
 import { DECK_LANGUAGES } from '../../../../utils/languages'
 import { ColorPicker } from '../../ColorPicker'
 import { EmojiPicker } from '../../EmojiPicker'
-import { Deck } from '../../../../store/useStore'
+import { Deck } from '@/types/decks'
 
 interface EditDeckDialogProps {
   open: boolean

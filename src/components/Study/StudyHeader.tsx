@@ -1,4 +1,4 @@
-import { Deck } from '../../../store/useStore'
+import { Deck } from '../../types/decks'
 import { Button } from '../../ui/button'
 import { ArrowLeft, RotateCcw, StopCircle } from 'lucide-react'
 

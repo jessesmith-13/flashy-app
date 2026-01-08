@@ -37,7 +37,7 @@ export function StudyScreen() {
     let filteredCards = [...deckCards]
     
     if (excludeIgnored) {
-      filteredCards = filteredCards.filter(c => !c.ignored)
+      filteredCards = filteredCards.filter(c => !c.isIgnored)
     }
     
     if (favoritesOnly) {
@@ -223,7 +223,7 @@ export function StudyScreen() {
     let filteredCards = [...deckCards]
     
     if (excludeIgnored) {
-      filteredCards = filteredCards.filter(c => !c.ignored)
+      filteredCards = filteredCards.filter(c => !c.isIgnored)
     }
     
     if (favoritesOnly) {

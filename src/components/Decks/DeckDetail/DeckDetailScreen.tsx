@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
-import { useStore, CardType, CommunityDeck, Card } from '../../../../store/useStore'
+import { useStore } from '../../../../store/useStore'
+import { CardType, UICard, UIDeck } from '@/types/decks'
+import { CommunityDeck } from '@/types/community'
 import { useNavigation } from '../../../../hooks/useNavigation'
 import { 
   fetchCards as apiFetchCards, 
@@ -259,7 +261,7 @@ export function DeckDetailScreen() {
 
     setCreating(true)
     try {
-      const cardData: CardData = {
+      const cardData: UICard = {
         front: newCardFront,
         cardType: newCardType,
       }
@@ -658,18 +660,46 @@ export function DeckDetailScreen() {
     }
   }
 
-  const handleToggleFavorite = async (cardId: string) => {
-    const card = deckCards.find(c => c.id === cardId)
-    if (!card) return
+const handleToggleFavorite = async (cardId: string) => {
+  const card = deckCards.find(c => c.id === cardId)
+  if (!card || !accessToken) return
 
+  try {
+    // ✅ Update backend first
+    await apiUpdateCard(accessToken, deck.id, cardId, { 
+      favorite: !card.favorite 
+    })
+    
+    // ✅ Then update local state
     updateCard(cardId, { favorite: !card.favorite })
+    
+    toast.success(card.favorite ? 'Removed from favorites' : 'Added to favorites')
+  } catch (error) {
+    handleAuthError(error)
+    console.error('Failed to toggle favorite:', error)
+    toast.error('Failed to update favorite status')
   }
+}
 
   const handleToggleIgnored = async (cardId: string) => {
     const card = deckCards.find(c => c.id === cardId)
-    if (!card) return
+    if (!card || !accessToken) return
 
-    updateCard(cardId, { ignored: !card.ignored })
+    try {
+      // ✅ Update backend first
+      await apiUpdateCard(accessToken, deck.id, cardId, { 
+        isIgnored: !card.isIgnored 
+      })
+      
+      // ✅ Then update local state
+      updateCard(cardId, { isIgnored: !card.isIgnored })
+      
+      toast.success(card.isIgnored ? 'Card unignored' : 'Card ignored')
+    } catch (error) {
+      handleAuthError(error)
+      console.error('Failed to toggle ignored:', error)
+      toast.error('Failed to update ignored status')
+    }
   }
 
   const handleCardDragStart = (cardId: string) => {
@@ -760,7 +790,7 @@ export function DeckDetailScreen() {
       toast.error('Add some cards to this deck before studying!')
       return
     }
-    navigateTo('study')
+    navigateTo('study-options')
   }
 
   const handlePublishDeck = async () => {
