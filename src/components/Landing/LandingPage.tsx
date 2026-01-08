@@ -10,6 +10,9 @@ export function LandingPage() {
   const [isDarkMode, setIsDarkMode] = useState(false)
   const [isFlipped, setIsFlipped] = useState(false)
 
+
+  const logoLight = '/logoLight.png'
+  const logoDark = '/logoDark.png'
   useEffect(() => {
     setIsDarkMode(darkMode)
   }, [darkMode])
@@ -54,7 +57,7 @@ export function LandingPage() {
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-2">
               <img 
-                src={isDarkMode ? "../../../public/logoDark.png" : "../../../public/logoLight.png"}
+                src={isDarkMode ? logoDark : logoLight} 
                 alt="Flashy Logo" 
                 className="w-8 h-8"
               />

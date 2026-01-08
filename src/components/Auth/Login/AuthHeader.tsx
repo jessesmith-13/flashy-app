@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 
-const logoLight = '../../../../public/logoLight.png'
-const logoDark = '../../../../public/logoDark.png'
+const logoLight = '/logoLight.png'
+const logoDark = '/logoDark.png'
 interface AuthHeaderProps {
   onBackToHome?: () => void
   subtitle?: string

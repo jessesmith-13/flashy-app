@@ -8,6 +8,8 @@ import { Home, Users, User, LogOut, Crown, Layers, Settings, Shield, FileText, M
 import { NotificationCenter } from '../Notifications/NotificationCenter'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetDescription } from '../../ui/sheet'
 import { useIsSuperuser, useIsModerator } from '../../../utils/userUtils'
+const logoLight = '/logoLight.png'
+const logoDark = '/logoDark.png'
 
 interface AppLayoutProps {
   children: ReactNode
@@ -88,7 +90,7 @@ export function AppLayout({ children }: AppLayoutProps) {
           <div className="p-6 border-b border-gray-200 dark:border-gray-700">
             <div className="flex items-center gap-2 mb-3">
               <img 
-                src={isDarkMode ? '../../../public/logoDark.png' : '../../../public/logoLight.png'} 
+                src={isDarkMode ? logoDark : logoLight} 
                 alt="Flashy Logo" 
                 className="w-10 h-10"
               />
@@ -335,7 +337,7 @@ export function AppLayout({ children }: AppLayoutProps) {
           <div className="flex items-center justify-between px-4 py-3">
             <div className="flex items-center gap-2">
               <img 
-                src={isDarkMode ? '../../../public/logoDark.png' : '../../../public/logoLight.png'} 
+                src={isDarkMode ? logoDark : logoLight} 
                 alt="Flashy Logo" 
                 className="w-7 h-7"
               />
