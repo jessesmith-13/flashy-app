@@ -69,7 +69,7 @@ export const fetchFeaturedCommunityDecks = async () => {
 export const publishDeck = async (
   accessToken: string,
   deckId: string,
-  publishData: { category: string; subtopic: string }
+  publishData: { category: string; subtopic: string | undefined }
 ) => {
   console.log('📤 publishDeck called with:')
   console.log('  - deckId:', deckId)

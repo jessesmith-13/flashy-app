@@ -19,7 +19,7 @@ export type ApiCard = {
   deck_id: string
   card_type: 'classic-flip' | 'multiple-choice' | 'type-answer'
   front: string | null
-  back: string | null
+  back?: string | null
   correct_answers: string[] | null
   incorrect_answers: string[] | null
   accepted_answers: string[] | null
@@ -68,8 +68,17 @@ export interface Deck {
   card_count: number
   difficulty: DifficultyLevel
   source_community_deck_id?: string | null
+  community_published_id?: string | null
   front_language?: string | null
   back_language?: string | null 
+  is_published: boolean
+  is_favorite?: boolean
+  is_learned?: boolean
+  is_community?: boolean
+  is_deleted?: boolean
+  is_shared?: boolean
+  position?: number
+  deleted_at?: string | null
 }
 
 export interface UIDeck {
@@ -86,8 +95,18 @@ export interface UIDeck {
   cardCount: number
   difficulty: DifficultyLevel
   sourceCommunityDeckId?: string | null
+  communityPublishedId?: string | null
   frontLanguage?: string | null
   backLanguage?: string | null
+  isPublished: boolean
+  isFavorite?: boolean
+  isLearned?: boolean
+  isCommunity?: boolean
+  isDeleted?: boolean
+  isShared?: boolean
+  position?: number
+  deletedAt?: string | null
+  communityDeckVersion?: number | null
 }
 
 export type DifficultyLevel = 'beginner' | 'intermediate' | 'advanced' | 'expert' | 'mixed';

@@ -10,7 +10,7 @@ import { CardType } from '@/types/decks'
 import { AudioRecorder } from './AudioRecorder'
 import { canAddImageToCard } from '../../../../utils/subscription'
 
-interface CardFormData {
+export interface CardFormData {
   id: string
   cardType: CardType
   front: string
