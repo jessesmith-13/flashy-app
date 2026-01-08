@@ -29,6 +29,7 @@ export interface StudySession {
   timeSpentSeconds: number | null
 
   sessionData: Record<string, unknown> | null
+  timeSpent: number
 }
 
 export interface StudySessionPayload {

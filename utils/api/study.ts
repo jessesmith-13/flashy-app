@@ -7,6 +7,7 @@ type StudySessionRow = {
   deck_id: string
   date: string
   correct_answers: number
+  incorrect_answers: number
   total_questions: number
   score: number
   duration_minutes: number | null
@@ -29,6 +30,7 @@ const mapStudySession = (row: StudySessionRow): StudySession => ({
   deckId: row.deck_id,
   date: row.date,
   correctAnswers: row.correct_answers,
+  incorrectAnswers: row.incorrect_answers,
   totalQuestions: row.total_questions,
   score: row.score,
   durationMinutes: row.duration_minutes,
@@ -43,6 +45,7 @@ const mapStudySession = (row: StudySessionRow): StudySession => ({
   studyMode: row.study_mode,
   timeSpentSeconds: row.time_spent_seconds,
   sessionData: row.session_data,
+  timeSpent: 0
 })
 
 /**
