@@ -1,7 +1,7 @@
 import { Button } from '../../../ui/button'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../../../ui/alert-dialog'
 import { GripVertical, Edit, Star, EyeOff, Trash2, FlipVertical, CheckCircle, Keyboard } from 'lucide-react'
-import type { Card, CardType } from '../../../../store/useStore'
+import type { UICard, CardType } from '@/types/decks'
 
 const CARD_TYPES: { value: CardType; label: string; icon: typeof FlipVertical }[] = [
   { value: 'classic-flip', label: 'Classic Flip', icon: FlipVertical },
@@ -10,7 +10,7 @@ const CARD_TYPES: { value: CardType; label: string; icon: typeof FlipVertical }[
 ]
 
 interface CardItemProps {
-  card: Card
+  card: UICard
   onEdit: (cardId: string) => void
   onDelete: (cardId: string) => void
   onToggleFavorite: (cardId: string) => void
@@ -218,8 +218,8 @@ export function CardItem({
                 variant="ghost"
                 size="icon"
                 onClick={() => onToggleIgnored(card.id)}
-                className={`h-7 w-7 sm:h-8 sm:w-8 ${card.ignored ? 'text-gray-600 hover:text-gray-700' : 'text-gray-400 hover:text-gray-600'}`}
-                title={card.ignored ? 'Unignore card' : 'Ignore card'}
+                className={`h-7 w-7 sm:h-8 sm:w-8 ${card.isIgnored ? 'text-gray-600 hover:text-gray-700' : 'text-gray-400 hover:text-gray-600'}`}
+                title={card.isIgnored ? 'Unignore card' : 'Ignore card'}
               >
                 <EyeOff className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               </Button>

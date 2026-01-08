@@ -4,10 +4,10 @@ import { Pagination } from '../../Pagination/Pagination'
 import { Eye, Star, EyeOff, ArrowUpDown, CheckSquare, Square, Trash2 } from 'lucide-react'
 import { Button } from '../../../ui/button'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../../../ui/alert-dialog'
-import type { Card } from '../../../../store/useStore'
+import type { UICard } from '@/types/decks'
 
 interface CardListProps {
-  cards: Card[]
+  cards: UICard[]
   onEditCard: (cardId: string) => void
   onDeleteCard: (cardId: string) => void
   onToggleFavorite: (cardId: string) => void
@@ -53,7 +53,7 @@ export function CardList({
     if (filterTab === 'favorites') {
       filtered = filtered.filter(card => card.favorite)
     } else if (filterTab === 'ignored') {
-      filtered = filtered.filter(card => card.ignored)
+      filtered = filtered.filter(card => card.isIgnored)
     }
     
     // Then sort
@@ -65,8 +65,8 @@ export function CardList({
       })
     } else if (sortBy === 'ignored') {
       filtered.sort((a, b) => {
-        if (a.ignored && !b.ignored) return -1
-        if (!a.ignored && b.ignored) return 1
+        if (a.isIgnored && !b.isIgnored) return -1
+        if (!a.isIgnored && b.isIgnored) return 1
         return (a.position || 0) - (b.position || 0)
       })
     } else {
@@ -202,7 +202,7 @@ export function CardList({
             }`}
           >
             <EyeOff className="w-4 h-4" />
-            <span className="hidden sm:inline">Ignored </span>({cards.filter(c => c.ignored).length})
+            <span className="hidden sm:inline">Ignored </span>({cards.filter(c => c.isIgnored).length})
           </button>
         </div>
         <div className="flex items-center gap-2 flex-wrap">

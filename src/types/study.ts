@@ -1,3 +1,5 @@
+import { CommunityCard, CommunityDeck } from './community'
+
 export interface StudySession {
   id: string
   userId: string
@@ -40,4 +42,17 @@ export interface StudySessionPayload {
   timeSpentSeconds: number
   mode?: string
   sessionData?: unknown
+}
+
+export interface StudyOptions {
+  timedMode: boolean
+  continuousShuffle: boolean
+  order: 'randomized' | 'linear'
+  excludeIgnored: boolean
+  favoritesOnly: boolean
+}
+
+export interface TemporaryStudyDeck {
+  deck: CommunityDeck
+  cards: CommunityCard[]
 }

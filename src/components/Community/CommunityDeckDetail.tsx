@@ -11,7 +11,8 @@ import { DeletionDialog } from './DeletionDialog'
 import { toast } from 'sonner'
 import { useStore } from '../../../store/useStore'
 import * as api from '../../../utils/api'
-import type { CommunityDeck, Deck } from '../../../store/useStore'
+import { Deck } from '@/types/decks'
+import { CommunityDeck } from '@/types/community'
 
 type FlagTargetType = 'deck' | 'comment' | 'card'
 

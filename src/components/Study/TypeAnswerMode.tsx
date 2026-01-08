@@ -101,17 +101,17 @@ export function TypeAnswerMode({ cards, onNext, currentIndex, isLastCard, isTemp
   const handleToggleIgnored = async () => {
     if (!accessToken || !selectedDeckId) return
 
-    const newIgnoredValue = !currentCard.ignored
+    const newIgnoredValue = !currentCard.isIgnored
 
     // Optimistically update the UI immediately
-    updateCard(currentCard.id, { ignored: newIgnoredValue })
+    updateCard(currentCard.id, { isIgnored: newIgnoredValue })
 
     try {
-      await api.updateCard(accessToken, selectedDeckId, currentCard.id, { ignored: newIgnoredValue })
+      await api.updateCard(accessToken, selectedDeckId, currentCard.id, { isIgnored: newIgnoredValue })
       toast.success(newIgnoredValue ? 'Card ignored - will be excluded from future study sessions' : 'Card unignored')
     } catch (error) {
       // Revert on error
-      updateCard(currentCard.id, { ignored: !newIgnoredValue })
+      updateCard(currentCard.id, { isIgnored: !newIgnoredValue })
       console.error('Failed to toggle ignored:', error)
       toast.error('Failed to update ignored status')
     }
@@ -140,18 +140,18 @@ export function TypeAnswerMode({ cards, onNext, currentIndex, isLastCard, isTemp
               <span className="text-xs">{currentCard.favorite ? 'Favorited' : 'Favorite'}</span>
             </Button>
             <Button
-              variant={currentCard.ignored ? "default" : "outline"}
+              variant={currentCard.isIgnored ? "default" : "outline"}
               size="sm"
               onClick={handleToggleIgnored}
               className={`gap-1.5 transition-all ${
-                currentCard.ignored 
+                currentCard.isIgnored 
                   ? 'bg-gray-600 hover:bg-gray-700 text-white border-gray-600' 
                   : 'border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:border-gray-600 hover:text-gray-700'
               }`}
-              title={currentCard.ignored ? 'Unignore card' : 'Ignore card (exclude from study)'}
+              title={currentCard.isIgnored ? 'Unignore card' : 'Ignore card (exclude from study)'}
             >
               <EyeOff className="w-4 h-4" />
-              <span className="text-xs">{currentCard.ignored ? 'Ignored' : 'Ignore'}</span>
+              <span className="text-xs">{currentCard.isIgnored ? 'Ignored' : 'Ignore'}</span>
             </Button>
           </div>
         )}

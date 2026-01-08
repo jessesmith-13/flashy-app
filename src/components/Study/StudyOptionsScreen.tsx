@@ -19,7 +19,7 @@ export function StudyOptionsScreen() {
   const [excludeIgnored, setExcludeIgnored] = useState(false)
   const [favoritesOnly, setFavoritesOnly] = useState(false)
 
-  const ignoredCount = deckCards.filter(c => c.ignored).length
+  const ignoredCount = deckCards.filter(c => c.isIgnored).length
   const favoritesCount = deckCards.filter(c => c.favorite).length
 
   const handleStartStudy = () => {

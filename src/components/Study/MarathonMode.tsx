@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { motion } from 'motion/react'
 import { Button } from '../../ui/button'
 import { X, Check, RotateCcw, Pause, Play } from 'lucide-react'
-import { Card } from '../../../store/useStore'
+import { Card } from '@/types/decks'
 
 interface MarathonModeProps {
   cards: Card[]

@@ -1,189 +1,13 @@
 import { create } from 'zustand'
 import { projectId } from '../utils/supabase/info'
 import { fetchUserAchievements } from '../utils/api/achievements'
-
-export type CardType = 'classic-flip' | 'multiple-choice' | 'type-answer'
-
-export type DifficultyLevel = 'beginner' | 'intermediate' | 'advanced' | 'expert' | 'mixed'
-
-export interface Card {
-  id: string
-  deckId: string
-  front: string
-  back: string
-  createdAt: string
-  position: number
-  cardType: CardType  // Each card has its own type
-  favorite?: boolean  // Mark card as favorite
-  ignored?: boolean   // Mark card as ignored
-  frontImageUrl?: string  // Optional image for the question (premium feature)
-  backImageUrl?: string  // Optional image for the answer (premium feature, classic-flip only)
-  frontAudio?: string  // Optional audio for the question (premium feature)
-  backAudio?: string  // Optional audio for the answer (premium feature)
-  // For multiple-choice card type
-  incorrectAnswers?: string[]
-  correctAnswers?: string[]  // Array of correct answers for multiple choice (if undefined, 'back' is the single correct answer)
-  // For type-answer card type
-  acceptedAnswers?: string[]  // Array of alternative acceptable answers
-}
-
-export type DeckType = 'classic-flip' | 'multiple-choice' | 'type-answer'
-
-export interface Deck {
-  id: string
-  name: string
-  color: string
-  emoji: string
-  userId: string
-  createdAt: string
-  cardCount: number
-  deckType: DeckType
-  position: number
-  theme?: string
-  favorite?: boolean  // Mark deck as favorite
-  learned?: boolean   // Mark deck as learned
-  category?: string   // Deck category
-  subtopic?: string   // Deck subtopic
-  difficulty?: DifficultyLevel  // Deck difficulty level
-  frontLanguage?: string   // Language of the question/front (e.g., "English")
-  backLanguage?: string    // Language of the answer/back (e.g., "Spanish")
-  sourceCommunityDeckId?: string  // Track which community deck this was imported from
-  communityPublishedId?: string   // Track which community deck ID this deck was published as
-  communityDeckVersion?: number   // Track version of imported community deck
-  cannotRepublish?: boolean  // Flag if deck cannot be republished (set by superuser)
-  cannotRepublishReason?: string  // Reason why deck cannot be republished
-  isDeleted?: boolean  // Soft-delete flag
-  deletedAt?: string  // When the deck was deleted
-  lastSyncedAt?: string  // When the deck was last synced with community version
-}
-
-// CommunityDeck extends Deck and adds community-specific fields
-export interface CommunityDeck extends Omit<Deck, 'userId' | 'position' | 'favorite' | 'learned' | 'sourceCommunityDeckId' | 'communityPublishedId' | 'communityDeckVersion'> {
-  authorId: string // Replaces userId for community context
-  author: string // Display name of the author
-  cards: Card[] // Community decks include cards inline
-  publishedAt: string // When it was published
-  updatedAt?: string // When it was last updated
-  downloads: number // Number of times downloaded
-  featured?: boolean // Featured by superuser
-  version?: number // Version number for updates
-  averageRating?: number // Average rating from users
-  ratingCount?: number // Number of ratings
-  commentCount?: number // Number of comments
-  isPublished: boolean
-}
-
-export interface StudyOptions {
-  timedMode: boolean
-  continuousShuffle: boolean
-  order: 'randomized' | 'linear'
-  excludeIgnored: boolean
-  favoritesOnly: boolean
-}
-
-export interface StudySession {
-  deckId: string
-  startedAt: string
-  endedAt: string
-  cardsStudied: number
-  correctCount: number
-  incorrectCount: number
-  skippedCount: number
-  mode: string
-  timeSpentSeconds: number
-  score: number
-}
-
-export interface UserStats {
-  totalDecks: number
-  totalCards: number
-  studyStreak: number
-  lastStudyDate: string
-  totalStudySessions: number
-  averageScore: number
-  cardsReviewed: number
-  correctAnswersInRow: number
-  totalStudyMinutes: number
-  perfectScores: number
-}
-
-export interface UserAchievements {
-  unlockedAchievementIds: string[]
-  customizedDeckTheme: boolean
-  hasProfilePicture: boolean
-  decksPublished: number
-  decksImported: number
-  studiedBeforeEightAM: boolean
-  studiedAfterMidnight: boolean
-  studiedSixtyMinutesNonstop: boolean
-  studiedThreeHoursInOneDay: boolean
-  flippedCardFiveTimes: boolean
-  studiedOnLowBattery: boolean
-  slowCardReview: boolean
-  createdMultipleChoiceCard: boolean
-  createdTrueFalseCard: boolean
-  createdImageCard: boolean
-  completedBeginnerDeck: boolean
-  completedIntermediateDeck: boolean
-  completedAdvancedDeck: boolean
-  completedExpertDeck: boolean
-  completedMasterDeck: boolean
-  usedAI: boolean
-  aiCardsGenerated: number
-  commentsLeft: number
-  ratingsGiven: number
-}
-
-export type SubscriptionTier = 'free' | 'monthly' | 'annual' | 'lifetime'
-
-export interface FriendRequest {
-  id: string
-  name: string
-  displayName?: string
-  email: string
-  avatarUrl?: string
-}
-
-export interface Notification {
-  id: string
-  userId: string
-  type: "friend_request" | "comment" | "reply" | "deck_comment" | "warning" | "mention" | "comment_like" | "ticket_mention" | "ticket_comment" | "ticket_assigned";
-  message: string
-  relatedUserId: string
-  requesterDisplayName: string
-  requesterAvatar: string | null
-  createdAt: string
-  relatedDeckId: string | null
-  relatedCommentId: string | null
-  relatedReplyId: string | null
-  fromUserId?: string
-  fromUserName?: string
-  fromUserAvatar?: string
-  deckName?: string
-  commentText?: string
-  isRead: boolean
-  isSeen: boolean
-}
-
-export interface TemporaryStudyDeck {
-  deck: CommunityDeck
-  cards: Card[]
-}
-
-interface User {
-  id: string
-  email: string
-  name: string
-  displayName?: string
-  avatarUrl?: string
-  decksPublic?: boolean
-  subscriptionTier?: SubscriptionTier
-  subscriptionExpiry?: string // For monthly/annual subscriptions
-  subscriptionCancelledAtPeriodEnd?: boolean // If subscription is set to cancel at period end
-  isSuperuser?: boolean // Superuser role for "Flashy" admin account (full admin privileges)
-  isModerator?: boolean // Moderator role (can manage flags, has premium features)
-  isBanned?: boolean // User ban status (managed by superuser)
-}
+import { UIDeck, UICard } from '../src/types/decks'
+import { CommunityDeck } from '@/types/community'
+import { StudyOptions, StudySession, TemporaryStudyDeck } from '@/types/study'
+import { UserStats, UserAchievements } from '@/types/users'
+import { FriendRequest } from '@/types/friends'
+import { Notification } from '@/types/notifications'
+import { User } from '@/types/users'
 
 interface AppState {
   // Auth state
@@ -214,10 +38,10 @@ interface AppState {
   clearAllMentionNotifications: () => void
 
   // Deck state
-  decks: Deck[]
-  setDecks: (decks: Deck[]) => void
-  addDeck: (deck: Deck) => void
-  updateDeck: (deckId: string, updates: Partial<Deck>) => void
+  decks: UIDeck[]
+  setDecks: (decks: UIDeck[]) => void
+  addDeck: (deck: UIDeck) => void
+  updateDeck: (deckId: string, updates: Partial<UIDeck>) => void
   removeDeck: (deckId: string) => void
   decksLastLoaded: number | null // Timestamp when decks were last loaded
   decksCacheInvalidated: boolean // Flag to force reload
@@ -225,10 +49,10 @@ interface AppState {
   shouldReloadDecks: () => boolean // Check if decks need reloading
 
   // Card state
-  cards: Card[]
-  setCards: (cards: Card[]) => void
-  addCard: (card: Card) => void
-  updateCard: (cardId: string, updates: Partial<Card>) => void
+  cards: UICard[]
+  setCards: (cards: UICard[]) => void
+  addCard: (card: UICard) => void
+  updateCard: (cardId: string, updates: Partial<UICard>) => void
   removeCard: (cardId: string) => void
 
   communityDecks: CommunityDeck[]
@@ -259,7 +83,7 @@ interface AppState {
   ttsProvider: 'browser' | 'openai'
   temporaryStudyDeck: TemporaryStudyDeck | null // For studying community decks without adding them
   returnToCommunityDeck: CommunityDeck | null // Track which community deck to return to after studying
-  returnToUserDeck: { deck: any; cards: any[]; ownerId: string } | null // Track which user deck to return to after studying
+  returnToUserDeck: { deck: UIDeck; cards: UICard[]; ownerId: string } | null // Track which user deck to return to after studying
   returnToSharedDeckId: string | null // Track which shared deck to return to after studying
   viewingCommunityDeckId: string | null // Track which community deck to view (for notifications)
   targetCommentId: string | null // Track which comment to scroll to (for notifications)
@@ -277,7 +101,7 @@ interface AppState {
   setTTSProvider: (provider: 'browser' | 'openai') => void
   setTemporaryStudyDeck: (deck: TemporaryStudyDeck | null) => void
   setReturnToCommunityDeck: (deck: CommunityDeck | null) => void
-  setReturnToUserDeck: (userDeck: { deck: any; cards: any[]; ownerId: string } | null) => void
+  setReturnToUserDeck: (userDeck: { deck: UIDeck; cards: UICard[]; ownerId: string } | null) => void
   setReturnToSharedDeckId: (deckId: string | null) => void
   setViewingCommunityDeckId: (deckId: string | null) => void
   setTargetCommentId: (commentId: string | null) => void
