@@ -32,6 +32,7 @@ import { Toaster } from './ui/sonner'
 import { toast } from 'sonner'
 import { SetDisplayModal } from './components/Auth/Signup/SetDisplayModal'
 import { SubscriptionTier } from '@/types/users'
+console.log('SUPABASE URL AT RUNTIME:', import.meta.env.VITE_SUPABASE_URL)
 
 // Suppress Supabase auth errors from console
 const originalConsoleError = console.error
