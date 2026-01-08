@@ -51,6 +51,7 @@ export function SignupForm({
           {
             headers: {
               'Authorization': `Bearer ${anonKey}`,
+              'apikey': anonKey,
             },
           }
         )
