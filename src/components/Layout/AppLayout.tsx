@@ -2,7 +2,7 @@ import { ReactNode, useState, useEffect } from 'react'
 import { useStore } from '../../../store/useStore'
 import { useNavigation } from '../../../hooks/useNavigation'
 import { useLocation } from 'react-router-dom'
-import * as api from '../../../utils/api'
+import { signOut } from '../../../utils/api/auth'
 import { Button } from '../../ui/button'
 import { Home, Users, User, LogOut, Crown, Layers, Settings, Shield, FileText, Mail, Menu, ShieldAlert } from 'lucide-react'
 import { NotificationCenter } from '../Notifications/NotificationCenter'
@@ -45,7 +45,7 @@ export function AppLayout({ children }: AppLayoutProps) {
 
   const handleLogout = async () => {
     try {
-      await api.signOut()
+      await signOut()
       logout()
       // Navigate to landing page after logout
       navigateTo('landing')

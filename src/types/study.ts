@@ -1,4 +1,4 @@
-import { UIDeck, UICard } from './decks'
+import {  UICard } from './decks'
 
 export interface StudySession {
   id: string
@@ -67,6 +67,8 @@ export interface UISharedDeck {
         publishedAt: string
         downloadCount: number
         createdAt: string
+        frontLanguage?: string | null
+        backLanguage?: string | null
 }
 
 export interface TemporaryStudyDeck {

@@ -1,13 +1,15 @@
 import { useState } from 'react'
 import { useStore } from '../../../store/useStore'
 import { useNavigation } from '../../../hooks/useNavigation'
-import * as api from '../../../utils/api'
+import { updateProfile } from '../../../utils/api/users'
+import { supabaseClient } from '../../../utils/api/auth'
 import { toast } from 'sonner'
 import { AppLayout } from '../Layout/AppLayout'
 import { Button } from '../../ui/button'
 import { ArrowLeft, Crown, AlertCircle } from 'lucide-react'
 import { SubscriptionSection } from './SubscriptionSection'
 import { NotificationsSection } from './NotificationsSection'
+import { cancelSubscription, changeSubscriptionPlan } from '../../../utils/api/subscriptions'
 import { AppearanceSection } from './AppearanceSection'
 import { DataPrivacySection } from './DataPrivacySection'
 import { DangerZoneSection } from './DangerZoneSection'
@@ -18,7 +20,7 @@ import { DeleteAccountDialog } from './DeleteAccountDialog'
 import { projectId } from '../../../utils/supabase/info'
 
 export function SettingsScreen() {
-  const { darkMode, setDarkMode, userAchievements, setUserAchievements, user, accessToken, updateUser, setAuth, ttsProvider, setTTSProvider } = useStore()
+  const { darkMode, setDarkMode, userAchievements, setUserAchievements, user, accessToken, updateUser, ttsProvider, setTTSProvider } = useStore()
   const { navigateTo } = useNavigation()
   
   // Debug logging
@@ -42,7 +44,6 @@ export function SettingsScreen() {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [cancelling, setCancelling] = useState(false)
   const [changingPlan, setChangingPlan] = useState(false)
-  const [exporting, setExporting] = useState(false)
   const [fixingTier, setFixingTier] = useState(false)
 
     
@@ -66,7 +67,7 @@ export function SettingsScreen() {
     
     try {
       if (!user?.id || !accessToken) return
-      await api.updateProfile(user.id, accessToken, {
+      await updateProfile(user.id, accessToken, {
         decksPublic: enabled
       })
       
@@ -90,7 +91,6 @@ export function SettingsScreen() {
       return
     }
 
-    setExporting(true)
     toast.loading('Preparing your data export...', { id: 'export' })
 
     try {
@@ -140,9 +140,7 @@ export function SettingsScreen() {
     } catch (error: any) {
       console.error('Failed to export data:', error)
       toast.error(error.message || 'Failed to export data', { id: 'export' })
-    } finally {
-      setExporting(false)
-    }
+    } 
   }
 
   const handleDeleteAccount = () => {
@@ -177,7 +175,7 @@ export function SettingsScreen() {
       const data = await response.json()
       
       // Refresh session to get updated metadata
-      const { data: { session }, error } = await api.supabaseClient.auth.refreshSession()
+      const { data: { session }, error } = await supabaseClient.auth.refreshSession()
       
       if (error) {
         console.error('Error refreshing session after fix:', error)
@@ -230,7 +228,7 @@ export function SettingsScreen() {
     setCancelling(true)
     try {
       // Cancel subscription via Stripe API
-      const result = await api.cancelSubscription(accessToken)
+      const result = await cancelSubscription(accessToken)
       
       console.log('Subscription cancelled:', result)
 
@@ -258,7 +256,7 @@ export function SettingsScreen() {
     setChangingPlan(true)
     try {
       // Change subscription via Stripe API
-      const result = await api.changeSubscriptionPlan(accessToken, selectedPlan)
+      const result = await changeSubscriptionPlan(accessToken, selectedPlan)
       
       console.log('✅ Subscription changed:', result)
       
@@ -288,12 +286,12 @@ export function SettingsScreen() {
     setShowChangePlanDialog(true)
   }
 
-  const isPremiumSubscription = user?.subscriptionTier && ['monthly', 'annual', 'lifetime'].includes(user.subscriptionTier)
-  const canCancelSubscription = user?.subscriptionTier && ['monthly', 'annual'].includes(user.subscriptionTier)
+  const isPremiumSubscription = !!(user?.subscriptionTier && ['monthly', 'annual', 'lifetime'].includes(user.subscriptionTier))
+  const canCancelSubscription = !!(user?.subscriptionTier && ['monthly', 'annual'].includes(user.subscriptionTier))
   const subscriptionInfo = getSubscriptionDisplay()
   
   // Superusers and moderators should also be considered premium
-  const effectiveIsPremium = isPremiumSubscription || user?.isSuperuser || user?.isModerator
+  const effectiveIsPremium = !!(isPremiumSubscription || user?.isSuperuser || user?.isModerator)
   
   // Check if subscription tier is invalid
   const hasInvalidTier = user?.subscriptionTier && !['free', 'monthly', 'annual', 'lifetime'].includes(user.subscriptionTier)

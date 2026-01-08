@@ -10,7 +10,7 @@ import { StudyStats } from './StudyStats'
 import { EmptyDeckState } from './EmptyDeckState'
 
 export function StudyScreen() {
-  const { selectedDeckId, decks, cards, studyOptions, studyAllCards, userAchievements, setUserAchievements, addStudySession, temporaryStudyDeck, setTemporaryStudyDeck, setReturnToCommunityDeck, returnToUserDeck, setReturnToUserDeck, returnToSharedDeckId, setReturnToSharedDeckId } = useStore()
+  const { selectedDeckId, decks, cards, studyOptions, studyAllCards, userAchievements, setUserAchievements, addStudySession, temporaryStudyDeck, setTemporaryStudyDeck, setReturnToCommunityDeck, setReturnToUserDeck, returnToSharedDeckId, setReturnToSharedDeckId } = useStore()
   const { navigateTo } = useNavigation()
   
   // Check if we're studying a temporary community deck
@@ -45,7 +45,7 @@ export function StudyScreen() {
     }
     
     // Order cards based on study options
-    let orderedCards = [...filteredCards]
+    const orderedCards = [...filteredCards]
     
     if (order === 'randomized') {
       orderedCards.sort(() => Math.random() - 0.5)
@@ -329,8 +329,8 @@ export function StudyScreen() {
                 currentIndex={currentIndex}
                 isLastCard={isLastCard}
                 isTemporaryStudy={isTemporaryStudy}
-                frontLanguage={deck?.frontLanguage}
-                backLanguage={deck?.backLanguage}
+                frontLanguage={deck?.frontLanguage ?? undefined}
+                backLanguage={deck?.backLanguage ?? undefined}
               />
             )}
             
@@ -341,7 +341,7 @@ export function StudyScreen() {
                 currentIndex={currentIndex}
                 isLastCard={isLastCard}
                 isTemporaryStudy={isTemporaryStudy}
-                frontLanguage={deck?.frontLanguage}
+                frontLanguage={deck?.frontLanguage ?? undefined}
               />
             )}
             
@@ -352,7 +352,7 @@ export function StudyScreen() {
                 currentIndex={currentIndex}
                 isLastCard={isLastCard}
                 isTemporaryStudy={isTemporaryStudy}
-                frontLanguage={deck?.frontLanguage}
+                frontLanguage={deck?.frontLanguage ?? undefined}
               />
             )}
           </>

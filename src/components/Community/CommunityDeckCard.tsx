@@ -2,7 +2,7 @@ import { Button } from '../../ui/button'
 import { Star, Users, Plus, Check, Upload, X, MessageCircle, EyeOff } from 'lucide-react'
 import { DeckRatingDisplay } from './DeckRatingDisplay'
 import { toast } from 'sonner'
-import { Deck } from '@/types/decks'
+import { UIDeck } from '@/types/decks'
 import { UICommunityDeck } from '@/types/community'
 
 interface CommunityDeckCardProps {
@@ -19,11 +19,11 @@ interface CommunityDeckCardProps {
   onViewDeck: (deck: UICommunityDeck) => void
   onViewUser: (userId: string) => void
   onAddDeck: (deck: UICommunityDeck) => void
-  onUpdateDeck: (communityDeck: UICommunityDeck, importedDeck: Deck) => void
+  onUpdateDeck: (communityDeck: UICommunityDeck, importedDeck: UIDeck) => void
   onToggleFeatured: (deckId: string) => void
   onDeleteDeck: (deckId: string, deckName: string) => void
   onUnpublishDeck: (deckId: string, deckName: string) => void
-  importedDeck?: Deck
+  importedDeck?: UIDeck
   isFeatured?: boolean
 }
 

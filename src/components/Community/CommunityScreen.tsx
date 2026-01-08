@@ -3,7 +3,6 @@ import { useStore } from '../../../store/useStore'
 import { useNavigation } from '../../../hooks/useNavigation'
 // Import community-specific functions from API
 import { getUserDeck } from '../../../utils/api/users'
-import { createFlag } from '../../../utils/api/moderation'
 import { 
   toggleCommunityDeckFeatured,
   deleteCommunityDeck,
@@ -305,7 +304,7 @@ export function CommunityScreen() {
       return
     }
 
-    if (deck.authorId === user.id) {
+    if (deck.ownerId === user.id) {
       // ✅ ADD: && !d.isDeleted
       const alreadyInCollection = decks.find(d => d.communityPublishedId === deck.id && !d.isDeleted)
       if (alreadyInCollection) {
@@ -316,7 +315,7 @@ export function CommunityScreen() {
       }
     }
 
-    if (deck.authorId !== user.id) {
+    if (deck.ownerId !== user.id) {
       // ✅ ADD: && !d.isDeleted
       const alreadyImported = decks.find(d => d.sourceCommunityDeckId === deck.id && !d.isDeleted)
       if (alreadyImported) {
@@ -330,9 +329,16 @@ export function CommunityScreen() {
       const newDeck = await addDeckFromCommunity(accessToken, {
         communityDeckId: deck.id,
         name: deck.name,
-        color: deck.color,
-        emoji: deck.emoji,
-        cards: deck.cards || [],
+        color: deck.color || '#10B981',
+        emoji: deck.emoji || '📚',
+        cards: (deck.cards || []).map(card => ({
+          front: card.front || '',
+          back: card.back || '',  // In case back is null for MC cards
+          cardType: card.cardType,
+          correctAnswers: card.correctAnswers || undefined,
+          incorrectAnswers: card.incorrectAnswers || undefined,
+          acceptedAnswers: card.acceptedAnswers || undefined,
+        })),
         category: deck.category,
         subtopic: deck.subtopic,
         version: deck.version || 1,
@@ -349,7 +355,7 @@ export function CommunityScreen() {
       if (viewingDeck && viewingDeck.id === deck.id) {
         setViewingDeck({
           ...viewingDeck,
-          downloads: (viewingDeck.downloads || 0) + 1
+          downloadCount: (viewingDeck.downloadCount || 0) + 1
         })
       }
       
@@ -492,26 +498,6 @@ export function CommunityScreen() {
     } catch (error: any) {
       console.error('Failed to load user deck:', error)
       toast.error(error.message || 'Failed to load deck')
-    }
-  }
-
-  const handleFlagItem = async (itemId: string, reason: string, details: string) => {
-    try {
-      await createFlag(accessToken, {
-        itemType: flagItemType,
-        itemId,
-        reason,
-        details
-      })
-
-      if (flagItemType === 'deck') {
-        setFlaggedDecks(prev => new Set(prev).add(itemId))
-      } else {
-        setFlaggedCards(prev => new Set(prev).add(itemId))
-      }
-    } catch (error) {
-      console.error('Failed to flag item:', error)
-      throw error
     }
   }
 
@@ -752,24 +738,24 @@ export function CommunityScreen() {
   // Filter and sort decks
   let filteredDecks = communityDecks.filter((deck) => {
     const matchesSearch = deck.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      deck.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      deck.subtopic.toLowerCase().includes(searchQuery.toLowerCase())
+      deck.category?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      deck.subtopic?.toLowerCase().includes(searchQuery.toLowerCase())
     
     const matchesCategory = filterCategory === 'all' || deck.category === filterCategory
     const matchesSubtopic = filterSubtopic === 'all' || deck.subtopic === filterSubtopic
     const matchesFeatured = !showFeaturedOnly || deck.featured === true
-    const matchesFlashy = !showFlashyDecksOnly || deck.author === 'Flashy'
-    const matchesMyPublished = !showMyPublishedOnly || deck.authorId === user?.id
+    const matchesFlashy = !showFlashyDecksOnly || deck.ownerDisplayName === 'Flashy'
+    const matchesMyPublished = !showMyPublishedOnly || deck.ownerId === user?.id
 
     return matchesSearch && matchesCategory && matchesSubtopic && matchesFeatured && matchesFlashy && matchesMyPublished
   })
 
   // Sort decks
   filteredDecks = [...filteredDecks].sort((a, b) => {
-    if (sortBy === 'popular') return b.downloads - a.downloads
+    if (sortBy === 'popular') return b.downloadCount - a.downloadCount
     if (sortBy === 'rating') {
-      const ratingA = a.rating || 0
-      const ratingB = b.rating || 0
+      const ratingA = a.averageRating || 0
+      const ratingB = b.averageRating || 0
       if (ratingB !== ratingA) return ratingB - ratingA
       return (b.ratingCount || 0) - (a.ratingCount || 0)
     }

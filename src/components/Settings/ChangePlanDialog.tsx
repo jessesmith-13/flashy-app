@@ -77,7 +77,7 @@ export function ChangePlanDialog({
               </p>
             )}
 
-            {isDowngrade && newPlan !== 'lifetime' && (
+            {isDowngrade && (
               <p className="text-sm text-gray-600 dark:text-gray-400">
                 Your plan will be changed at the end of your current billing period. You'll keep your current benefits until then.
               </p>

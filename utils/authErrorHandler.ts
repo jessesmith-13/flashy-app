@@ -1,5 +1,5 @@
 import { useStore } from '../store/useStore'
-import { signOut } from './api'
+import { signOut } from './api/auth'
 
 export class AuthenticationError extends Error {
   constructor(message: string = 'Authentication failed') {

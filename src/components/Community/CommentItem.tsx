@@ -15,7 +15,8 @@ import { Textarea } from '../../ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../ui/select'
 import { Label } from '../../ui/label'
 import { toast } from 'sonner'
-import * as api from '../../../utils/api'
+import { likeComment } from '../../../utils/api/community'
+import { deleteDeckComment } from '../../../utils/api/moderation'
 
 export interface Comment {
   id: string
@@ -93,7 +94,7 @@ export function CommentItem({
 
     setDeleteLoading(true)
     try {
-      await api.deleteDeckComment(accessToken, comment.communityDeckId, comment.id, fullReason)
+      await deleteDeckComment(accessToken, comment.communityDeckId, comment.id, fullReason)
       toast.success('Comment deleted successfully')
       setShowDeleteDialog(false)
       setDeleteReason('')
@@ -128,7 +129,7 @@ export function CommentItem({
     setLocalLikes(newLikes)
 
     try {
-      await api.likeComment(accessToken, comment.communityDeckId, comment.id)
+      await likeComment(accessToken, comment.communityDeckId, comment.id)
     } catch (error) {
       console.error('Failed to like comment:', error)
       // Revert on error

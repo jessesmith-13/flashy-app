@@ -19,7 +19,7 @@ import {
   RefreshCw,
   Sparkles
 } from 'lucide-react'
-import { getAllUsers, toggleModeratorStatus, banUser, grantPremium, demotePremium } from '../../../utils/api'
+import { getAllUsers, toggleModeratorStatus, banUser, grantPremium, demotePremium } from '../../../utils/api/admin'
 import { toast } from 'sonner'
 import {
   AlertDialog,

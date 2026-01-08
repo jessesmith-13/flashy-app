@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react'
 import { HashRouter, Routes, Route, Navigate, useNavigate, useParams } from 'react-router-dom'
 import { useStore } from '../store/useStore'
-import * as api from '../utils/api'
+import { supabaseClient, signOut, getSession, recordTermsAcceptance } from '../utils/api/auth'
+import { getFriends, getFriendRequests } from '../utils/api/friends'
+import { updateProfile } from '../utils/api/users'
 import { getUserProfile } from '../utils/api/auth'
 import { LandingPage } from './components/Landing/LandingPage'
 import { LoginScreen } from './components/Auth/Login/LoginScreen'
@@ -66,7 +68,7 @@ function SharedDeckRoute() {
 // Helper function to fetch user role from database
 async function fetchUserRole(userId: string): Promise<{ isSuperuser: boolean; isModerator: boolean }> {
   try {
-    const { data, error } = await api.supabaseClient
+    const { data, error } = await supabaseClient
       .from('users')
       .select('is_superuser, is_moderator')
       .eq('id', userId)
@@ -108,7 +110,7 @@ function AppContent() {
     checkSession()
     
     // Set up automatic session refresh
-    const { data: authListener } = api.supabaseClient.auth.onAuthStateChange(
+    const { data: authListener } = supabaseClient.auth.onAuthStateChange(
       async (event, session) => {
         console.log('Auth state change:', event)
         
@@ -133,7 +135,7 @@ function AppContent() {
               description,
               duration: 6000,
             })
-            await api.signOut()
+            await signOut()
             useStore.getState().logout()
             navigate('/')
             return
@@ -141,10 +143,10 @@ function AppContent() {
           
           try {
             // Fetch updated friends and friend requests with new token
-            const friends = await api.getFriends(session.access_token)
+            const friends = await getFriends(session.access_token)
             setFriends(friends.map((f: { id: string }) => f.id))
             
-            const requests = await api.getFriendRequests(session.access_token)
+            const requests = await getFriendRequests(session.access_token)
             setFriendRequests(requests)
             
             // Fetch user role from database instead of metadata
@@ -186,7 +188,7 @@ function AppContent() {
     setIsSettingDisplayName(true)
     try {
       // Get the session directly - don't rely on state!
-      const session = await api.getSession()
+      const session = await getSession()
       
       if (!session || !session.access_token) {
         toast.error('No authentication token found')
@@ -194,7 +196,7 @@ function AppContent() {
       }
       
       // SET the display name in the database
-      await api.setDisplayName(session.access_token, displayName)
+      await updateProfile(session.user.id, session.access_token, {displayName})
       
       setShowDisplayNameModal(false)
       
@@ -242,7 +244,7 @@ function AppContent() {
       console.log('checkSession - hash:', hash, 'path:', path, 'hasSharedDeck:', hasSharedDeck)
       
       console.log('checkSession - Proceeding with auth check')
-      const session = await api.getSession()
+      const session = await getSession()
       
       if (session && session.user && session.access_token) {
         // Check if user is banned
@@ -264,7 +266,7 @@ function AppContent() {
             duration: 8000,
           })
           
-          await api.signOut()
+          await signOut()
           setAuth(null, null)
           navigate('/')
           return
@@ -275,11 +277,11 @@ function AppContent() {
         try {
           // Fetch friends and requests in parallel
           const [friends, requests] = await Promise.all([
-            api.getFriends(session.access_token).catch(err => {
+            getFriends(session.access_token).catch(err => {
               console.log('Failed to fetch friends during session check:', err)
               return [] // Return empty array on error
             }),
-            api.getFriendRequests(session.access_token).catch(err => {
+            getFriendRequests(session.access_token).catch(err => {
               console.log('Failed to fetch friend requests during session check:', err)
               return [] // Return empty array on error
             })
@@ -372,7 +374,7 @@ function AppContent() {
           if (termsAccepted === 'true' && termsAcceptedAt && !session.user.user_metadata?.termsAcceptedAt) {
             console.log('Recording terms acceptance for Google OAuth user')
             try {
-              await api.recordTermsAcceptance(session.access_token, termsAcceptedAt)
+              await recordTermsAcceptance(session.access_token, termsAcceptedAt)
               console.log('Terms acceptance recorded successfully')
             } catch (error) {
               console.error('Failed to record terms acceptance:', error)
@@ -411,7 +413,7 @@ function AppContent() {
           }
           
           try {
-            await api.signOut()
+            await signOut()
           } catch (signOutError) {
             // Ignore signOut errors - session might already be expired
             console.log('SignOut failed (session likely already expired)')

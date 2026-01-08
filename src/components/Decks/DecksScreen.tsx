@@ -18,7 +18,7 @@ import { DECK_CATEGORIES } from '../../../utils/categories'
 import { ShareDeckDialog } from '../ShareDeckDialog'
 import { CreateDeckDialog } from './DeckDetail/CreateDeckDialog'
 import { EditDeckDialog } from './DeckDetail/EditDeckDialog'
-import type { UIDeck, DifficultyLevel } from '@/types/decks'
+import type { UIDeck } from '@/types/decks'
 
 type SortOption = 'custom' | 'alphabetical-asc' | 'alphabetical-desc' | 'newest' | 'oldest' | 'recently-studied' | 'most-studied' | 'least-studied'
 
@@ -137,7 +137,9 @@ export function DecksScreen() {
     color: string
     category?: string
     subtopic?: string
-    difficulty?: DifficultyLevel
+    difficulty?: string
+    frontLanguage?: string
+    backLanguage?: string
   }) => {
     if (!accessToken) return
 
@@ -294,8 +296,8 @@ export function DecksScreen() {
         accessToken,
         publishingDeck.id,
         {
-          category: publishingDeck.category,
-          subtopic: publishingDeck.subtopic,
+          category: publishingDeck.category || undefined,
+          subtopic: publishingDeck.subtopic || undefined,
         }
       )
 
@@ -314,7 +316,7 @@ export function DecksScreen() {
         try {
           const freshDecks = await fetchDecks(accessToken)
           console.log('🔄 Reloaded decks after publish:', 
-            freshDecks.filter(d => d.communityPublishedId).map(d => ({
+            freshDecks.filter((d: UIDeck) => d.communityPublishedId).map(( d: UIDeck) => ({
               name: d.name,
               communityPublishedId: d.communityPublishedId
             }))
@@ -345,7 +347,7 @@ export function DecksScreen() {
     }
   }
 
-  const handleUnpublishDeck = async (e: React.MouseEvent, deckId: string, deckName: string, communityPublishedId: string) => {
+  const handleUnpublishDeck = async (e: React.MouseEvent, deckId: string) => {
     e.stopPropagation()
     if (!accessToken) {
       toast.error('Please log in to unpublish decks')
@@ -360,7 +362,7 @@ export function DecksScreen() {
   }
 
   const confirmUnpublish = async () => {
-    if (!unpublishingDeck || !accessToken) return
+    if (!unpublishingDeck || !accessToken || !unpublishingDeck.communityPublishedId) return
 
     setUnpublishingDeckId(unpublishingDeck.id)
     try {
@@ -399,7 +401,7 @@ export function DecksScreen() {
 
     await updateDeck(accessToken, editingDeck.id, data)
 
-    updateDeckInStore(editingDeck.id, data)
+    updateDeckInStore(editingDeck.id, data as Partial<UIDeck>)
 
     if (editingDeck.communityPublishedId && !editingDeck.sourceCommunityDeckId) {
       try {
@@ -957,7 +959,7 @@ export function DecksScreen() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={(e) => handleUnpublishDeck(e, deck.id, deck.name, deck.communityPublishedId)}
+                            onClick={(e) => handleUnpublishDeck(e, deck.id )}
                             className="h-7 w-7 transition-colors text-gray-400 hover:text-red-600 hover:bg-red-50"
                             title="Unpublish from Community"
                           >

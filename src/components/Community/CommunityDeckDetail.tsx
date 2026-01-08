@@ -10,7 +10,7 @@ import { FlagDialog } from './FlagDialog'
 import { DeletionDialog } from './DeletionDialog'
 import { toast } from 'sonner'
 import { useStore } from '../../../store/useStore'
-import * as api from '../../../utils/api'
+import { deleteCommunityDeck, deleteCommunityCard } from '../../../utils/api/admin'
 import { UIDeck } from '@/types/decks'
 import { UICommunityDeck, UICommunityCard } from '@/types/community'
 import { UICard } from '@/types/decks'
@@ -170,7 +170,7 @@ export function CommunityDeckDetail({
     if (!accessToken) return
     
     try {
-      await api.deleteCommunityDeck(accessToken, deck.id, reason)
+      await deleteCommunityDeck(accessToken, deck.id, reason)
       toast.success('Deck deleted successfully')
       setDeleteDeckDialogOpen(false)
       // Navigate back to community since the deck is deleted
@@ -186,7 +186,7 @@ export function CommunityDeckDetail({
     if (!cardToDelete || !accessToken) return
     
     try {
-      await api.deleteCommunityCard(accessToken, deck.id, cardToDelete.id, reason)
+      await deleteCommunityCard(accessToken, deck.id, cardToDelete.id, reason)
       toast.success('Card deleted successfully')
       setDeleteCardDialogOpen(false)
       setCardToDelete(null)

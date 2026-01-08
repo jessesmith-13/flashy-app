@@ -24,9 +24,6 @@ export function NotificationCenter() {
     mentionNotifications,
     setMentionNotifications,
     removeMentionNotification,
-    setCurrentSection,
-    setViewingCommunityDeckId,
-    setTargetCommentId
   } = useStore()
   const { navigateTo } = useNavigation()
   const [isOpen, setIsOpen] = useState(false)
@@ -83,7 +80,6 @@ export function NotificationCenter() {
   }
 
   // Count friend request notifications
-  const friendRequestNotifications = mentionNotifications.filter(n => n.type === 'friend_request')
   const totalNotifications = mentionNotifications.length
   // Only show unseen notifications in the badge
   const unseenCount = mentionNotifications.filter(n => !n.isSeen).length

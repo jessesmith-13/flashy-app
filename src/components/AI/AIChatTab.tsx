@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Sparkles, Music, Volume2 } from 'lucide-react'
 import { DECK_LANGUAGES } from '../../../utils/languages'
 
-interface CardTypes {
+export interface CardTypes {
   classicFlip: boolean
   multipleChoice: boolean
   typeAnswer: boolean

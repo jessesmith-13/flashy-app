@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { projectId } from '../utils/supabase/info'
 import { fetchUserAchievements } from '../utils/api/achievements'
 import { UIDeck, UICard } from '../src/types/decks'
+import { UICommunityDeck } from '@/types/community'
 import { CommunityDeck } from '@/types/community'
 import { StudyOptions, StudySession, TemporaryStudyDeck } from '@/types/study'
 import { UserStats, UserAchievements } from '@/types/users'
@@ -82,8 +83,8 @@ interface AppState {
   darkMode: boolean
   ttsProvider: 'browser' | 'openai'
   temporaryStudyDeck: TemporaryStudyDeck | null // For studying community decks without adding them
-  returnToCommunityDeck: CommunityDeck | null // Track which community deck to return to after studying
-  returnToUserDeck: { deck: UIDeck; cards: UICard[]; ownerId: string } | null // Track which user deck to return to after studying
+  returnToCommunityDeck: UICommunityDeck | null // Track which community deck to return to after studying
+  returnToUserDeck: { deck: UICommunityDeck; cards: UICard[]; ownerId: string } | null // Track which user deck to return to after studying
   returnToSharedDeckId: string | null // Track which shared deck to return to after studying
   viewingCommunityDeckId: string | null // Track which community deck to view (for notifications)
   targetCommentId: string | null // Track which comment to scroll to (for notifications)
@@ -100,8 +101,8 @@ interface AppState {
   toggleDarkMode: () => void
   setTTSProvider: (provider: 'browser' | 'openai') => void
   setTemporaryStudyDeck: (deck: TemporaryStudyDeck | null) => void
-  setReturnToCommunityDeck: (deck: CommunityDeck | null) => void
-  setReturnToUserDeck: (userDeck: { deck: UIDeck; cards: UICard[]; ownerId: string } | null) => void
+  setReturnToCommunityDeck: (deck: UICommunityDeck | null) => void
+  setReturnToUserDeck: (userDeck: { deck: UICommunityDeck; cards: UICard[]; ownerId: string } | null) => void
   setReturnToSharedDeckId: (deckId: string | null) => void
   setViewingCommunityDeckId: (deckId: string | null) => void
   setTargetCommentId: (commentId: string | null) => void

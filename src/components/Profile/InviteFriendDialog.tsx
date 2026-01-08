@@ -5,7 +5,7 @@ import { Input } from '../../ui/input'
 import { Label } from '../../ui/label'
 import { Mail, Gift, Copy, Check } from 'lucide-react'
 import { toast } from 'sonner'
-import * as api from '../../../utils/api'
+import { sendReferralInvite } from '../../../utils/api/referrals'
 
 interface InviteFriendDialogProps {
   open: boolean
@@ -32,7 +32,7 @@ export function InviteFriendDialog({ open, onOpenChange, accessToken }: InviteFr
 
     setSending(true)
     try {
-      const result = await api.sendReferralInvite(accessToken, email)
+      const result = await sendReferralInvite(accessToken, email)
       
       toast.success('Referral invite sent!')
       setReferralLink(result.referralLink)

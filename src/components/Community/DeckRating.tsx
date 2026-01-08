@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useStore } from '../../../store/useStore'
 import { Star, Lock } from 'lucide-react'
-import * as api from '../../../utils/api'
+import { getDeckRatings, rateDeck } from '../../../utils/api/community'
 import { toast } from 'sonner'
 import { UpgradeModal } from '../UpgradeModal'
 
@@ -30,7 +30,7 @@ export function DeckRating({ deckId, onRatingChange }: DeckRatingProps) {
   const loadRatings = async () => {
     try {
       setLoading(true)
-      const data = await api.getDeckRatings(deckId, accessToken || undefined)
+      const data = await getDeckRatings(deckId, accessToken || undefined)
       setAverageRating(data.averageRating)
       setTotalRatings(data.totalRatings)
       setUserRating(data.userRating)
@@ -56,7 +56,7 @@ export function DeckRating({ deckId, onRatingChange }: DeckRatingProps) {
 
     setSubmitting(true)
     try {
-      const data = await api.rateDeck(accessToken, deckId, rating)
+      const data = await rateDeck(accessToken, deckId, rating)
       setAverageRating(data.averageRating)
       setTotalRatings(data.totalRatings)
       setUserRating(data.userRating)
@@ -192,8 +192,8 @@ export function DeckRating({ deckId, onRatingChange }: DeckRatingProps) {
       </div>
 
       <UpgradeModal 
-        isOpen={upgradeModalOpen}
-        onClose={() => setUpgradeModalOpen(false)}
+        open={upgradeModalOpen}
+        onOpenChange={() => setUpgradeModalOpen(false)}
         feature="rating decks"
       />
     </>

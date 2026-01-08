@@ -49,6 +49,7 @@ export interface Notification {
   deckName?: string
   commentText?: string
   ticketId?: string
+  tier?: string
 }
 
 /**

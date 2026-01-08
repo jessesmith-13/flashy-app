@@ -228,7 +228,7 @@ export const updateTicketStatus = async (
   statusData: {
     status: 'open' | 'reviewing' | 'resolved' | 'dismissed'
     resolutionNote?: string,
-    resolutionReason: 'approved' | 'rejected' | 'removed'
+    resolutionReason?: 'approved' | 'rejected' | 'removed'
   }
 ) => {
   const response = await fetch(

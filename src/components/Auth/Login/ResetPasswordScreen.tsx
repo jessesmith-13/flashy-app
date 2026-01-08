@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import * as api from '../../../../utils/api'
+import { updatePassword } from '../../../../utils/api/auth'
 import { AuthHeader } from './AuthHeader'
 import { Button } from '../../../ui/button'
 import { Input } from '../../../ui/input'
@@ -47,7 +47,7 @@ export function ResetPasswordScreen() {
     setLoading(true)
 
     try {
-      await api.updatePassword(password)
+      await updatePassword(password)
       setSuccess(true)
       toast.success('Password updated successfully!')
       

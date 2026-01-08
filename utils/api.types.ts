@@ -1,4 +1,4 @@
-import type { CardType } from '../store/useStore'
+import { CardType } from '../src/types/decks'
 
 export interface CreateCardInput {
   front: string

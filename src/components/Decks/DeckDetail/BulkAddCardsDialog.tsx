@@ -9,6 +9,7 @@ import { Loader2, Plus, Trash2, Sparkles, Upload, X } from 'lucide-react'
 import { CardType } from '@/types/decks'
 import { AudioRecorder } from './AudioRecorder'
 import { canAddImageToCard } from '../../../../utils/subscription'
+import { SubscriptionTier } from '@/types/users'
 
 export interface CardFormData {
   id: string
@@ -34,7 +35,7 @@ interface BulkAddCardsDialogProps {
   onSubmit: (cards: CardFormData[]) => Promise<void>
   deckFrontLanguage?: string
   deckBackLanguage?: string
-  userTier?: string
+  userTier?: SubscriptionTier
   onTranslate?: (text: string, language: string) => Promise<string>
   onUploadImage?: (file: File) => Promise<string>
   onUploadAudio?: (file: File) => Promise<string>
