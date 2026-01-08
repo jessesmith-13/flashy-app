@@ -16,6 +16,7 @@ export const signUp = async (
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${anonKey}`,
+      'apikey': anonKey,
     },
     body: JSON.stringify({ email, password, name }),
   })
@@ -73,6 +74,7 @@ export const signIn = async (
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${data.session.access_token}`,
+        'apikey': anonKey,
       },
     }
   )
@@ -228,6 +230,7 @@ export const setDisplayName = async (token: string, displayName: string): Promis
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${token}`,
+      'apikey': anonKey,
     },
     body: JSON.stringify({ displayName }),
   })
@@ -249,6 +252,7 @@ export const getUserProfileOnLogin = async (token: string): Promise<{
     method: 'GET',
     headers: {
       Authorization: `Bearer ${token}`,
+      'apikey': anonKey,
     },
   })
 
@@ -275,6 +279,7 @@ export const recordTermsAcceptance = async (
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${accessToken}`,
+        'apikey': anonKey,
       },
       body: JSON.stringify({ termsAcceptedAt }),
     }
