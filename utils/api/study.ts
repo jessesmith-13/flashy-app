@@ -1,5 +1,6 @@
 import { API_BASE } from '../../src/supabase/runtime'
 import type { StudySession, StudySessionPayload } from '@/types/study'
+const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
 type StudySessionRow = {
   id: string
@@ -60,6 +61,7 @@ export const fetchStudySessions = async (
   const response = await fetch(`${API_BASE}/study/sessions`, {
     headers: {
       Authorization: `Bearer ${accessToken}`,
+      'apikey': anonKey,
     },
   })
 
@@ -83,6 +85,7 @@ export const saveStudySessionApi = async (
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${accessToken}`,
+      'apikey': anonKey,
     },
     body: JSON.stringify(session),
   })
