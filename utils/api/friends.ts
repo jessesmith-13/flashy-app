@@ -1,6 +1,6 @@
 // api/friends.ts
 
-import { API_BASE } from '../supabase/info'
+import { API_BASE } from '../../src/supabase/runtime'
 
 // ============================================================
 // FRIENDS – REQUESTS

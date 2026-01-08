@@ -1,6 +1,7 @@
 // api/users.ts
 
-import { API_BASE, publicAnonKey } from '../supabase/info'
+import { API_BASE } from '../../src/supabase/runtime'
+const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
 // ============================================================
 // TYPES
@@ -23,7 +24,7 @@ export type UpdateProfilePayload = {
 export const getUserProfile = async (userId: string) => {
   const response = await fetch(`${API_BASE}/users/${userId}/profile`, {
     headers: {
-      Authorization: `Bearer ${publicAnonKey}`,
+      Authorization: `Bearer ${anonKey}`,
     },
   })
 

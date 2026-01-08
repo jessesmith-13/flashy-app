@@ -1,4 +1,4 @@
-import { API_BASE, publicAnonKey } from '../supabase/info'
+import { API_BASE } from '../../src/supabase/runtime'
 import { CommunityCard } from '../../src/types/community'
 import { toast } from 'sonner'
 import { ACHIEVEMENTS } from '../../utils/achievements'
@@ -12,10 +12,12 @@ const { fetchUserAchievements } = useStore.getState()
 // COMMUNITY DECKS
 // ============================================================
 
+const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+
 export const fetchCommunityDecks = async (): Promise<UICommunityDeck[]> => {
   const response = await fetch(`${API_BASE}/community/decks`, {
     headers: {
-      Authorization: `Bearer ${publicAnonKey}`,
+      Authorization: `Bearer ${anonKey}`,
     },
   })
 
@@ -32,7 +34,7 @@ export const fetchCommunityDecks = async (): Promise<UICommunityDeck[]> => {
 export const getCommunityDeck = async (deckId: string): Promise<UICommunityDeck | null> => {
   const response = await fetch(`${API_BASE}/community/decks/${deckId}`, {
       headers: {
-      Authorization: `Bearer ${publicAnonKey}`,
+      Authorization: `Bearer ${anonKey}`,
     },
   })
 
@@ -49,7 +51,7 @@ export const getCommunityDeck = async (deckId: string): Promise<UICommunityDeck 
 export const fetchFeaturedCommunityDecks = async (): Promise<UICommunityDeck> => {
   const response = await fetch(`${API_BASE}/community/decks/featured`, {
     headers: {
-      Authorization: `Bearer ${publicAnonKey}`,
+      Authorization: `Bearer ${anonKey}`,
     },
   })
 
@@ -252,7 +254,7 @@ export const fetchDownloadCounts = async (deckIds: string[]) => {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${publicAnonKey}`,
+      Authorization: `Bearer ${anonKey}`,
     },
     body: JSON.stringify({ deckIds }),
   })
@@ -272,7 +274,7 @@ export const searchCommunityUsers = async (query: string) => {
     `${API_BASE}/community/users/search?q=${encodeURIComponent(query)}`,
     {
       headers: {
-        Authorization: `Bearer ${publicAnonKey}`,
+        Authorization: `Bearer ${anonKey}`,
       },
     }
   )
@@ -340,7 +342,7 @@ export const getDeckRatings = async (
     `${API_BASE}/community/decks/${deckId}/ratings`,
     {
       headers: {
-        Authorization: `Bearer ${accessToken || publicAnonKey}`,
+        Authorization: `Bearer ${accessToken || anonKey}`,
       },
     }
   )
@@ -364,7 +366,7 @@ export const getDeckComments = async (deckId: string) => {
     `${API_BASE}/community/decks/${deckId}/comments`,
     {
       headers: {
-        Authorization: `Bearer ${publicAnonKey}`,
+        Authorization: `Bearer ${anonKey}`,
       },
     }
   )

@@ -9,7 +9,7 @@ import { Label } from '../../ui/label'
 import { Textarea } from '../../ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../ui/select'
 import { toast } from 'sonner'
-import { API_BASE } from '../../../utils/supabase/info'
+import { API_BASE } from '../../supabase/runtime'
 
 export function ContactScreen() {
   const { user, accessToken } = useStore()

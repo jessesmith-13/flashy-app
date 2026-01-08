@@ -1,4 +1,4 @@
-import { AI_API_BASE } from '../supabase/info'
+import { AI_API_BASE } from '../../src/supabase/runtime'
 import type { GeneratedCardType } from '../../src/types/ai'
 import * as pdfjsLib from 'pdfjs-dist'
 import { supabase } from '../../src/lib/supabase'

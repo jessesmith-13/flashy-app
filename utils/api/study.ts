@@ -1,4 +1,4 @@
-import { API_BASE } from '../supabase/info'
+import { API_BASE } from '../../src/supabase/runtime'
 import type { StudySession, StudySessionPayload } from '@/types/study'
 
 type StudySessionRow = {
