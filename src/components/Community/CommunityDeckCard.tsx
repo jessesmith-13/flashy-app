@@ -3,10 +3,10 @@ import { Star, Users, Plus, Check, Upload, X, MessageCircle, EyeOff } from 'luci
 import { DeckRatingDisplay } from './DeckRatingDisplay'
 import { toast } from 'sonner'
 import { Deck } from '@/types/decks'
-import { CommunityDeck } from '@/types/community'
+import { UICommunityDeck } from '@/types/community'
 
 interface CommunityDeckCardProps {
-  deck: CommunityDeck
+  deck: UICommunityDeck
   isAdded: boolean
   isDeleted: boolean
   updateAvailable: boolean
@@ -16,10 +16,10 @@ interface CommunityDeckCardProps {
   deletingDeckId: string | null
   featuringDeckId: string | null
   unpublishingDeckId: string | null
-  onViewDeck: (deck: CommunityDeck) => void
+  onViewDeck: (deck: UICommunityDeck) => void
   onViewUser: (userId: string) => void
-  onAddDeck: (deck: CommunityDeck) => void
-  onUpdateDeck: (communityDeck: CommunityDeck, importedDeck: Deck) => void
+  onAddDeck: (deck: UICommunityDeck) => void
+  onUpdateDeck: (communityDeck: UICommunityDeck, importedDeck: Deck) => void
   onToggleFeatured: (deckId: string) => void
   onDeleteDeck: (deckId: string, deckName: string) => void
   onUnpublishDeck: (deckId: string, deckName: string) => void
@@ -135,7 +135,7 @@ export function CommunityDeckCard({
         <div className="flex items-start justify-between mb-4 gap-2">
           <div
             className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl flex items-center justify-center text-xl sm:text-2xl flex-shrink-0"
-            style={{ backgroundColor: deck.color }}
+            style={{ backgroundColor: deck.color || undefined}}
           >
             {deck.emoji}
           </div>
@@ -165,13 +165,13 @@ export function CommunityDeckCard({
         </div>
 
         <h3 className="text-base sm:text-lg text-gray-900 dark:text-gray-100 mb-1 break-words">{deck.name}</h3>
-        <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">{deck.cards?.length || deck.cardCount || 0} cards</p>
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">{deck.cardCount || 0} cards</p>
 
         <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400 mb-2">
           <DeckRatingDisplay deckId={deck.id} />
           <div className="flex items-center gap-1">
             <Plus className="w-4 h-4" />
-            <span>{deck.downloads}</span>
+            <span>{deck.downloadCount}</span>
           </div>
           <div className="flex items-center gap-1">
             <MessageCircle className="w-4 h-4" />
@@ -200,12 +200,12 @@ export function CommunityDeckCard({
       <button
         onClick={(e) => {
           e.stopPropagation()
-          onViewUser(deck.authorId)
+          onViewUser(deck.ownerId)
         }}
         className="flex items-center gap-2 mb-4 text-sm text-gray-600 dark:text-gray-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
       >
         <Users className="w-4 h-4" />
-        <span>by {deck.author}</span>
+        <span>by {deck.ownerDisplayName}</span>
       </button>
 
       {/* Superuser Controls */}

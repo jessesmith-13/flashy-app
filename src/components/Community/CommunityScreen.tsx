@@ -40,31 +40,13 @@ import { UpgradeModal } from '../UpgradeModal'
 import { FlagDialog } from './FlagDialog'
 import { DeletionDialog } from './DeletionDialog'
 import { UpdateDeckWarningDialog } from './UpdateDeckWarningDialog'
-import { Deck } from '../../types/decks'
+import { UIDeck } from '../../types/decks'
+import { UICommunityDeck, UICommunityCard } from '../../types/community'
 
-interface Card {
-  id: string
-  front: string
-  back: string
-  deckId: string
-}
-
-interface CommunityDeck {
-  id: string
-  name: string
-  emoji: string
-  color: string
-  author: string
-  authorId: string
-  downloads: number
-  rating: number
-  ratingCount: number
-  cards: Card[]
-  category: string
-  subtopic: string
-  featured?: boolean
-  publishedAt?: string
-  version?: number
+interface FlagItemDetails {
+  deckId?: string
+  commentText?: string
+  front?: string
 }
 
 export function CommunityScreen() {
@@ -88,34 +70,32 @@ export function CommunityScreen() {
     setViewingUserId, 
     userProfileReturnView, 
     setUserProfileReturnView, 
-    invalidateDecksCache, 
-    updateCommunityDeck
   } = useStore()
   const { navigateTo } = useNavigation()
   const isSuperuser = useIsSuperuser()
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null)
-  const [viewingUserDeck, setViewingUserDeck] = useState<{ deck: Deck; cards: Card[]; ownerId: string } | null>(null)
+  const [viewingUserDeck, setViewingUserDeck] = useState<{ deck: UICommunityDeck; cards: UICommunityCard[]; ownerId: string } | null>(null)
   const [addingDeckId, setAddingDeckId] = useState<string | null>(null)
   const [upgradeModalOpen, setUpgradeModalOpen] = useState(false)
   const [upgradeFeature, setUpgradeFeature] = useState<string | undefined>()
   const [publishDialogOpen, setPublishDialogOpen] = useState(false)
   const [selectedDeckId, setSelectedDeckId] = useState('')
   const [publishing, setPublishing] = useState(false)
-  const [viewingDeck, setViewingDeck] = useState<CommunityDeck | null>(null)
-  const [communityDecks, setCommunityDecks] = useState<CommunityDeck[]>([])
-  const [featuredDecks, setFeaturedDecks] = useState<CommunityDeck[]>([])
+  const [viewingDeck, setViewingDeck] = useState<UICommunityDeck | null>(null)
+  const [communityDecks, setCommunityDecks] = useState<UICommunityDeck[]>([])
+  const [featuredDecks, setFeaturedDecks] = useState<UICommunityDeck[]>([])
   const [loading, setLoading] = useState(true)
   const [searchedUsers, setSearchedUsers] = useState<{ id: string; name: string; deckCount: number }[]>([])
   const [updateWarningOpen, setUpdateWarningOpen] = useState(false)
-  const [pendingUpdate, setPendingUpdate] = useState<{ communityDeck: any; importedDeck: any } | null>(null)
+  const [pendingUpdate, setPendingUpdate] = useState<{ communityDeck: UICommunityDeck; importedDeck: UIDeck } | null>(null)
   
   // Superuser state
   const [deletingDeckId, setDeletingDeckId] = useState<string | null>(null)
   const [featuringDeckId, setFeaturingDeckId] = useState<string | null>(null)
   const [unpublishingDeckId, setUnpublishingDeckId] = useState<string | null>(null)
   const [unpublishDialogOpen, setUnpublishDialogOpen] = useState(false)
-  const [unpublishingDeck, setUnpublishingDeck] = useState<CommunityDeck | null>(null)
+  const [unpublishingDeck, setUnpublishingDeck] = useState<UICommunityDeck | null>(null)
   
   // Filters
   const [filterCategory, setFilterCategory] = useState<string>('all')
@@ -135,7 +115,7 @@ export function CommunityScreen() {
   const [flagItemType, setFlagItemType] = useState<'deck' | 'card'>('deck')
   const [flagItemId, setFlagItemId] = useState('')
   const [flagItemName, setFlagItemName] = useState('')
-  const [flagItemDetails, setFlagItemDetails] = useState<any>(undefined)
+  const [flagItemDetails, setFlagItemDetails] = useState<FlagItemDetails | undefined>(undefined)
   const [flaggedDecks, setFlaggedDecks] = useState<Set<string>>(new Set())
   const [flaggedCards, setFlaggedCards] = useState<Set<string>>(new Set())
 
@@ -316,7 +296,7 @@ export function CommunityScreen() {
     }
   }
 
-  const handleAddDeck = async (deck: CommunityDeck) => {
+  const handleAddDeck = async (deck: UICommunityDeck) => {
     if (!accessToken || !user) return
 
     if (!canImportCommunityDecks(user?.subscriptionTier, isSuperuser)) {
@@ -386,7 +366,7 @@ export function CommunityScreen() {
     }
   }
 
-  const handleUpdateDeck = async (communityDeck: CommunityDeck, importedDeck: Deck) => {
+  const handleUpdateDeck = async (communityDeck: UICommunityDeck, importedDeck: UIDeck) => {
     if (!accessToken) {
       toast.error('Please login to update decks')
       return
@@ -408,7 +388,7 @@ export function CommunityScreen() {
     await performUpdate(communityDeck, importedDeck)
   }
 
-  const performUpdate = async (communityDeck: any, importedDeck: any) => {
+  const performUpdate = async (communityDeck: UICommunityDeck, importedDeck: UIDeck) => {
     setAddingDeckId(communityDeck.id)
     try {
       const updatedDeck = await updateImportedDeck(accessToken, importedDeck.id, {

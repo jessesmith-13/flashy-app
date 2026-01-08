@@ -7,9 +7,10 @@ import { Button } from '../ui/button'
 import { ArrowLeft, Play, FlipVertical, CheckCircle, Keyboard } from 'lucide-react'
 import { Input } from '../ui/input'
 import { toast } from 'sonner'
+import { Deck } from '@/types/decks'
 
 export function AllCardsScreen() {
-  const { user, accessToken, cards, decks, setCards, setStudyAllCards } = useStore()
+  const { accessToken, cards, decks, setCards, setStudyAllCards } = useStore()
   const { navigateTo } = useNavigation()
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
@@ -31,7 +32,7 @@ export function AllCardsScreen() {
       const allDecks = await api.fetchDecks(accessToken)
       
       // Then fetch cards for each deck
-      const allCardsPromises = allDecks.map((deck: any) => 
+      const allCardsPromises = allDecks.map((deck: Deck) => 
         api.fetchCards(accessToken, deck.id)
       )
       const cardsArrays = await Promise.all(allCardsPromises)

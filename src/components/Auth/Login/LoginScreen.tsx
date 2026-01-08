@@ -8,6 +8,7 @@ import { LoginForm } from './LoginForm'
 import { ForgotPasswordForm } from './ForgotPasswordForm'
 import { GoogleLoginButton } from './GoogleLoginButton'
 import { toast } from 'sonner'
+import { SubscriptionTier } from '@/types/users'
 
 interface AccountBannedError extends Error {
   name: 'ACCOUNT_BANNED'
@@ -50,21 +51,21 @@ export function LoginScreen() {
       
       if (session && user && profile) {
         // ✅ Step 2: Use database values (not metadata) for auth state
-        setAuth(
-          { 
-            id: user.id, 
-            email: user.email || '', 
-            name: profile.name || '',
-            displayName: profile.displayName || profile.name || '',
-            avatarUrl: profile.avatarUrl || null,
-            decksPublic: profile.decksPublic ?? false,
-            subscriptionTier: profile.subscriptionTier || 'free',
-            subscriptionExpiry: profile.subscriptionExpiry || null,
-            isSuperuser: profile.isSuperuser || false, // ✅ Fresh from DB
-            isModerator: profile.isModerator || false, // ✅ Fresh from DB
-          },
-          session.access_token
-        )
+      setAuth(
+        { 
+          id: user.id, 
+          email: user.email || '', 
+          name: profile.name || '',
+          displayName: profile.displayName || profile.name || '',
+          avatarUrl: profile.avatarUrl || undefined,  // ✅ Changed: null → undefined
+          decksPublic: profile.decksPublic ?? false,
+          subscriptionTier: (profile.subscriptionTier || 'free') as SubscriptionTier,  // ✅ Added type cast
+          subscriptionExpiry: profile.subscriptionExpiry || undefined,  // ✅ Changed: null → undefined
+          isSuperuser: profile.isSuperuser || false,
+          isModerator: profile.isModerator || false,
+        },
+        session.access_token
+      )
         
         // Load friend data
         try {
