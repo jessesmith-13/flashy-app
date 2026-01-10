@@ -1,73 +1,340 @@
-# React + TypeScript + Vite
+# 📚 Flashy - Smart Flashcard Learning Platform
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+<div align="center">
+  <img src="/public/logoLight.png" alt="Flashy Logo" width="120" />
+  
+  **Learn anything, fast.**
+  
+  A modern, full-featured flashcard app with AI-powered learning, community sharing, and advanced study modes.
 
-Currently, two official plugins are available:
+  [Features](#-features) • [Tech Stack](#-tech-stack) • [Getting Started](#-getting-started) • [Documentation](#-documentation)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+  [![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+  [![React](https://img.shields.io/badge/React-20232A?logo=react&logoColor=61DAFB)](https://reactjs.org/)
+  [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
+  [![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?logo=supabase&logoColor=white)](https://supabase.com/)
+</div>
 
-## React Compiler
+---
 
-The React Compiler is currently not compatible with SWC. See [this issue](https://github.com/vitejs/vite-plugin-react/issues/428) for tracking the progress.
+## ✨ Features
 
-## Expanding the ESLint configuration
+### 🎯 Core Learning
+- **Multiple Card Types**
+  - Classic flip cards with confidence ratings
+  - Multiple choice questions with multiple correct answers
+  - Type-to-answer with alternative spelling support
+- **Smart Study Modes**
+  - Spaced repetition algorithm
+  - Confidence-based card filtering
+  - Progress tracking and statistics
+- **Rich Media Support**
+  - Image uploads for questions and answers
+  - Audio recording for pronunciation practice
+  - Multi-language support with translation
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+### 👥 Social & Community
+- **Community Deck Library**
+  - Browse 1000+ decks across 50+ categories
+  - Download and study decks from other learners
+  - Rate and review community content
+- **Deck Publishing**
+  - Share your decks with the world
+  - Track downloads and ratings
+  - Update published decks seamlessly
+- **Friends System**
+  - Connect with other learners
+  - Share private decks with friends
+  - View friends' public profiles
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
+### 🏆 Gamification
+- **Achievement System**
+  - 30+ achievements to unlock
+  - Study streaks and milestones
+  - Progress badges
+- **User Profiles**
+  - Public profile pages
+  - Deck showcase
+  - Achievement display
+
+### 💎 Premium Features
+- **AI-Powered Tools** (Premium)
+  - Auto-generate flashcards from text
+  - Translate cards between languages
+  - Smart card suggestions
+- **Enhanced Content** (Premium)
+  - Unlimited decks and cards
+  - Image and audio uploads
+  - Community publishing
+  - Priority support
+
+### 🛡️ Moderation & Safety
+- **Content Moderation**
+  - Flag inappropriate content
+  - Moderator dashboard
+  - Ticket management system
+- **User Safety**
+  - Report system for users, decks, cards, and comments
+  - Automated and manual review workflows
+  - Community guidelines enforcement
+
+### 📧 Email Notifications
+- **Account Management**
+  - Welcome emails
+  - Password reset
+  - Security alerts
+- **Subscription Updates**
+  - Payment confirmations
+  - Renewal reminders
+  - Upgrade notifications
+- **Social Notifications**
+  - Friend requests
+  - Deck comments and replies
+  - Like notifications
+
+---
+
+## 🛠️ Tech Stack
+
+### Frontend
+- **React 18** - UI framework
+- **TypeScript** - Type safety
+- **Vite** - Build tool and dev server
+- **Tailwind CSS v4** - Styling
+- **Zustand** - State management
+- **React Router** - Navigation
+- **Lucide React** - Icons
+- **Recharts** - Data visualization
+
+### Backend
+- **Supabase** - Backend infrastructure
+  - PostgreSQL database
+  - Row Level Security (RLS)
+  - Storage for images/audio
+  - Edge Functions (Deno)
+- **Hono** - Edge function web framework
+- **Stripe** - Payment processing
+- **Resend** - Transactional emails
+
+### DevOps
+- **GitHub** - Version control
+- **Supabase CLI** - Database migrations
+- **TypeScript** - Type checking
+
+---
+
+## 🚀 Getting Started
+
+### Prerequisites
+- **Node.js** 18+ and npm
+- **Supabase CLI** ([Install](https://supabase.com/docs/guides/cli))
+- **Stripe Account** ([Sign up](https://stripe.com))
+- **Resend Account** ([Sign up](https://resend.com))
+
+### Installation
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/yourusername/flashy.git
+   cd flashy
+Install dependencies
+
+npm install
+Set up Supabase
+
+# Start local Supabase instance
+supabase start
+
+# Get your local credentials
+supabase status
+Configure environment variables
+
+Create a .env.local file:
+
+# Supabase
+VITE_SUPABASE_URL=your_supabase_url
+VITE_SUPABASE_ANON_KEY=your_anon_key
+
+# Feature flags (optional)
+VITE_ENABLE_AI_FEATURES=true
+Configure Supabase Edge Function secrets
+
+You'll need to set these in your Supabase project:
+
+supabase secrets set STRIPE_SECRET_KEY=sk_test_...
+supabase secrets set STRIPE_PRICE_ID_MONTHLY=price_...
+supabase secrets set STRIPE_PRICE_ID_ANNUAL=price_...
+supabase secrets set STRIPE_PRICE_ID_LIFETIME=price_...
+supabase secrets set RESEND_API_KEY=re_...
+supabase secrets set TEST_EMAIL_OVERRIDE=your.email@example.com
+supabase secrets set OPENAI_API_KEY=sk-... (optional, for AI features)
+Run database migrations
+
+supabase db push
+Start the development server
+
+npm run dev
+Access the app
+
+Open http://localhost:5173
+
+📁 Project Structure
+flashy/
+├── hooks/                   # Custom React hooks
+├── src/
+│   ├── components/          # React components
+│   ├── components/          # Typescript Types
+│   ├── ui/                  # Reusable UI components
+│   ├── store/               # Zustand state management
+│   ├── utils/               # Utility functions
+│   │   ├── api/             # API client functions
+│   │   └── subscription.ts  # Subscription tier logic
+│   ├── types/               # TypeScript type definitions
+│   └── styles/              # Global styles
+├── supabase/
+│   ├── functions/           # Edge Functions
+│   │   └── server/          # Hono backend server
+│   │       ├── routes/      # API routes
+│   │       └── lib/         # Backend utilities
+│   │   └── stripe/          # Stripe backend server
+│   │   └── ai/              # AI backend server
+│   └── migrations/          # Database migrations
+├── public/                  # Static assets
+└── index.html               # Entry HTML file
+🔧 Development
+Available Scripts
+# Start dev server
+npm run dev
+
+# Build for production
+npm run build
+
+# Preview production build
+npm run preview
+
+# Type checking
+npm run type-check
+
+# Lint code
+npm run lint
+Working with Supabase
+# Generate TypeScript types from database
+supabase gen types typescript --local > src/types/database.types.ts
+
+# Create a new migration
+supabase migration new your_migration_name
+
+# Run migrations
+supabase db push
+
+# Reset local database
+supabase db reset
+
+# Deploy edge functions
+supabase functions deploy server
+Testing Stripe Integration
+Use Stripe test mode with test cards:
+
+Success: 4242 4242 4242 4242
+Decline: 4000 0000 0000 0002
+Use any future expiry date and any 3-digit CVC.
+
+Testing Email Integration
+Emails in test mode will be sent to TEST_EMAIL_OVERRIDE address set in your environment variables.
+
+🌐 Deployment
+Deploy to Production
+Create Supabase project
+
+Go to supabase.com
+Create new project
+Note your project URL and anon key
+Set production secrets
+
+supabase secrets set --project-ref your-ref STRIPE_SECRET_KEY=sk_live_...
+supabase secrets set --project-ref your-ref RESEND_API_KEY=re_...
+# ... set all other secrets
+Deploy database
+
+supabase db push --linked
+Deploy edge functions
+
+supabase functions deploy server --project-ref your-ref
+Build and deploy frontend
+
+Set production environment variables in your hosting provider:
+
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_ANON_KEY=your_production_anon_key
+Then build and deploy:
+
+npm run build
+# Deploy the `dist` folder to your hosting provider
+Hosting Recommendations
+Vercel - Zero-config deployment
+Netlify - Simple static hosting
+Cloudflare Pages - Global CDN
+🎨 Customization
+Theming
+Edit /src/styles/globals.css to customize colors:
+
+:root {
+  --primary: #10B981;        /* Emerald green */
+  --secondary: #3B82F6;      /* Blue */
+  --destructive: #EF4444;    /* Red */
+  /* ... more theme variables */
+}
+Adding Categories
+Edit /src/utils/categories.ts:
+
+export const DECK_CATEGORIES = [
   {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+    category: 'Your Category',
+    subtopics: ['Subtopic 1', 'Subtopic 2']
+  }
+]
+📝 Environment Variables
+Required Variables
+Variable	Description	Example
+VITE_SUPABASE_URL	Supabase project URL	https://xyz.supabase.co
+VITE_SUPABASE_ANON_KEY	Supabase anonymous key	eyJ...
+Edge Function Secrets (Supabase)
+Variable	Description	Required
+SUPABASE_URL	Auto-provided by Supabase	✅
+SUPABASE_ANON_KEY	Auto-provided by Supabase	✅
+SUPABASE_SERVICE_ROLE_KEY	Auto-provided by Supabase	✅
+STRIPE_SECRET_KEY	Stripe API key	✅
+STRIPE_PRICE_ID_MONTHLY	Monthly subscription price ID	✅
+STRIPE_PRICE_ID_ANNUAL	Annual subscription price ID	✅
+STRIPE_PRICE_ID_LIFETIME	Lifetime subscription price ID	✅
+RESEND_API_KEY	Resend email API key	✅
+TEST_EMAIL_OVERRIDE	Test mode email recipient	⚠️ (dev only)
+FROM_EMAIL	Production sender email	⚠️ (prod only)
+OPENAI_API_KEY	OpenAI API for AI features	❌ (optional)
+🤝 Contributions
+This project is not currently accepting contributions, as it's being actively developed as a personal project. However:
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+🐛 Bug reports are always welcome via GitHub Issues
+💡 Feature suggestions can be submitted as issues
+🍴 Forking for personal learning is encouraged!
+If you're interested in collaborating, feel free to reach out via the contact form on my website.
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+🐛 Known Issues & Limitations
+Mobile Safari: Emoji picker may require scrolling adjustment on very small screens
+AI Features: Require OpenAI API key and premium subscription
+Email Delivery: Requires domain verification for production use with Resend
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+🙏 Acknowledgments
+Icons: Lucide Icons
+UI Components: Inspired by shadcn/ui
+Backend: Powered by Supabase
+Payments: Stripe
+Emails: Resend
+📧 Support
+Issues: GitHub Issues
+Contact: yourwebsite.com/contact
+Made with ❤️ by [Your Name]
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+Website • GitHub
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
 ```
