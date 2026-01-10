@@ -34,6 +34,9 @@ export function SettingsScreen() {
   const [emailOffers, setEmailOffers] = useState(true)
   const [emailCommentReplies, setEmailCommentReplies] = useState(true)
   const [emailFriendRequests, setEmailFriendRequests] = useState(true)
+  const [emailFlaggedContent, setEmailFlaggedContent] = useState(true)        // ✅ NEW
+  const [emailModerationNotices, setEmailModerationNotices] = useState(true)  // ✅ NEW
+  
   // Initialize from user data, default to false if undefined
   const [decksPublic, setDecksPublic] = useState(user?.decksPublic ?? false)
   const [showCancelDialog, setShowCancelDialog] = useState(false)
@@ -358,10 +361,14 @@ export function SettingsScreen() {
               emailOffers={emailOffers}
               emailCommentReplies={emailCommentReplies}
               emailFriendRequests={emailFriendRequests}
+              emailFlaggedContent={emailFlaggedContent}
+              emailModerationNotices={emailModerationNotices}
               onEmailNotificationsChange={setEmailNotifications}
               onEmailOffersChange={setEmailOffers}
               onEmailCommentRepliesChange={setEmailCommentReplies}
               onEmailFriendRequestsChange={setEmailFriendRequests}
+              onEmailFlaggedContentChange={setEmailFlaggedContent}
+              onEmailModerationNoticesChange={setEmailModerationNotices}
             />
 
             <AppearanceSection
