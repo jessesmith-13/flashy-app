@@ -135,49 +135,69 @@
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/yourusername/flashy.git
+   git clone https://github.com/jesse-smith13/flashy.git
    cd flashy
-Install dependencies
+   ```
 
-npm install
-Set up Supabase
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
 
-# Start local Supabase instance
-supabase start
+3. **Set up Supabase**
+   ```bash
+   # Start local Supabase instance
+   supabase start
+   
+   # Get your local credentials
+   supabase status
+   ```
 
-# Get your local credentials
-supabase status
-Configure environment variables
+4. **Configure environment variables**
+   
+   Create a `.env.local` file:
+   ```env
+   # Supabase
+   VITE_SUPABASE_URL=your_supabase_url
+   VITE_SUPABASE_ANON_KEY=your_anon_key
+   
+   # Feature flags (optional)
+   VITE_ENABLE_AI_FEATURES=true
+   ```
 
-Create a .env.local file:
+5. **Configure Supabase Edge Function secrets**
+   
+   You'll need to set these in your Supabase project:
+   ```bash
+   supabase secrets set STRIPE_SECRET_KEY=sk_test_...
+   supabase secrets set STRIPE_PRICE_ID_MONTHLY=price_...
+   supabase secrets set STRIPE_PRICE_ID_ANNUAL=price_...
+   supabase secrets set STRIPE_PRICE_ID_LIFETIME=price_...
+   supabase secrets set RESEND_API_KEY=re_...
+   supabase secrets set TEST_EMAIL_OVERRIDE=your.email@example.com
+   supabase secrets set OPENAI_API_KEY=sk-... (optional, for AI features)
+   
+   ```
 
-# Supabase
-VITE_SUPABASE_URL=your_supabase_url
-VITE_SUPABASE_ANON_KEY=your_anon_key
+6. **Run database migrations**
+   ```bash
+   supabase db push
+   ```
 
-# Feature flags (optional)
-VITE_ENABLE_AI_FEATURES=true
-Configure Supabase Edge Function secrets
+7. **Start the development server**
+   ```bash
+   npm run dev
+   ```
 
-You'll need to set these in your Supabase project:
+8. **Access the app**
+   
+   Open [http://localhost:5173](http://localhost:5173)
 
-supabase secrets set STRIPE_SECRET_KEY=sk_test_...
-supabase secrets set STRIPE_PRICE_ID_MONTHLY=price_...
-supabase secrets set STRIPE_PRICE_ID_ANNUAL=price_...
-supabase secrets set STRIPE_PRICE_ID_LIFETIME=price_...
-supabase secrets set RESEND_API_KEY=re_...
-supabase secrets set TEST_EMAIL_OVERRIDE=your.email@example.com
-supabase secrets set OPENAI_API_KEY=sk-... (optional, for AI features)
-Run database migrations
+---
 
-supabase db push
-Start the development server
+## 📁 Project Structure
 
-npm run dev
-Access the app
-
-Open http://localhost:5173
-
+```
 📁 Project Structure
 flashy/
 ├── hooks/                   # Custom React hooks
@@ -201,8 +221,15 @@ flashy/
 │   └── migrations/          # Database migrations
 ├── public/                  # Static assets
 └── index.html               # Entry HTML file
-🔧 Development
-Available Scripts
+```
+
+---
+
+## 🔧 Development
+
+### Available Scripts
+
+```bash
 # Start dev server
 npm run dev
 
@@ -217,7 +244,11 @@ npm run type-check
 
 # Lint code
 npm run lint
-Working with Supabase
+```
+
+### Working with Supabase
+
+```bash
 # Generate TypeScript types from database
 supabase gen types typescript --local > src/types/database.types.ts
 
@@ -232,74 +263,120 @@ supabase db reset
 
 # Deploy edge functions
 supabase functions deploy server
-Testing Stripe Integration
-Use Stripe test mode with test cards:
+```
 
-Success: 4242 4242 4242 4242
-Decline: 4000 0000 0000 0002
+### Testing Stripe Integration
+
+Use Stripe test mode with test cards:
+- **Success**: `4242 4242 4242 4242`
+- **Decline**: `4000 0000 0000 0002`
+
 Use any future expiry date and any 3-digit CVC.
 
-Testing Email Integration
-Emails in test mode will be sent to TEST_EMAIL_OVERRIDE address set in your environment variables.
+### Testing Email Integration
 
-🎨 Customization
-Theming
-Edit /src/styles/globals.css to customize colors:
+Emails in test mode will be sent to `TEST_EMAIL_OVERRIDE` address set in your environment variables.
 
+---
+
+## 🎨 Customization
+
+### Theming
+
+Edit `/src/styles/globals.css` to customize colors:
+
+```css
 :root {
   --primary: #10B981;        /* Emerald green */
   --secondary: #3B82F6;      /* Blue */
   --destructive: #EF4444;    /* Red */
   /* ... more theme variables */
 }
-Adding Categories
-Edit /src/utils/categories.ts:
+```
 
+### Adding Categories
+
+Edit `/src/utils/categories.ts`:
+
+```typescript
 export const DECK_CATEGORIES = [
   {
     category: 'Your Category',
     subtopics: ['Subtopic 1', 'Subtopic 2']
   }
 ]
-📝 Environment Variables
-Required Variables
-Variable	Description	Example
-VITE_SUPABASE_URL	Supabase project URL	https://xyz.supabase.co
-VITE_SUPABASE_ANON_KEY	Supabase anonymous key	eyJ...
-Edge Function Secrets (Supabase)
-Variable	Description	Required
-SUPABASE_URL	Auto-provided by Supabase	✅
-SUPABASE_ANON_KEY	Auto-provided by Supabase	✅
-SUPABASE_SERVICE_ROLE_KEY	Auto-provided by Supabase	✅
-STRIPE_SECRET_KEY	Stripe API key	✅
-STRIPE_PRICE_ID_MONTHLY	Monthly subscription price ID	✅
-STRIPE_PRICE_ID_ANNUAL	Annual subscription price ID	✅
-STRIPE_PRICE_ID_LIFETIME	Lifetime subscription price ID	✅
-RESEND_API_KEY	Resend email API key	✅
-TEST_EMAIL_OVERRIDE	Test mode email recipient	⚠️ (dev only)
-FROM_EMAIL	Production sender email	⚠️ (prod only)
-OPENAI_API_KEY	OpenAI API for AI features	❌ (optional)
-🤝 Contributions
-This project is not currently accepting contributions, as it's being actively developed as a personal project. However:
+```
 
-🐛 Bug reports are always welcome via GitHub Issues
-💡 Feature suggestions can be submitted as issues
-🍴 Forking for personal learning is encouraged!
-If you're interested in collaborating, feel free to reach out via the contact form on my website.
+---
 
-🐛 Known Issues & Limitations
-Mobile Safari: Emoji picker may require scrolling adjustment on very small screens
-AI Features: Require OpenAI API key and premium subscription
-Email Delivery: Requires domain verification for production use with Resend
-🙏 Acknowledgments
-Icons: Lucide Icons
-UI Components: Inspired by shadcn/ui
-Backend: Powered by Supabase
-Payments: Stripe
-Emails: Resend
-📧 Support
-Issues: GitHub Issues
-Contact: jessesmith.tech/#contact
+## 📝 Environment Variables
+
+### Required Variables
+
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `VITE_SUPABASE_URL` | Supabase project URL | `https://xyz.supabase.co` |
+| `VITE_SUPABASE_ANON_KEY` | Supabase anonymous key | `eyJ...` |
+
+### Edge Function Secrets (Supabase)
+
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `SUPABASE_URL` | Auto-provided by Supabase | ✅ |
+| `SUPABASE_ANON_KEY` | Auto-provided by Supabase | ✅ |
+| `SUPABASE_SERVICE_ROLE_KEY` | Auto-provided by Supabase | ✅ |
+| `STRIPE_SECRET_KEY` | Stripe API key | ✅ |
+| `STRIPE_PRICE_ID_MONTHLY` | Monthly subscription price ID | ✅ |
+| `STRIPE_PRICE_ID_ANNUAL` | Annual subscription price ID | ✅ |
+| `STRIPE_PRICE_ID_LIFETIME` | Lifetime subscription price ID | ✅ |
+| `RESEND_API_KEY` | Resend email API key | ✅ |
+| `TEST_EMAIL_OVERRIDE` | Test mode email recipient | ⚠️ (dev only) |
+| `FROM_EMAIL` | Production sender email | ⚠️ (prod only) |
+| `OPENAI_API_KEY` | OpenAI API for AI features | ❌ (optional) |
+
+---
+
+## 🤝 Contributions
+
+**This project is not currently accepting contributions**, as it's being actively developed as a personal project. However:
+
+- 🐛 **Bug reports** are always welcome via [GitHub Issues](https://github.com/jesse-smith13/flashy/issues)
+- 💡 **Feature suggestions** can be submitted as issues
+- 🍴 **Forking** for personal learning is encouraged!
+
+If you're interested in collaborating, feel free to reach out via the [contact form on my website](https://jessesmith.tech/#contact).
+
+---
+
+## 🐛 Known Issues & Limitations
+
+- **Mobile Safari**: Emoji picker may require scrolling adjustment on very small screens
+- **AI Features**: Require OpenAI API key and premium subscription
+- **Email Delivery**: Requires domain verification for production use with Resend
+
+---
+
+## 🙏 Acknowledgments
+
+- **Icons**: [Lucide Icons](https://lucide.dev/)
+- **UI Components**: Inspired by [shadcn/ui](https://ui.shadcn.com/)
+- **Backend**: Powered by [Supabase](https://supabase.com/)
+- **Payments**: [Stripe](https://stripe.com/)
+- **Emails**: [Resend](https://resend.com/)
+
+---
+
+## 📧 Support
+
+- **Issues**: [GitHub Issues](https://github.com/jesse-smith13/flashy/issues)
+- **Contact**: [jessesmith.tech](https://jessesmith.tech/#contact)
+
+---
+
+<div align="center">
+  
 Made with ❤️ by Jesse Smith
 
-Website • GitHub
+[Website](https://jessesmith.tech) • [GitHub](https://github.com/jesse-smith13)
+
+</div>
