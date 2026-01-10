@@ -15,6 +15,7 @@ import { EditProfileDialog } from "./EditProfileDialog";
 import { InviteFriendDialog } from "./InviteFriendDialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../ui/tabs";
 import { BarChart3, Trophy, Users } from "lucide-react";
+import { useSearchParams } from "react-router-dom";
 
 export function ProfileScreen() {
   const {
@@ -33,6 +34,8 @@ export function ProfileScreen() {
     fetchUserAchievements,
   } = useStore();
   const { navigateTo } = useNavigation();
+  const [searchParams] = useSearchParams();
+  const initialTab = searchParams.get("tab") || "stats";
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [inviteFriendDialogOpen, setInviteFriendDialogOpen] = useState(false);
   const [displayName, setDisplayName] = useState(
@@ -353,7 +356,7 @@ export function ProfileScreen() {
 
           {/* Tabs */}
           <Tabs
-            defaultValue="stats"
+            defaultValue={initialTab}
             className="w-full overflow-x-hidden"
             onValueChange={(value) => {
               if (

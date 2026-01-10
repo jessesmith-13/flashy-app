@@ -44,6 +44,8 @@ import { toast } from "sonner";
 import { SetDisplayModal } from "./components/Auth/Signup/SetDisplayModal";
 import { supabase } from "../src/lib/supabase";
 import { SubscriptionTier } from "./types/users";
+import { BetaTestingPage } from "./components/BetaTesting/BetaTestingPage";
+import { IS_BETA_TESTING_ENABLED } from "../utils/config";
 
 // Suppress Supabase auth errors from console
 const originalConsoleError = console.error;
@@ -692,6 +694,10 @@ function AppContent() {
                 </ProtectedRoute>
               }
             />
+            {/* Beta Testing - Conditional */}
+            {IS_BETA_TESTING_ENABLED && (
+              <Route path="/beta-testing" element={<BetaTestingPage />} />
+            )}
             <Route
               path="/ai-generate"
               element={
