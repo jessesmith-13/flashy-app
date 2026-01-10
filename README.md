@@ -7,7 +7,7 @@
   
   A modern, full-featured flashcard app with AI-powered learning, community sharing, and advanced study modes.
 
-  [Features](#-features) • [Tech Stack](#-tech-stack) • [Getting Started](#-getting-started) • [Documentation](#-documentation)
+  [Features](#-features) • [Tech Stack](#-tech-stack) • [Getting Started](#-getting-started)
 
   [![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
   [![React](https://img.shields.io/badge/React-20232A?logo=react&logoColor=61DAFB)](https://reactjs.org/)
@@ -131,7 +131,7 @@
 - **Stripe Account** ([Sign up](https://stripe.com))
 - **Resend Account** ([Sign up](https://resend.com))
 
-### Installation
+### Local Development Setup
 
 1. **Clone the repository**
    ```bash
@@ -183,7 +183,7 @@ flashy/
 ├── hooks/                   # Custom React hooks
 ├── src/
 │   ├── components/          # React components
-│   ├── components/          # Typescript Types
+│   ├── types/               # Typescript Types
 │   ├── ui/                  # Reusable UI components
 │   ├── store/               # Zustand state management
 │   ├── utils/               # Utility functions
@@ -242,38 +242,6 @@ Use any future expiry date and any 3-digit CVC.
 Testing Email Integration
 Emails in test mode will be sent to TEST_EMAIL_OVERRIDE address set in your environment variables.
 
-🌐 Deployment
-Deploy to Production
-Create Supabase project
-
-Go to supabase.com
-Create new project
-Note your project URL and anon key
-Set production secrets
-
-supabase secrets set --project-ref your-ref STRIPE_SECRET_KEY=sk_live_...
-supabase secrets set --project-ref your-ref RESEND_API_KEY=re_...
-# ... set all other secrets
-Deploy database
-
-supabase db push --linked
-Deploy edge functions
-
-supabase functions deploy server --project-ref your-ref
-Build and deploy frontend
-
-Set production environment variables in your hosting provider:
-
-VITE_SUPABASE_URL=https://your-project.supabase.co
-VITE_SUPABASE_ANON_KEY=your_production_anon_key
-Then build and deploy:
-
-npm run build
-# Deploy the `dist` folder to your hosting provider
-Hosting Recommendations
-Vercel - Zero-config deployment
-Netlify - Simple static hosting
-Cloudflare Pages - Global CDN
 🎨 Customization
 Theming
 Edit /src/styles/globals.css to customize colors:
@@ -323,7 +291,6 @@ If you're interested in collaborating, feel free to reach out via the contact fo
 Mobile Safari: Emoji picker may require scrolling adjustment on very small screens
 AI Features: Require OpenAI API key and premium subscription
 Email Delivery: Requires domain verification for production use with Resend
-
 🙏 Acknowledgments
 Icons: Lucide Icons
 UI Components: Inspired by shadcn/ui
@@ -332,9 +299,7 @@ Payments: Stripe
 Emails: Resend
 📧 Support
 Issues: GitHub Issues
-Contact: yourwebsite.com/contact
-Made with ❤️ by [Your Name]
+Contact: jessesmith.tech/#contact
+Made with ❤️ by Jesse Smith
 
 Website • GitHub
-
-```
