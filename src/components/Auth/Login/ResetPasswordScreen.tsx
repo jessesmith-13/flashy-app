@@ -24,65 +24,31 @@ export function ResetPasswordScreen() {
   useEffect(() => {
     let mounted = true
 
-    const setupRecoverySession = async () => {
+    const checkRecoverySession = async () => {
       try {
-        console.log('🔍 Full URL:', window.location.href)
-        console.log('🔍 Hash:', window.location.hash)
+        // Just check if we have a valid session (App.tsx already set it)
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession()
         
-        // Extract tokens from hash: #/reset-password?access_token=XXX&type=recovery&refresh_token=YYY
-        const hashParts = window.location.hash.split('?')
-        if (hashParts.length < 2) {
-          console.log('❌ No query params in hash')
-          setError('Invalid password reset link.')
-          setHasValidSession(false)
-          setCheckingSession(false)
-          return
-        }
-        
-        const params = new URLSearchParams(hashParts[1])
-        const accessToken = params.get('access_token')
-        const refreshToken = params.get('refresh_token')
-        const type = params.get('type')
-        
-        console.log('🔐 Extracted tokens:', { 
-          hasAccessToken: !!accessToken, 
-          hasRefreshToken: !!refreshToken,
-          type 
+        console.log('🔐 Reset screen - Session check:', { 
+          hasSession: !!session,
+          error: sessionError 
         })
         
-        if (!accessToken || type !== 'recovery') {
-          console.log('❌ Missing tokens or wrong type')
-          setError('Invalid or expired password reset link. Please request a new one.')
-          setHasValidSession(false)
-          setCheckingSession(false)
-          return
-        }
+        if (!mounted) return
         
-        // ✅ MANUALLY SET THE SESSION
-        console.log('✅ Setting session with extracted tokens...')
-        const { data, error: sessionError } = await supabase.auth.setSession({
-          access_token: accessToken,
-          refresh_token: refreshToken || ''
-        })
-        
-        if (sessionError) {
-          console.error('❌ Error setting session:', sessionError)
-          setError('Failed to verify password reset link. It may have expired.')
-          setHasValidSession(false)
-        } else if (data.session) {
-          console.log('✅ Session set successfully!')
+        if (session) {
+          console.log('✅ Valid session found')
           setHasValidSession(true)
           setError('')
         } else {
-          console.log('❌ No session after setSession')
-          setError('Failed to establish recovery session.')
+          console.log('❌ No session')
+          setError('Invalid or expired password reset link. Please request a new one.')
           setHasValidSession(false)
         }
-        
       } catch (err) {
-        console.error('❌ Setup error:', err)
+        console.error('Session check error:', err)
         if (mounted) {
-          setError('An error occurred. Please try again.')
+          setError('Failed to verify password reset link.')
           setHasValidSession(false)
         }
       } finally {
@@ -92,7 +58,7 @@ export function ResetPasswordScreen() {
       }
     }
 
-    setupRecoverySession()
+    checkRecoverySession()
 
     return () => {
       mounted = false

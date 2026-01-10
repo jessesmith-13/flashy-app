@@ -253,31 +253,39 @@ function AppContent() {
 
   const checkSession = async () => {
     console.log('checkSession - Starting...')
-    
+
     // ============================================================
-    // ✅ HANDLE SUPABASE AUTH CALLBACKS (password reset, etc.)
+    // ✅ INTERCEPT SUPABASE PASSWORD RESET CALLBACK
+    // Tokens will be in QUERY STRING (not hash) when redirected
     // ============================================================
-    const hashParams = new URLSearchParams(window.location.hash.split('?')[1] || '')
-    const accessToken = hashParams.get('access_token')
-    const type = hashParams.get('type')
-    const refreshToken = hashParams.get('refresh_token')
+    const queryParams = new URLSearchParams(window.location.search)
+    const accessToken = queryParams.get('access_token')
+    const refreshToken = queryParams.get('refresh_token')
+    const type = queryParams.get('type')
     
-    console.log('🔐 Auth callback check:', { accessToken: !!accessToken, type, refreshToken: !!refreshToken })
+    console.log('🔐 Query string check:', { 
+      hasAccessToken: !!accessToken, 
+      hasRefreshToken: !!refreshToken,
+      type,
+      search: window.location.search
+    })
     
     if (accessToken && type === 'recovery') {
-      console.log('✅ Password recovery link detected, setting session and navigating to reset page')
+      console.log('✅ Password recovery detected in query string!')
       
       try {
-        // Set the session with the tokens from URL
+        // Set the session
         await supabase.auth.setSession({
           access_token: accessToken,
           refresh_token: refreshToken || ''
         })
         
-        // Navigate to reset password page WITH the tokens in the URL
-        navigate(`/reset-password?access_token=${accessToken}&type=${type}${refreshToken ? `&refresh_token=${refreshToken}` : ''}`)
+        console.log('✅ Session set, navigating to reset page')
+        
+        // Navigate to reset page (now session is set)
+        navigate('/reset-password')
         setCheckingSession(false)
-        return // Stop here, don't continue with normal session check
+        return // STOP HERE
       } catch (error) {
         console.error('Failed to set recovery session:', error)
       }
