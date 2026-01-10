@@ -134,27 +134,41 @@ export const publishDeck = async (
 
 export const unpublishDeck = async (
   accessToken: string,
-  communityDeckId: string
+  deckId: string
 ) => {
-  const response = await fetch(
-    `${API_BASE}/decks/${communityDeckId}/unpublish`,
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${accessToken}`,
-      },
+  console.log('📤 unpublishDeck API called with communityDeckId:', deckId)
+  console.log('📤 API_BASE:', API_BASE)
+  console.log('📤 Full URL:', `${API_BASE}/decks/${deckId}/unpublish`)
+  
+  try {
+    const response = await fetch(
+      `${API_BASE}/decks/${deckId}/unpublish`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }
+    )
+
+    console.log('📥 Response status:', response.status)
+    console.log('📥 Response ok:', response.ok)
+
+    const data = await response.json()
+    console.log('📥 Response data:', data)
+
+    if (!response.ok) {
+      console.error('❌ Failed to unpublish deck:', data.error)
+      throw new Error(data.error || 'Failed to unpublish deck')
     }
-  )
 
-  const data = await response.json()
-
-  if (!response.ok) {
-    console.error('Failed to unpublish deck:', data.error)
-    throw new Error(data.error || 'Failed to unpublish deck')
+    console.log('✅ Unpublish successful')
+    return data
+  } catch (error) {
+    console.error('❌ unpublishDeck exception:', error)
+    throw error
   }
-
-  return data
 }
 
 export const addDeckFromCommunity = async (
