@@ -253,6 +253,37 @@ function AppContent() {
 
   const checkSession = async () => {
     console.log('checkSession - Starting...')
+    
+    // ============================================================
+    // ✅ HANDLE SUPABASE AUTH CALLBACKS (password reset, etc.)
+    // ============================================================
+    const hashParams = new URLSearchParams(window.location.hash.split('?')[1] || '')
+    const accessToken = hashParams.get('access_token')
+    const type = hashParams.get('type')
+    const refreshToken = hashParams.get('refresh_token')
+    
+    console.log('🔐 Auth callback check:', { accessToken: !!accessToken, type, refreshToken: !!refreshToken })
+    
+    if (accessToken && type === 'recovery') {
+      console.log('✅ Password recovery link detected, setting session and navigating to reset page')
+      
+      try {
+        // Set the session with the tokens from URL
+        await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken || ''
+        })
+        
+        // Navigate to reset password page WITH the tokens in the URL
+        navigate(`/reset-password?access_token=${accessToken}&type=${type}${refreshToken ? `&refresh_token=${refreshToken}` : ''}`)
+        setCheckingSession(false)
+        return // Stop here, don't continue with normal session check
+      } catch (error) {
+        console.error('Failed to set recovery session:', error)
+      }
+    }
+    // ============================================================
+
     try {
       // Check if there's a shared deck in the URL
       const hash = window.location.hash
