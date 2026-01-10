@@ -137,6 +137,35 @@ export const BETA_TASK_CATEGORIES: BetaTaskCategory[] = [
     ],
   },
   {
+    id: "subscription",
+    title: "💳 Subscription & Payments",
+    description: "Test payment and subscription features",
+    icon: "CreditCard",
+    tasks: [
+      {
+        id: "view-plans",
+        label: "View subscription plans",
+        navigateTo: "/settings",
+      },
+      {
+        id: "check-features",
+        label: "Check what each tier includes",
+        description: `Click "Upgrade" to compare free, premium, and lifetime`,
+      },
+      {
+        id: "upgrade-flow",
+        label: "Try the upgrade flow (don't complete payment)",
+        description:
+          "Test the Stripe checkout process, use 4242 4242 4242 4242 for a test card (It's just on test mode!)",
+      },
+      {
+        id: "check-subscription-status",
+        label: "View your subscription status after upgrading",
+        navigateTo: "/settings",
+      },
+    ],
+  },
+  {
     id: "study",
     title: "🎯 Studying Your Cards",
     description: "Test study sessions and progress tracking",
@@ -195,35 +224,6 @@ export const BETA_TASK_CATEGORIES: BetaTaskCategory[] = [
         id: "check-streak",
         label: "Check your current streak",
         description: "View it on your profile page",
-      },
-    ],
-  },
-  {
-    id: "subscription",
-    title: "💳 Subscription & Payments",
-    description: "Test payment and subscription features",
-    icon: "CreditCard",
-    tasks: [
-      {
-        id: "view-plans",
-        label: "View subscription plans",
-        navigateTo: "/settings",
-      },
-      {
-        id: "check-features",
-        label: "Check what each tier includes",
-        description: "Compare free, premium, and lifetime",
-      },
-      {
-        id: "upgrade-flow",
-        label: "Try the upgrade flow (don't complete payment)",
-        description:
-          "Test the Stripe checkout process, use 4242 4242 4242 4242 for a test card (It's just on test mode!)",
-      },
-      {
-        id: "check-subscription-status",
-        label: "View your subscription status",
-        navigateTo: "/settings",
       },
     ],
   },
