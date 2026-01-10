@@ -20,49 +20,23 @@ export function ResetPasswordScreen() {
   const [hasValidSession, setHasValidSession] = useState(false)
   const [checkingSession, setCheckingSession] = useState(true)
 
-  // ✅ MANUALLY EXTRACT TOKENS FROM HASH AND SET SESSION
-  useEffect(() => {
-    let mounted = true
-
-    const checkRecoverySession = async () => {
-      try {
-        // Just check if we have a valid session (App.tsx already set it)
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-        
-        console.log('🔐 Reset screen - Session check:', { 
-          hasSession: !!session,
-          error: sessionError 
-        })
-        
-        if (!mounted) return
-        
-        if (session) {
-          console.log('✅ Valid session found')
-          setHasValidSession(true)
-          setError('')
-        } else {
-          console.log('❌ No session')
-          setError('Invalid or expired password reset link. Please request a new one.')
-          setHasValidSession(false)
-        }
-      } catch (err) {
-        console.error('Session check error:', err)
-        if (mounted) {
-          setError('Failed to verify password reset link.')
-          setHasValidSession(false)
-        }
-      } finally {
-        if (mounted) {
-          setCheckingSession(false)
-        }
+    useEffect(() => {
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      
+      console.log('🔐 Reset page - has session:', !!session)
+      
+      if (session) {
+        setHasValidSession(true)
+      } else {
+        setError('Invalid or expired password reset link. Please request a new one.')
+        setHasValidSession(false)
       }
+      
+      setCheckingSession(false)
     }
-
-    checkRecoverySession()
-
-    return () => {
-      mounted = false
-    }
+    
+    checkSession()
   }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {

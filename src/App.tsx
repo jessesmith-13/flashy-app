@@ -254,42 +254,63 @@ function AppContent() {
   const checkSession = async () => {
     console.log('checkSession - Starting...')
 
-    // ============================================================
-    // ✅ INTERCEPT SUPABASE PASSWORD RESET CALLBACK
-    // Tokens will be in QUERY STRING (not hash) when redirected
+     // ============================================================
+    // ✅ CHECK FOR PASSWORD RECOVERY TOKENS FIRST (before anything else)
     // ============================================================
     const queryParams = new URLSearchParams(window.location.search)
     const accessToken = queryParams.get('access_token')
     const refreshToken = queryParams.get('refresh_token')
     const type = queryParams.get('type')
     
-    console.log('🔐 Query string check:', { 
+    console.log('🔐 Query params:', { 
       hasAccessToken: !!accessToken, 
-      hasRefreshToken: !!refreshToken,
       type,
-      search: window.location.search
+      fullSearch: window.location.search
     })
     
     if (accessToken && type === 'recovery') {
-      console.log('✅ Password recovery detected in query string!')
+      console.log('✅ PASSWORD RECOVERY TOKENS FOUND!')
       
       try {
-        // Set the session
-        await supabase.auth.setSession({
+        const { data, error: sessionError } = await supabase.auth.setSession({
           access_token: accessToken,
           refresh_token: refreshToken || ''
         })
         
-        console.log('✅ Session set, navigating to reset page')
+        console.log('🔐 setSession result:', { 
+          hasSession: !!data.session, 
+          error: sessionError 
+        })
         
-        // Navigate to reset page (now session is set)
-        navigate('/reset-password')
-        setCheckingSession(false)
-        return // STOP HERE
+        if (sessionError) {
+          console.error('❌ setSession error:', sessionError)
+          toast.error('Password reset link is invalid or expired')
+          navigate('/login')
+          setCheckingSession(false)
+          return
+        }
+        
+        if (data.session) {
+          console.log('✅ Session set successfully!')
+          
+          // Clear query params and navigate to reset page
+          window.history.replaceState({}, '', '/#/reset-password')
+          navigate('/reset-password')
+          setCheckingSession(false)
+          return
+        }
+        
       } catch (error) {
-        console.error('Failed to set recovery session:', error)
+        console.error('❌ Recovery session setup failed:', error)
+        toast.error('Failed to process password reset link')
+        navigate('/login')
+        setCheckingSession(false)
+        return
       }
     }
+    
+    // ============================================================
+    // Continue with normal session check...
     // ============================================================
 
     try {
