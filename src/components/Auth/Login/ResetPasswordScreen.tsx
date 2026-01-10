@@ -7,6 +7,7 @@ import { Input } from '../../../ui/input'
 import { Label } from '../../../ui/label'
 import { toast } from 'sonner'
 import { Eye, EyeOff, CheckCircle } from 'lucide-react'
+import { supabase } from '../../../lib/supabase'
 
 export function ResetPasswordScreen() {
   const [searchParams] = useSearchParams()
@@ -21,11 +22,35 @@ export function ResetPasswordScreen() {
 
   // Check if we have the necessary tokens in the URL
   useEffect(() => {
-    const accessToken = searchParams.get('access_token')
-    const type = searchParams.get('type')
+    // Check query params first
+    let accessToken = searchParams.get('access_token')
+    let type = searchParams.get('type')
+    
+    // If not in query params, check the hash fragment
+    if (!accessToken) {
+      const hashParams = new URLSearchParams(window.location.hash.substring(window.location.hash.indexOf('?') + 1))
+      accessToken = hashParams.get('access_token')
+      type = hashParams.get('type')
+    }
+    
+    // Also check if tokens are after a # in the hash (double hash scenario)
+    if (!accessToken && window.location.hash.includes('access_token=')) {
+      const hashFragment = window.location.hash.split('#')[2] || '' // Get part after second #
+      const fragmentParams = new URLSearchParams(hashFragment)
+      accessToken = fragmentParams.get('access_token')
+      type = fragmentParams.get('type')
+    }
+    
+    console.log('🔐 Reset password - access_token found:', !!accessToken, 'type:', type)
     
     if (!accessToken || type !== 'recovery') {
       setError('Invalid or expired password reset link. Please request a new one.')
+    } else {
+      // Set the session with the token from URL
+      supabase.auth.setSession({
+        access_token: accessToken,
+        refresh_token: searchParams.get('refresh_token') || ''
+      })
     }
   }, [searchParams])
 
