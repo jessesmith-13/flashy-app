@@ -88,9 +88,9 @@ export function UserActivityPanel({ accessToken }: UserActivityPanelProps) {
       const query = searchQuery.toLowerCase();
       const filtered = allUsers.filter(
         (u) =>
-          u.displayName.toLowerCase().includes(query) ||
-          u.email.toLowerCase().includes(query) ||
-          u.id.toLowerCase().includes(query)
+          u.displayName?.toLowerCase().includes(query) ||
+          u.email?.toLowerCase().includes(query) ||
+          u.id?.toLowerCase().includes(query)
       );
       setSearchResults(filtered);
       setShowDropdown(filtered.length > 0);
