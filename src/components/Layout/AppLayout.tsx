@@ -410,7 +410,7 @@ export function AppLayout({ children }: AppLayoutProps) {
                   <span className="text-xs">More</span>
                 </button>
               </SheetTrigger>
-              <SheetContent side="bottom" className="h-auto max-h-[80vh] overflow-y-auto">
+              <SheetContent side="bottom" className="h-auto max-h-[80vh] overflow-y-auto pb-12">
                 <SheetHeader>
                   <SheetTitle>Menu</SheetTitle>
                   <SheetDescription className="sr-only">
