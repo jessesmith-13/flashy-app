@@ -258,6 +258,12 @@ export const getUserProfileOnLogin = async (token: string): Promise<{
   decks_public: boolean
   subscription_tier: string
   subscription_expiry: string | null
+  email_notifications_enabled: boolean 
+  email_offers: boolean              
+  email_comment_replies: boolean       
+  email_friend_requests: boolean       
+  email_flag_notifications: boolean  
+  email_moderation_updates: boolean   
 }> => {
   const response = await fetch(`${API_BASE}/auth/user-profile`, {
     method: 'GET',

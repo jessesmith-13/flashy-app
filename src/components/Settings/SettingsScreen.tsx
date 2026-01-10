@@ -30,12 +30,12 @@ export function SettingsScreen() {
   console.log('🔐 Settings - Is Moderator:', user?.isModerator)
   console.log('🔐 Settings - accessToken:', accessToken ? 'exists' : 'missing')
   
-  const [emailNotifications, setEmailNotifications] = useState(true)
-  const [emailOffers, setEmailOffers] = useState(true)
-  const [emailCommentReplies, setEmailCommentReplies] = useState(true)
-  const [emailFriendRequests, setEmailFriendRequests] = useState(true)
-  const [emailFlaggedContent, setEmailFlaggedContent] = useState(true)        // ✅ NEW
-  const [emailModerationNotices, setEmailModerationNotices] = useState(true)  // ✅ NEW
+const [emailNotifications, setEmailNotifications] = useState(user?.emailNotificationsEnabled ?? true)
+const [emailOffers, setEmailOffers] = useState(user?.emailOffers ?? true)
+const [emailCommentReplies, setEmailCommentReplies] = useState(user?.emailCommentReplies ?? true)
+const [emailFriendRequests, setEmailFriendRequests] = useState(user?.emailFriendRequests ?? true)
+const [emailFlaggedContent, setEmailFlaggedContent] = useState(user?.emailFlaggedContent ?? true)
+const [emailModerationNotices, setEmailModerationNotices] = useState(user?.emailModerationNotices ?? true)
   
   // Initialize from user data, default to false if undefined
   const [decksPublic, setDecksPublic] = useState(user?.decksPublic ?? false)
@@ -86,6 +86,26 @@ export function SettingsScreen() {
       setDecksPublic(!enabled)
     }
   }
+
+  const handleEmailPreferenceChange = async (field: string, enabled: boolean) => {
+  if (!accessToken || !user?.id) return
+  
+  try {
+    await updateProfile(user.id, accessToken, {
+      [field]: enabled
+    })
+    
+    // Update local state
+    updateUser({
+      [field]: enabled
+    })
+    
+    toast.success('Email preferences updated')
+  } catch (error) {
+    console.error('Failed to update email preferences:', error)
+    toast.error('Failed to update email preferences')
+  }
+}
 
   const handleExportData = async () => {
     if (!accessToken) {
@@ -363,12 +383,30 @@ export function SettingsScreen() {
               emailFriendRequests={emailFriendRequests}
               emailFlaggedContent={emailFlaggedContent}
               emailModerationNotices={emailModerationNotices}
-              onEmailNotificationsChange={setEmailNotifications}
-              onEmailOffersChange={setEmailOffers}
-              onEmailCommentRepliesChange={setEmailCommentReplies}
-              onEmailFriendRequestsChange={setEmailFriendRequests}
-              onEmailFlaggedContentChange={setEmailFlaggedContent}
-              onEmailModerationNoticesChange={setEmailModerationNotices}
+              onEmailNotificationsChange={(v) => {
+                setEmailNotifications(v)
+                handleEmailPreferenceChange('emailNotificationsEnabled', v)  // ✅ Was: email_notifications
+              }}
+              onEmailOffersChange={(v) => {
+                setEmailOffers(v)
+                handleEmailPreferenceChange('emailOffers', v)  // ✅ Was: email_offers
+              }}
+              onEmailCommentRepliesChange={(v) => {
+                setEmailCommentReplies(v)
+                handleEmailPreferenceChange('emailCommentReplies', v)  // ✅ Was: email_comment_replies
+              }}
+              onEmailFriendRequestsChange={(v) => {
+                setEmailFriendRequests(v)
+                handleEmailPreferenceChange('emailFriendRequests', v)  // ✅ Was: email_friend_requests
+              }}
+              onEmailFlaggedContentChange={(v) => {
+                setEmailFlaggedContent(v)
+                handleEmailPreferenceChange('emailFlaggedContent', v)  // ✅ Was: email_flag_notifications
+              }}
+              onEmailModerationNoticesChange={(v) => {
+                setEmailModerationNotices(v)
+                handleEmailPreferenceChange('emailModerationNotices', v)  // ✅ Was: email_moderation_updates
+              }}
             />
 
             <AppearanceSection

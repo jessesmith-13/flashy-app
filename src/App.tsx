@@ -169,6 +169,12 @@ function AppContent() {
                   subscriptionExpiry: profile.subscription_expiry || undefined,
                   isSuperuser,
                   isModerator,
+                  emailNotificationsEnabled: profile.email_notifications_enabled ?? true,
+                  emailOffers: profile.email_offers ?? true,
+                  emailCommentReplies: profile.email_comment_replies ?? true,
+                  emailFriendRequests: profile.email_friend_requests ?? true,
+                  emailFlaggedContent: profile.email_flag_notifications ?? true,
+                  emailModerationNotices: profile.email_moderation_updates ?? true,
                 },
                 session.access_token
               )
@@ -224,6 +230,12 @@ function AppContent() {
             subscriptionExpiry: profile.subscription_expiry || undefined,
             isSuperuser,
             isModerator,
+            emailNotificationsEnabled: profile.email_notifications_enabled ?? true,
+            emailOffers: profile.email_offers ?? true,
+            emailCommentReplies: profile.email_comment_replies ?? true,
+            emailFriendRequests: profile.email_friend_requests ?? true,
+            emailFlaggedContent: profile.email_flag_notifications ?? true,
+            emailModerationNotices: profile.email_moderation_updates ?? true,
           },
           session.access_token
         )
@@ -323,6 +335,12 @@ function AppContent() {
                 subscriptionExpiry: userProfile.subscription_expiry || undefined,
                 isSuperuser,
                 isModerator,
+                emailNotificationsEnabled: userProfile.email_notifications_enabled ?? true,
+                emailOffers: userProfile.email_offers ?? true,
+                emailCommentReplies: userProfile.email_comment_replies ?? true,
+                emailFriendRequests: userProfile.email_friend_requests ?? true,
+                emailFlaggedContent: userProfile.email_flag_notifications ?? true,
+                emailModerationNotices: userProfile.email_moderation_updates ?? true,
               },
               session.access_token
             )
@@ -346,6 +364,12 @@ function AppContent() {
                 subscriptionExpiry: userProfile.subscription_expiry || undefined,
                 isSuperuser,
                 isModerator,
+                emailNotificationsEnabled: userProfile.email_notifications_enabled ?? true,
+                emailOffers: userProfile.email_offers ?? true,
+                emailCommentReplies: userProfile.email_comment_replies ?? true,
+                emailFriendRequests: userProfile.email_friend_requests ?? true,
+                emailFlaggedContent: userProfile.email_flag_notifications ?? true,
+                emailModerationNotices: userProfile.email_moderation_updates ?? true,
               },
               session.access_token
             )
