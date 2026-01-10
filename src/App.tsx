@@ -531,7 +531,7 @@ function AppContent() {
   return (
     <>
       {checkingSession ? (
-        <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex items-center justify-center">
+        <div className="min-h-[100dvh] bg-gray-100 dark:bg-gray-900 flex items-center justify-center">
           <div className="text-emerald-600 dark:text-emerald-400">Loading...</div>
         </div>
       ) : (
