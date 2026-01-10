@@ -839,7 +839,7 @@ export function CommunityScreen() {
 
   return (
     <AppLayout>
-      <div className="min-h-screen bg-gray-100 dark:bg-gray-900 p-4 sm:p-6 lg:p-8">
+      <div className="min-h-screen bg-gray-100 dark:bg-gray-900 p-4 sm:p-6 lg:p-8 pb-16 sm:pb-6 lg:pb-8">
         <div className="max-w-6xl mx-auto">
           {/* Header */}
           <div className="mb-6 sm:mb-8">
