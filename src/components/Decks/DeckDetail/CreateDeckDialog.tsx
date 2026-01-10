@@ -71,7 +71,7 @@ export function CreateDeckDialog({ open, onOpenChange, onCreateDeck }: CreateDec
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-md max-h-[75vh] sm:max-h-[90vh] overflow-y-auto overscroll-contain">
         <DialogHeader>
           <DialogTitle>Create New Deck</DialogTitle>
           <DialogDescription>
