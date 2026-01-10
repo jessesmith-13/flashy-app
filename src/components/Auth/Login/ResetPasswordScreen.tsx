@@ -21,23 +21,82 @@ export function ResetPasswordScreen() {
   const [checkingSession, setCheckingSession] = useState(true)
 
     useEffect(() => {
-    const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-      
-      console.log('🔐 Reset page - has session:', !!session)
-      
-      if (session) {
-        setHasValidSession(true)
-      } else {
-        setError('Invalid or expired password reset link. Please request a new one.')
-        setHasValidSession(false)
+      const setupSession = async () => {
+        console.log('🔍 Full hash:', window.location.hash)
+        
+        // Split on # to handle double-hash: #/reset-password#access_token=...
+        const hashParts = window.location.hash.split('#')
+        console.log('🔍 Hash parts:', hashParts)
+        
+        let accessToken = null
+        let refreshToken = null
+        let type = null
+        
+        // Check if there's a second hash with tokens
+        if (hashParts.length > 2) {
+          // Extract from second hash: #access_token=XXX&type=recovery
+          const tokenHash = hashParts[2]
+          const params = new URLSearchParams(tokenHash)
+          accessToken = params.get('access_token')
+          refreshToken = params.get('refresh_token')
+          type = params.get('type')
+          
+          console.log('🔐 Extracted from double hash:', { 
+            hasAccessToken: !!accessToken, 
+            hasRefreshToken: !!refreshToken,
+            type 
+          })
+        }
+        
+        if (accessToken && type === 'recovery') {
+          console.log('✅ Setting session with tokens from double hash...')
+          
+          try {
+            const { data, error: sessionError } = await supabase.auth.setSession({
+              access_token: accessToken,
+              refresh_token: refreshToken || ''
+            })
+            
+            if (sessionError) {
+              console.error('❌ setSession error:', sessionError)
+              setError('Password reset link is invalid or expired.')
+              setHasValidSession(false)
+            } else if (data.session) {
+              console.log('✅ Session set successfully!')
+              setHasValidSession(true)
+              setError('')
+              
+              // Clean up the URL
+              window.history.replaceState({}, '', '/#/reset-password')
+            } else {
+              console.log('❌ No session returned')
+              setError('Failed to establish session.')
+              setHasValidSession(false)
+            }
+          } catch (err) {
+            console.error('❌ Session setup error:', err)
+            setError('An error occurred.')
+            setHasValidSession(false)
+          }
+        } else {
+          // No tokens in URL, check if session already exists
+          const { data: { session } } = await supabase.auth.getSession()
+          
+          console.log('🔐 Checking existing session:', !!session)
+          
+          if (session) {
+            setHasValidSession(true)
+          } else {
+            setError('Invalid or expired password reset link. Please request a new one.')
+            setHasValidSession(false)
+          }
+        }
+        
+        setCheckingSession(false)
       }
       
-      setCheckingSession(false)
-    }
-    
-    checkSession()
-  }, [])
+      setupSession()
+    }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
