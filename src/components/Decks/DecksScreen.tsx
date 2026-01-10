@@ -37,7 +37,7 @@ export function DecksScreen() {
   const [draggedDeck, setDraggedDeck] = useState<string | null>(null)
   const [deletingDeckId, setDeletingDeckId] = useState<string | null>(null)
   const [unpublishingDeckId, setUnpublishingDeckId] = useState<string | null>(null)
-  const [activeTab, setActiveTab] = useState<'all' | 'favorites' | 'learned' | 'added' | 'created' | 'published'>('all')
+  const [activeTab, setActiveTab] = useState<'all' | 'favorites' | 'learned' | 'added' | 'created' | 'published' | 'unpublished'>('all')
   const [sortOption, setSortOption] = useState<SortOption>('custom')
   const [searchQuery, setSearchQuery] = useState('')
   const [filterCategory, setFilterCategory] = useState<string>('all')
@@ -258,12 +258,6 @@ export function DecksScreen() {
   const handlePublishToCommunity = async () => {
     if (!accessToken || !publishingDeck) return
 
-    console.log('=== PUBLISH/UPDATE ATTEMPT ===')
-    console.log('Deck ID:', publishingDeck.id)
-    console.log('Deck name:', publishingDeck.name)
-    console.log('Category:', publishingDeck.category)
-    console.log('Subtopic:', publishingDeck.subtopic)
-
     if (!publishingDeck.cardCount || publishingDeck.cardCount === 0) {
       toast.error('Cannot publish an empty deck')
       setPublishDialogOpen(false)
@@ -362,26 +356,33 @@ export function DecksScreen() {
   }
 
   const confirmUnpublish = async () => {
-    if (!unpublishingDeck || !accessToken || !unpublishingDeck.communityPublishedId) return
 
-    setUnpublishingDeckId(unpublishingDeck.id)
-    try {
-      await unpublishDeck(accessToken, unpublishingDeck.communityPublishedId)
-      
-      updateDeckInStore(unpublishingDeck.id, {
-        communityPublishedId: null
-      })
-      
-      toast.success(`"${unpublishingDeck.name}" has been unpublished from the community`)
-      setUnpublishDialogOpen(false)
-      setUnpublishingDeck(null)
-    } catch (error: any) {
-      console.error('Failed to unpublish deck:', error)
-      toast.error(error.message || 'Failed to unpublish deck')
-    } finally {
-      setUnpublishingDeckId(null)
-    }
+  if (!unpublishingDeck || !accessToken) {
+    console.log('❌ Early return: missing deck or token')
+    toast.error('Cannot unpublish: missing required information')
+    return
   }
+
+  setUnpublishingDeckId(unpublishingDeck.id)
+  try {
+    console.log('📤 Calling unpublishDeck with deck ID:', unpublishingDeck.id)
+    await unpublishDeck(accessToken, unpublishingDeck.id)  // ✅ Pass deck.id instead
+    
+    console.log('✅ Unpublish successful, updating store')
+    updateDeckInStore(unpublishingDeck.id, {
+      isPublished: false
+    })
+    
+    toast.success(`"${unpublishingDeck.name}" has been unpublished from the community`)
+    setUnpublishDialogOpen(false)
+    setUnpublishingDeck(null)
+  } catch (error: any) {
+    console.error('❌ Failed to unpublish deck:', error)
+    toast.error(error.message || 'Failed to unpublish deck')
+  } finally {
+    setUnpublishingDeckId(null)
+  }
+}
 
   const handleOpenEditDialog = (e: React.MouseEvent, deck: UIDeck) => {
     e.stopPropagation()
@@ -424,10 +425,6 @@ export function DecksScreen() {
 
   const filteredDecks = decks.filter(deck => {
     if (deck.isDeleted) return false
-
-    if (deck.isPublished) {
-      console.log(`🔍 Deck "${deck.name}" has isPublished:`, deck.isPublished)
-    }
     
     const tabFilter = (() => {
       if (activeTab === 'favorites') return !!deck.isFavorite
@@ -439,9 +436,11 @@ export function DecksScreen() {
         return (!deck.isCommunity) && !deck.isShared
       }
       if (activeTab === 'published') {
-        const isPublished = !!deck.isPublished
-        console.log(`🔍 Checking deck "${deck.name}" for published tab: ${isPublished}`)
-        return isPublished
+        return !!deck.isPublished
+      }
+      if (activeTab === 'unpublished') {
+        // Your own decks that haven't been published yet
+        return !deck.sourceCommunityDeckId && !deck.isShared && !deck.isPublished
       }
       return true
     })()
@@ -516,7 +515,8 @@ export function DecksScreen() {
   )
 
   const publishedCount = decks.filter(d => !!d.isPublished).length
-  console.log('🔍 Published decks count:', publishedCount)
+  const unpublishedCount = decks.filter(d => !d.sourceCommunityDeckId && !d.isShared && !d.isPublished).length
+
   return (
     <AppLayout>
       {loading ? (
@@ -637,6 +637,7 @@ export function DecksScreen() {
                 <SelectItem value="added">Added ({decks.filter(d => (d.sourceCommunityDeckId && !d.communityPublishedId) || d.isShared).length})</SelectItem>
                 <SelectItem value="created">Your Decks ({decks.filter(d => (!d.sourceCommunityDeckId || d.communityPublishedId) && !d.isShared).length})</SelectItem>
                 <SelectItem value="published">Published ({publishedCount})</SelectItem>
+                <SelectItem value="published">Unpublished ({unpublishedCount})</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -683,6 +684,13 @@ export function DecksScreen() {
                   Published
                   <span className="ml-2 text-xs bg-gray-200 dark:bg-gray-700 px-2 py-0.5 rounded-full">
                     {publishedCount}
+                  </span>
+                </TabsTrigger>
+                <TabsTrigger value="unpublished" className="data-[state=active]:bg-emerald-100 dark:data-[state=active]:bg-emerald-900/30 data-[state=active]:text-emerald-700 dark:data-[state=active]:text-emerald-400 text-sm whitespace-nowrap">
+                  <Upload className="w-4 h-4 mr-1" />
+                  Unpublished
+                  <span className="ml-2 text-xs bg-gray-200 dark:bg-gray-700 px-2 py-0.5 rounded-full">
+                    {unpublishedCount}
                   </span>
                 </TabsTrigger>
               </TabsList>
@@ -735,19 +743,21 @@ export function DecksScreen() {
                 <BookOpen className="w-20 h-20 mx-auto text-gray-400 dark:text-gray-600 mb-4" />
                 <p className="text-gray-600 dark:text-gray-400 mb-2">
                   {activeTab === 'all' ? 'No decks yet' : 
-                   activeTab === 'favorites' ? 'No favorite decks yet' : 
-                   activeTab === 'learned' ? 'No learned decks yet' :
-                   activeTab === 'added' ? 'No added decks yet' :
-                   activeTab === 'created' ? 'No created decks yet' :
-                   'No published decks yet'}
+                  activeTab === 'favorites' ? 'No favorite decks yet' : 
+                  activeTab === 'learned' ? 'No learned decks yet' :
+                  activeTab === 'added' ? 'No added decks yet' :
+                  activeTab === 'created' ? 'No created decks yet' :
+                  activeTab === 'published' ? 'No published decks yet' :
+                  'No unpublished decks yet'}
                 </p>
                 <p className="text-sm text-gray-500 dark:text-gray-500">
                   {activeTab === 'all' ? 'Create your first deck to get started!' : 
-                   activeTab === 'favorites' ? 'Star decks to mark them as favorites!' : 
-                   activeTab === 'learned' ? 'Mark decks as learned when you master them!' :
-                   activeTab === 'added' ? 'Import decks from the Community to see them here!' :
-                   activeTab === 'created' ? 'Create a new deck to get started!' :
-                   'Publish a deck to the community to see it here!'}
+                  activeTab === 'favorites' ? 'Star decks to mark them as favorites!' : 
+                  activeTab === 'learned' ? 'Mark decks as learned when you master them!' :
+                  activeTab === 'added' ? 'Import decks from the Community to see them here!' :
+                  activeTab === 'created' ? 'Create a new deck to get started!' :
+                  activeTab === 'published' ? 'Publish a deck to the community to see it here!' :
+                  'All your decks are published! Create a new deck to see unpublished ones.'}
                 </p>
               </>
             )}

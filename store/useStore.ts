@@ -129,7 +129,7 @@ export const useStore = create<AppState>((set, get) => ({
     }
   },
   updateUser: (updates) => set((state) => ({
-    user: state.user ? { ...state.user, ...updates } : null
+    user: state.user ? { ...state.user, ...updates } : null,
   })),
   logout: () => set({ 
     user: null, 
