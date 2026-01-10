@@ -1,6 +1,6 @@
 import { Switch } from '../../ui/switch'
 import { Label } from '../../ui/label'
-import { Mail, Tag, MessageSquare, UserPlus } from 'lucide-react'
+import { Mail, Tag, MessageSquare, UserPlus, Flag, Shield } from 'lucide-react'
 
 interface NotificationsSectionProps {
   userEmail: string | undefined
@@ -8,10 +8,14 @@ interface NotificationsSectionProps {
   emailOffers: boolean
   emailCommentReplies: boolean
   emailFriendRequests: boolean
+  emailFlaggedContent: boolean
+  emailModerationNotices: boolean
   onEmailNotificationsChange: (checked: boolean) => void
   onEmailOffersChange: (checked: boolean) => void
   onEmailCommentRepliesChange: (checked: boolean) => void
   onEmailFriendRequestsChange: (checked: boolean) => void
+  onEmailFlaggedContentChange: (checked: boolean) => void
+  onEmailModerationNoticesChange: (checked: boolean) => void 
 }
 
 export function NotificationsSection({
@@ -20,10 +24,14 @@ export function NotificationsSection({
   emailOffers,
   emailCommentReplies,
   emailFriendRequests,
+  emailFlaggedContent,
+  emailModerationNotices,
   onEmailNotificationsChange,
   onEmailOffersChange,
   onEmailCommentRepliesChange,
-  onEmailFriendRequestsChange
+  onEmailFriendRequestsChange,
+  onEmailFlaggedContentChange,
+  onEmailModerationNoticesChange,
 }: NotificationsSectionProps) {
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
@@ -52,25 +60,7 @@ export function NotificationsSection({
         {/* Sub-options - shown when email notifications are enabled */}
         {emailNotifications && (
           <div className="ml-8 space-y-4 pt-2 border-l-2 border-gray-200 dark:border-gray-700 pl-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Tag className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-                <div>
-                  <Label htmlFor="emailOffers" className="text-sm">
-                    Exclusive Offers
-                  </Label>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    Special deals and promotions
-                  </p>
-                </div>
-              </div>
-              <Switch
-                id="emailOffers"
-                checked={emailOffers}
-                onCheckedChange={onEmailOffersChange}
-              />
-            </div>
-
+            {/* Social & Community */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <MessageSquare className="w-4 h-4 text-gray-600 dark:text-gray-400" />
@@ -106,6 +96,65 @@ export function NotificationsSection({
                 id="emailFriendRequests"
                 checked={emailFriendRequests}
                 onCheckedChange={onEmailFriendRequestsChange}
+              />
+            </div>
+
+            {/* ✅ NEW: Moderation Emails */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Flag className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                <div>
+                  <Label htmlFor="emailFlaggedContent" className="text-sm">
+                    Flagged Content
+                  </Label>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    When your content is reported
+                  </p>
+                </div>
+              </div>
+              <Switch
+                id="emailFlaggedContent"
+                checked={emailFlaggedContent}
+                onCheckedChange={onEmailFlaggedContentChange}
+              />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Shield className="w-4 h-4 text-red-600 dark:text-red-400" />
+                <div>
+                  <Label htmlFor="emailModerationNotices" className="text-sm">
+                    Moderator Actions
+                  </Label>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    Warnings and account restrictions
+                  </p>
+                </div>
+              </div>
+              <Switch
+                id="emailModerationNotices"
+                checked={emailModerationNotices}
+                onCheckedChange={onEmailModerationNoticesChange}
+              />
+            </div>
+
+            {/* Marketing */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Tag className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                <div>
+                  <Label htmlFor="emailOffers" className="text-sm">
+                    Exclusive Offers
+                  </Label>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    Special deals and promotions
+                  </p>
+                </div>
+              </div>
+              <Switch
+                id="emailOffers"
+                checked={emailOffers}
+                onCheckedChange={onEmailOffersChange}
               />
             </div>
           </div>

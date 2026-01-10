@@ -24,6 +24,11 @@ export function AppLayout({ children }: AppLayoutProps) {
   const isSuperuser = useIsSuperuser()
   const isModerator = useIsModerator()
 
+    // 🔍 DEBUG - What's actually in the store?
+  console.log('🔍 AppLayout - Full user object:', user)
+  console.log('🔍 subscriptionTier:', user?.subscriptionTier)
+  console.log('🔍 All user keys:', user ? Object.keys(user) : 'no user')
+  
   // Determine current view from URL path
   const currentView = location.pathname.split('/')[1] || 'landing'
 
