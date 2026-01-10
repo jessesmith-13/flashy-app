@@ -1,16 +1,14 @@
 import { useState, useEffect } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
-import { updatePassword } from '../../../../utils/api/auth'
+import { useNavigate } from 'react-router-dom'
+import { supabase } from '../../../lib/supabase'  // Adjust path
 import { AuthHeader } from './AuthHeader'
 import { Button } from '../../../ui/button'
 import { Input } from '../../../ui/input'
 import { Label } from '../../../ui/label'
 import { toast } from 'sonner'
 import { Eye, EyeOff, CheckCircle } from 'lucide-react'
-import { supabase } from '../../../lib/supabase'
 
 export function ResetPasswordScreen() {
-  const [searchParams] = useSearchParams()
   const navigate = useNavigate()
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -19,40 +17,66 @@ export function ResetPasswordScreen() {
   const [success, setSuccess] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [hasValidSession, setHasValidSession] = useState(false)
+  const [checkingSession, setCheckingSession] = useState(true)
 
-  // Check if we have the necessary tokens in the URL
+  // ✅ USE SUPABASE'S BUILT-IN AUTH STATE LISTENER
   useEffect(() => {
-    // Check query params first
-    let accessToken = searchParams.get('access_token')
-    let type = searchParams.get('type')
-    
-    // If not in query params, check the hash fragment
-    if (!accessToken) {
-      const hashParams = new URLSearchParams(window.location.hash.substring(window.location.hash.indexOf('?') + 1))
-      accessToken = hashParams.get('access_token')
-      type = hashParams.get('type')
+    let mounted = true
+
+    const checkRecoverySession = async () => {
+      try {
+        console.log('🔍 Checking for recovery session...')
+        
+        // Supabase automatically handles the hash tokens
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+        
+        console.log('🔐 Session:', session ? 'EXISTS' : 'NONE')
+        console.log('🔐 Error:', sessionError)
+        
+        if (!mounted) return
+        
+        if (session) {
+          console.log('✅ Valid recovery session found')
+          setHasValidSession(true)
+          setError('')
+        } else {
+          console.log('❌ No valid session')
+          setError('Invalid or expired password reset link. Please request a new one.')
+          setHasValidSession(false)
+        }
+      } catch (err) {
+        console.error('Session check error:', err)
+        if (mounted) {
+          setError('Failed to verify password reset link.')
+          setHasValidSession(false)
+        }
+      } finally {
+        if (mounted) {
+          setCheckingSession(false)
+        }
+      }
     }
-    
-    // Also check if tokens are after a # in the hash (double hash scenario)
-    if (!accessToken && window.location.hash.includes('access_token=')) {
-      const hashFragment = window.location.hash.split('#')[2] || '' // Get part after second #
-      const fragmentParams = new URLSearchParams(hashFragment)
-      accessToken = fragmentParams.get('access_token')
-      type = fragmentParams.get('type')
+
+    // Listen for auth state changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      console.log('🔔 Auth event:', event)
+      if (event === 'PASSWORD_RECOVERY') {
+        console.log('✅ PASSWORD_RECOVERY event detected')
+        if (mounted) {
+          setHasValidSession(true)
+          setError('')
+        }
+      }
+    })
+
+    checkRecoverySession()
+
+    return () => {
+      mounted = false
+      subscription.unsubscribe()
     }
-    
-    console.log('🔐 Reset password - access_token found:', !!accessToken, 'type:', type)
-    
-    if (!accessToken || type !== 'recovery') {
-      setError('Invalid or expired password reset link. Please request a new one.')
-    } else {
-      // Set the session with the token from URL
-      supabase.auth.setSession({
-        access_token: accessToken,
-        refresh_token: searchParams.get('refresh_token') || ''
-      })
-    }
-  }, [searchParams])
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -72,7 +96,13 @@ export function ResetPasswordScreen() {
     setLoading(true)
 
     try {
-      await updatePassword(password)
+      // ✅ Use Supabase's updateUser directly (no need for custom API call)
+      const { error: updateError } = await supabase.auth.updateUser({
+        password: password
+      })
+
+      if (updateError) throw updateError
+
       setSuccess(true)
       toast.success('Password updated successfully!')
       
@@ -97,6 +127,14 @@ export function ResetPasswordScreen() {
 
   const handleBackToLogin = () => {
     navigate('/login')
+  }
+
+  if (checkingSession) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-blue-50 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
+        <div className="text-emerald-600 dark:text-emerald-400">Verifying reset link...</div>
+      </div>
+    )
   }
 
   if (success) {
@@ -125,16 +163,10 @@ export function ResetPasswordScreen() {
           subtitle="Create a new password"
         />
 
-        {error && searchParams.get('access_token') && (
-          <div className="mb-6 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 p-3 rounded-lg text-sm border border-red-200 dark:border-red-800">
-            {error}
-          </div>
-        )}
-
-        {!searchParams.get('access_token') || searchParams.get('type') !== 'recovery' ? (
+        {!hasValidSession ? (
           <div className="space-y-4">
             <div className="bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 p-4 rounded-lg text-sm border border-amber-200 dark:border-amber-800">
-              <p className="mb-3">This password reset link is invalid or has expired.</p>
+              <p className="mb-3">{error || 'This password reset link is invalid or has expired.'}</p>
               <Button
                 onClick={handleBackToLogin}
                 className="w-full bg-emerald-600 hover:bg-emerald-700 text-white"
