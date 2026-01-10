@@ -31,8 +31,8 @@ import ProtectedRoute from './components/ProtectedRoute'
 import { Toaster } from './ui/sonner'
 import { toast } from 'sonner'
 import { SetDisplayModal } from './components/Auth/Signup/SetDisplayModal'
-import { SubscriptionTier } from '@/types/users'
 import { supabase } from '../src/lib/supabase'
+import { SubscriptionTier } from './types/users'
 
 // Suppress Supabase auth errors from console
 const originalConsoleError = console.error
@@ -153,29 +153,33 @@ function AppContent() {
             // Fetch user role from database instead of metadata
             const { isSuperuser, isModerator } = await fetchUserRole(session.user.id)
             
-            // Update auth with refreshed token
-            setAuth(
-              {
-                id: session.user.id,
-                email: session.user.email || '',
-                name: session.user.user_metadata?.name || '',
-                displayName: session.user.user_metadata?.displayName || session.user.user_metadata?.name || '',
-                avatarUrl: session.user.user_metadata?.avatarUrl,
-                decksPublic: session.user.user_metadata?.decksPublic ?? false,
-                subscriptionTier: (session.user.user_metadata?.subscriptionTier || 'free') as SubscriptionTier,
-                subscriptionExpiry: session.user.user_metadata?.subscriptionExpiry || undefined,
-                isSuperuser,
-                isModerator,
-              },
-              session.access_token
-            )
+            // ✅ FETCH FRESH PROFILE FROM DATABASE (snake_case!)
+            const profile = await getUserProfileOnLogin(session.access_token)
+            
+            if (profile) {
+              setAuth(
+                {
+                  id: session.user.id,
+                  email: session.user.email || '',
+                  name: profile.display_name || '',
+                  displayName: profile.display_name || '',
+                  avatarUrl: profile.avatar_url || undefined,
+                  decksPublic: profile.decks_public ?? false,
+                  subscriptionTier: (profile.subscription_tier || 'free') as SubscriptionTier,
+                  subscriptionExpiry: profile.subscription_expiry || undefined,
+                  isSuperuser,
+                  isModerator,
+                },
+                session.access_token
+              )
+            }
           } catch (error) {
             console.error('Failed to update data after token refresh:', error)
           }
-        } else if (event === 'SIGNED_IN' && session) {
-          // User signed in
-          console.log('User signed in')
-        }
+            } else if (event === 'SIGNED_IN' && session) {
+              console.log('User signed in via event')
+              // Do nothing - checkSession() will handle it
+            }
       }
     )
 
@@ -201,28 +205,29 @@ function AppContent() {
       
       setShowDisplayNameModal(false)
       
-      // Refresh user data
-      const userProfile = await getUserProfileOnLogin(session.access_token)
-      
       // Fetch user role from database instead of metadata
       const { isSuperuser, isModerator } = await fetchUserRole(session.user.id)
       
-      // Update auth with database values
-      setAuth(
-        {
-          id: session.user.id,
-          email: session.user.email || '',
-          name: userProfile.display_name || '',
-          displayName: userProfile.display_name || '',
-          avatarUrl: userProfile.avatar_url || session.user.user_metadata?.avatarUrl,
-          decksPublic: userProfile.decks_public ?? false,
-          subscriptionTier: (session.user.user_metadata?.subscriptionTier || 'free') as SubscriptionTier,
-          subscriptionExpiry: session.user.user_metadata?.subscriptionExpiry || undefined,
-          isSuperuser,
-          isModerator,
-        },
-        session.access_token
-      )
+      // ✅ FETCH FRESH PROFILE FROM DATABASE
+      const profile = await getUserProfileOnLogin(session.access_token)
+      
+      if (profile) {
+        setAuth(
+          {
+            id: session.user.id,
+            email: session.user.email || '',
+            name: profile.display_name || '',
+            displayName: profile.display_name || '',
+            avatarUrl: profile.avatar_url || undefined,
+            decksPublic: profile.decks_public ?? false,
+            subscriptionTier: (profile.subscription_tier || 'free') as SubscriptionTier,
+            subscriptionExpiry: profile.subscription_expiry || undefined,
+            isSuperuser,
+            isModerator,
+          },
+          session.access_token
+        )
+      }
       
       toast.success('Welcome to Flashy!')
       navigate('/decks')
@@ -298,75 +303,57 @@ function AppContent() {
           // Fetch user role from database instead of metadata
           const { isSuperuser, isModerator } = await fetchUserRole(session.user.id)
           
-          // Token is valid, set auth
-          setAuth(
-            {
-              id: session.user.id,
-              email: session.user.email || '',
-              name: session.user.user_metadata?.name || '',
-              displayName: session.user.user_metadata?.displayName || session.user.user_metadata?.name || '',
-              avatarUrl: session.user.user_metadata?.avatarUrl,
-              decksPublic: session.user.user_metadata?.decksPublic ?? false,
-              subscriptionTier: session.user.user_metadata?.subscriptionTier || 'free',
-              subscriptionExpiry: session.user.user_metadata?.subscriptionExpiry,
-              isSuperuser,
-              isModerator,
-            },
-            session.access_token
-          )
+          // ✅ FETCH FRESH PROFILE FROM DATABASE
+          const userProfile = await getUserProfileOnLogin(session.access_token)
 
           // Check if user needs to set display name (OAuth users with NULL display_name)
-          try {
-            const userProfile = await getUserProfileOnLogin(session.access_token)
-            console.log('User profile from database:', userProfile)
+          if (userProfile && userProfile.display_name === null) {
+            console.log('User has NULL display_name, showing modal')
             
-            // Check if display_name is NULL in the database
-            if (userProfile && userProfile.display_name === null) {
-              console.log('User has NULL display_name, showing modal')
-              
-              // SET AUTH FIRST so token is available!
-              setAuth(
-                {
-                  id: session.user.id,
-                  email: session.user.email || '',
-                  name: '',
-                  displayName: '',
-                  avatarUrl: userProfile.avatar_url || session.user.user_metadata?.avatarUrl,
-                  decksPublic: userProfile.decks_public ?? false,
-                  subscriptionTier: (session.user.user_metadata?.subscriptionTier || 'free') as SubscriptionTier,
-                  subscriptionExpiry: session.user.user_metadata?.subscriptionExpiry || undefined,
-                  isSuperuser,
-                  isModerator,
-                },
-                session.access_token
-              )
-              
-              setShowDisplayNameModal(true)
-              setCheckingSession(false)
-              return
-            }
+            // SET AUTH FIRST so token is available!
+            setAuth(
+              {
+                id: session.user.id,
+                email: session.user.email || '',
+                name: '',
+                displayName: '',
+                avatarUrl: userProfile.avatar_url || undefined,
+                decksPublic: userProfile.decks_public ?? false,
+                subscriptionTier: (userProfile.subscription_tier || 'free') as SubscriptionTier,
+                subscriptionExpiry: userProfile.subscription_expiry || undefined,
+                isSuperuser,
+                isModerator,
+              },
+              session.access_token
+            )
             
-            // Update local state with database values if they exist
-            if (userProfile) {
-              setAuth(
-                {
-                  id: session.user.id,
-                  email: session.user.email || '',
-                  name: userProfile.display_name || session.user.user_metadata?.name || '',
-                  displayName: userProfile.display_name || session.user.user_metadata?.displayName || session.user.user_metadata?.name || '',
-                  avatarUrl: userProfile.avatar_url || session.user.user_metadata?.avatarUrl,
-                  decksPublic: userProfile.decks_public ?? session.user.user_metadata?.decksPublic ?? false,
-                  subscriptionTier: (session.user.user_metadata?.subscriptionTier || 'free') as SubscriptionTier,
-                  subscriptionExpiry: session.user.user_metadata?.subscriptionExpiry || undefined,
-                  isSuperuser,
-                  isModerator,
-                },
-                session.access_token
-              )
-            }
-          } catch (error) {
-            console.error('Failed to fetch user profile for display name check:', error)
-            // Continue with normal flow even if this fails
+            setShowDisplayNameModal(true)
+            setCheckingSession(false)
+            return
+          }
+
+          // Set auth with fresh database data
+          if (userProfile) {
+            setAuth(
+              {
+                id: session.user.id,
+                email: session.user.email || '',
+                name: userProfile.display_name || '',
+                displayName: userProfile.display_name || '',
+                avatarUrl: userProfile.avatar_url || undefined,
+                decksPublic: userProfile.decks_public ?? false,
+                subscriptionTier: (userProfile.subscription_tier || 'free') as SubscriptionTier,
+                subscriptionExpiry: userProfile.subscription_expiry || undefined,
+                isSuperuser,
+                isModerator,
+              },
+              session.access_token
+            )
+            
+            console.log('🎯 Auth set with FRESH DATABASE VALUES:', {
+              subscriptionTier: userProfile.subscription_tier,
+              subscriptionExpiry: userProfile.subscription_expiry
+            })
           }
 
           // Check if we need to record terms acceptance (for Google OAuth users)
