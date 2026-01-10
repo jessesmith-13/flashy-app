@@ -57,6 +57,8 @@ export function DeckCardPreviewList({
     )
   }
 
+  console.log(cards)
+
   const totalPages = Math.ceil(cards.length / cardsPerPage)
   const paginatedCards = cards.slice(
     (currentPage - 1) * cardsPerPage,
