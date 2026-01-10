@@ -15,11 +15,12 @@ interface AudioRecorderProps {
 }
 
 export function AudioRecorder({ 
-  onAudioSave, 
+  onAudioSave,  
+
   currentAudioUrl, 
   onAudioRemove,
   disabled = false,
-  label = 'Audio'
+  label = 'Audio' 
 }: AudioRecorderProps) {
   const [isRecording, setIsRecording] = useState(false)
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null)
@@ -163,7 +164,7 @@ export function AudioRecorder({
         setRecordingTime(prev => prev + 1)
       }, 1000)
       
-    } catch (error: any) {
+    } catch (error: any) { 
       console.error('=== Error accessing microphone ===')
       console.error('Error name:', error.name)
       console.error('Error message:', error.message)
@@ -486,4 +487,7 @@ export function AudioRecorder({
       )}
     </div>
   )
-}
+ }  
+
+
+
