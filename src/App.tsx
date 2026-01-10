@@ -254,64 +254,68 @@ function AppContent() {
   const checkSession = async () => {
     console.log('checkSession - Starting...')
 
-     // ============================================================
-    // ✅ CHECK FOR PASSWORD RECOVERY TOKENS FIRST (before anything else)
     // ============================================================
-    const queryParams = new URLSearchParams(window.location.search)
-    const accessToken = queryParams.get('access_token')
-    const refreshToken = queryParams.get('refresh_token')
-    const type = queryParams.get('type')
+  // ✅ CAPTURE PASSWORD RESET TOKENS BEFORE REACT ROUTER STRIPS THEM
+  // ============================================================
+  const fullHash = window.location.hash
+  console.log('🔍 Full hash in App.tsx:', fullHash)
+  
+  // Check for double hash: #/reset-password#access_token=...
+  if (fullHash.includes('#access_token=')) {
+    const hashParts = fullHash.split('#')
+    console.log('🔍 Hash parts:', hashParts)
     
-    console.log('🔐 Query params:', { 
-      hasAccessToken: !!accessToken, 
-      type,
-      fullSearch: window.location.search
-    })
-    
-    if (accessToken && type === 'recovery') {
-      console.log('✅ PASSWORD RECOVERY TOKENS FOUND!')
+    // Third part contains the tokens
+    if (hashParts.length > 2) {
+      const tokenPart = hashParts[2]
+      const params = new URLSearchParams(tokenPart)
+      const accessToken = params.get('access_token')
+      const refreshToken = params.get('refresh_token')
+      const type = params.get('type')
       
-      try {
-        const { data, error: sessionError } = await supabase.auth.setSession({
-          access_token: accessToken,
-          refresh_token: refreshToken || ''
-        })
+      console.log('🔐 Extracted tokens:', { 
+        hasAccessToken: !!accessToken, 
+        hasRefreshToken: !!refreshToken,
+        type 
+      })
+      
+      if (accessToken && type === 'recovery') {
+        console.log('✅ Setting session from double hash...')
         
-        console.log('🔐 setSession result:', { 
-          hasSession: !!data.session, 
-          error: sessionError 
-        })
-        
-        if (sessionError) {
-          console.error('❌ setSession error:', sessionError)
-          toast.error('Password reset link is invalid or expired')
+        try {
+          const { data, error: sessionError } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken || ''
+          })
+          
+          if (sessionError) {
+            console.error('❌ setSession error:', sessionError)
+            toast.error('Password reset link is invalid or expired')
+            navigate('/login')
+            setCheckingSession(false)
+            return
+          }
+          
+          if (data.session) {
+            console.log('✅ Session set! Navigating to reset page...')
+            // Clean URL and navigate
+            window.history.replaceState({}, '', '/#/reset-password')
+            navigate('/reset-password')
+            setCheckingSession(false)
+            return
+          }
+        } catch (error) {
+          console.error('❌ Session setup failed:', error)
+          toast.error('Failed to process reset link')
           navigate('/login')
           setCheckingSession(false)
           return
         }
-        
-        if (data.session) {
-          console.log('✅ Session set successfully!')
-          
-          // Clear query params and navigate to reset page
-          window.history.replaceState({}, '', '/#/reset-password')
-          navigate('/reset-password')
-          setCheckingSession(false)
-          return
-        }
-        
-      } catch (error) {
-        console.error('❌ Recovery session setup failed:', error)
-        toast.error('Failed to process password reset link')
-        navigate('/login')
-        setCheckingSession(false)
-        return
       }
     }
-    
-    // ============================================================
-    // Continue with normal session check...
-    // ============================================================
+  }
+  // ============================================================
+
 
     try {
       // Check if there's a shared deck in the URL
