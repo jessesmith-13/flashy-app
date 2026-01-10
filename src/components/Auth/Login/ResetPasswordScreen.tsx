@@ -20,35 +20,69 @@ export function ResetPasswordScreen() {
   const [hasValidSession, setHasValidSession] = useState(false)
   const [checkingSession, setCheckingSession] = useState(true)
 
-  // ✅ USE SUPABASE'S BUILT-IN AUTH STATE LISTENER
+  // ✅ MANUALLY EXTRACT TOKENS FROM HASH AND SET SESSION
   useEffect(() => {
     let mounted = true
 
-    const checkRecoverySession = async () => {
+    const setupRecoverySession = async () => {
       try {
-        console.log('🔍 Checking for recovery session...')
+        console.log('🔍 Full URL:', window.location.href)
+        console.log('🔍 Hash:', window.location.hash)
         
-        // Supabase automatically handles the hash tokens
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+        // Extract tokens from hash: #/reset-password?access_token=XXX&type=recovery&refresh_token=YYY
+        const hashParts = window.location.hash.split('?')
+        if (hashParts.length < 2) {
+          console.log('❌ No query params in hash')
+          setError('Invalid password reset link.')
+          setHasValidSession(false)
+          setCheckingSession(false)
+          return
+        }
         
-        console.log('🔐 Session:', session ? 'EXISTS' : 'NONE')
-        console.log('🔐 Error:', sessionError)
+        const params = new URLSearchParams(hashParts[1])
+        const accessToken = params.get('access_token')
+        const refreshToken = params.get('refresh_token')
+        const type = params.get('type')
         
-        if (!mounted) return
+        console.log('🔐 Extracted tokens:', { 
+          hasAccessToken: !!accessToken, 
+          hasRefreshToken: !!refreshToken,
+          type 
+        })
         
-        if (session) {
-          console.log('✅ Valid recovery session found')
+        if (!accessToken || type !== 'recovery') {
+          console.log('❌ Missing tokens or wrong type')
+          setError('Invalid or expired password reset link. Please request a new one.')
+          setHasValidSession(false)
+          setCheckingSession(false)
+          return
+        }
+        
+        // ✅ MANUALLY SET THE SESSION
+        console.log('✅ Setting session with extracted tokens...')
+        const { data, error: sessionError } = await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken || ''
+        })
+        
+        if (sessionError) {
+          console.error('❌ Error setting session:', sessionError)
+          setError('Failed to verify password reset link. It may have expired.')
+          setHasValidSession(false)
+        } else if (data.session) {
+          console.log('✅ Session set successfully!')
           setHasValidSession(true)
           setError('')
         } else {
-          console.log('❌ No valid session')
-          setError('Invalid or expired password reset link. Please request a new one.')
+          console.log('❌ No session after setSession')
+          setError('Failed to establish recovery session.')
           setHasValidSession(false)
         }
+        
       } catch (err) {
-        console.error('Session check error:', err)
+        console.error('❌ Setup error:', err)
         if (mounted) {
-          setError('Failed to verify password reset link.')
+          setError('An error occurred. Please try again.')
           setHasValidSession(false)
         }
       } finally {
@@ -58,23 +92,10 @@ export function ResetPasswordScreen() {
       }
     }
 
-    // Listen for auth state changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      console.log('🔔 Auth event:', event)
-      if (event === 'PASSWORD_RECOVERY') {
-        console.log('✅ PASSWORD_RECOVERY event detected')
-        if (mounted) {
-          setHasValidSession(true)
-          setError('')
-        }
-      }
-    })
-
-    checkRecoverySession()
+    setupRecoverySession()
 
     return () => {
       mounted = false
-      subscription.unsubscribe()
     }
   }, [])
 
@@ -96,18 +117,24 @@ export function ResetPasswordScreen() {
     setLoading(true)
 
     try {
-      // ✅ Use Supabase's updateUser directly (no need for custom API call)
+      console.log('🔄 Updating password...')
+      
       const { error: updateError } = await supabase.auth.updateUser({
         password: password
       })
 
-      if (updateError) throw updateError
+      if (updateError) {
+        console.error('❌ Update error:', updateError)
+        throw updateError
+      }
 
+      console.log('✅ Password updated successfully')
       setSuccess(true)
       toast.success('Password updated successfully!')
       
-      // Redirect to login after 2 seconds
-      setTimeout(() => {
+      // Sign out and redirect to login after 2 seconds
+      setTimeout(async () => {
+        await supabase.auth.signOut()
         navigate('/login')
       }, 2000)
     } catch (err: unknown) {
