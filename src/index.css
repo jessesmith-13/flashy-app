@@ -88,10 +88,29 @@
     @apply border-border outline-[color:var(--ring)/0.5];
   }
 
+  html {
+    overscroll-behavior: none;
+    overscroll-behavior-y: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
   body {
     @apply bg-[var(--background)] text-[var(--foreground)];
     font-size: var(--font-size);
     font-weight: var(--font-weight-normal);
+    
+    /* Mobile viewport fixes */
+    min-height: 100vh;
+    min-height: 100dvh; /* Dynamic viewport - adjusts for mobile chrome */
+    overscroll-behavior-y: contain;
+    touch-action: pan-y;
+  }
+  
+  /* Safari iOS specific fix */
+  @supports (-webkit-touch-callout: none) {
+    body {
+      min-height: -webkit-fill-available;
+    }
   }
 
   h1, h2, h3, h4, p, label, button, input {
