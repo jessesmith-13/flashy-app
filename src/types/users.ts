@@ -53,6 +53,12 @@ export interface User {
   isModerator?: boolean // Moderator role (can manage flags, has premium features)
   isBanned?: boolean // User ban status (managed by superuser)
   stripeSubscriptionId?: string | null // Stripe subscription ID
+  emailNotificationsEnabled?: boolean // Master email notifications toggle
+  emailOffers?: boolean // Promotional offers
+  emailCommentReplies?: boolean // Notifications for comment replies
+  emailFriendRequests?: boolean // Notifications for friend requests
+  emailFlaggedContent?: boolean // Notifications for flagged content
+  emailModerationNotices?: boolean // Notifications for moderation actions
 }
 
 export type SubscriptionTier = 'free' | 'monthly' | 'annual' | 'lifetime'
