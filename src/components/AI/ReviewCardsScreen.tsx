@@ -1,17 +1,17 @@
-import { AppLayout } from '../Layout/AppLayout'
-import { Button } from '../../ui/button'
-import { ArrowLeft, X, Check } from 'lucide-react'
-import { GeneratedCard, GeneratedCardItem } from './GeneratedCardItem'
+import { AppLayout } from "../Layout/AppLayout";
+import { Button } from "../../ui/button";
+import { ArrowLeft, X, Check } from "lucide-react";
+import { GeneratedCard, GeneratedCardItem } from "./GeneratedCardItem";
 
 interface ReviewCardsScreenProps {
-  cards: GeneratedCard[]
-  deckName: string | undefined
-  saving: boolean
-  onBack: () => void
-  onSaveAll: () => void
-  onDiscard: () => void
-  onUpdateCard: (index: number, updatedCard: GeneratedCard) => void
-  onRemoveCard: (index: number) => void
+  cards: GeneratedCard[];
+  deckName: string | undefined;
+  saving: boolean;
+  onBack: () => void;
+  onSaveAll: () => void;
+  onDiscard: () => void;
+  onUpdateCard: (index: number, updatedCard: GeneratedCard) => void;
+  onRemoveCard: (index: number) => void;
 }
 
 export function ReviewCardsScreen({
@@ -22,17 +22,13 @@ export function ReviewCardsScreen({
   onSaveAll,
   onDiscard,
   onUpdateCard,
-  onRemoveCard
+  onRemoveCard,
 }: ReviewCardsScreenProps) {
   return (
     <AppLayout>
       <div className="min-h-screen bg-gray-100 dark:bg-gray-900 p-4 lg:p-8">
         <div className="max-w-4xl mx-auto">
-          <Button
-            variant="ghost"
-            onClick={onBack}
-            className="mb-6"
-          >
+          <Button variant="ghost" onClick={onBack} className="mb-6">
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to Generator
           </Button>
@@ -40,8 +36,12 @@ export function ReviewCardsScreen({
           <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 sm:p-8 shadow-sm border border-gray-200 dark:border-gray-700">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
               <div>
-                <h1 className="text-2xl text-gray-900 dark:text-gray-100">Review Generated Cards</h1>
-                <p className="text-sm text-gray-600 dark:text-gray-400">{cards.length} cards ready to save</p>
+                <h1 className="text-2xl text-gray-900 dark:text-gray-100">
+                  Review Generated Cards
+                </h1>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  {cards.length} cards ready to save
+                </p>
               </div>
               <div className="flex gap-2 flex-wrap sm:flex-nowrap">
                 <Button
@@ -63,7 +63,7 @@ export function ReviewCardsScreen({
                   ) : (
                     <>
                       <Check className="w-4 h-4 mr-2" />
-                      Save to {deckName || 'Deck'}
+                      Save to {deckName || "Deck"}
                     </>
                   )}
                 </Button>
@@ -85,5 +85,5 @@ export function ReviewCardsScreen({
         </div>
       </div>
     </AppLayout>
-  )
+  );
 }
