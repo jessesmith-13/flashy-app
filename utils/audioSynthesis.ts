@@ -160,7 +160,7 @@ export function getNoteFrequency(noteName: string): number | null {
   // Pattern: C#4 or Db5 → first char uppercase, #/b lowercase, digit as-is
   normalized = normalized.replace(
     /^([A-G])([#Bb]?)(\d)$/i,
-    (match, note, accidental, octave) => {
+    (_match, note, accidental, octave) => {
       return note.toUpperCase() + accidental.toLowerCase() + octave;
     }
   );
