@@ -90,16 +90,36 @@ export function GeneratedCardItem({
       acceptedAnswers,
       frontImageUrl: frontImageUrl || undefined,
       backImageUrl: backImageUrl || undefined,
+      // ✅ PRESERVE AUDIO URLs
+      frontAudio: card.frontAudio,
+      backAudio: card.backAudio,
+      // ✅ PRESERVE IMAGE ATTRIBUTION
+      frontImageAttribution: card.frontImageAttribution,
+      backImageAttribution: card.backImageAttribution,
     });
     setIsEditing(false);
   };
+
+  // 🔍 DEBUG LOGGING - Remove after fixing
+  if (!isEditing) {
+    console.log(`🎴 Card ${index + 1} rendering:`, {
+      front: card.front.substring(0, 40),
+      hasFrontAudio: !!card.frontAudio,
+      frontAudioUrl: card.frontAudio?.substring(0, 60),
+    });
+  }
 
   if (isEditing) {
     return (
       <div className="rounded-lg border border-gray-200 dark:border-gray-700 p-4 bg-white dark:bg-gray-800 space-y-3">
         <div>
           <Label>Front</Label>
-          <Textarea value={front} onChange={(e) => setFront(e.target.value)} />
+          <Textarea
+            value={front}
+            onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
+              setFront(e.target.value)
+            }
+          />
         </div>
 
         {/* 📸 FRONT IMAGE EDITOR (all card types) */}
@@ -107,7 +127,9 @@ export function GeneratedCardItem({
           <Label>Front Image URL (Optional)</Label>
           <Input
             value={frontImageUrl}
-            onChange={(e) => setFrontImageUrl(e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+              setFrontImageUrl(e.target.value)
+            }
             placeholder="https://images.unsplash.com/..."
           />
           {frontImageUrl && (
@@ -116,7 +138,7 @@ export function GeneratedCardItem({
                 src={frontImageUrl}
                 alt="Front preview"
                 className="w-full max-h-48 object-cover rounded-lg"
-                onError={(e) => {
+                onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
                   e.currentTarget.src = "";
                   e.currentTarget.alt = "Image failed to load";
                 }}
@@ -132,7 +154,9 @@ export function GeneratedCardItem({
               <Label>Back</Label>
               <Textarea
                 value={back}
-                onChange={(e) => setBack(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
+                  setBack(e.target.value)
+                }
               />
             </div>
 
@@ -141,7 +165,9 @@ export function GeneratedCardItem({
               <Label>Back Image URL (Optional)</Label>
               <Input
                 value={backImageUrl}
-                onChange={(e) => setBackImageUrl(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                  setBackImageUrl(e.target.value)
+                }
                 placeholder="https://images.unsplash.com/..."
               />
               {backImageUrl && (
@@ -150,7 +176,7 @@ export function GeneratedCardItem({
                     src={backImageUrl}
                     alt="Back preview"
                     className="w-full max-h-48 object-cover rounded-lg"
-                    onError={(e) => {
+                    onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
                       e.currentTarget.src = "";
                       e.currentTarget.alt = "Image failed to load";
                     }}
@@ -170,7 +196,7 @@ export function GeneratedCardItem({
                 <Input
                   key={i}
                   value={ans}
-                  onChange={(e) => {
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                     const next = [...correctAnswers];
                     next[i] = e.target.value;
                     setCorrectAnswers(next);
@@ -192,7 +218,7 @@ export function GeneratedCardItem({
                 <Input
                   key={i}
                   value={ans}
-                  onChange={(e) => {
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                     const next = [...incorrectAnswers];
                     next[i] = e.target.value;
                     setIncorrectAnswers(next);
@@ -217,7 +243,9 @@ export function GeneratedCardItem({
               <Label>Back (Primary Answer)</Label>
               <Textarea
                 value={back}
-                onChange={(e) => setBack(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
+                  setBack(e.target.value)
+                }
               />
             </div>
 
@@ -227,7 +255,7 @@ export function GeneratedCardItem({
                 <Input
                   key={i}
                   value={ans}
-                  onChange={(e) => {
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                     const next = [...acceptedAnswers];
                     next[i] = e.target.value;
                     setAcceptedAnswers(next);
@@ -314,7 +342,7 @@ export function GeneratedCardItem({
             src={card.frontImageUrl}
             alt={card.front}
             className="w-full max-h-64 object-cover rounded-lg"
-            onError={(e) => {
+            onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
               // Hide image if it fails to load
               e.currentTarget.style.display = "none";
             }}
@@ -358,7 +386,7 @@ export function GeneratedCardItem({
                 src={card.backImageUrl}
                 alt={card.back}
                 className="w-full max-h-64 object-cover rounded-lg"
-                onError={(e) => {
+                onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
                   e.currentTarget.style.display = "none";
                 }}
               />
