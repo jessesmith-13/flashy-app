@@ -1,4 +1,4 @@
-import { Checkbox } from "@/ui/checkbox";
+import { Checkbox } from "@/shared/ui/checkbox";
 import { useNavigation } from "../../../../hooks/useNavigation";
 
 interface TermsAcceptanceCheckboxesProps {

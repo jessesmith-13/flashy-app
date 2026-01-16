@@ -6,10 +6,10 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/ui/dialog";
-import { Button } from "@/ui/button";
-import { Label } from "@/ui/label";
-import { Textarea } from "@/ui/textarea";
+} from "@/shared/ui/dialog";
+import { Button } from "@/shared/ui/button";
+import { Label } from "@/shared/ui/label";
+import { Textarea } from "@/shared/ui/textarea";
 import { AlertTriangle } from "lucide-react";
 
 interface FlagEscalationDialogProps {

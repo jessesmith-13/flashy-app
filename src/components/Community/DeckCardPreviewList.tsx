@@ -1,4 +1,4 @@
-import { Button } from "@/ui/button";
+import { Button } from "@/shared/ui/button";
 import { Flag } from "lucide-react";
 import { Pagination } from "@/components/Pagination/Pagination";
 import { useEffect, useRef } from "react";

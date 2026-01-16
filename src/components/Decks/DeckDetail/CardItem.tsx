@@ -1,4 +1,4 @@
-import { Button } from "@/ui/button";
+import { Button } from "@/shared/ui/button";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -9,7 +9,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/ui/alert-dialog";
+} from "@/shared/ui/alert-dialog";
 import {
   GripVertical,
   Edit,

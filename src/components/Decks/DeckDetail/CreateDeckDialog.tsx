@@ -5,17 +5,17 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "@/ui/dialog";
-import { Input } from "@/ui/input";
-import { Label } from "@/ui/label";
-import { Button } from "@/ui/button";
+} from "@/shared/ui/dialog";
+import { Input } from "@/shared/ui/input";
+import { Label } from "@/shared/ui/label";
+import { Button } from "@/shared/ui/button";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/ui/select";
+} from "@/shared/ui/select";
 import { DECK_CATEGORIES } from "../../../../utils/categories";
 import { DECK_LANGUAGES } from "../../../../utils/languages";
 import { ColorPicker } from "../../ColorPicker";

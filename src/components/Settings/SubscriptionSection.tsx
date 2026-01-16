@@ -1,5 +1,5 @@
-import { Button } from "@/ui/button";
-import { Label } from "@/ui/label";
+import { Button } from "@/shared/ui/button";
+import { Label } from "@/shared/ui/label";
 import { Crown, CreditCard, X, AlertCircle, RefreshCw } from "lucide-react";
 
 interface SubscriptionSectionProps {

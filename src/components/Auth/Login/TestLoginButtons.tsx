@@ -1,4 +1,4 @@
-import { Button } from "@/ui/button";
+import { Button } from "@/shared/ui/button";
 
 interface TestLoginButtonsProps {
   onTestLogin: (accountType: "free" | "premium" | "superuser") => void;

@@ -10,16 +10,16 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/ui/alert-dialog";
-import { Textarea } from "@/ui/textarea";
+} from "@/shared/ui/alert-dialog";
+import { Textarea } from "@/shared/ui/textarea";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/ui/select";
-import { Label } from "@/ui/label";
+} from "@/shared/ui/select";
+import { Label } from "@/shared/ui/label";
 import { toast } from "sonner";
 import { likeComment } from "../../../utils/api/community";
 import { deleteDeckComment } from "../../../utils/api/moderation";

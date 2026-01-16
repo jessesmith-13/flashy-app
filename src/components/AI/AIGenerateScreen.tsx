@@ -10,8 +10,8 @@ import { uploadCardAudio } from "../../../utils/api/storage";
 import { getSession } from "../../../utils/api/auth";
 import { createCardsBatch } from "../../../utils/api/decks";
 import { AppLayout } from "@/components/Layout/AppLayout";
-import { Button } from "@/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/ui/tabs";
+import { Button } from "@/shared/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 import {
   ArrowLeft,
   Sparkles,

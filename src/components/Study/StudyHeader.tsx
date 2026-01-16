@@ -1,6 +1,6 @@
 import { UIDeck } from "@/types/decks";
 import { UISharedDeck } from "@/types/study";
-import { Button } from "@/ui/button";
+import { Button } from "@/shared/ui/button";
 import { ArrowLeft, RotateCcw, StopCircle } from "lucide-react";
 
 interface StudyHeaderProps {

@@ -27,7 +27,7 @@ import {
 } from "../../../utils/subscription";
 import { useIsSuperuser } from "../../../utils/userUtils";
 import { AppLayout } from "@/components/Layout/AppLayout";
-import { Button } from "@/ui/button";
+import { Button } from "@/shared/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -35,15 +35,15 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/ui/dialog";
+} from "@/shared/ui/dialog";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/ui/select";
-import { Label } from "@/ui/label";
+} from "@/shared/ui/select";
+import { Label } from "@/shared/ui/label";
 import { Upload } from "lucide-react";
 import { CommunityDeckGrid } from "./CommunityDeckGrid";
 import { CommunityDeckDetail } from "./CommunityDeckDetail";

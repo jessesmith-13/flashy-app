@@ -10,7 +10,7 @@ import {
   Square,
   Trash2,
 } from "lucide-react";
-import { Button } from "@/ui/button";
+import { Button } from "@/shared/ui/button";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -21,7 +21,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/ui/alert-dialog";
+} from "@/shared/ui/alert-dialog";
 import type { UICard } from "@/types/decks";
 
 interface CardListProps {

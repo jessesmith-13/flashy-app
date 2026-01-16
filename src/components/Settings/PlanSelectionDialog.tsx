@@ -4,8 +4,8 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
-} from "@/ui/dialog";
-import { Button } from "@/ui/button";
+} from "@/shared/ui/dialog";
+import { Button } from "@/shared/ui/button";
 import { Crown, Check } from "lucide-react";
 
 interface PlanSelectionDialogProps {

@@ -1,12 +1,12 @@
-import { Switch } from "@/ui/switch";
-import { Label } from "@/ui/label";
+import { Switch } from "@/shared/ui/switch";
+import { Label } from "@/shared/ui/label";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/ui/select";
+} from "@/shared/ui/select";
 import { Moon, Volume2, Crown } from "lucide-react";
 
 interface AppearanceSectionProps {

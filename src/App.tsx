@@ -39,7 +39,7 @@ import { ContactScreen } from "./components/Contact/ContactScreen";
 import { SharedDeckView } from "./components/SharedDeckView";
 import { NotificationsScreen } from "./components/Notifications/NotificationsScreen";
 import ProtectedRoute from "./components/ProtectedRoute";
-import { Toaster } from "./ui/sonner";
+import { Toaster } from "@/shared/ui/sonner";
 import { toast } from "sonner";
 import { SetDisplayModal } from "./components/Auth/Signup/SetDisplayModal";
 import { supabase } from "../src/lib/supabase";

@@ -1,5 +1,5 @@
 import { Lock, Crown } from "lucide-react";
-import { Button } from "@/ui/button";
+import { Button } from "@/shared/ui/button";
 
 interface PremiumWarningBannerProps {
   onUpgradeClick: () => void;

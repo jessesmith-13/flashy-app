@@ -1,6 +1,6 @@
 import { useNavigation } from "../../../hooks/useNavigation";
 import { AppLayout } from "@/components/Layout/AppLayout";
-import { Button } from "@/ui/button";
+import { Button } from "@/shared/ui/button";
 import { ArrowLeft, Shield } from "lucide-react";
 import { TicketManagementPanel } from "./TicketManagementPanel";
 import { useIsModerator } from "../../../utils/userUtils";

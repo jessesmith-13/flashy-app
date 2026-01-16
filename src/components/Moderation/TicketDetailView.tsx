@@ -2,8 +2,8 @@ import { useState, useEffect, useRef } from "react";
 import { useStore } from "@/shared/state/useStore";
 import { useNavigation } from "../../../hooks/useNavigation";
 import { toast } from "sonner";
-import { Button } from "@/ui/button";
-import { Textarea } from "@/ui/textarea";
+import { Button } from "@/shared/ui/button";
+import { Textarea } from "@/shared/ui/textarea";
 import {
   ArrowLeft,
   Send,
@@ -23,14 +23,14 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/ui/select";
+} from "@/shared/ui/select";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "@/ui/dialog";
+} from "@/shared/ui/dialog";
 import { UserWarningDialog } from "./UserWarningDialog";
 import { FlagEscalationDialog } from "./FlagEscalationDialog";
 import { FlagResolutionDialog } from "./FlagResolutionDialog";

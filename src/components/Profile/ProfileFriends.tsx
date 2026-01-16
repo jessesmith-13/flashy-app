@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Users, UserMinus } from "lucide-react";
-import { Button } from "@/ui/button";
+import { Button } from "@/shared/ui/button";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -10,7 +10,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/ui/alert-dialog";
+} from "@/shared/ui/alert-dialog";
 
 interface Friend {
   id: string;

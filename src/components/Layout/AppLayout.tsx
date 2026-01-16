@@ -3,7 +3,7 @@ import { useStore } from "@/shared/state/useStore";
 import { useNavigation } from "../../../hooks/useNavigation";
 import { useLocation } from "react-router-dom";
 import { signOut } from "../../../utils/api/auth";
-import { Button } from "@/ui/button";
+import { Button } from "@/shared/ui/button";
 import {
   Home,
   Users,
@@ -27,7 +27,7 @@ import {
   SheetTitle,
   SheetTrigger,
   SheetDescription,
-} from "../../ui/sheet";
+} from "@/shared/ui/sheet";
 import { useIsSuperuser, useIsModerator } from "../../../utils/userUtils";
 import { IS_BETA_TESTING_ENABLED } from "../../../utils/config";
 

@@ -14,7 +14,7 @@ import {
   Users,
   Flag,
 } from "lucide-react";
-import { Button } from "@/ui/button";
+import { Button } from "@/shared/ui/button";
 import { getUserProfile, getUserFriends } from "../../../utils/api/users";
 import { sendFriendRequest, removeFriend } from "../../../utils/api/friends";
 import { banUser, toggleModeratorStatus } from "../../../utils/api/admin";
@@ -24,7 +24,7 @@ import {
   CATEGORY_LABELS,
   AchievementCategory,
 } from "../../../utils/achievements";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -34,7 +34,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/ui/alert-dialog";
+} from "@/shared/ui/alert-dialog";
 import { useStore } from "@/shared/state/useStore";
 import { UICommunityDeck } from "@/types/community";
 import { ProvenanceBadges } from "@/components/Provenance/ProvenanceBadges";

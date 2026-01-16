@@ -1,4 +1,4 @@
-import { Button } from "@/ui/button";
+import { Button } from "@/shared/ui/button";
 import {
   ArrowLeft,
   FileEdit,
@@ -24,7 +24,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/ui/alert-dialog";
+} from "@/shared/ui/alert-dialog";
 import type { UIDeck } from "@/types/decks";
 
 interface DeckHeaderProps {

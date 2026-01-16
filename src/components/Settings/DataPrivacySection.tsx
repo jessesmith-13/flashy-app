@@ -1,6 +1,6 @@
-import { Button } from "@/ui/button";
-import { Switch } from "@/ui/switch";
-import { Label } from "@/ui/label";
+import { Button } from "@/shared/ui/button";
+import { Switch } from "@/shared/ui/switch";
+import { Label } from "@/shared/ui/label";
 import { Download, Eye } from "lucide-react";
 
 interface DataPrivacySectionProps {

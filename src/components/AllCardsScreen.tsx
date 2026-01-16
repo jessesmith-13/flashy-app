@@ -3,9 +3,9 @@ import { useStore } from "@/shared/state/useStore";
 import { useNavigation } from "../../hooks/useNavigation";
 import { fetchDecks, fetchCards } from "../../utils/api/decks";
 import { AppLayout } from "./Layout/AppLayout";
-import { Button } from "../ui/button";
+import { Button } from "@/shared/ui/button";
 import { ArrowLeft, Play } from "lucide-react";
-import { Input } from "../ui/input";
+import { Input } from "@/shared/ui/input";
 import { toast } from "sonner";
 import { Deck } from "@/types/decks";
 

@@ -1,5 +1,5 @@
 import { AppLayout } from "@/components/Layout/AppLayout";
-import { Button } from "@/ui/button";
+import { Button } from "@/shared/ui/button";
 import { ArrowLeft, Play } from "lucide-react";
 import { Deck } from "@/types/decks";
 
