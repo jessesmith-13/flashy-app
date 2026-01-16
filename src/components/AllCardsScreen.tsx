@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useStore } from "@/shared/state/useStore";
 import { useNavigation } from "../shared/hooks/useNavigation";
-import { fetchDecks, fetchCards } from "../../utils/api/decks";
+import { fetchDecks, fetchCards } from "../shared/api/decks";
 import { AppLayout } from "./Layout/AppLayout";
 import { Button } from "@/shared/ui/button";
 import { ArrowLeft, Play } from "lucide-react";

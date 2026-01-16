@@ -6,7 +6,7 @@ import { TicketManagementPanel } from "@/components/Moderation/TicketManagementP
 import { DeletedItemsPanel } from "./DeletedItemsPanel";
 import { UserManagementPanel } from "./UserManagementPanel";
 import { UserActivityPanel } from "./UserActivityPanel";
-import { useIsSuperuser } from "../../../utils/userUtils";
+import { useIsSuperuser } from "../../shared/auth/roles";
 import { Button } from "@/shared/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 import { useState } from "react";

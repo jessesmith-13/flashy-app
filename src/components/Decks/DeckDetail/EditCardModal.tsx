@@ -23,7 +23,7 @@ import {
 } from "lucide-react";
 import { CardType } from "@/types/decks";
 import { SubscriptionTier } from "@/types/users";
-import { canAddImageToCard } from "../../../../utils/subscription";
+import { canAddImageToCard } from "../../../shared/entitlements/subscription";
 import { AudioRecorder } from "./AudioRecorder";
 
 const CARD_TYPES: {

@@ -6,8 +6,8 @@ import { ChevronRight, Check, X, Star, EyeOff, Volume2 } from "lucide-react";
 import { useStore } from "@/shared/state/useStore";
 import { UICard } from "@/types/decks";
 import { toast } from "sonner";
-import { updateCard as updateCardApi } from "../../../utils/api/decks";
-import { speak } from "../../../utils/textToSpeech";
+import { updateCard as updateCardApi } from "../../shared/api/decks";
+import { speak } from "../../shared/tts/textToSpeech";
 
 interface TypeAnswerModeProps {
   cards: UICard[];

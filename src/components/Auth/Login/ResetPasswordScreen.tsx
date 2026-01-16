@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "../../../lib/supabase"; // Adjust path
+import { supabase } from "../../../shared/lib/supabase"; // Adjust path
 import { AuthHeader } from "./AuthHeader";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";

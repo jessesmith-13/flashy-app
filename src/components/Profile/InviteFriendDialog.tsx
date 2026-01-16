@@ -11,7 +11,7 @@ import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { Mail, Gift, Copy, Check } from "lucide-react";
 import { toast } from "sonner";
-import { sendReferralInvite } from "../../../utils/api/referrals";
+import { sendReferralInvite } from "../../shared/api/referrals";
 
 interface InviteFriendDialogProps {
   open: boolean;

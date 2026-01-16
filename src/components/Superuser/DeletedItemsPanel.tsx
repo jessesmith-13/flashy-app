@@ -14,7 +14,7 @@ import {
   AlertCircle,
   CheckCircle,
 } from "lucide-react";
-import { getDeletedItems, restoreDeletedItem } from "../../../utils/api/admin";
+import { getDeletedItems, restoreDeletedItem } from "../../shared/api/admin";
 import { toast } from "sonner";
 import {
   AlertDialog,

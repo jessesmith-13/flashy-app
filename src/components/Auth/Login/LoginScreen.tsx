@@ -5,8 +5,8 @@ import {
   signIn,
   resetPassword,
   signInWithGoogle,
-} from "../../../../utils/api/auth";
-import { getFriends, getFriendRequests } from "../../../../utils/api/friends";
+} from "../../../shared/api/auth";
+import { getFriends, getFriendRequests } from "../../../shared/api/friends";
 import { AuthHeader } from "./AuthHeader";
 import { LoginForm } from "./LoginForm";
 import { ForgotPasswordForm } from "./ForgotPasswordForm";

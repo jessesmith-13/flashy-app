@@ -1,7 +1,7 @@
 import { AI_API_BASE } from "@/supabase/runtime";
 import type { GeneratedCardType } from "@/types/ai";
 import * as pdfjsLib from "pdfjs-dist";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/shared/lib/supabase";
 
 // Configure PDF.js worker - import from node_modules
 if (typeof window !== "undefined" && !pdfjsLib.GlobalWorkerOptions.workerSrc) {

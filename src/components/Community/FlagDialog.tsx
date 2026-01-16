@@ -18,7 +18,7 @@ import {
 } from "@/shared/ui/select";
 import { AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
-import { createFlag } from "../../../utils/api/moderation";
+import { createFlag } from "../../shared/api/moderation";
 
 interface FlagDialogProps {
   open: boolean;

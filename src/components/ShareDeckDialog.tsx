@@ -16,7 +16,7 @@ import {
   Download,
 } from "lucide-react";
 import { toast } from "sonner";
-import * as api from "../../utils/api/decks";
+import * as api from "../shared/api/decks";
 import { QRCodeSVG } from "qrcode.react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 

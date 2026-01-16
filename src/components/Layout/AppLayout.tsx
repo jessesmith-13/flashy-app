@@ -2,7 +2,7 @@ import { ReactNode, useState, useEffect } from "react";
 import { useStore } from "@/shared/state/useStore";
 import { useNavigation } from "../../shared/hooks/useNavigation";
 import { useLocation } from "react-router-dom";
-import { signOut } from "../../../utils/api/auth";
+import { signOut } from "../../shared/api/auth";
 import { Button } from "@/shared/ui/button";
 import {
   Home,
@@ -28,8 +28,8 @@ import {
   SheetTrigger,
   SheetDescription,
 } from "@/shared/ui/sheet";
-import { useIsSuperuser, useIsModerator } from "../../../utils/userUtils";
-import { IS_BETA_TESTING_ENABLED } from "../../../utils/config";
+import { useIsSuperuser, useIsModerator } from "../../shared/auth/roles";
+import { IS_BETA_TESTING_ENABLED } from "../../shared/config/featureFlags";
 
 const logoLight = "/logoLight.png";
 const logoDark = "/logoDark.png";

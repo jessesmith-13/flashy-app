@@ -22,7 +22,7 @@ import { useStore } from "@/shared/state/useStore";
 import {
   deleteCommunityDeck,
   deleteCommunityCard,
-} from "../../../utils/api/admin";
+} from "../../shared/api/admin";
 import { UIDeck } from "@/types/decks";
 import { UICommunityDeck, UICommunityCard } from "@/types/community";
 import { UICard } from "@/types/decks";

@@ -2,12 +2,12 @@ import { useState, useEffect } from "react";
 import { useStore } from "@/shared/state/useStore";
 import { useNavigation } from "../../shared/hooks/useNavigation";
 // Import community-specific functions from API
-import { getUserDeck } from "../../../utils/api/users";
+import { getUserDeck } from "../../shared/api/users";
 import {
   toggleCommunityDeckFeatured,
   deleteCommunityDeck,
   deleteCommunityCard,
-} from "../../../utils/api/admin";
+} from "../../shared/api/admin";
 import {
   fetchCommunityDecks,
   fetchFeaturedCommunityDecks,
@@ -17,15 +17,15 @@ import {
   addDeckFromCommunity,
   searchCommunityUsers,
   unpublishDeck,
-} from "../../../utils/api/community";
-import { updateImportedDeck, fetchDecks } from "../../../utils/api/decks";
-import { publishDeck } from "../../../utils/api/community";
+} from "../../shared/api/community";
+import { updateImportedDeck, fetchDecks } from "../../shared/api/decks";
+import { publishDeck } from "../../shared/api/community";
 import { toast } from "sonner";
 import {
   canImportCommunityDecks,
   canPublishToCommunity,
-} from "../../../utils/subscription";
-import { useIsSuperuser } from "../../../utils/userUtils";
+} from "../../shared/entitlements/subscription";
+import { useIsSuperuser } from "../../shared/auth/roles";
 import { AppLayout } from "@/components/Layout/AppLayout";
 import { Button } from "@/shared/ui/button";
 import {

@@ -1,6 +1,6 @@
 import { API_BASE } from "@/supabase/runtime";
 
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/shared/lib/supabase";
 /**
  * ============================================================
  * STORAGE API

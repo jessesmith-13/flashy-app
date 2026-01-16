@@ -25,7 +25,7 @@ import {
   banUser,
   grantPremium,
   demotePremium,
-} from "../../../utils/api/admin";
+} from "../../shared/api/admin";
 import { toast } from "sonner";
 import {
   AlertDialog,

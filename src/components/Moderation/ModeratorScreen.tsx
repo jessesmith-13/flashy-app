@@ -3,7 +3,7 @@ import { AppLayout } from "@/components/Layout/AppLayout";
 import { Button } from "@/shared/ui/button";
 import { ArrowLeft, Shield } from "lucide-react";
 import { TicketManagementPanel } from "./TicketManagementPanel";
-import { useIsModerator } from "../../../utils/userUtils";
+import { useIsModerator } from "../../shared/auth/roles";
 
 export function ModeratorScreen() {
   const { navigateTo } = useNavigation();

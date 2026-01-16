@@ -29,7 +29,7 @@ import { TicketDetailView } from "./TicketDetailView";
 import { UserWarningDialog } from "./UserWarningDialog";
 import { FlagEscalationDialog } from "./FlagEscalationDialog";
 import { FlagResolutionDialog } from "./FlagResolutionDialog";
-import * as api from "../../../utils/api/moderation";
+import * as api from "../../shared/api/moderation";
 
 interface TicketData {
   id: string;

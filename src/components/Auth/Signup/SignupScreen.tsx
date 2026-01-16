@@ -2,8 +2,8 @@ import { useState } from "react";
 import { useStore } from "@/shared/state/useStore";
 import { useNavigation } from "../../../shared/hooks/useNavigation";
 import { useLocation } from "react-router-dom";
-import { signUp, signIn, signInWithGoogle } from "../../../../utils/api/auth";
-import { applyReferralCode } from "../../../../utils/api/referrals";
+import { signUp, signIn, signInWithGoogle } from "../../../shared/api/auth";
+import { applyReferralCode } from "../../../shared/api/referrals";
 
 import { AuthHeader } from "@/components/Auth/Login/AuthHeader";
 import { GoogleLoginButton } from "@/components/Auth/Login/GoogleLoginButton";
@@ -120,7 +120,7 @@ export function SignUpScreen() {
 
         // ✅ FETCH FRESH PROFILE FROM DATABASE (like in App.tsx)
         const { getUserProfileOnLogin } = await import(
-          "../../../../utils/api/auth"
+          "../../../shared/api/auth"
         );
         const userProfile = await getUserProfileOnLogin(session.access_token);
 

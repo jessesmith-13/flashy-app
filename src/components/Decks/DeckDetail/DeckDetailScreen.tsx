@@ -12,17 +12,17 @@ import {
   deleteDeck as apiDeleteDeck,
   updateCardPositions as apiReorderCard,
   createCardsBatch as apiCreateCardsBatch,
-} from "../../../../utils/api/decks";
-import { translateText as apiTranslateText } from "../../../../utils/api/ai";
+} from "../../../shared/api/decks";
+import { translateText as apiTranslateText } from "../../../shared/api/ai";
 import {
   fetchCommunityDecks as apiFetchCommunityDecks,
   publishDeck as apiPublishDeck,
   unpublishDeck as apiUnpublishDeck,
-} from "../../../../utils/api/community";
+} from "../../../shared/api/community";
 import {
   uploadCardImage as apiUploadCardImage,
   uploadCardAudio as apiUploadCardAudio,
-} from "../../../../utils/api/storage";
+} from "../../../shared/api/storage";
 import { AppLayout } from "@/components/Layout/AppLayout";
 import { DeckHeader } from "./DeckHeader";
 import { AddCardModal } from "./AddCardModal";
@@ -33,8 +33,8 @@ import { PublishDeckDialog } from "./PublishDeckDialog";
 import { CardList } from "./CardList";
 import { UpgradeModal } from "@/components/UpgradeModal";
 import { toast } from "sonner";
-import { canPublishToCommunity } from "../../../../utils/subscription";
-import { handleAuthError } from "../../../../utils/authErrorHandler";
+import { canPublishToCommunity } from "../../../shared/entitlements/subscription";
+import { handleAuthError } from "../../../features/auth/authErrorHandler";
 import { DifficultyLevel } from "@/types/decks";
 
 interface CardData {
