@@ -18,7 +18,7 @@ import { AppLayout } from "../Layout/AppLayout";
 import { FlagDialog } from "./FlagDialog";
 import { DeletionDialog } from "./DeletionDialog";
 import { toast } from "sonner";
-import { useStore } from "../../../store/useStore";
+import { useStore } from "@/shared/state/useStore";
 import {
   deleteCommunityDeck,
   deleteCommunityCard,

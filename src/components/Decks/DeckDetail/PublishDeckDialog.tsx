@@ -1,16 +1,21 @@
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../../../ui/dialog'
-import { Button } from '../../../ui/button'
-// import type { Deck } from '../../../../store/useStore'
-import { UIDeck } from '@/types/decks'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "../../../ui/dialog";
+import { Button } from "../../../ui/button";
+import { UIDeck } from "@/types/decks";
 
 interface PublishDeckDialogProps {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  deck: UIDeck
-  cardCount: number
-  publishing: boolean
-  onPublish: () => void
-  onOpenSettings: () => void
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  deck: UIDeck;
+  cardCount: number;
+  publishing: boolean;
+  onPublish: () => void;
+  onOpenSettings: () => void;
 }
 
 export function PublishDeckDialog({
@@ -20,10 +25,10 @@ export function PublishDeckDialog({
   cardCount,
   publishing,
   onPublish,
-  onOpenSettings
+  onOpenSettings,
 }: PublishDeckDialogProps) {
-  const hasRequiredSettings = deck.category && deck.subtopic
-  const cannotRepublish = deck.publishBanned === true
+  const hasRequiredSettings = deck.category && deck.subtopic;
+  const cannotRepublish = deck.publishBanned === true;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -37,13 +42,17 @@ export function PublishDeckDialog({
         <div className="space-y-4 py-4">
           {cannotRepublish ? (
             <div className="bg-red-50 dark:bg-red-900/20 rounded-lg p-4 border border-red-200 dark:border-red-700">
-              <h3 className="text-red-900 dark:text-red-100 mb-2">Cannot Republish Deck</h3>
+              <h3 className="text-red-900 dark:text-red-100 mb-2">
+                Cannot Republish Deck
+              </h3>
               <p className="text-sm text-red-700 dark:text-red-300">
-                This deck was removed from the community by a moderator and cannot be republished.
+                This deck was removed from the community by a moderator and
+                cannot be republished.
               </p>
               {deck.publishBannedReason && (
                 <p className="text-sm text-red-700 dark:text-red-300 mt-2">
-                  <span className="font-medium">Reason:</span> {deck.publishBannedReason}
+                  <span className="font-medium">Reason:</span>{" "}
+                  {deck.publishBannedReason}
                 </p>
               )}
             </div>
@@ -51,16 +60,18 @@ export function PublishDeckDialog({
             <>
               <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 space-y-2">
                 <div className="flex items-center gap-2">
-                  <div 
+                  <div
                     className="w-12 h-12 rounded-lg flex items-center justify-center text-2xl"
                     style={{ backgroundColor: deck.color }}
                   >
                     {deck.emoji}
                   </div>
                   <div>
-                    <h3 className="font-medium dark:text-gray-100">{deck.name}</h3>
+                    <h3 className="font-medium dark:text-gray-100">
+                      {deck.name}
+                    </h3>
                     <p className="text-sm text-gray-600 dark:text-gray-400">
-                      {cardCount} {cardCount === 1 ? 'card' : 'cards'}
+                      {cardCount} {cardCount === 1 ? "card" : "cards"}
                     </p>
                   </div>
                 </div>
@@ -73,30 +84,36 @@ export function PublishDeckDialog({
                   </span>
                 </div>
               </div>
-              
+
               {deck.communityPublishedId && (
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                  This deck is already published. Publishing again will update it with your latest changes.
+                  This deck is already published. Publishing again will update
+                  it with your latest changes.
                 </p>
               )}
-              
+
               <Button
                 onClick={onPublish}
                 disabled={publishing}
                 className="w-full bg-emerald-600 hover:bg-emerald-700"
               >
-                {publishing ? 'Publishing...' : deck.communityPublishedId ? 'Update Published Deck' : 'Publish to Community'}
+                {publishing
+                  ? "Publishing..."
+                  : deck.communityPublishedId
+                  ? "Update Published Deck"
+                  : "Publish to Community"}
               </Button>
             </>
           ) : (
             <div className="text-center py-4">
               <p className="text-gray-600 dark:text-gray-400 mb-4">
-                Please set a category and subtopic for this deck before publishing.
+                Please set a category and subtopic for this deck before
+                publishing.
               </p>
               <Button
                 onClick={() => {
-                  onOpenChange(false)
-                  onOpenSettings()
+                  onOpenChange(false);
+                  onOpenSettings();
                 }}
                 className="bg-emerald-600 hover:bg-emerald-700"
               >
@@ -107,5 +124,5 @@ export function PublishDeckDialog({
         </div>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

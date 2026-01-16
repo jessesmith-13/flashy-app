@@ -35,7 +35,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "../../ui/alert-dialog";
-import { useStore } from "../../../store/useStore";
+import { useStore } from "@/shared/state/useStore";
 import { UICommunityDeck } from "@/types/community";
 import { ProvenanceBadges } from "../Provenance/ProvenanceBadges";
 

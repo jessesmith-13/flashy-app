@@ -1,47 +1,47 @@
-import { useEffect, useRef } from 'react'
-import { useNavigation } from '../../hooks/useNavigation'
-import { Button } from '../ui/button'
-import { Check, Sparkles } from 'lucide-react'
-import { AppLayout } from './Layout/AppLayout'
-import { useStore } from '../../store/useStore'
-import { verifyPayment } from '../../utils/api/subscriptions'
+import { useEffect, useRef } from "react";
+import { useNavigation } from "../../hooks/useNavigation";
+import { Button } from "../ui/button";
+import { Check, Sparkles } from "lucide-react";
+import { AppLayout } from "./Layout/AppLayout";
+import { useStore } from "@/shared/state/useStore";
+import { verifyPayment } from "../../utils/api/subscriptions";
 
 export function PaymentSuccessScreen() {
-  const { navigateTo } = useNavigation()
-  const { setAuth, accessToken, user } = useStore()
-  const hasVerified = useRef(false)  // ✅ Track if we've already verified
+  const { navigateTo } = useNavigation();
+  const { setAuth, accessToken, user } = useStore();
+  const hasVerified = useRef(false); // ✅ Track if we've already verified
 
   useEffect(() => {
     // ✅ Prevent re-running if already verified
-    if (hasVerified.current) return
+    if (hasVerified.current) return;
 
-    console.log('=== PaymentSuccessScreen mounted ===')
-    console.log('Current URL:', window.location.href)
-    console.log('User:', user)
-    console.log('Access Token:', accessToken ? 'Present' : 'Missing')
-    
+    console.log("=== PaymentSuccessScreen mounted ===");
+    console.log("Current URL:", window.location.href);
+    console.log("User:", user);
+    console.log("Access Token:", accessToken ? "Present" : "Missing");
+
     // Get session ID from URL hash (since we're using HashRouter)
-    const hash = window.location.hash
-    const queryString = hash.includes('?') ? hash.split('?')[1] : ''
-    const urlParams = new URLSearchParams(queryString)
-    const sessionId = urlParams.get('session_id')
-    
-    console.log('Payment success page loaded, session_id:', sessionId)
+    const hash = window.location.hash;
+    const queryString = hash.includes("?") ? hash.split("?")[1] : "";
+    const urlParams = new URLSearchParams(queryString);
+    const sessionId = urlParams.get("session_id");
+
+    console.log("Payment success page loaded, session_id:", sessionId);
 
     // Verify payment and upgrade user immediately
     const verifyAndUpgrade = async () => {
       if (!sessionId || !accessToken || !user) {
-        console.log('Missing sessionId, accessToken, or user')
-        return
+        console.log("Missing sessionId, accessToken, or user");
+        return;
       }
 
       try {
-        console.log('🔍 Verifying payment with Stripe...')
-        const result = await verifyPayment(accessToken, sessionId)
-        console.log('✅ Payment verified:', result)
+        console.log("🔍 Verifying payment with Stripe...");
+        const result = await verifyPayment(accessToken, sessionId);
+        console.log("✅ Payment verified:", result);
 
         // ✅ Mark as verified BEFORE updating state
-        hasVerified.current = true
+        hasVerified.current = true;
 
         // ✅ IMMEDIATELY UPDATE ZUSTAND STORE with premium subscription!
         setAuth(
@@ -53,27 +53,28 @@ export function PaymentSuccessScreen() {
             subscriptionCancelledAtPeriodEnd: false,
           },
           accessToken
-        )
+        );
 
-        console.log('✅ User state updated with subscription_tier:', result.tier || 'premium')
+        console.log(
+          "✅ User state updated with subscription_tier:",
+          result.tier || "premium"
+        );
 
         // ✅✅✅ IMPORTANT: Start redirect timer AFTER store update
         setTimeout(() => {
-          console.log('🔄 Redirecting to decks...')
-          navigateTo('decks')
-        }, 3000)
-        
+          console.log("🔄 Redirecting to decks...");
+          navigateTo("decks");
+        }, 3000);
       } catch (error) {
-        console.error('Error verifying payment:', error)
+        console.error("Error verifying payment:", error);
       }
-    }
+    };
 
     // Verify immediately
-    verifyAndUpgrade()
+    verifyAndUpgrade();
 
     // ❌ REMOVE the old timer from here - it's now inside verifyAndUpgrade!
-
-  }, []) // ✅ EMPTY dependency array - only run once on mount!
+  }, []); // ✅ EMPTY dependency array - only run once on mount!
 
   return (
     <AppLayout>
@@ -89,7 +90,8 @@ export function PaymentSuccessScreen() {
             Welcome to Premium! 🎉
           </h1>
           <p className="text-lg text-gray-600 dark:text-gray-400 mb-8">
-            Your payment was successful. You now have access to all premium features!
+            Your payment was successful. You now have access to all premium
+            features!
           </p>
 
           {/* Premium Features List */}
@@ -123,13 +125,13 @@ export function PaymentSuccessScreen() {
           {/* Action Buttons */}
           <div className="flex flex-col gap-3">
             <Button
-              onClick={() => navigateTo('decks')}
+              onClick={() => navigateTo("decks")}
               className="w-full bg-emerald-600 hover:bg-emerald-700 text-white"
             >
               Go to My Decks
             </Button>
             <Button
-              onClick={() => navigateTo('ai-generate')}
+              onClick={() => navigateTo("ai-generate")}
               variant="outline"
               className="w-full"
             >
@@ -143,5 +145,5 @@ export function PaymentSuccessScreen() {
         </div>
       </div>
     </AppLayout>
-  )
+  );
 }

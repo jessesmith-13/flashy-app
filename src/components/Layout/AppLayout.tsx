@@ -1,5 +1,5 @@
 import { ReactNode, useState, useEffect } from "react";
-import { useStore } from "../../../store/useStore";
+import { useStore } from "@/shared/state/useStore";
 import { useNavigation } from "../../../hooks/useNavigation";
 import { useLocation } from "react-router-dom";
 import { signOut } from "../../../utils/api/auth";

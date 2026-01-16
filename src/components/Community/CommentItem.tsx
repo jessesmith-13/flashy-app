@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react'
-import { Reply, Flag, Trash2, Heart } from 'lucide-react'
-import { useStore } from '../../../store/useStore'
+import { useState, useEffect } from "react";
+import { Reply, Flag, Trash2, Heart } from "lucide-react";
+import { useStore } from "@/shared/state/useStore";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -10,154 +10,173 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '../../ui/alert-dialog'
-import { Textarea } from '../../ui/textarea'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../ui/select'
-import { Label } from '../../ui/label'
-import { toast } from 'sonner'
-import { likeComment } from '../../../utils/api/community'
-import { deleteDeckComment } from '../../../utils/api/moderation'
+} from "../../ui/alert-dialog";
+import { Textarea } from "../../ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../../ui/select";
+import { Label } from "../../ui/label";
+import { toast } from "sonner";
+import { likeComment } from "../../../utils/api/community";
+import { deleteDeckComment } from "../../../utils/api/moderation";
 
 export interface Comment {
-  id: string
-  communityDeckId: string
-  userId: string
-  userName: string
-  userAvatar: string | null
-  userRole?: 'flashy' | 'moderator' | 'user' // Add user role
-  text: string
-  parentId: string | null
-  createdAt: string
-  replies: Comment[]
-  rootCommentId?: string // Track the root comment for nested replies
-  likes?: string[] // Array of user IDs who liked this comment
+  id: string;
+  communityDeckId: string;
+  userId: string;
+  userName: string;
+  userAvatar: string | null;
+  userRole?: "flashy" | "moderator" | "user"; // Add user role
+  text: string;
+  parentId: string | null;
+  createdAt: string;
+  replies: Comment[];
+  rootCommentId?: string; // Track the root comment for nested replies
+  likes?: string[]; // Array of user IDs who liked this comment
 }
 
 interface CommentItemProps {
-  comment: Comment
-  onReply: (commentId: string, userName: string, rootCommentId: string) => void
-  level?: number
-  deckAuthorId?: string
-  targetCommentId?: string | null
-  rootCommentId?: string
-  onViewUser?: (userId: string) => void
-  onFlagComment?: (commentId: string, commentText: string) => void
-  onCommentDeleted?: () => void // Callback to refresh comments after deletion
+  comment: Comment;
+  onReply: (commentId: string, userName: string, rootCommentId: string) => void;
+  level?: number;
+  deckAuthorId?: string;
+  targetCommentId?: string | null;
+  rootCommentId?: string;
+  onViewUser?: (userId: string) => void;
+  onFlagComment?: (commentId: string, commentText: string) => void;
+  onCommentDeleted?: () => void; // Callback to refresh comments after deletion
 }
 
-export function CommentItem({ 
-  comment, 
-  onReply, 
-  level = 0, 
+export function CommentItem({
+  comment,
+  onReply,
+  level = 0,
   deckAuthorId,
   targetCommentId,
   rootCommentId,
   onViewUser,
   onFlagComment,
-  onCommentDeleted
+  onCommentDeleted,
 }: CommentItemProps) {
-  const { user, accessToken } = useStore()
-  const isAuthor = deckAuthorId && comment.userId === deckAuthorId
-  const isTarget = targetCommentId === comment.id
-  const isOwnComment = user?.id === comment.userId
-  const [showReplies, setShowReplies] = useState(false)
-  const [visibleReplies, setVisibleReplies] = useState(5)
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
-  const [deleteReason, setDeleteReason] = useState('')
-  const [deleteMessage, setDeleteMessage] = useState('')
-  const [deleteLoading, setDeleteLoading] = useState(false)
-  const [liking, setLiking] = useState(false)
-  const [localLikes, setLocalLikes] = useState<string[]>(comment.likes || [])
+  const { user, accessToken } = useStore();
+  const isAuthor = deckAuthorId && comment.userId === deckAuthorId;
+  const isTarget = targetCommentId === comment.id;
+  const isOwnComment = user?.id === comment.userId;
+  const [showReplies, setShowReplies] = useState(false);
+  const [visibleReplies, setVisibleReplies] = useState(5);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [deleteReason, setDeleteReason] = useState("");
+  const [deleteMessage, setDeleteMessage] = useState("");
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [liking, setLiking] = useState(false);
+  const [localLikes, setLocalLikes] = useState<string[]>(comment.likes || []);
 
   // Check if user can delete (moderator or superuser)
-  const canDelete = user?.isModerator === true || user?.isSuperuser === true
-  
-  // Check if current user has liked this comment
-  const hasLiked = user?.id ? localLikes.includes(user.id) : false
-  const likeCount = localLikes.length
+  const canDelete = user?.isModerator === true || user?.isSuperuser === true;
 
-  const replyCount = comment.replies?.length || 0
-  const hasMoreReplies = replyCount > visibleReplies
+  // Check if current user has liked this comment
+  const hasLiked = user?.id ? localLikes.includes(user.id) : false;
+  const likeCount = localLikes.length;
+
+  const replyCount = comment.replies?.length || 0;
+  const hasMoreReplies = replyCount > visibleReplies;
 
   const handleDeleteComment = async () => {
-    if (!accessToken || !canDelete) return
-    
+    if (!accessToken || !canDelete) return;
+
     if (!deleteReason) {
-      toast.error('Please select a reason for deletion')
-      return
+      toast.error("Please select a reason for deletion");
+      return;
     }
 
     // Combine reason and optional message
-    const fullReason = deleteMessage.trim() 
-      ? `${deleteReason}: ${deleteMessage.trim()}` 
-      : deleteReason
+    const fullReason = deleteMessage.trim()
+      ? `${deleteReason}: ${deleteMessage.trim()}`
+      : deleteReason;
 
-    setDeleteLoading(true)
+    setDeleteLoading(true);
     try {
-      await deleteDeckComment(accessToken, comment.communityDeckId, comment.id, fullReason)
-      toast.success('Comment deleted successfully')
-      setShowDeleteDialog(false)
-      setDeleteReason('')
-      setDeleteMessage('')
-      
+      await deleteDeckComment(
+        accessToken,
+        comment.communityDeckId,
+        comment.id,
+        fullReason
+      );
+      toast.success("Comment deleted successfully");
+      setShowDeleteDialog(false);
+      setDeleteReason("");
+      setDeleteMessage("");
+
       // Trigger refresh of comments
       if (onCommentDeleted) {
-        onCommentDeleted()
+        onCommentDeleted();
       }
     } catch (error) {
-      console.error('Failed to delete comment:', error)
-      toast.error('Failed to delete comment')
+      console.error("Failed to delete comment:", error);
+      toast.error("Failed to delete comment");
     } finally {
-      setDeleteLoading(false)
+      setDeleteLoading(false);
     }
-  }
+  };
 
   const handleLikeComment = async () => {
     if (!accessToken || !user) {
-      toast.error('Please log in to like comments')
-      return
+      toast.error("Please log in to like comments");
+      return;
     }
 
-    if (liking) return
+    if (liking) return;
 
-    setLiking(true)
-    
+    setLiking(true);
+
     // Optimistic UI update
-    const newLikes = hasLiked 
-      ? localLikes.filter(id => id !== user.id)
-      : [...localLikes, user.id]
-    setLocalLikes(newLikes)
+    const newLikes = hasLiked
+      ? localLikes.filter((id) => id !== user.id)
+      : [...localLikes, user.id];
+    setLocalLikes(newLikes);
 
     try {
-      await likeComment(accessToken, comment.communityDeckId, comment.id)
+      await likeComment(accessToken, comment.communityDeckId, comment.id);
     } catch (error) {
-      console.error('Failed to like comment:', error)
+      console.error("Failed to like comment:", error);
       // Revert on error
-      setLocalLikes(comment.likes || [])
-      toast.error('Failed to like comment')
+      setLocalLikes(comment.likes || []);
+      toast.error("Failed to like comment");
     } finally {
-      setLiking(false)
+      setLiking(false);
     }
-  }
+  };
 
   // Auto-expand replies if this comment or any of its replies is the target
   useEffect(() => {
     if (level === 0 && targetCommentId) {
-      const isReplyTarget = comment.replies?.some(r => r.id === targetCommentId)
+      const isReplyTarget = comment.replies?.some(
+        (r) => r.id === targetCommentId
+      );
       if (comment.id === targetCommentId || isReplyTarget) {
-        setShowReplies(true)
+        setShowReplies(true);
         // Show all replies if one is targeted
         if (isReplyTarget) {
-          setVisibleReplies(replyCount)
+          setVisibleReplies(replyCount);
         }
       }
     }
-  }, [targetCommentId, comment.id, comment.replies, level, replyCount])
+  }, [targetCommentId, comment.id, comment.replies, level, replyCount]);
 
   return (
-    <div 
+    <div
       id={comment.id}
-      className={`${level > 0 ? 'ml-8 mt-4' : 'mt-4'} ${level === 0 ? 'pb-4 border-b border-gray-200 dark:border-gray-700' : ''} ${isTarget ? 'bg-emerald-50 dark:bg-emerald-900/20 rounded-lg p-3 -ml-3 -mr-3' : ''} transition-colors duration-500`}
+      className={`${level > 0 ? "ml-8 mt-4" : "mt-4"} ${
+        level === 0 ? "pb-4 border-b border-gray-200 dark:border-gray-700" : ""
+      } ${
+        isTarget
+          ? "bg-emerald-50 dark:bg-emerald-900/20 rounded-lg p-3 -ml-3 -mr-3"
+          : ""
+      } transition-colors duration-500`}
     >
       <div className="flex items-start gap-3">
         {/* User Avatar */}
@@ -192,23 +211,23 @@ export function CommentItem({
                 Creator
               </span>
             )}
-            {comment.userRole === 'flashy' && (
+            {comment.userRole === "flashy" && (
               <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs bg-gradient-to-r from-purple-600 to-pink-600 text-white font-medium shadow-sm">
                 ⚡ Flashy
               </span>
             )}
-            {comment.userRole === 'moderator' && (
+            {comment.userRole === "moderator" && (
               <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs bg-gradient-to-r from-blue-600 to-cyan-600 text-white font-medium shadow-sm">
                 🛡️ Moderator
               </span>
             )}
             <span className="text-xs text-gray-500 dark:text-gray-400">
               {new Date(comment.createdAt).toLocaleDateString(undefined, {
-                month: 'short',
-                day: 'numeric',
-                year: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
+                month: "short",
+                day: "numeric",
+                year: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
               })}
             </span>
           </div>
@@ -222,7 +241,13 @@ export function CommentItem({
           <div className="flex items-center gap-3">
             {/* Reply Button */}
             <button
-              onClick={() => onReply(comment.id, comment.userName, rootCommentId || comment.id)}
+              onClick={() =>
+                onReply(
+                  comment.id,
+                  comment.userName,
+                  rootCommentId || comment.id
+                )
+              }
               className="text-xs text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 font-medium flex items-center gap-1 transition-colors"
             >
               <Reply className="w-3 h-3" />
@@ -249,11 +274,11 @@ export function CommentItem({
               disabled={liking || !user}
               className={`text-xs font-medium flex items-center gap-1 transition-colors ${
                 hasLiked
-                  ? 'text-red-500 dark:text-red-400 hover:text-red-600 dark:hover:text-red-300'
-                  : 'text-gray-600 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400'
+                  ? "text-red-500 dark:text-red-400 hover:text-red-600 dark:hover:text-red-300"
+                  : "text-gray-600 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400"
               }`}
             >
-              <Heart className={`w-3 h-3 ${hasLiked ? 'fill-current' : ''}`} />
+              <Heart className={`w-3 h-3 ${hasLiked ? "fill-current" : ""}`} />
               {likeCount > 0 && <span>{likeCount}</span>}
             </button>
 
@@ -276,40 +301,49 @@ export function CommentItem({
                 onClick={() => setShowReplies(!showReplies)}
                 className="text-xs text-gray-600 dark:text-gray-400 hover:text-emerald-600 dark:hover:text-emerald-400 font-medium transition-colors"
               >
-                {showReplies ? `Hide ${replyCount} ${replyCount === 1 ? 'reply' : 'replies'}` : `View ${replyCount} ${replyCount === 1 ? 'reply' : 'replies'}`}
+                {showReplies
+                  ? `Hide ${replyCount} ${
+                      replyCount === 1 ? "reply" : "replies"
+                    }`
+                  : `View ${replyCount} ${
+                      replyCount === 1 ? "reply" : "replies"
+                    }`}
               </button>
             </div>
           )}
 
           {/* Nested Replies - Only show for level 0 when expanded */}
-          {level === 0 && showReplies && comment.replies && comment.replies.length > 0 && (
-            <div className="mt-2">
-              {comment.replies.slice(0, visibleReplies).map((reply) => (
-                <CommentItem
-                  key={reply.id}
-                  comment={reply}
-                  onReply={onReply}
-                  level={1}
-                  deckAuthorId={deckAuthorId}
-                  targetCommentId={targetCommentId}
-                  rootCommentId={comment.id}
-                  onViewUser={onViewUser}
-                  onFlagComment={onFlagComment}
-                  onCommentDeleted={onCommentDeleted}
-                />
-              ))}
-              
-              {/* Load More Replies Button */}
-              {hasMoreReplies && (
-                <button
-                  onClick={() => setVisibleReplies(prev => prev + 5)}
-                  className="ml-8 mt-3 text-xs text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 font-medium transition-colors"
-                >
-                  Load more replies ({replyCount - visibleReplies} remaining)
-                </button>
-              )}
-            </div>
-          )}
+          {level === 0 &&
+            showReplies &&
+            comment.replies &&
+            comment.replies.length > 0 && (
+              <div className="mt-2">
+                {comment.replies.slice(0, visibleReplies).map((reply) => (
+                  <CommentItem
+                    key={reply.id}
+                    comment={reply}
+                    onReply={onReply}
+                    level={1}
+                    deckAuthorId={deckAuthorId}
+                    targetCommentId={targetCommentId}
+                    rootCommentId={comment.id}
+                    onViewUser={onViewUser}
+                    onFlagComment={onFlagComment}
+                    onCommentDeleted={onCommentDeleted}
+                  />
+                ))}
+
+                {/* Load More Replies Button */}
+                {hasMoreReplies && (
+                  <button
+                    onClick={() => setVisibleReplies((prev) => prev + 5)}
+                    className="ml-8 mt-3 text-xs text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 font-medium transition-colors"
+                  >
+                    Load more replies ({replyCount - visibleReplies} remaining)
+                  </button>
+                )}
+              </div>
+            )}
         </div>
       </div>
 
@@ -319,12 +353,16 @@ export function CommentItem({
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Comment</AlertDialogTitle>
             <AlertDialogDescription>
-              Please select a reason for deleting this comment. The user will be notified with your reason.
+              Please select a reason for deleting this comment. The user will be
+              notified with your reason.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="space-y-4 mt-4">
             <div>
-              <Label htmlFor="delete-reason" className="text-sm font-medium mb-2 block">
+              <Label
+                htmlFor="delete-reason"
+                className="text-sm font-medium mb-2 block"
+              >
                 Reason for deletion *
               </Label>
               <Select value={deleteReason} onValueChange={setDeleteReason}>
@@ -332,18 +370,27 @@ export function CommentItem({
                   <SelectValue placeholder="Select a reason" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Harassment or Bullying">Harassment or Bullying</SelectItem>
-                  <SelectItem value="Inappropriate Language">Inappropriate Language</SelectItem>
+                  <SelectItem value="Harassment or Bullying">
+                    Harassment or Bullying
+                  </SelectItem>
+                  <SelectItem value="Inappropriate Language">
+                    Inappropriate Language
+                  </SelectItem>
                   <SelectItem value="Spam">Spam</SelectItem>
                   <SelectItem value="Misinformation">Misinformation</SelectItem>
                   <SelectItem value="Off-topic">Off-topic</SelectItem>
-                  <SelectItem value="Violation of Community Guidelines">Violation of Community Guidelines</SelectItem>
+                  <SelectItem value="Violation of Community Guidelines">
+                    Violation of Community Guidelines
+                  </SelectItem>
                   <SelectItem value="Other">Other</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div>
-              <Label htmlFor="delete-message" className="text-sm font-medium mb-2 block">
+              <Label
+                htmlFor="delete-message"
+                className="text-sm font-medium mb-2 block"
+              >
                 Additional details (optional)
               </Label>
               <Textarea
@@ -356,17 +403,19 @@ export function CommentItem({
             </div>
           </div>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleteLoading}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={deleteLoading}>
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteComment}
               disabled={deleteLoading || !deleteReason}
               className="bg-red-600 hover:bg-red-700"
             >
-              {deleteLoading ? 'Deleting...' : 'Delete Comment'}
+              {deleteLoading ? "Deleting..." : "Delete Comment"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
     </div>
-  )
+  );
 }
