@@ -2,7 +2,7 @@ import { LandingHeader } from "./components/LandingHeader";
 import { HeroSection } from "./components/HeroSection";
 import { FeaturesSection } from "./components/FeaturesSection";
 import { BenefitsFlipCardSection } from "./components/BenefitsFlipCardSection";
-import { CtaSection } from "./components/CTASection";
+import { CtaSection } from "./components/CtaSection";
 import { LandingFooter } from "./components/LandingFooter";
 
 export function LandingPage() {
