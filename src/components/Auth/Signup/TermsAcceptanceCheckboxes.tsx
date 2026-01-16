@@ -1,5 +1,5 @@
 import { Checkbox } from "@/shared/ui/checkbox";
-import { useNavigation } from "../../../../hooks/useNavigation";
+import { useNavigation } from "../../../shared/hooks/useNavigation";
 
 interface TermsAcceptanceCheckboxesProps {
   acceptedTerms: boolean;

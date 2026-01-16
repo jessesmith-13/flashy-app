@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { useNavigation } from "../../hooks/useNavigation";
+import { useNavigation } from "../shared/hooks/useNavigation";
 import { Button } from "@/shared/ui/button";
 import { Check, Sparkles } from "lucide-react";
 import { AppLayout } from "./Layout/AppLayout";

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useStore } from "@/shared/state/useStore";
-import { useNavigation } from "../../hooks/useNavigation";
+import { useNavigation } from "../shared/hooks/useNavigation";
 import { getSharedDeck } from "../../utils/api/decks";
 import { Button } from "@/shared/ui/button";
 import { ArrowLeft, BookOpen, Check } from "lucide-react";

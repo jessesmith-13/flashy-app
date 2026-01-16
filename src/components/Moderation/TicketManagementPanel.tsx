@@ -23,7 +23,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { Tabs, TabsList, TabsTrigger } from "@/shared/ui/tabs";
-import { useNavigation } from "../../../hooks/useNavigation";
+import { useNavigation } from "../../shared/hooks/useNavigation";
 import { useStore } from "@/shared/state/useStore";
 import { TicketDetailView } from "./TicketDetailView";
 import { UserWarningDialog } from "./UserWarningDialog";

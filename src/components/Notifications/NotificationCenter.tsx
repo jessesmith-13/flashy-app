@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { useStore } from "@/shared/state/useStore";
-import { useNavigation } from "../../../hooks/useNavigation";
+import { useNavigation } from "../../shared/hooks/useNavigation";
 import {
   markAllNotificationsSeen,
   getNotifications,

@@ -1,4 +1,4 @@
-import { useNavigation } from "../../../hooks/useNavigation";
+import { useNavigation } from "../../shared/hooks/useNavigation";
 import { AppLayout } from "@/components/Layout/AppLayout";
 import { Button } from "@/shared/ui/button";
 import { ArrowLeft, Shield } from "lucide-react";

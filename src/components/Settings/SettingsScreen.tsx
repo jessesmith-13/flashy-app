@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useStore } from "@/shared/state/useStore";
-import { useNavigation } from "../../../hooks/useNavigation";
+import { useNavigation } from "../../shared/hooks/useNavigation";
 import { updateProfile } from "../../../utils/api/users";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useStore } from "@/shared/state/useStore";
-import { useNavigation } from "../../../hooks/useNavigation";
+import { useNavigation } from "../../shared/hooks/useNavigation";
 import { AppLayout } from "@/components/Layout/AppLayout";
 import { Button } from "@/shared/ui/button";
 import { ArrowLeft, Mail, MessageSquare, Send } from "lucide-react";

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useStore } from "@/shared/state/useStore";
-import { useNavigation } from "../../../hooks/useNavigation";
+import { useNavigation } from "../../shared/hooks/useNavigation";
 import { toast } from "sonner";
 import { Button } from "@/shared/ui/button";
 import { Textarea } from "@/shared/ui/textarea";

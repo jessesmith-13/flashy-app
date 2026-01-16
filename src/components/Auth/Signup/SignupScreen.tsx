@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useStore } from "@/shared/state/useStore";
-import { useNavigation } from "../../../../hooks/useNavigation";
+import { useNavigation } from "../../../shared/hooks/useNavigation";
 import { useLocation } from "react-router-dom";
 import { signUp, signIn, signInWithGoogle } from "../../../../utils/api/auth";
 import { applyReferralCode } from "../../../../utils/api/referrals";
