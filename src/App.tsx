@@ -7,7 +7,7 @@ import {
   useNavigate,
   useParams,
 } from "react-router-dom";
-import { useStore } from "../store/useStore";
+import { useStore } from "@/shared/state/useStore";
 import { signOut, getSession, recordTermsAcceptance } from "../utils/api/auth";
 import {
   getFriends,

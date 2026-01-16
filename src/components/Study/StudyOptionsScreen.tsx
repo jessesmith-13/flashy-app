@@ -1,26 +1,35 @@
-import { useState } from 'react'
-import { useStore } from '../../../store/useStore'
-import { useNavigation } from '../../../hooks/useNavigation'
-import { AppLayout } from '../Layout/AppLayout'
-import { Button } from '../../ui/button'
-import { ArrowLeft, Play, Clock, Shuffle, ArrowRight, Star, EyeOff } from 'lucide-react'
-import { Label } from '../../ui/label'
-import { Switch } from '../../ui/switch'
+import { useState } from "react";
+import { useStore } from "@/shared/state/useStore";
+import { useNavigation } from "../../../hooks/useNavigation";
+import { AppLayout } from "../Layout/AppLayout";
+import { Button } from "../../ui/button";
+import {
+  ArrowLeft,
+  Play,
+  Clock,
+  Shuffle,
+  ArrowRight,
+  Star,
+  EyeOff,
+} from "lucide-react";
+import { Label } from "../../ui/label";
+import { Switch } from "../../ui/switch";
 
 export function StudyOptionsScreen() {
-  const { decks, selectedDeckId, cards, setStudyOptions, setStudyAllCards } = useStore()
-  const { navigateTo } = useNavigation()
-  const deck = decks.find((d) => d.id === selectedDeckId)
-  const deckCards = cards.filter((c) => c.deckId === selectedDeckId)
+  const { decks, selectedDeckId, cards, setStudyOptions, setStudyAllCards } =
+    useStore();
+  const { navigateTo } = useNavigation();
+  const deck = decks.find((d) => d.id === selectedDeckId);
+  const deckCards = cards.filter((c) => c.deckId === selectedDeckId);
 
-  const [timedMode, setTimedMode] = useState(false)
-  const [continuousShuffle, setContinuousShuffle] = useState(false)
-  const [order, setOrder] = useState<'randomized' | 'linear'>('randomized')
-  const [excludeIgnored, setExcludeIgnored] = useState(false)
-  const [favoritesOnly, setFavoritesOnly] = useState(false)
+  const [timedMode, setTimedMode] = useState(false);
+  const [continuousShuffle, setContinuousShuffle] = useState(false);
+  const [order, setOrder] = useState<"randomized" | "linear">("randomized");
+  const [excludeIgnored, setExcludeIgnored] = useState(false);
+  const [favoritesOnly, setFavoritesOnly] = useState(false);
 
-  const ignoredCount = deckCards.filter(c => c.isIgnored).length
-  const favoritesCount = deckCards.filter(c => c.favorite).length
+  const ignoredCount = deckCards.filter((c) => c.isIgnored).length;
+  const favoritesCount = deckCards.filter((c) => c.favorite).length;
 
   const handleStartStudy = () => {
     setStudyOptions({
@@ -29,10 +38,10 @@ export function StudyOptionsScreen() {
       order,
       excludeIgnored,
       favoritesOnly,
-    })
-    setStudyAllCards(false) // Ensure we're studying a specific deck
-    navigateTo('study')
-  }
+    });
+    setStudyAllCards(false); // Ensure we're studying a specific deck
+    navigateTo("study");
+  };
 
   if (!deck) {
     return (
@@ -41,7 +50,7 @@ export function StudyOptionsScreen() {
           <div className="text-gray-900 dark:text-gray-100">Deck not found</div>
         </div>
       </AppLayout>
-    )
+    );
   }
 
   return (
@@ -49,7 +58,7 @@ export function StudyOptionsScreen() {
       <div className="min-h-screen bg-gray-100 dark:bg-gray-900 p-4 lg:p-8">
         <div className="max-w-2xl mx-auto">
           <div className="mb-6">
-            <Button variant="ghost" onClick={() => navigateTo('deck-detail')}>
+            <Button variant="ghost" onClick={() => navigateTo("deck-detail")}>
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Deck
             </Button>
@@ -65,8 +74,12 @@ export function StudyOptionsScreen() {
                 {deck.emoji}
               </div>
               <div>
-                <h1 className="text-2xl mb-1 text-gray-900 dark:text-gray-100">{deck.name}</h1>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Configure study session</p>
+                <h1 className="text-2xl mb-1 text-gray-900 dark:text-gray-100">
+                  {deck.name}
+                </h1>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Configure study session
+                </p>
               </div>
             </div>
 
@@ -78,29 +91,49 @@ export function StudyOptionsScreen() {
                 <div className="grid grid-cols-2 gap-3">
                   <button
                     type="button"
-                    onClick={() => setOrder('randomized')}
+                    onClick={() => setOrder("randomized")}
                     className={`p-4 rounded-lg border-2 transition-all text-left ${
-                      order === 'randomized'
-                        ? 'border-emerald-600 bg-emerald-50 dark:bg-emerald-900/20'
-                        : 'border-gray-200 dark:border-gray-700 hover:border-emerald-300 dark:hover:border-emerald-600'
+                      order === "randomized"
+                        ? "border-emerald-600 bg-emerald-50 dark:bg-emerald-900/20"
+                        : "border-gray-200 dark:border-gray-700 hover:border-emerald-300 dark:hover:border-emerald-600"
                     }`}
                   >
-                    <Shuffle className={`w-5 h-5 mb-2 ${order === 'randomized' ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-600 dark:text-gray-400'}`} />
-                    <div className="text-sm text-gray-900 dark:text-gray-100">Randomized</div>
-                    <div className="text-xs text-gray-500 dark:text-gray-500 mt-1">Shuffle cards</div>
+                    <Shuffle
+                      className={`w-5 h-5 mb-2 ${
+                        order === "randomized"
+                          ? "text-emerald-600 dark:text-emerald-400"
+                          : "text-gray-600 dark:text-gray-400"
+                      }`}
+                    />
+                    <div className="text-sm text-gray-900 dark:text-gray-100">
+                      Randomized
+                    </div>
+                    <div className="text-xs text-gray-500 dark:text-gray-500 mt-1">
+                      Shuffle cards
+                    </div>
                   </button>
                   <button
                     type="button"
-                    onClick={() => setOrder('linear')}
+                    onClick={() => setOrder("linear")}
                     className={`p-4 rounded-lg border-2 transition-all text-left ${
-                      order === 'linear'
-                        ? 'border-emerald-600 bg-emerald-50 dark:bg-emerald-900/20'
-                        : 'border-gray-200 dark:border-gray-700 hover:border-emerald-300 dark:hover:border-emerald-600'
+                      order === "linear"
+                        ? "border-emerald-600 bg-emerald-50 dark:bg-emerald-900/20"
+                        : "border-gray-200 dark:border-gray-700 hover:border-emerald-300 dark:hover:border-emerald-600"
                     }`}
                   >
-                    <ArrowRight className={`w-5 h-5 mb-2 ${order === 'linear' ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-600 dark:text-gray-400'}`} />
-                    <div className="text-sm text-gray-900 dark:text-gray-100">Linear</div>
-                    <div className="text-xs text-gray-500 dark:text-gray-500 mt-1">In order</div>
+                    <ArrowRight
+                      className={`w-5 h-5 mb-2 ${
+                        order === "linear"
+                          ? "text-emerald-600 dark:text-emerald-400"
+                          : "text-gray-600 dark:text-gray-400"
+                      }`}
+                    />
+                    <div className="text-sm text-gray-900 dark:text-gray-100">
+                      Linear
+                    </div>
+                    <div className="text-xs text-gray-500 dark:text-gray-500 mt-1">
+                      In order
+                    </div>
                   </button>
                 </div>
               </div>
@@ -110,8 +143,15 @@ export function StudyOptionsScreen() {
                 <div className="flex items-start gap-3">
                   <Clock className="w-5 h-5 text-gray-600 dark:text-gray-400 mt-0.5" />
                   <div>
-                    <Label htmlFor="timed-mode" className="text-sm cursor-pointer text-gray-900 dark:text-gray-100">Timed Mode</Label>
-                    <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">Add a timer for each card</p>
+                    <Label
+                      htmlFor="timed-mode"
+                      className="text-sm cursor-pointer text-gray-900 dark:text-gray-100"
+                    >
+                      Timed Mode
+                    </Label>
+                    <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
+                      Add a timer for each card
+                    </p>
                   </div>
                 </div>
                 <Switch
@@ -126,8 +166,15 @@ export function StudyOptionsScreen() {
                 <div className="flex items-start gap-3">
                   <Shuffle className="w-5 h-5 text-gray-600 dark:text-gray-400 mt-0.5" />
                   <div>
-                    <Label htmlFor="continuous-shuffle" className="text-sm cursor-pointer text-gray-900 dark:text-gray-100">Continuous Shuffle</Label>
-                    <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">Keep studying without end</p>
+                    <Label
+                      htmlFor="continuous-shuffle"
+                      className="text-sm cursor-pointer text-gray-900 dark:text-gray-100"
+                    >
+                      Continuous Shuffle
+                    </Label>
+                    <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
+                      Keep studying without end
+                    </p>
                   </div>
                 </div>
                 <Switch
@@ -142,9 +189,15 @@ export function StudyOptionsScreen() {
                 <div className="flex items-start gap-3">
                   <EyeOff className="w-5 h-5 text-gray-600 dark:text-gray-400 mt-0.5" />
                   <div>
-                    <Label htmlFor="exclude-ignored" className="text-sm cursor-pointer text-gray-900 dark:text-gray-100">Exclude Ignored Cards</Label>
+                    <Label
+                      htmlFor="exclude-ignored"
+                      className="text-sm cursor-pointer text-gray-900 dark:text-gray-100"
+                    >
+                      Exclude Ignored Cards
+                    </Label>
                     <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
-                      Skip cards marked as ignored {ignoredCount > 0 && `(${ignoredCount})`}
+                      Skip cards marked as ignored{" "}
+                      {ignoredCount > 0 && `(${ignoredCount})`}
                     </p>
                   </div>
                 </div>
@@ -161,9 +214,15 @@ export function StudyOptionsScreen() {
                 <div className="flex items-start gap-3">
                   <Star className="w-5 h-5 text-gray-600 dark:text-gray-400 mt-0.5" />
                   <div>
-                    <Label htmlFor="favorites-only" className="text-sm cursor-pointer text-gray-900 dark:text-gray-100">Favorites Only</Label>
+                    <Label
+                      htmlFor="favorites-only"
+                      className="text-sm cursor-pointer text-gray-900 dark:text-gray-100"
+                    >
+                      Favorites Only
+                    </Label>
                     <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
-                      Only study favorite cards {favoritesCount > 0 && `(${favoritesCount})`}
+                      Only study favorite cards{" "}
+                      {favoritesCount > 0 && `(${favoritesCount})`}
                     </p>
                   </div>
                 </div>
@@ -188,5 +247,5 @@ export function StudyOptionsScreen() {
         </div>
       </div>
     </AppLayout>
-  )
+  );
 }

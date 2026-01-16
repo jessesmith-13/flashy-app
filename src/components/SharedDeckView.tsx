@@ -1,71 +1,91 @@
-import { useState, useEffect } from 'react'
-import { useStore } from '../../store/useStore'
-import { useNavigation } from '../../hooks/useNavigation'
-import { getSharedDeck } from '../../utils/api/decks'
-import { Button } from '../ui/button'
-import { ArrowLeft, BookOpen, Check } from 'lucide-react'
-import { toast } from 'sonner'
-import { AppLayout } from './Layout/AppLayout'
-import { UICard } from '@/types/decks'
+import { useState, useEffect } from "react";
+import { useStore } from "@/shared/state/useStore";
+import { useNavigation } from "../../hooks/useNavigation";
+import { getSharedDeck } from "../../utils/api/decks";
+import { Button } from "../ui/button";
+import { ArrowLeft, BookOpen, Check } from "lucide-react";
+import { toast } from "sonner";
+import { AppLayout } from "./Layout/AppLayout";
+import { UICard } from "@/types/decks";
 
 interface SharedDeckViewProps {
-  shareId: string
-  onBack: () => void
+  shareId: string;
+  onBack: () => void;
 }
 
 export function SharedDeckView({ shareId, onBack }: SharedDeckViewProps) {
-  const [deckData, setDeckData] = useState<any>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [saving, setSaving] = useState(false)
-  const { setTemporaryStudyDeck, user, accessToken, setStudyOptions, setReturnToSharedDeckId } = useStore()
-  const { navigateTo } = useNavigation()
+  const [deckData, setDeckData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const {
+    setTemporaryStudyDeck,
+    user,
+    accessToken,
+    setStudyOptions,
+    setReturnToSharedDeckId,
+  } = useStore();
+  const { navigateTo } = useNavigation();
 
   useEffect(() => {
-    console.log('SharedDeckView mounted/updated - shareId:', shareId, 'user:', user ? `logged in as ${user.email}` : 'not logged in')
-    loadSharedDeck()
-  }, [shareId])
-  
+    console.log(
+      "SharedDeckView mounted/updated - shareId:",
+      shareId,
+      "user:",
+      user ? `logged in as ${user.email}` : "not logged in"
+    );
+    loadSharedDeck();
+  }, [shareId]);
+
   // Log when user changes
   useEffect(() => {
-    console.log('User state changed in SharedDeckView:', user ? `logged in as ${user.email}` : 'not logged in')
-  }, [user])
+    console.log(
+      "User state changed in SharedDeckView:",
+      user ? `logged in as ${user.email}` : "not logged in"
+    );
+  }, [user]);
 
   const loadSharedDeck = async () => {
     try {
-      setLoading(true)
-      console.log('Loading shared deck with shareId:', shareId)
-      const deck = await getSharedDeck(shareId)
-      console.log('Loaded shared deck:', deck)
-      setDeckData(deck)
+      setLoading(true);
+      console.log("Loading shared deck with shareId:", shareId);
+      const deck = await getSharedDeck(shareId);
+      console.log("Loaded shared deck:", deck);
+      setDeckData(deck);
     } catch (error: any) {
-      console.error('Failed to load shared deck:', error)
-      setError('Failed to load shared deck')
+      console.error("Failed to load shared deck:", error);
+      setError("Failed to load shared deck");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const handleStudyDeck = () => {
-    if (!deckData) return
+    if (!deckData) return;
 
-    console.log('handleStudyDeck called - user:', user ? `logged in as ${user.email}` : 'not logged in')
-    console.log('Setting up temporary study deck with cards:', deckData.cards.length)
+    console.log(
+      "handleStudyDeck called - user:",
+      user ? `logged in as ${user.email}` : "not logged in"
+    );
+    console.log(
+      "Setting up temporary study deck with cards:",
+      deckData.cards.length
+    );
 
     // Set default study options for shared decks
     setStudyOptions({
       timedMode: false,
       continuousShuffle: false,
-      order: 'randomized',
+      order: "randomized",
       excludeIgnored: false,
       favoritesOnly: false,
-    })
+    });
 
     // Mark that we should return to this shared deck after studying
-    setReturnToSharedDeckId(shareId)
+    setReturnToSharedDeckId(shareId);
 
     // 🔧 FIX: Use the actual deck type from the data, not hardcoded 'classic-flip'
-    const actualDeckType = deckData.deckType || 'classic-flip'
+    const actualDeckType = deckData.deckType || "classic-flip";
 
     // Set up temporary study deck in store
     setTemporaryStudyDeck({
@@ -77,58 +97,65 @@ export function SharedDeckView({ shareId, onBack }: SharedDeckViewProps) {
         cardCount: deckData.cards.length,
         category: deckData.category,
         subtopic: deckData.subtopic,
-        ownerId: deckData.owner_id || 'unknown',
-        ownerDisplayName: deckData.owner_display_name || 'Unknown',
+        ownerId: deckData.owner_id || "unknown",
+        ownerDisplayName: deckData.owner_display_name || "Unknown",
         cards: deckData.cards,
         publishedAt: new Date().toISOString(),
         downloadCount: 0,
         createdAt: new Date().toISOString(),
       },
       cards: deckData.cards,
-    })
+    });
 
-    console.log('Temporary study deck set with type:', actualDeckType, 'navigating to study screen')
+    console.log(
+      "Temporary study deck set with type:",
+      actualDeckType,
+      "navigating to study screen"
+    );
 
     // Clear the shared deck view
-    onBack()
-    
+    onBack();
+
     // Navigate to study screen
-    navigateTo('study')
-  }
+    navigateTo("study");
+  };
 
   const handleSaveToDeck = async () => {
-    if (!user || !accessToken || !deckData) return
+    if (!user || !accessToken || !deckData) return;
 
-    setSaving(true)
+    setSaving(true);
     try {
+      toast.success("Deck saved to your library!");
 
-      toast.success('Deck saved to your library!')
-      
       // Navigate to decks view after short delay
       setTimeout(() => {
-        navigateTo('decks')
-      }, 1000)
+        navigateTo("decks");
+      }, 1000);
     } catch (error: any) {
-      console.error('Failed to save deck:', error)
-      if (error.message?.includes('already added')) {
-        toast.error('You already have this deck in your library')
+      console.error("Failed to save deck:", error);
+      if (error.message?.includes("already added")) {
+        toast.error("You already have this deck in your library");
       } else {
-        toast.error('Failed to save deck')
+        toast.error("Failed to save deck");
       }
     } finally {
-      setSaving(false)
+      setSaving(false);
     }
-  }
+  };
 
   // 🔧 NEW: Helper function to render card preview based on card type
   const renderCardPreview = (card: UICard, index: number) => {
-    const cardType = card.cardType || 'classic-flip'
+    const cardType = card.cardType || "classic-flip";
 
-    if (cardType === 'multiple-choice') {
+    if (cardType === "multiple-choice") {
       // Multiple-choice cards: front + correctAnswers + incorrectAnswers
-      const correctAnswers = Array.isArray(card.correctAnswers) ? card.correctAnswers : []
-      const incorrectAnswers = Array.isArray(card.incorrectAnswers) ? card.incorrectAnswers : []
-      const allOptions = [...correctAnswers, ...incorrectAnswers].slice(0, 4) // Show max 4 options
+      const correctAnswers = Array.isArray(card.correctAnswers)
+        ? card.correctAnswers
+        : [];
+      const incorrectAnswers = Array.isArray(card.incorrectAnswers)
+        ? card.incorrectAnswers
+        : [];
+      const allOptions = [...correctAnswers, ...incorrectAnswers].slice(0, 4); // Show max 4 options
 
       return (
         <div
@@ -150,27 +177,30 @@ export function SharedDeckView({ shareId, onBack }: SharedDeckViewProps) {
           </div>
           <div className="space-y-1">
             {allOptions.map((option, i) => {
-              const isCorrect = correctAnswers.includes(option)
+              const isCorrect = correctAnswers.includes(option);
               return (
                 <div
                   key={i}
                   className={`text-xs px-2 py-1 rounded ${
                     isCorrect
-                      ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400'
-                      : 'bg-gray-100 dark:bg-gray-600 text-gray-600 dark:text-gray-300'
+                      ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400"
+                      : "bg-gray-100 dark:bg-gray-600 text-gray-600 dark:text-gray-300"
                   }`}
                 >
-                  {isCorrect && '✓ '}{option}
+                  {isCorrect && "✓ "}
+                  {option}
                 </div>
-              )
+              );
             })}
           </div>
         </div>
-      )
-    } else if (cardType === 'type-answer') {
+      );
+    } else if (cardType === "type-answer") {
       // Type-answer cards: front + back + acceptedAnswers
-      const acceptedAnswers = Array.isArray(card.acceptedAnswers) ? card.acceptedAnswers : []
-      
+      const acceptedAnswers = Array.isArray(card.acceptedAnswers)
+        ? card.acceptedAnswers
+        : [];
+
       return (
         <div
           key={card.id || index}
@@ -196,7 +226,9 @@ export function SharedDeckView({ shareId, onBack }: SharedDeckViewProps) {
           </div>
           {acceptedAnswers.length > 0 && (
             <div className="mt-2 pt-2 border-t border-gray-200 dark:border-gray-600">
-              <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Also accepts:</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">
+                Also accepts:
+              </p>
               <div className="flex flex-wrap gap-1">
                 {acceptedAnswers.map((answer, i) => (
                   <span
@@ -210,7 +242,7 @@ export function SharedDeckView({ shareId, onBack }: SharedDeckViewProps) {
             </div>
           )}
         </div>
-      )
+      );
     } else {
       // Classic flip cards: front + back
       return (
@@ -237,18 +269,20 @@ export function SharedDeckView({ shareId, onBack }: SharedDeckViewProps) {
             </div>
           </div>
         </div>
-      )
+      );
     }
-  }
+  };
 
   if (loading) {
     return (
       <AppLayout>
         <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex items-center justify-center">
-          <div className="text-emerald-600 dark:text-emerald-400">Loading shared deck...</div>
+          <div className="text-emerald-600 dark:text-emerald-400">
+            Loading shared deck...
+          </div>
         </div>
       </AppLayout>
-    )
+    );
   }
 
   if (error) {
@@ -269,7 +303,7 @@ export function SharedDeckView({ shareId, onBack }: SharedDeckViewProps) {
           </div>
         </div>
       </AppLayout>
-    )
+    );
   }
 
   return (
@@ -278,11 +312,7 @@ export function SharedDeckView({ shareId, onBack }: SharedDeckViewProps) {
         <div className="max-w-4xl mx-auto">
           {/* Header */}
           <div className="mb-6">
-            <Button
-              onClick={onBack}
-              variant="ghost"
-              className="mb-4"
-            >
+            <Button onClick={onBack} variant="ghost" className="mb-4">
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back
             </Button>
@@ -311,22 +341,36 @@ export function SharedDeckView({ shareId, onBack }: SharedDeckViewProps) {
                       </span>
                     )}
                     {deckData.difficulty && (
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs ${
-                        deckData.difficulty === 'beginner' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' :
-                        deckData.difficulty === 'intermediate' ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400' :
-                        deckData.difficulty === 'advanced' ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400' :
-                        deckData.difficulty === 'expert' ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400' :
-                        'bg-gradient-to-r from-purple-100 to-pink-100 dark:from-purple-900/30 dark:to-pink-900/30 text-purple-700 dark:text-purple-400'
-                      }`}>
-                        {deckData.difficulty === 'beginner' ? '🟢' :
-                         deckData.difficulty === 'intermediate' ? '🟡' :
-                         deckData.difficulty === 'advanced' ? '🟠' :
-                         deckData.difficulty === 'expert' ? '🔴' : '🌈'} {deckData.difficulty.charAt(0).toUpperCase() + deckData.difficulty.slice(1)}
+                      <span
+                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs ${
+                          deckData.difficulty === "beginner"
+                            ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400"
+                            : deckData.difficulty === "intermediate"
+                            ? "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400"
+                            : deckData.difficulty === "advanced"
+                            ? "bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400"
+                            : deckData.difficulty === "expert"
+                            ? "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400"
+                            : "bg-gradient-to-r from-purple-100 to-pink-100 dark:from-purple-900/30 dark:to-pink-900/30 text-purple-700 dark:text-purple-400"
+                        }`}
+                      >
+                        {deckData.difficulty === "beginner"
+                          ? "🟢"
+                          : deckData.difficulty === "intermediate"
+                          ? "🟡"
+                          : deckData.difficulty === "advanced"
+                          ? "🟠"
+                          : deckData.difficulty === "expert"
+                          ? "🔴"
+                          : "🌈"}{" "}
+                        {deckData.difficulty.charAt(0).toUpperCase() +
+                          deckData.difficulty.slice(1)}
                       </span>
                     )}
                   </div>
                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                    Shared by {deckData.authorName} • {deckData.cards.length} cards
+                    Shared by {deckData.authorName} • {deckData.cards.length}{" "}
+                    cards
                   </p>
                 </div>
               </div>
@@ -351,17 +395,19 @@ export function SharedDeckView({ shareId, onBack }: SharedDeckViewProps) {
             <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
               Cards Preview
             </h2>
-            
+
             {deckData.cards.length === 0 ? (
               <p className="text-center py-8 text-gray-500 dark:text-gray-400">
                 This deck has no cards yet
               </p>
             ) : (
               <div className="space-y-3">
-                {deckData.cards.slice(0, 10).map((card: UICard, index: number) => 
-                  renderCardPreview(card, index)
-                )}
-                
+                {deckData.cards
+                  .slice(0, 10)
+                  .map((card: UICard, index: number) =>
+                    renderCardPreview(card, index)
+                  )}
+
                 {deckData.cards.length > 10 && (
                   <p className="text-center text-sm text-gray-500 dark:text-gray-400 pt-2">
                     And {deckData.cards.length - 10} more cards...
@@ -376,16 +422,17 @@ export function SharedDeckView({ shareId, onBack }: SharedDeckViewProps) {
             <div className="bg-gradient-to-r from-emerald-500 to-teal-600 rounded-xl p-8 text-center text-white shadow-lg">
               <h3 className="text-2xl mb-2">Love this deck?</h3>
               <p className="text-emerald-50 mb-6">
-                Sign up for Flashy to save this deck to your library, track your progress, and access thousands of community decks!
+                Sign up for Flashy to save this deck to your library, track your
+                progress, and access thousands of community decks!
               </p>
               <div className="flex gap-3 justify-center">
                 <Button
                   onClick={() => {
                     // Save the current shared deck URL to return to it after signup
-                    sessionStorage.setItem('returnToSharedDeck', shareId)
+                    sessionStorage.setItem("returnToSharedDeck", shareId);
                     // Clear the shared deck view so login/signup can show
-                    onBack()
-                    navigateTo('signup')
+                    onBack();
+                    navigateTo("signup");
                   }}
                   className="bg-white text-emerald-600 hover:bg-emerald-50"
                 >
@@ -394,10 +441,10 @@ export function SharedDeckView({ shareId, onBack }: SharedDeckViewProps) {
                 <Button
                   onClick={() => {
                     // Save the current shared deck URL to return to it after login
-                    sessionStorage.setItem('returnToSharedDeck', shareId)
+                    sessionStorage.setItem("returnToSharedDeck", shareId);
                     // Clear the shared deck view so login/signup can show
-                    onBack()
-                    navigateTo('login')
+                    onBack();
+                    navigateTo("login");
                   }}
                   variant="outline"
                   className="border-white text-white hover:bg-white/10"
@@ -420,7 +467,7 @@ export function SharedDeckView({ shareId, onBack }: SharedDeckViewProps) {
                 className="bg-emerald-600 hover:bg-emerald-700 text-white"
               >
                 <Check className="w-4 h-4 mr-2" />
-                {saving ? 'Saving...' : 'Save to My Decks'}
+                {saving ? "Saving..." : "Save to My Decks"}
               </Button>
             </div>
           ) : (
@@ -436,5 +483,5 @@ export function SharedDeckView({ shareId, onBack }: SharedDeckViewProps) {
         </div>
       </div>
     </AppLayout>
-  )
+  );
 }

@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { useStore } from "../store/useStore";
+import { useStore } from "@/shared/state/useStore";
 
 // Map old view names to new routes
 const viewToRoute: Record<string, string> = {

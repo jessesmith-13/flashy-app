@@ -1,83 +1,105 @@
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../ui/dialog'
-import { Button } from '../ui/button'
-import { Check, Sparkles, Crown, Infinity as InfinityIcon, Image, Brain, Users, Upload } from 'lucide-react'
-import { SUBSCRIPTION_PRICES } from '../../utils/subscription'
-import { useStore } from '../../store/useStore'
-import { createCheckoutSession } from '../../utils/api/subscriptions'
-import { useState } from 'react'
-import { toast } from 'sonner'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "../ui/dialog";
+import { Button } from "../ui/button";
+import {
+  Check,
+  Sparkles,
+  Crown,
+  Infinity as InfinityIcon,
+  Image,
+  Brain,
+  Users,
+  Upload,
+} from "lucide-react";
+import { SUBSCRIPTION_PRICES } from "../../utils/subscription";
+import { useStore } from "@/shared/state/useStore";
+import { createCheckoutSession } from "../../utils/api/subscriptions";
+import { useState } from "react";
+import { toast } from "sonner";
 
 interface UpgradeModalProps {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  feature?: string // Optional: specific feature that triggered the modal
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  feature?: string; // Optional: specific feature that triggered the modal
 }
 
-export function UpgradeModal({ open, onOpenChange, feature }: UpgradeModalProps) {
-  const accessToken = useStore((state) => state.accessToken)
-  const [loading, setLoading] = useState<string | null>(null)
+export function UpgradeModal({
+  open,
+  onOpenChange,
+  feature,
+}: UpgradeModalProps) {
+  const accessToken = useStore((state) => state.accessToken);
+  const [loading, setLoading] = useState<string | null>(null);
 
   const plans = [
     {
-      id: 'monthly',
-      name: 'Monthly',
+      id: "monthly",
+      name: "Monthly",
       price: SUBSCRIPTION_PRICES.monthly.price,
-      interval: 'month',
+      interval: "month",
       icon: Sparkles,
-      color: 'from-blue-400 to-blue-600',
+      color: "from-blue-400 to-blue-600",
       popular: false,
     },
     {
-      id: 'annual',
-      name: 'Annual',
+      id: "annual",
+      name: "Annual",
       price: SUBSCRIPTION_PRICES.annual.price,
-      interval: 'year',
+      interval: "year",
       icon: Crown,
-      color: 'from-emerald-400 to-emerald-600',
+      color: "from-emerald-400 to-emerald-600",
       popular: true,
-      savings: 'Save 64%',
+      savings: "Save 64%",
     },
     {
-      id: 'lifetime',
-      name: 'Lifetime',
+      id: "lifetime",
+      name: "Lifetime",
       price: SUBSCRIPTION_PRICES.lifetime.price,
-      interval: 'once',
+      interval: "once",
       icon: InfinityIcon,
-      color: 'from-purple-400 to-purple-600',
+      color: "from-purple-400 to-purple-600",
       popular: false,
-      savings: 'Best Value',
+      savings: "Best Value",
     },
-  ]
+  ];
 
   const features = [
-    { icon: Brain, text: 'AI flashcard generation from PDFs, images & chat' },
-    { icon: InfinityIcon, text: 'Unlimited decks and cards' },
-    { icon: Image, text: 'Add images to flashcards' },
-    { icon: Users, text: 'Import decks from Community' },
-    { icon: Upload, text: 'Publish decks to Community' },
-  ]
+    { icon: Brain, text: "AI flashcard generation from PDFs, images & chat" },
+    { icon: InfinityIcon, text: "Unlimited decks and cards" },
+    { icon: Image, text: "Add images to flashcards" },
+    { icon: Users, text: "Import decks from Community" },
+    { icon: Upload, text: "Publish decks to Community" },
+  ];
 
   const handleUpgrade = async (planId: string) => {
     if (!accessToken) {
-      toast.error('Please log in to upgrade')
-      return
+      toast.error("Please log in to upgrade");
+      return;
     }
-    
-    setLoading(planId)
+
+    setLoading(planId);
     try {
-      const checkoutUrl = await createCheckoutSession(accessToken, planId as 'monthly' | 'annual' | 'lifetime')
+      const checkoutUrl = await createCheckoutSession(
+        accessToken,
+        planId as "monthly" | "annual" | "lifetime"
+      );
       // Redirect to Stripe Checkout at the top level (break out of iframe)
       if (window.top) {
-        window.top.location.href = checkoutUrl
+        window.top.location.href = checkoutUrl;
       } else {
-        window.location.href = checkoutUrl
+        window.location.href = checkoutUrl;
       }
     } catch (error) {
-      console.error('Checkout error:', error)
-      toast.error('Failed to start checkout. Please try again.')
-      setLoading(null)
+      console.error("Checkout error:", error);
+      toast.error("Failed to start checkout. Please try again.");
+      setLoading(null);
     }
-  }
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -87,34 +109,43 @@ export function UpgradeModal({ open, onOpenChange, feature }: UpgradeModalProps)
             Upgrade to Premium
           </DialogTitle>
           <DialogDescription className="text-center">
-            {feature ? `Unlock ${feature} and more premium features` : 'Choose a plan that fits your learning goals'}
+            {feature
+              ? `Unlock ${feature} and more premium features`
+              : "Choose a plan that fits your learning goals"}
           </DialogDescription>
         </DialogHeader>
 
         {/* Premium Features */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 py-6">
           {features.map((feature, index) => {
-            const Icon = feature.icon
+            const Icon = feature.icon;
             return (
-              <div key={index} className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+              <div
+                key={index}
+                className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
+              >
                 <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-emerald-400 to-blue-500 flex items-center justify-center flex-shrink-0">
                   <Icon className="w-5 h-5 text-white" />
                 </div>
-                <p className="text-sm text-gray-700 dark:text-gray-300">{feature.text}</p>
+                <p className="text-sm text-gray-700 dark:text-gray-300">
+                  {feature.text}
+                </p>
               </div>
-            )
+            );
           })}
         </div>
 
         {/* Pricing Plans */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {plans.map((plan) => {
-            const Icon = plan.icon
+            const Icon = plan.icon;
             return (
               <div
                 key={plan.id}
                 className={`relative border-2 rounded-2xl p-6 ${
-                  plan.popular ? 'border-emerald-500 shadow-lg' : 'border-gray-200 dark:border-gray-700'
+                  plan.popular
+                    ? "border-emerald-500 shadow-lg"
+                    : "border-gray-200 dark:border-gray-700"
                 } bg-white dark:bg-gray-800`}
               >
                 {plan.popular && (
@@ -122,20 +153,28 @@ export function UpgradeModal({ open, onOpenChange, feature }: UpgradeModalProps)
                     Most Popular
                   </div>
                 )}
-                
-                <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${plan.color} flex items-center justify-center mb-4`}>
+
+                <div
+                  className={`w-12 h-12 rounded-xl bg-gradient-to-br ${plan.color} flex items-center justify-center mb-4`}
+                >
                   <Icon className="w-6 h-6 text-white" />
                 </div>
 
-                <h3 className="text-xl text-gray-900 dark:text-gray-100 mb-1">{plan.name}</h3>
-                
+                <h3 className="text-xl text-gray-900 dark:text-gray-100 mb-1">
+                  {plan.name}
+                </h3>
+
                 <div className="mb-4">
-                  <span className="text-3xl text-gray-900 dark:text-gray-100">${plan.price}</span>
+                  <span className="text-3xl text-gray-900 dark:text-gray-100">
+                    ${plan.price}
+                  </span>
                   <span className="text-gray-600 dark:text-gray-400 text-sm">
-                    {plan.interval === 'once' ? '' : `/${plan.interval}`}
+                    {plan.interval === "once" ? "" : `/${plan.interval}`}
                   </span>
                   {plan.savings && (
-                    <div className="text-emerald-600 dark:text-emerald-400 text-sm mt-1">{plan.savings}</div>
+                    <div className="text-emerald-600 dark:text-emerald-400 text-sm mt-1">
+                      {plan.savings}
+                    </div>
                   )}
                 </div>
 
@@ -163,24 +202,31 @@ export function UpgradeModal({ open, onOpenChange, feature }: UpgradeModalProps)
                   disabled={loading === plan.id}
                   className={`w-full ${
                     plan.popular
-                      ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
-                      : 'bg-gray-900 hover:bg-gray-800 dark:bg-gray-700 dark:hover:bg-gray-600 text-white'
+                      ? "bg-emerald-600 hover:bg-emerald-700 text-white"
+                      : "bg-gray-900 hover:bg-gray-800 dark:bg-gray-700 dark:hover:bg-gray-600 text-white"
                   }`}
                 >
-                  {loading === plan.id ? 'Loading...' : `Choose ${plan.name}`}
+                  {loading === plan.id ? "Loading..." : `Choose ${plan.name}`}
                 </Button>
               </div>
-            )
+            );
           })}
         </div>
 
         {/* Free Plan Limits */}
         <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
           <p className="text-sm text-gray-600 dark:text-gray-400 text-center">
-            Free plan includes: <strong className="text-gray-900 dark:text-gray-100">15 decks</strong> and <strong className="text-gray-900 dark:text-gray-100">50 cards per deck</strong>
+            Free plan includes:{" "}
+            <strong className="text-gray-900 dark:text-gray-100">
+              15 decks
+            </strong>{" "}
+            and{" "}
+            <strong className="text-gray-900 dark:text-gray-100">
+              50 cards per deck
+            </strong>
           </p>
         </div>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

@@ -1,42 +1,62 @@
-import { useState } from 'react'
-import { motion } from 'motion/react'
-import { Button } from '../../ui/button'
-import { ChevronLeft, X, Check, Star, EyeOff, Volume2 } from 'lucide-react'
-import { useStore } from '../../../store/useStore'
-import { UICard } from '@/types/decks'
-import { toast } from 'sonner'
-import { updateCard as updateCardApi } from '../../../utils/api/decks'
-import { speak } from '../../../utils/textToSpeech'
+import { useState } from "react";
+import { motion } from "motion/react";
+import { Button } from "../../ui/button";
+import { ChevronLeft, X, Check, Star, EyeOff, Volume2 } from "lucide-react";
+import { useStore } from "@/shared/state/useStore";
+import { UICard } from "@/types/decks";
+import { toast } from "sonner";
+import { updateCard as updateCardApi } from "../../../utils/api/decks";
+import { speak } from "../../../utils/textToSpeech";
 
 interface ClassicFlipModeProps {
-  cards: UICard[]
-  onNext: (wasCorrect?: boolean) => void
-  onPrevious: () => void
-  currentIndex: number
-  isLastCard: boolean
-  isTemporaryStudy?: boolean
-  frontLanguage?: string
-  backLanguage?: string
+  cards: UICard[];
+  onNext: (wasCorrect?: boolean) => void;
+  onPrevious: () => void;
+  currentIndex: number;
+  isLastCard: boolean;
+  isTemporaryStudy?: boolean;
+  frontLanguage?: string;
+  backLanguage?: string;
 }
 
-export function ClassicFlipMode({ cards, onNext, onPrevious, currentIndex, isTemporaryStudy = false, frontLanguage, backLanguage }: ClassicFlipModeProps) {
-  const [isFlipped, setIsFlipped] = useState(false)
-  const [isSpeaking, setIsSpeaking] = useState(false)
-  const { updateCard, accessToken, selectedDeckId, cards: storeCards, ttsProvider } = useStore()
-  
+export function ClassicFlipMode({
+  cards,
+  onNext,
+  onPrevious,
+  currentIndex,
+  isTemporaryStudy = false,
+  frontLanguage,
+  backLanguage,
+}: ClassicFlipModeProps) {
+  const [isFlipped, setIsFlipped] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const {
+    updateCard,
+    accessToken,
+    selectedDeckId,
+    cards: storeCards,
+    ttsProvider,
+  } = useStore();
+
   // Get current card from store to ensure we have the latest state
-  const currentCard = storeCards.find(c => c.id === cards[currentIndex]?.id) || cards[currentIndex]
+  const currentCard =
+    storeCards.find((c) => c.id === cards[currentIndex]?.id) ||
+    cards[currentIndex];
 
   const handleFlip = () => {
-    setIsFlipped(!isFlipped)
-  }
+    setIsFlipped(!isFlipped);
+  };
 
-  const handleSpeak = (text: string | null, language: string | undefined, e?: React.MouseEvent) => {
+  const handleSpeak = (
+    text: string | null,
+    language: string | undefined,
+    e?: React.MouseEvent
+  ) => {
     if (e) {
-      e.stopPropagation() // Prevent card flip when clicking speaker button
+      e.stopPropagation(); // Prevent card flip when clicking speaker button
     }
 
-    if (!text) return
+    if (!text) return;
 
     const result = speak({
       text,
@@ -46,73 +66,86 @@ export function ClassicFlipMode({ cards, onNext, onPrevious, currentIndex, isTem
       onStart: () => setIsSpeaking(true),
       onEnd: () => setIsSpeaking(false),
       onError: () => {
-        setIsSpeaking(false)
-        toast.error('Failed to speak text')
-      }
-    })
+        setIsSpeaking(false);
+        toast.error("Failed to speak text");
+      },
+    });
 
     if (result instanceof Promise) {
-      result.then(res => {
+      result.then((res) => {
         if (!res.success && res.error) {
-          toast.error(res.error)
+          toast.error(res.error);
         }
-      })
+      });
     } else {
       if (!result.success && result.error) {
-        toast.error(result.error)
+        toast.error(result.error);
       }
     }
-  }
+  };
 
   const handleRating = (correct: boolean) => {
-    onNext(correct)
-    setIsFlipped(false)
-  }
+    onNext(correct);
+    setIsFlipped(false);
+  };
 
   const handleToggleFavorite = async (e: React.MouseEvent) => {
-    e.stopPropagation()
-    if (!accessToken || !selectedDeckId) return
+    e.stopPropagation();
+    if (!accessToken || !selectedDeckId) return;
 
-    const newFavoriteValue = !currentCard.favorite
+    const newFavoriteValue = !currentCard.favorite;
 
     // Optimistically update the UI immediately
-    updateCard(currentCard.id, { favorite: newFavoriteValue })
+    updateCard(currentCard.id, { favorite: newFavoriteValue });
 
     try {
-      await updateCardApi(accessToken, selectedDeckId, currentCard.id, { favorite: newFavoriteValue })
-      toast.success(newFavoriteValue ? 'Added to favorites' : 'Removed from favorites')
+      await updateCardApi(accessToken, selectedDeckId, currentCard.id, {
+        favorite: newFavoriteValue,
+      });
+      toast.success(
+        newFavoriteValue ? "Added to favorites" : "Removed from favorites"
+      );
     } catch (error) {
       // Revert on error
-      updateCard(currentCard.id, { favorite: !newFavoriteValue })
-      console.error('Failed to toggle favorite:', error)
-      toast.error('Failed to update favorite status')
+      updateCard(currentCard.id, { favorite: !newFavoriteValue });
+      console.error("Failed to toggle favorite:", error);
+      toast.error("Failed to update favorite status");
     }
-  }
+  };
 
   const handleToggleIgnored = async (e: React.MouseEvent) => {
-    e.stopPropagation()
-    if (!accessToken || !selectedDeckId) return
+    e.stopPropagation();
+    if (!accessToken || !selectedDeckId) return;
 
-    const newIgnoredValue = !currentCard.isIgnored
+    const newIgnoredValue = !currentCard.isIgnored;
 
     // Optimistically update the UI immediately
-    updateCard(currentCard.id, { isIgnored: newIgnoredValue })
+    updateCard(currentCard.id, { isIgnored: newIgnoredValue });
 
     try {
-      await updateCardApi(accessToken, selectedDeckId, currentCard.id, { isIgnored: newIgnoredValue })
-      toast.success(newIgnoredValue ? 'Card ignored - will be excluded from future study sessions' : 'Card unignored')
+      await updateCardApi(accessToken, selectedDeckId, currentCard.id, {
+        isIgnored: newIgnoredValue,
+      });
+      toast.success(
+        newIgnoredValue
+          ? "Card ignored - will be excluded from future study sessions"
+          : "Card unignored"
+      );
     } catch (error) {
       // Revert on error
-      updateCard(currentCard.id, { isIgnored: !newIgnoredValue })
-      console.error('Failed to toggle ignored:', error)
-      toast.error('Failed to update ignored status')
+      updateCard(currentCard.id, { isIgnored: !newIgnoredValue });
+      console.error("Failed to toggle ignored:", error);
+      toast.error("Failed to update ignored status");
     }
-  }
+  };
 
-  if (!currentCard) return null
+  if (!currentCard) return null;
 
   return (
-    <div className="flex items-center justify-center p-2 sm:p-4 lg:p-8" style={{ minHeight: 'calc(100vh - 280px)' }}>
+    <div
+      className="flex items-center justify-center p-2 sm:p-4 lg:p-8"
+      style={{ minHeight: "calc(100vh - 280px)" }}
+    >
       <div className="w-full max-w-3xl">
         {/* Quick Actions - Only show for personal decks */}
         {!isTemporaryStudy && (
@@ -122,28 +155,44 @@ export function ClassicFlipMode({ cards, onNext, onPrevious, currentIndex, isTem
               size="sm"
               onClick={handleToggleFavorite}
               className={`gap-1.5 transition-all ${
-                currentCard.favorite 
-                  ? 'bg-yellow-500 hover:bg-yellow-600 text-white border-yellow-500' 
-                  : 'border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:border-yellow-500 hover:text-yellow-600'
+                currentCard.favorite
+                  ? "bg-yellow-500 hover:bg-yellow-600 text-white border-yellow-500"
+                  : "border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:border-yellow-500 hover:text-yellow-600"
               }`}
-              title={currentCard.favorite ? 'Remove from favorites' : 'Add to favorites'}
+              title={
+                currentCard.favorite
+                  ? "Remove from favorites"
+                  : "Add to favorites"
+              }
             >
-              <Star className={`w-4 h-4 ${currentCard.favorite ? 'fill-current' : ''}`} />
-              <span className="text-xs">{currentCard.favorite ? 'Favorited' : 'Favorite'}</span>
+              <Star
+                className={`w-4 h-4 ${
+                  currentCard.favorite ? "fill-current" : ""
+                }`}
+              />
+              <span className="text-xs">
+                {currentCard.favorite ? "Favorited" : "Favorite"}
+              </span>
             </Button>
             <Button
               variant={currentCard.isIgnored ? "default" : "outline"}
               size="sm"
               onClick={handleToggleIgnored}
               className={`gap-1.5 transition-all ${
-                currentCard.isIgnored 
-                  ? 'bg-gray-600 hover:bg-gray-700 text-white border-gray-600' 
-                  : 'border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:border-gray-600 hover:text-gray-700'
+                currentCard.isIgnored
+                  ? "bg-gray-600 hover:bg-gray-700 text-white border-gray-600"
+                  : "border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:border-gray-600 hover:text-gray-700"
               }`}
-              title={currentCard.isIgnored ? 'Unignore card' : 'Ignore card (exclude from study)'}
+              title={
+                currentCard.isIgnored
+                  ? "Unignore card"
+                  : "Ignore card (exclude from study)"
+              }
             >
               <EyeOff className="w-4 h-4" />
-              <span className="text-xs">{currentCard.isIgnored ? 'Ignored' : 'Ignore'}</span>
+              <span className="text-xs">
+                {currentCard.isIgnored ? "Ignored" : "Ignore"}
+              </span>
             </Button>
           </div>
         )}
@@ -151,108 +200,148 @@ export function ClassicFlipMode({ cards, onNext, onPrevious, currentIndex, isTem
         <div className="perspective-1000">
           <motion.div
             className="relative w-full cursor-pointer"
-            style={{ 
-              minHeight: '400px',
-              transformStyle: 'preserve-3d'
+            style={{
+              minHeight: "400px",
+              transformStyle: "preserve-3d",
             }}
             onClick={handleFlip}
             animate={{ rotateY: isFlipped ? 180 : 0 }}
-            transition={{ duration: 0.6, type: 'spring' }}
+            transition={{ duration: 0.6, type: "spring" }}
             whileHover={{ scale: 1.02 }}
           >
             {/* Front */}
             <div
               className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-4 sm:p-8 md:p-12 flex flex-col items-center justify-start min-h-[400px] backface-hidden"
               style={{
-                backfaceVisibility: 'hidden',
-                position: isFlipped ? 'absolute' : 'relative',
-                inset: isFlipped ? 0 : 'auto',
-                width: '100%',
+                backfaceVisibility: "hidden",
+                position: isFlipped ? "absolute" : "relative",
+                inset: isFlipped ? 0 : "auto",
+                width: "100%",
               }}
             >
               <div className="w-full flex items-center justify-between mb-6">
-                <div className="text-xs text-emerald-600 dark:text-emerald-400 uppercase tracking-wide">Question</div>
+                <div className="text-xs text-emerald-600 dark:text-emerald-400 uppercase tracking-wide">
+                  Question
+                </div>
                 {currentCard.front && (
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={(e) => handleSpeak(currentCard.front, frontLanguage, e)}
+                    onClick={(e) =>
+                      handleSpeak(currentCard.front, frontLanguage, e)
+                    }
                     className="gap-1.5 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
                     title="Read question aloud"
                   >
-                    <Volume2 className={`w-4 h-4 ${isSpeaking ? 'text-emerald-600 animate-pulse' : 'text-gray-500'}`} />
+                    <Volume2
+                      className={`w-4 h-4 ${
+                        isSpeaking
+                          ? "text-emerald-600 animate-pulse"
+                          : "text-gray-500"
+                      }`}
+                    />
                   </Button>
                 )}
               </div>
-              {currentCard.front && <p className="text-2xl md:text-3xl text-center max-w-2xl text-gray-900 dark:text-gray-100 mb-4">{currentCard.front}</p>}
+              {currentCard.front && (
+                <p className="text-2xl md:text-3xl text-center max-w-2xl text-gray-900 dark:text-gray-100 mb-4">
+                  {currentCard.front}
+                </p>
+              )}
               {currentCard.frontImageUrl && (
                 <div className="mt-4 rounded-lg overflow-hidden border max-w-2xl w-full mx-auto">
-                  <img 
-                    src={currentCard.frontImageUrl} 
-                    alt="Question" 
+                  <img
+                    src={currentCard.frontImageUrl}
+                    alt="Question"
                     className="w-full h-auto object-contain bg-gray-50 dark:bg-gray-900"
-                    style={{ maxHeight: '500px' }}
+                    style={{ maxHeight: "500px" }}
                   />
                 </div>
               )}
               {currentCard.frontAudio && (
                 <div className="mt-4 w-full max-w-md">
-                  <audio controls className="w-full" onClick={(e) => e.stopPropagation()}>
+                  <audio
+                    controls
+                    className="w-full"
+                    onClick={(e) => e.stopPropagation()}
+                  >
                     <source src={currentCard.frontAudio} type="audio/wav" />
                     <source src={currentCard.frontAudio} type="audio/mpeg" />
                     Your browser does not support the audio element.
                   </audio>
                 </div>
               )}
-              <div className="mt-6 text-sm text-gray-400 dark:text-gray-500">Click to flip</div>
+              <div className="mt-6 text-sm text-gray-400 dark:text-gray-500">
+                Click to flip
+              </div>
             </div>
 
             {/* Back */}
             <div
               className="bg-emerald-600 dark:bg-emerald-700 text-white rounded-2xl shadow-2xl p-4 sm:p-8 md:p-12 flex flex-col items-center justify-start min-h-[400px] backface-hidden"
               style={{
-                backfaceVisibility: 'hidden',
-                transform: 'rotateY(180deg)',
-                position: isFlipped ? 'relative' : 'absolute',
-                inset: isFlipped ? 'auto' : 0,
-                width: '100%',
+                backfaceVisibility: "hidden",
+                transform: "rotateY(180deg)",
+                position: isFlipped ? "relative" : "absolute",
+                inset: isFlipped ? "auto" : 0,
+                width: "100%",
               }}
             >
               <div className="w-full flex items-center justify-between mb-6">
-                <div className="text-xs text-emerald-200 dark:text-emerald-300 uppercase tracking-wide">Answer</div>
+                <div className="text-xs text-emerald-200 dark:text-emerald-300 uppercase tracking-wide">
+                  Answer
+                </div>
                 {currentCard.back && (
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={(e) => handleSpeak(currentCard.back, backLanguage, e)}
+                    onClick={(e) =>
+                      handleSpeak(currentCard.back, backLanguage, e)
+                    }
                     className="gap-1.5 hover:bg-emerald-500/20"
                     title="Read answer aloud"
                   >
-                    <Volume2 className={`w-4 h-4 ${isSpeaking ? 'text-white animate-pulse' : 'text-emerald-200'}`} />
+                    <Volume2
+                      className={`w-4 h-4 ${
+                        isSpeaking
+                          ? "text-white animate-pulse"
+                          : "text-emerald-200"
+                      }`}
+                    />
                   </Button>
                 )}
               </div>
-              {currentCard.back && <p className="text-2xl md:text-3xl text-center max-w-2xl mb-4">{currentCard.back}</p>}
+              {currentCard.back && (
+                <p className="text-2xl md:text-3xl text-center max-w-2xl mb-4">
+                  {currentCard.back}
+                </p>
+              )}
               {currentCard.backImageUrl && (
                 <div className="mt-4 rounded-lg overflow-hidden border border-emerald-400 max-w-2xl w-full mx-auto">
-                  <img 
-                    src={currentCard.backImageUrl} 
-                    alt="Answer" 
+                  <img
+                    src={currentCard.backImageUrl}
+                    alt="Answer"
                     className="w-full h-auto object-contain bg-white/10"
-                    style={{ maxHeight: '500px' }}
+                    style={{ maxHeight: "500px" }}
                   />
                 </div>
               )}
               {currentCard.backAudio && (
                 <div className="mt-4 w-full max-w-md">
-                  <audio controls className="w-full" onClick={(e) => e.stopPropagation()}>
+                  <audio
+                    controls
+                    className="w-full"
+                    onClick={(e) => e.stopPropagation()}
+                  >
                     <source src={currentCard.backAudio} type="audio/wav" />
                     <source src={currentCard.backAudio} type="audio/mpeg" />
                     Your browser does not support the audio element.
                   </audio>
                 </div>
               )}
-              <div className="mt-6 text-sm text-emerald-200 dark:text-emerald-300">Rate your answer below</div>
+              <div className="mt-6 text-sm text-emerald-200 dark:text-emerald-300">
+                Rate your answer below
+              </div>
             </div>
           </motion.div>
         </div>
@@ -273,7 +362,7 @@ export function ClassicFlipMode({ cards, onNext, onPrevious, currentIndex, isTem
             <Button
               size="lg"
               onClick={() => {
-                setIsFlipped(true)
+                setIsFlipped(true);
               }}
               className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white"
             >
@@ -282,7 +371,9 @@ export function ClassicFlipMode({ cards, onNext, onPrevious, currentIndex, isTem
           </div>
         ) : (
           <div className="flex flex-col gap-3 sm:gap-4 mt-4 sm:mt-6 max-w-md mx-auto">
-            <p className="text-center text-sm text-gray-600 dark:text-gray-400">Did you get it right?</p>
+            <p className="text-center text-sm text-gray-600 dark:text-gray-400">
+              Did you get it right?
+            </p>
             <div className="flex items-center gap-4">
               <Button
                 variant="outline"
@@ -306,5 +397,5 @@ export function ClassicFlipMode({ cards, onNext, onPrevious, currentIndex, isTem
         )}
       </div>
     </div>
-  )
+  );
 }

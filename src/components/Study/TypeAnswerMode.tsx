@@ -1,42 +1,56 @@
-import { useState, useEffect } from 'react'
-import { motion } from 'motion/react'
-import { Button } from '../../ui/button'
-import { Input } from '../../ui/input'
-import { ChevronRight, Check, X, Star, EyeOff, Volume2 } from 'lucide-react'
-import { useStore } from '../../../store/useStore'
-import { UICard } from '@/types/decks'
-import { toast } from 'sonner'
-import { updateCard as updateCardApi } from '../../../utils/api/decks'
-import { speak } from '../../../utils/textToSpeech'
+import { useState, useEffect } from "react";
+import { motion } from "motion/react";
+import { Button } from "../../ui/button";
+import { Input } from "../../ui/input";
+import { ChevronRight, Check, X, Star, EyeOff, Volume2 } from "lucide-react";
+import { useStore } from "@/shared/state/useStore";
+import { UICard } from "@/types/decks";
+import { toast } from "sonner";
+import { updateCard as updateCardApi } from "../../../utils/api/decks";
+import { speak } from "../../../utils/textToSpeech";
 
 interface TypeAnswerModeProps {
-  cards: UICard[]
-  onNext: (wasCorrect?: boolean) => void
-  currentIndex: number
-  isLastCard: boolean
-  isTemporaryStudy?: boolean
-  frontLanguage?: string
+  cards: UICard[];
+  onNext: (wasCorrect?: boolean) => void;
+  currentIndex: number;
+  isLastCard: boolean;
+  isTemporaryStudy?: boolean;
+  frontLanguage?: string;
 }
 
-export function TypeAnswerMode({ cards, onNext, currentIndex, isTemporaryStudy = false, frontLanguage }: TypeAnswerModeProps) {
-  const [userAnswer, setUserAnswer] = useState('')
-  const [hasAnswered, setHasAnswered] = useState(false)
-  const [isCorrect, setIsCorrect] = useState(false)
-  const [isSpeaking, setIsSpeaking] = useState(false)
+export function TypeAnswerMode({
+  cards,
+  onNext,
+  currentIndex,
+  isTemporaryStudy = false,
+  frontLanguage,
+}: TypeAnswerModeProps) {
+  const [userAnswer, setUserAnswer] = useState("");
+  const [hasAnswered, setHasAnswered] = useState(false);
+  const [isCorrect, setIsCorrect] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
 
-  const { updateCard, accessToken, selectedDeckId, cards: storeCards, ttsProvider } = useStore()
-  
+  const {
+    updateCard,
+    accessToken,
+    selectedDeckId,
+    cards: storeCards,
+    ttsProvider,
+  } = useStore();
+
   // Get current card from store to ensure we have the latest state
-  const currentCard = storeCards.find(c => c.id === cards[currentIndex]?.id) || cards[currentIndex]
+  const currentCard =
+    storeCards.find((c) => c.id === cards[currentIndex]?.id) ||
+    cards[currentIndex];
 
   useEffect(() => {
-    setUserAnswer('')
-    setHasAnswered(false)
-    setIsCorrect(false)
-  }, [currentIndex])
+    setUserAnswer("");
+    setHasAnswered(false);
+    setIsCorrect(false);
+  }, [currentIndex]);
 
   const handleSpeak = (text: string | null) => {
-    if (!text) return
+    if (!text) return;
     const result = speak({
       text,
       language: frontLanguage,
@@ -45,92 +59,110 @@ export function TypeAnswerMode({ cards, onNext, currentIndex, isTemporaryStudy =
       onStart: () => setIsSpeaking(true),
       onEnd: () => setIsSpeaking(false),
       onError: () => {
-        setIsSpeaking(false)
-        toast.error('Failed to speak text')
-      }
-    })
+        setIsSpeaking(false);
+        toast.error("Failed to speak text");
+      },
+    });
 
     if (result instanceof Promise) {
-      result.then(res => {
+      result.then((res) => {
         if (!res.success && res.error) {
-          toast.error(res.error)
+          toast.error(res.error);
         }
-      })
+      });
     } else {
       if (!result.success && result.error) {
-        toast.error(result.error)
+        toast.error(result.error);
       }
     }
-  }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!userAnswer.trim() || hasAnswered || !currentCard.back) return
+    e.preventDefault();
+    if (!userAnswer.trim() || hasAnswered || !currentCard.back) return;
 
     // Case-insensitive comparison, trimming whitespace
-    const normalizedAnswer = userAnswer.trim().toLowerCase()
-    const normalizedCorrectAnswer = currentCard.back.trim().toLowerCase()
-    
+    const normalizedAnswer = userAnswer.trim().toLowerCase();
+    const normalizedCorrectAnswer = currentCard.back.trim().toLowerCase();
+
     // Check if answer matches the main answer
-    let correct = normalizedAnswer === normalizedCorrectAnswer
-    
+    let correct = normalizedAnswer === normalizedCorrectAnswer;
+
     // Also check against accepted alternatives if they exist
-    if (!correct && currentCard.acceptedAnswers && currentCard.acceptedAnswers.length > 0) {
+    if (
+      !correct &&
+      currentCard.acceptedAnswers &&
+      currentCard.acceptedAnswers.length > 0
+    ) {
       correct = currentCard.acceptedAnswers.some(
-        acceptedAnswer => normalizedAnswer === acceptedAnswer.trim().toLowerCase()
-      )
+        (acceptedAnswer) =>
+          normalizedAnswer === acceptedAnswer.trim().toLowerCase()
+      );
     }
-    
-    setIsCorrect(correct)
-    setHasAnswered(true)
-  }
+
+    setIsCorrect(correct);
+    setHasAnswered(true);
+  };
 
   const handleNext = () => {
-    onNext(isCorrect)
-  }
+    onNext(isCorrect);
+  };
 
   const handleToggleFavorite = async () => {
-    if (!accessToken || !selectedDeckId) return
+    if (!accessToken || !selectedDeckId) return;
 
-    const newFavoriteValue = !currentCard.favorite
+    const newFavoriteValue = !currentCard.favorite;
 
     // Optimistically update the UI immediately
-    updateCard(currentCard.id, { favorite: newFavoriteValue })
+    updateCard(currentCard.id, { favorite: newFavoriteValue });
 
     try {
-      await updateCardApi(accessToken, selectedDeckId, currentCard.id, { favorite: newFavoriteValue })
-      toast.success(newFavoriteValue ? 'Added to favorites' : 'Removed from favorites')
+      await updateCardApi(accessToken, selectedDeckId, currentCard.id, {
+        favorite: newFavoriteValue,
+      });
+      toast.success(
+        newFavoriteValue ? "Added to favorites" : "Removed from favorites"
+      );
     } catch (error) {
       // Revert on error
-      updateCard(currentCard.id, { favorite: !newFavoriteValue })
-      console.error('Failed to toggle favorite:', error)
-      toast.error('Failed to update favorite status')
+      updateCard(currentCard.id, { favorite: !newFavoriteValue });
+      console.error("Failed to toggle favorite:", error);
+      toast.error("Failed to update favorite status");
     }
-  }
+  };
 
   const handleToggleIgnored = async () => {
-    if (!accessToken || !selectedDeckId) return
+    if (!accessToken || !selectedDeckId) return;
 
-    const newIgnoredValue = !currentCard.isIgnored
+    const newIgnoredValue = !currentCard.isIgnored;
 
     // Optimistically update the UI immediately
-    updateCard(currentCard.id, { isIgnored: newIgnoredValue })
+    updateCard(currentCard.id, { isIgnored: newIgnoredValue });
 
     try {
-      await updateCardApi(accessToken, selectedDeckId, currentCard.id, { isIgnored: newIgnoredValue })
-      toast.success(newIgnoredValue ? 'Card ignored - will be excluded from future study sessions' : 'Card unignored')
+      await updateCardApi(accessToken, selectedDeckId, currentCard.id, {
+        isIgnored: newIgnoredValue,
+      });
+      toast.success(
+        newIgnoredValue
+          ? "Card ignored - will be excluded from future study sessions"
+          : "Card unignored"
+      );
     } catch (error) {
       // Revert on error
-      updateCard(currentCard.id, { isIgnored: !newIgnoredValue })
-      console.error('Failed to toggle ignored:', error)
-      toast.error('Failed to update ignored status')
+      updateCard(currentCard.id, { isIgnored: !newIgnoredValue });
+      console.error("Failed to toggle ignored:", error);
+      toast.error("Failed to update ignored status");
     }
-  }
+  };
 
-  if (!currentCard) return null
+  if (!currentCard) return null;
 
   return (
-    <div className="flex items-center justify-center p-2 sm:p-4 lg:p-8" style={{ minHeight: 'calc(100vh - 280px)' }}>
+    <div
+      className="flex items-center justify-center p-2 sm:p-4 lg:p-8"
+      style={{ minHeight: "calc(100vh - 280px)" }}
+    >
       <div className="w-full max-w-3xl">
         {/* Quick Actions - Only show for personal decks */}
         {!isTemporaryStudy && (
@@ -140,28 +172,44 @@ export function TypeAnswerMode({ cards, onNext, currentIndex, isTemporaryStudy =
               size="sm"
               onClick={handleToggleFavorite}
               className={`gap-1.5 transition-all ${
-                currentCard.favorite 
-                  ? 'bg-yellow-500 hover:bg-yellow-600 text-white border-yellow-500' 
-                  : 'border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:border-yellow-500 hover:text-yellow-600'
+                currentCard.favorite
+                  ? "bg-yellow-500 hover:bg-yellow-600 text-white border-yellow-500"
+                  : "border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:border-yellow-500 hover:text-yellow-600"
               }`}
-              title={currentCard.favorite ? 'Remove from favorites' : 'Add to favorites'}
+              title={
+                currentCard.favorite
+                  ? "Remove from favorites"
+                  : "Add to favorites"
+              }
             >
-              <Star className={`w-4 h-4 ${currentCard.favorite ? 'fill-current' : ''}`} />
-              <span className="text-xs">{currentCard.favorite ? 'Favorited' : 'Favorite'}</span>
+              <Star
+                className={`w-4 h-4 ${
+                  currentCard.favorite ? "fill-current" : ""
+                }`}
+              />
+              <span className="text-xs">
+                {currentCard.favorite ? "Favorited" : "Favorite"}
+              </span>
             </Button>
             <Button
               variant={currentCard.isIgnored ? "default" : "outline"}
               size="sm"
               onClick={handleToggleIgnored}
               className={`gap-1.5 transition-all ${
-                currentCard.isIgnored 
-                  ? 'bg-gray-600 hover:bg-gray-700 text-white border-gray-600' 
-                  : 'border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:border-gray-600 hover:text-gray-700'
+                currentCard.isIgnored
+                  ? "bg-gray-600 hover:bg-gray-700 text-white border-gray-600"
+                  : "border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:border-gray-600 hover:text-gray-700"
               }`}
-              title={currentCard.isIgnored ? 'Unignore card' : 'Ignore card (exclude from study)'}
+              title={
+                currentCard.isIgnored
+                  ? "Unignore card"
+                  : "Ignore card (exclude from study)"
+              }
             >
               <EyeOff className="w-4 h-4" />
-              <span className="text-xs">{currentCard.isIgnored ? 'Ignored' : 'Ignore'}</span>
+              <span className="text-xs">
+                {currentCard.isIgnored ? "Ignored" : "Ignore"}
+              </span>
             </Button>
           </div>
         )}
@@ -184,23 +232,31 @@ export function TypeAnswerMode({ cards, onNext, currentIndex, isTemporaryStudy =
                 className="gap-1.5 hover:bg-purple-50 dark:hover:bg-purple-900/20"
                 title="Read question aloud"
               >
-                <Volume2 className={`w-4 h-4 ${isSpeaking ? 'text-purple-600 animate-pulse' : 'text-gray-500'}`} />
+                <Volume2
+                  className={`w-4 h-4 ${
+                    isSpeaking
+                      ? "text-purple-600 animate-pulse"
+                      : "text-gray-500"
+                  }`}
+                />
               </Button>
             )}
           </div>
-          <p className="text-2xl md:text-3xl text-center mb-6 sm:mb-8 md:mb-12 max-w-2xl mx-auto text-gray-900 dark:text-gray-100">{currentCard.front}</p>
+          <p className="text-2xl md:text-3xl text-center mb-6 sm:mb-8 md:mb-12 max-w-2xl mx-auto text-gray-900 dark:text-gray-100">
+            {currentCard.front}
+          </p>
 
           {currentCard.frontImageUrl && (
             <div className="mb-6 rounded-lg overflow-hidden border max-w-2xl mx-auto">
-              <img 
-                src={currentCard.frontImageUrl} 
-                alt="Question" 
+              <img
+                src={currentCard.frontImageUrl}
+                alt="Question"
                 className="w-full h-auto object-contain bg-gray-50 dark:bg-gray-900"
-                style={{ maxHeight: '400px' }}
+                style={{ maxHeight: "400px" }}
               />
             </div>
           )}
-          
+
           {currentCard.frontAudio && (
             <div className="mb-6 w-full max-w-md mx-auto">
               <audio controls className="w-full">
@@ -222,9 +278,9 @@ export function TypeAnswerMode({ cards, onNext, currentIndex, isTemporaryStudy =
                 className={`text-lg p-6 text-center ${
                   hasAnswered
                     ? isCorrect
-                      ? 'border-emerald-600 dark:border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20'
-                      : 'border-red-600 dark:border-red-500 bg-red-50 dark:bg-red-900/20'
-                    : ''
+                      ? "border-emerald-600 dark:border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20"
+                      : "border-red-600 dark:border-red-500 bg-red-50 dark:bg-red-900/20"
+                    : ""
                 }`}
                 autoFocus
               />
@@ -244,9 +300,13 @@ export function TypeAnswerMode({ cards, onNext, currentIndex, isTemporaryStudy =
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
               >
-                <div className={`p-4 rounded-xl text-center mb-4 sm:mb-6 ${
-                  isCorrect ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-800 dark:text-emerald-300' : 'bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-300'
-                }`}>
+                <div
+                  className={`p-4 rounded-xl text-center mb-4 sm:mb-6 ${
+                    isCorrect
+                      ? "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-800 dark:text-emerald-300"
+                      : "bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-300"
+                  }`}
+                >
                   {isCorrect ? (
                     <div className="flex items-center justify-center gap-2">
                       <Check className="w-5 h-5" />
@@ -258,11 +318,21 @@ export function TypeAnswerMode({ cards, onNext, currentIndex, isTemporaryStudy =
                         <X className="w-5 h-5" />
                         <span>Incorrect</span>
                       </div>
-                      <p className="text-sm">Your answer: <strong>{userAnswer}</strong></p>
-                      <p className="text-sm mt-1">Correct answer: <strong>{currentCard.back}</strong></p>
-                      {currentCard.acceptedAnswers && currentCard.acceptedAnswers.length > 0 && (
-                        <p className="text-sm mt-1">Also accepted: <strong>{currentCard.acceptedAnswers.join(', ')}</strong></p>
-                      )}
+                      <p className="text-sm">
+                        Your answer: <strong>{userAnswer}</strong>
+                      </p>
+                      <p className="text-sm mt-1">
+                        Correct answer: <strong>{currentCard.back}</strong>
+                      </p>
+                      {currentCard.acceptedAnswers &&
+                        currentCard.acceptedAnswers.length > 0 && (
+                          <p className="text-sm mt-1">
+                            Also accepted:{" "}
+                            <strong>
+                              {currentCard.acceptedAnswers.join(", ")}
+                            </strong>
+                          </p>
+                        )}
                     </div>
                   )}
                 </div>
@@ -286,5 +356,5 @@ export function TypeAnswerMode({ cards, onNext, currentIndex, isTemporaryStudy =
         </motion.div>
       </div>
     </div>
-  )
+  );
 }

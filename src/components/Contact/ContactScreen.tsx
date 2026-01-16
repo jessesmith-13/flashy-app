@@ -1,74 +1,77 @@
-import { useState } from 'react'
-import { useStore } from '../../../store/useStore'
-import { useNavigation } from '../../../hooks/useNavigation'
-import { AppLayout } from '../Layout/AppLayout'
-import { Button } from '../../ui/button'
-import { ArrowLeft, Mail, MessageSquare, Send } from 'lucide-react'
-import { Input } from '../../ui/input'
-import { Label } from '../../ui/label'
-import { Textarea } from '../../ui/textarea'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../ui/select'
-import { toast } from 'sonner'
-import { API_BASE } from '../../supabase/runtime'
+import { useState } from "react";
+import { useStore } from "@/shared/state/useStore";
+import { useNavigation } from "../../../hooks/useNavigation";
+import { AppLayout } from "../Layout/AppLayout";
+import { Button } from "../../ui/button";
+import { ArrowLeft, Mail, MessageSquare, Send } from "lucide-react";
+import { Input } from "../../ui/input";
+import { Label } from "../../ui/label";
+import { Textarea } from "../../ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../../ui/select";
+import { toast } from "sonner";
+import { API_BASE } from "../../supabase/runtime";
 
 export function ContactScreen() {
-  const { user, accessToken } = useStore()
-  const { navigate } = useNavigation()
-  const [subject, setSubject] = useState('')
-  const [category, setCategory] = useState('')
-  const [message, setMessage] = useState('')
-  const [sending, setSending] = useState(false)
+  const { user, accessToken } = useStore();
+  const { navigate } = useNavigation();
+  const [subject, setSubject] = useState("");
+  const [category, setCategory] = useState("");
+  const [message, setMessage] = useState("");
+  const [sending, setSending] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    
+    e.preventDefault();
+
     if (!accessToken) {
-      toast.error('You must be logged in to submit the contact form')
-      return
+      toast.error("You must be logged in to submit the contact form");
+      return;
     }
-    
+
     if (!category || !subject || !message) {
-      toast.error('Please fill out all fields')
-      return
+      toast.error("Please fill out all fields");
+      return;
     }
-    
-    setSending(true)
+
+    setSending(true);
 
     try {
-      const response = await fetch(
-        `${API_BASE}/support/contact`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${accessToken}`,
-          },
-          body: JSON.stringify({
-            category,
-            subject,
-            message,
-          }),
-        }
-      )
+      const response = await fetch(`${API_BASE}/support/contact`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({
+          category,
+          subject,
+          message,
+        }),
+      });
 
       if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.error || 'Failed to submit contact form')
+        const error = await response.json();
+        throw new Error(error.error || "Failed to submit contact form");
       }
-      
-      toast.success('Message sent successfully! We\'ll get back to you soon.')
-      
+
+      toast.success("Message sent successfully! We'll get back to you soon.");
+
       // Clear form
-      setSubject('')
-      setCategory('')
-      setMessage('')
+      setSubject("");
+      setCategory("");
+      setMessage("");
     } catch (error: any) {
-      console.error('Failed to submit contact form:', error)
-      toast.error(error.message || 'Failed to send message. Please try again.')
+      console.error("Failed to submit contact form:", error);
+      toast.error(error.message || "Failed to send message. Please try again.");
     } finally {
-      setSending(false)
+      setSending(false);
     }
-  }
+  };
 
   return (
     <AppLayout>
@@ -84,10 +87,12 @@ export function ContactScreen() {
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back
             </Button>
-            <h1 className="text-3xl text-gray-900 dark:text-gray-100">Contact Us</h1>
+            <h1 className="text-3xl text-gray-900 dark:text-gray-100">
+              Contact Us
+            </h1>
             <p className="text-gray-600 dark:text-gray-400 mt-2">
-              We'd love to hear from you! Send us a message and we'll respond as soon as
-              possible.
+              We'd love to hear from you! Send us a message and we'll respond as
+              soon as possible.
             </p>
           </div>
 
@@ -95,13 +100,21 @@ export function ContactScreen() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
             <div className="bg-gradient-to-br from-emerald-50 to-blue-50 dark:from-emerald-900/20 dark:to-blue-900/20 rounded-lg p-6 border border-emerald-200 dark:border-emerald-800">
               <Mail className="w-8 h-8 text-emerald-600 dark:text-emerald-400 mb-3" />
-              <h3 className="text-sm text-gray-900 dark:text-gray-100 mb-1">Email Support</h3>
-              <p className="text-xs text-gray-600 dark:text-gray-400">support@flashy.app</p>
+              <h3 className="text-sm text-gray-900 dark:text-gray-100 mb-1">
+                Email Support
+              </h3>
+              <p className="text-xs text-gray-600 dark:text-gray-400">
+                support@flashy.app
+              </p>
             </div>
             <div className="bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-lg p-6 border border-blue-200 dark:border-blue-800">
               <MessageSquare className="w-8 h-8 text-blue-600 dark:text-blue-400 mb-3" />
-              <h3 className="text-sm text-gray-900 dark:text-gray-100 mb-1">Response Time</h3>
-              <p className="text-xs text-gray-600 dark:text-gray-400">Usually within 24 hours</p>
+              <h3 className="text-sm text-gray-900 dark:text-gray-100 mb-1">
+                Response Time
+              </h3>
+              <p className="text-xs text-gray-600 dark:text-gray-400">
+                Usually within 24 hours
+              </p>
             </div>
           </div>
 
@@ -113,7 +126,7 @@ export function ContactScreen() {
                 <Input
                   id="email"
                   type="email"
-                  value={user?.email || ''}
+                  value={user?.email || ""}
                   disabled
                   className="mt-1"
                 />
@@ -128,7 +141,9 @@ export function ContactScreen() {
                   <SelectContent>
                     <SelectItem value="bug">Bug Report</SelectItem>
                     <SelectItem value="feature">Feature Request</SelectItem>
-                    <SelectItem value="billing">Billing & Subscription</SelectItem>
+                    <SelectItem value="billing">
+                      Billing & Subscription
+                    </SelectItem>
                     <SelectItem value="account">Account Issues</SelectItem>
                     <SelectItem value="feedback">General Feedback</SelectItem>
                     <SelectItem value="other">Other</SelectItem>
@@ -183,22 +198,26 @@ export function ContactScreen() {
 
           {/* FAQ Section */}
           <div className="mt-8 bg-gray-50 dark:bg-gray-800/50 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
-            <h2 className="text-lg text-gray-900 dark:text-gray-100 mb-4">Frequently Asked Questions</h2>
+            <h2 className="text-lg text-gray-900 dark:text-gray-100 mb-4">
+              Frequently Asked Questions
+            </h2>
             <div className="space-y-4">
               <div>
                 <h3 className="text-sm text-gray-900 dark:text-gray-100 mb-1">
                   How do I upgrade my subscription?
                 </h3>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Click the "Upgrade" button in the sidebar or top navigation to view
-                  subscription options.
+                  Click the "Upgrade" button in the sidebar or top navigation to
+                  view subscription options.
                 </p>
               </div>
               <div>
-                <h3 className="text-sm text-gray-900 dark:text-gray-100 mb-1">Can I export my flashcards?</h3>
+                <h3 className="text-sm text-gray-900 dark:text-gray-100 mb-1">
+                  Can I export my flashcards?
+                </h3>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Yes! Go to Settings and click "Export My Data" to download all your
-                  flashcards.
+                  Yes! Go to Settings and click "Export My Data" to download all
+                  your flashcards.
                 </p>
               </div>
               <div>
@@ -206,8 +225,8 @@ export function ContactScreen() {
                   How do I delete my account?
                 </h3>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Visit Settings and scroll to the Danger Zone. Note that this action is
-                  permanent and cannot be undone.
+                  Visit Settings and scroll to the Danger Zone. Note that this
+                  action is permanent and cannot be undone.
                 </p>
               </div>
             </div>
@@ -215,5 +234,5 @@ export function ContactScreen() {
         </div>
       </div>
     </AppLayout>
-  )
+  );
 }

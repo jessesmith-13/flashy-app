@@ -1,22 +1,22 @@
-import { useStore } from '../../../store/useStore'
-import { useNavigation } from '../../../hooks/useNavigation'
-import { AppLayout } from '../Layout/AppLayout'
-import { Button } from '../../ui/button'
-import { ArrowLeft, Shield, Trash2, Flag, Users, History } from 'lucide-react'
-import { TicketManagementPanel } from '../Moderation/TicketManagementPanel'
-import { DeletedItemsPanel } from './DeletedItemsPanel'
-import { UserManagementPanel } from './UserManagementPanel'
-import { UserActivityPanel } from './UserActivityPanel'
-import { useIsSuperuser } from '../../../utils/userUtils'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../ui/tabs'
-import { useState } from 'react'
+import { useStore } from "@/shared/state/useStore";
+import { useNavigation } from "../../../hooks/useNavigation";
+import { AppLayout } from "../Layout/AppLayout";
+import { Button } from "../../ui/button";
+import { ArrowLeft, Shield, Trash2, Flag, Users, History } from "lucide-react";
+import { TicketManagementPanel } from "../Moderation/TicketManagementPanel";
+import { DeletedItemsPanel } from "./DeletedItemsPanel";
+import { UserManagementPanel } from "./UserManagementPanel";
+import { UserActivityPanel } from "./UserActivityPanel";
+import { useIsSuperuser } from "../../../utils/userUtils";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../ui/tabs";
+import { useState } from "react";
 
 export function SuperuserScreen() {
-  const { accessToken } = useStore()
-  const { navigateTo } = useNavigation()
-  const isSuperuser = useIsSuperuser()
-  const [activeTab, setActiveTab] = useState('flags')
-  
+  const { accessToken } = useStore();
+  const { navigateTo } = useNavigation();
+  const isSuperuser = useIsSuperuser();
+  const [activeTab, setActiveTab] = useState("flags");
+
   // Redirect non-superusers
   if (!isSuperuser) {
     return (
@@ -25,12 +25,15 @@ export function SuperuserScreen() {
           <div className="max-w-4xl mx-auto p-4 lg:p-8">
             <div className="bg-red-50 dark:bg-red-900/20 rounded-2xl p-8 text-center border-2 border-red-200 dark:border-red-700">
               <Shield className="w-16 h-16 mx-auto mb-4 text-red-600 dark:text-red-400" />
-              <h1 className="text-2xl text-red-900 dark:text-red-100 mb-2">Access Denied</h1>
+              <h1 className="text-2xl text-red-900 dark:text-red-100 mb-2">
+                Access Denied
+              </h1>
               <p className="text-red-700 dark:text-red-300 mb-6">
-                You don't have permission to access this page. Superuser privileges are required.
+                You don't have permission to access this page. Superuser
+                privileges are required.
               </p>
               <Button
-                onClick={() => navigateTo('decks')}
+                onClick={() => navigateTo("decks")}
                 variant="outline"
                 className="border-red-300 dark:border-red-700 text-red-700 dark:text-red-300 hover:bg-red-100 dark:hover:bg-red-900/30"
               >
@@ -40,7 +43,7 @@ export function SuperuserScreen() {
           </div>
         </div>
       </AppLayout>
-    )
+    );
   }
 
   return (
@@ -51,7 +54,7 @@ export function SuperuserScreen() {
           <div className="mb-6">
             <Button
               variant="ghost"
-              onClick={() => navigateTo('decks')}
+              onClick={() => navigateTo("decks")}
               className="mb-4 -ml-2"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
@@ -62,7 +65,9 @@ export function SuperuserScreen() {
                 <Shield className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h1 className="text-3xl text-gray-900 dark:text-gray-100">Superuser Tools</h1>
+                <h1 className="text-3xl text-gray-900 dark:text-gray-100">
+                  Superuser Tools
+                </h1>
                 <p className="text-gray-600 dark:text-gray-400 mt-1">
                   Manage reports, users, and content moderation
                 </p>
@@ -71,7 +76,11 @@ export function SuperuserScreen() {
           </div>
 
           {/* Tools Sections */}
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <Tabs
+            value={activeTab}
+            onValueChange={setActiveTab}
+            className="space-y-6"
+          >
             <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4 gap-1 lg:w-auto lg:inline-flex bg-gray-100 dark:bg-gray-800 p-1 rounded-lg">
               <TabsTrigger value="flags" className="gap-2">
                 <Flag className="w-4 h-4" />
@@ -109,7 +118,9 @@ export function SuperuserScreen() {
 
             <TabsContent value="users" className="space-y-6">
               <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 sm:p-6 shadow-md border border-gray-200 dark:border-gray-700">
-                {accessToken && <UserManagementPanel accessToken={accessToken} />}
+                {accessToken && (
+                  <UserManagementPanel accessToken={accessToken} />
+                )}
               </div>
             </TabsContent>
 
@@ -122,5 +133,5 @@ export function SuperuserScreen() {
         </div>
       </div>
     </AppLayout>
-  )
+  );
 }

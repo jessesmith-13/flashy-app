@@ -19,7 +19,7 @@ import {
 } from "../../../utils/api/betaTesting";
 import type { BetaTestingTask } from "../../types/betaTesting";
 import { toast } from "sonner";
-import { useStore } from "../../../store/useStore";
+import { useStore } from "@/shared/state/useStore";
 import { AppLayout } from "../Layout/AppLayout";
 
 export function BetaTestingPage() {

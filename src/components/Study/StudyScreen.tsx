@@ -1,163 +1,189 @@
-import { useState, useEffect } from 'react'
-import { useStore } from '../../../store/useStore'
-import { useNavigation } from '../../../hooks/useNavigation'
-import { AppLayout } from '../Layout/AppLayout'
-import { ClassicFlipMode } from './ClassicFlipMode'
-import { MultipleChoiceMode } from './MultipleChoiceMode'
-import { TypeAnswerMode } from './TypeAnswerMode'
-import { StudyHeader } from './StudyHeader'
-import { StudyStats } from './StudyStats'
-import { EmptyDeckState } from './EmptyDeckState'
+import { useState, useEffect } from "react";
+import { useStore } from "@/shared/state/useStore";
+import { useNavigation } from "../../../hooks/useNavigation";
+import { AppLayout } from "../Layout/AppLayout";
+import { ClassicFlipMode } from "./ClassicFlipMode";
+import { MultipleChoiceMode } from "./MultipleChoiceMode";
+import { TypeAnswerMode } from "./TypeAnswerMode";
+import { StudyHeader } from "./StudyHeader";
+import { StudyStats } from "./StudyStats";
+import { EmptyDeckState } from "./EmptyDeckState";
 
 export function StudyScreen() {
-  const { selectedDeckId, decks, cards, studyOptions, studyAllCards, userAchievements, setUserAchievements, addStudySession, temporaryStudyDeck, setTemporaryStudyDeck, setReturnToCommunityDeck, setReturnToUserDeck, returnToSharedDeckId, setReturnToSharedDeckId } = useStore()
-  const { navigateTo } = useNavigation()
-  
-  // Check if we're studying a temporary community deck
-  const isTemporaryStudy = temporaryStudyDeck !== null
-  const deck = isTemporaryStudy ? temporaryStudyDeck.deck : decks.find((d) => d.id === selectedDeckId)
-  const deckCards = isTemporaryStudy 
-    ? temporaryStudyDeck.cards 
-    : (studyAllCards ? cards : cards.filter((c) => c.deckId === selectedDeckId))
-  
-  const [sessionCards, setSessionCards] = useState<typeof deckCards>([])
-  const [currentIndex, setCurrentIndex] = useState(0)
-  const [correctAnswers, setCorrectAnswers] = useState(0)
-  const [wrongAnswers, setWrongAnswers] = useState(0)
-  const [cardsStudied, setCardsStudied] = useState(0)
-  const [sessionStartTime, setSessionStartTime] = useState<number>(Date.now())
-  const [cardStartTime, setCardStartTime] = useState<number>(Date.now())
-  const [timeLeft, setTimeLeft] = useState<number>(30)
-  const [showStats, setShowStats] = useState(false)
+  const {
+    selectedDeckId,
+    decks,
+    cards,
+    studyOptions,
+    studyAllCards,
+    userAchievements,
+    setUserAchievements,
+    addStudySession,
+    temporaryStudyDeck,
+    setTemporaryStudyDeck,
+    setReturnToCommunityDeck,
+    setReturnToUserDeck,
+    returnToSharedDeckId,
+    setReturnToSharedDeckId,
+  } = useStore();
+  const { navigateTo } = useNavigation();
 
-  const { timedMode, continuousShuffle, order, excludeIgnored, favoritesOnly } = studyOptions
+  // Check if we're studying a temporary community deck
+  const isTemporaryStudy = temporaryStudyDeck !== null;
+  const deck = isTemporaryStudy
+    ? temporaryStudyDeck.deck
+    : decks.find((d) => d.id === selectedDeckId);
+  const deckCards = isTemporaryStudy
+    ? temporaryStudyDeck.cards
+    : studyAllCards
+    ? cards
+    : cards.filter((c) => c.deckId === selectedDeckId);
+
+  const [sessionCards, setSessionCards] = useState<typeof deckCards>([]);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [correctAnswers, setCorrectAnswers] = useState(0);
+  const [wrongAnswers, setWrongAnswers] = useState(0);
+  const [cardsStudied, setCardsStudied] = useState(0);
+  const [sessionStartTime, setSessionStartTime] = useState<number>(Date.now());
+  const [cardStartTime, setCardStartTime] = useState<number>(Date.now());
+  const [timeLeft, setTimeLeft] = useState<number>(30);
+  const [showStats, setShowStats] = useState(false);
+
+  const { timedMode, continuousShuffle, order, excludeIgnored, favoritesOnly } =
+    studyOptions;
 
   useEffect(() => {
     // Filter cards based on study options
-    let filteredCards = [...deckCards]
-    
+    let filteredCards = [...deckCards];
+
     if (excludeIgnored) {
-      filteredCards = filteredCards.filter(c => !c.isIgnored)
+      filteredCards = filteredCards.filter((c) => !c.isIgnored);
     }
-    
+
     if (favoritesOnly) {
-      filteredCards = filteredCards.filter(c => c.favorite)
+      filteredCards = filteredCards.filter((c) => c.favorite);
     }
-    
+
     // Order cards based on study options
-    const orderedCards = [...filteredCards]
-    
-    if (order === 'randomized') {
-      orderedCards.sort(() => Math.random() - 0.5)
+    const orderedCards = [...filteredCards];
+
+    if (order === "randomized") {
+      orderedCards.sort(() => Math.random() - 0.5);
     } else {
       // Linear - sort by position
-      orderedCards.sort((a, b) => (a.position || 0) - (b.position || 0))
+      orderedCards.sort((a, b) => (a.position || 0) - (b.position || 0));
     }
-    
-    setSessionCards(orderedCards)
-    setSessionStartTime(Date.now())
-    setCardStartTime(Date.now())
-    setTimeLeft(30)
-    
+
+    setSessionCards(orderedCards);
+    setSessionStartTime(Date.now());
+    setCardStartTime(Date.now());
+    setTimeLeft(30);
+
     // Check time of day for achievements
-    const hour = new Date().getHours()
+    const hour = new Date().getHours();
     if (hour >= 0 && hour < 3 && userAchievements) {
       setUserAchievements({
         ...userAchievements,
         studiedAfterMidnight: true,
-      })
+      });
     }
     if (hour >= 5 && hour < 8 && userAchievements) {
       setUserAchievements({
         ...userAchievements,
         studiedBeforeEightAM: true,
-      })
+      });
     }
-  }, [])
+  }, []);
 
   // Timer effect for timed mode
   useEffect(() => {
-    if (!timedMode || showStats) return
+    if (!timedMode || showStats) return;
 
     const timer = setInterval(() => {
       setTimeLeft((prev) => {
         if (prev <= 1) {
           // Time's up - auto advance
-          handleNext(false)
-          return 30
+          handleNext(false);
+          return 30;
         }
-        return prev - 1
-      })
-    }, 1000)
+        return prev - 1;
+      });
+    }, 1000);
 
-    return () => clearInterval(timer)
-  }, [currentIndex, timedMode, showStats])
+    return () => clearInterval(timer);
+  }, [currentIndex, timedMode, showStats]);
 
   const handleNext = (wasCorrect?: boolean) => {
     // Check if user took over 10 minutes on this card
-    const timeOnCard = (Date.now() - cardStartTime) / 1000 / 60
+    const timeOnCard = (Date.now() - cardStartTime) / 1000 / 60;
     if (timeOnCard > 10 && userAchievements) {
       setUserAchievements({
         ...userAchievements,
         slowCardReview: true,
-      })
+      });
     }
 
     // Update stats for current card
-    const newCardsStudied = cardsStudied + 1
-    const newCorrect = wasCorrect === true ? correctAnswers + 1 : correctAnswers
-    const newWrong = wasCorrect === false ? wrongAnswers + 1 : wrongAnswers
+    const newCardsStudied = cardsStudied + 1;
+    const newCorrect =
+      wasCorrect === true ? correctAnswers + 1 : correctAnswers;
+    const newWrong = wasCorrect === false ? wrongAnswers + 1 : wrongAnswers;
 
-    setCardsStudied(newCardsStudied)
-    setCorrectAnswers(newCorrect)
-    setWrongAnswers(newWrong)
-    setCardStartTime(Date.now())
-    setTimeLeft(30)
+    setCardsStudied(newCardsStudied);
+    setCorrectAnswers(newCorrect);
+    setWrongAnswers(newWrong);
+    setCardStartTime(Date.now());
+    setTimeLeft(30);
 
     if (continuousShuffle) {
       // In continuous shuffle mode, shuffle and restart when reaching the end
       if (currentIndex >= sessionCards.length - 1) {
-        const shuffled = [...sessionCards].sort(() => Math.random() - 0.5)
-        setSessionCards(shuffled)
-        setCurrentIndex(0)
+        const shuffled = [...sessionCards].sort(() => Math.random() - 0.5);
+        setSessionCards(shuffled);
+        setCurrentIndex(0);
       } else {
-        setCurrentIndex(currentIndex + 1)
+        setCurrentIndex(currentIndex + 1);
       }
     } else {
       // Normal mode - advance or complete
       if (currentIndex < sessionCards.length - 1) {
-        setCurrentIndex(currentIndex + 1)
+        setCurrentIndex(currentIndex + 1);
       } else {
         // Session complete - show stats
-        completeSession(newCorrect, newWrong, newCardsStudied)
+        completeSession(newCorrect, newWrong, newCardsStudied);
       }
     }
-  }
+  };
 
   const handlePrevious = () => {
     if (currentIndex > 0) {
-      setCurrentIndex(currentIndex - 1)
-      setTimeLeft(30)
+      setCurrentIndex(currentIndex - 1);
+      setTimeLeft(30);
     }
-  }
+  };
 
-  const completeSession = (finalCorrect?: number, finalWrong?: number, finalCardsStudied?: number) => {
-    const sessionDurationMinutes = (Date.now() - sessionStartTime) / 1000 / 60
-    
-    const correct = finalCorrect ?? correctAnswers
-    const wrong = finalWrong ?? wrongAnswers
-    const studied = finalCardsStudied ?? cardsStudied
-    
+  const completeSession = (
+    finalCorrect?: number,
+    finalWrong?: number,
+    finalCardsStudied?: number
+  ) => {
+    const sessionDurationMinutes = (Date.now() - sessionStartTime) / 1000 / 60;
+
+    const correct = finalCorrect ?? correctAnswers;
+    const wrong = finalWrong ?? wrongAnswers;
+    const studied = finalCardsStudied ?? cardsStudied;
+
     // Only save study session if studying a specific deck (not all cards)
     if (selectedDeckId && !studyAllCards) {
-      const totalQuestions = correct + wrong
-      const score = totalQuestions > 0 ? Math.round((correct / totalQuestions) * 100) : 0
-      
+      const totalQuestions = correct + wrong;
+      const score =
+        totalQuestions > 0 ? Math.round((correct / totalQuestions) * 100) : 0;
+
       // Only save study session for personal decks, not temporary community decks
       if (!isTemporaryStudy && selectedDeckId) {
         addStudySession({
           id: crypto.randomUUID(), // Generate unique ID
-          userId: '', // Will be set by the store
+          userId: "", // Will be set by the store
           deckId: selectedDeckId,
           date: new Date().toISOString(),
           correctAnswers: correct,
@@ -167,8 +193,8 @@ export function StudyScreen() {
           cardsStudied: studied,
           totalQuestions: 0,
           durationMinutes: null,
-          createdAt: '',
-          updatedAt: '',
+          createdAt: "",
+          updatedAt: "",
           startedAt: null,
           endedAt: null,
           correctCount: null,
@@ -176,91 +202,92 @@ export function StudyScreen() {
           skippedCount: null,
           studyMode: null,
           timeSpentSeconds: null,
-          sessionData: null
-        })
+          sessionData: null,
+        });
       }
     }
-    
+
     // Check for time-based achievements
     if (sessionDurationMinutes >= 60 && userAchievements) {
       setUserAchievements({
         ...userAchievements,
         studiedSixtyMinutesNonstop: true,
-      })
+      });
     }
-    
+
     if (sessionDurationMinutes >= 180 && userAchievements) {
       setUserAchievements({
         ...userAchievements,
         studiedThreeHoursInOneDay: true,
-      })
+      });
     }
 
-    setShowStats(true)
-  }
+    setShowStats(true);
+  };
 
   const handleStopStudy = () => {
-    completeSession()
-  }
+    completeSession();
+  };
 
   const handleBackNavigation = () => {
     if (isTemporaryStudy) {
-      setTemporaryStudyDeck(null)
-      setReturnToCommunityDeck(null)
-      setReturnToUserDeck(null) // Clear user deck return state
-      navigateTo('community')
+      setTemporaryStudyDeck(null);
+      setReturnToCommunityDeck(null);
+      setReturnToUserDeck(null); // Clear user deck return state
+      navigateTo("community");
     } else {
-      navigateTo(studyAllCards ? 'all-cards' : 'deck-detail')
+      navigateTo(studyAllCards ? "all-cards" : "deck-detail");
     }
-  }
+  };
 
   const handleViewDeckDetails = () => {
     // Check if we came from a shared deck
     if (returnToSharedDeckId) {
       // Clear temporary study and return to shared deck view
-      setTemporaryStudyDeck(null)
-      const shareId = returnToSharedDeckId
-      setReturnToSharedDeckId(null)
-      window.location.hash = `#/shared/${shareId}`
+      setTemporaryStudyDeck(null);
+      const shareId = returnToSharedDeckId;
+      setReturnToSharedDeckId(null);
+      window.location.hash = `#/shared/${shareId}`;
     } else {
       // Keep the return deck set, just clear temporary study and go back to community
-      setTemporaryStudyDeck(null)
-      navigateTo('community')
+      setTemporaryStudyDeck(null);
+      navigateTo("community");
     }
-  }
+  };
 
   const handleRestart = () => {
     // Filter cards based on study options
-    let filteredCards = [...deckCards]
-    
-    if (excludeIgnored) {
-      filteredCards = filteredCards.filter(c => !c.isIgnored)
-    }
-    
-    if (favoritesOnly) {
-      filteredCards = filteredCards.filter(c => c.favorite)
-    }
-    
-    const orderedCards = [...filteredCards]
-    
-    if (order === 'randomized') {
-      orderedCards.sort(() => Math.random() - 0.5)
-    } else {
-      orderedCards.sort((a, b) => (a.position || 0) - (b.position || 0))
-    }
-    
-    setSessionCards(orderedCards)
-    setCurrentIndex(0)
-    setCorrectAnswers(0)
-    setWrongAnswers(0)
-    setCardsStudied(0)
-    setSessionStartTime(Date.now())
-    setCardStartTime(Date.now())
-    setTimeLeft(30)
-    setShowStats(false)
-  }
+    let filteredCards = [...deckCards];
 
-  const isLastCard = currentIndex === sessionCards.length - 1 && !continuousShuffle
+    if (excludeIgnored) {
+      filteredCards = filteredCards.filter((c) => !c.isIgnored);
+    }
+
+    if (favoritesOnly) {
+      filteredCards = filteredCards.filter((c) => c.favorite);
+    }
+
+    const orderedCards = [...filteredCards];
+
+    if (order === "randomized") {
+      orderedCards.sort(() => Math.random() - 0.5);
+    } else {
+      orderedCards.sort((a, b) => (a.position || 0) - (b.position || 0));
+    }
+
+    setSessionCards(orderedCards);
+    setCurrentIndex(0);
+    setCorrectAnswers(0);
+    setWrongAnswers(0);
+    setCardsStudied(0);
+    setSessionStartTime(Date.now());
+    setCardStartTime(Date.now());
+    setTimeLeft(30);
+    setShowStats(false);
+  };
+
+  const isLastCard =
+    currentIndex === sessionCards.length - 1 && !continuousShuffle;
 
   // No cards available
   if (sessionCards.length === 0) {
@@ -274,9 +301,9 @@ export function StudyScreen() {
           onBack={handleBackNavigation}
         />
       </AppLayout>
-    )
+    );
   }
-  
+
   // Deck not found
   if (!studyAllCards && !deck) {
     return (
@@ -285,10 +312,10 @@ export function StudyScreen() {
           <div className="text-gray-900 dark:text-gray-100">Deck not found</div>
         </div>
       </AppLayout>
-    )
+    );
   }
 
-  const currentCard = sessionCards[currentIndex]
+  const currentCard = sessionCards[currentIndex];
 
   // Show statistics screen
   if (showStats) {
@@ -302,10 +329,12 @@ export function StudyScreen() {
           studyAllCards={studyAllCards}
           onRestart={handleRestart}
           onBack={handleBackNavigation}
-          onViewDeckDetails={isTemporaryStudy ? handleViewDeckDetails : undefined}
+          onViewDeckDetails={
+            isTemporaryStudy ? handleViewDeckDetails : undefined
+          }
         />
       </AppLayout>
-    )
+    );
   }
 
   return (
@@ -326,13 +355,15 @@ export function StudyScreen() {
           onBack={handleBackNavigation}
           onRestart={handleRestart}
           onStop={handleStopStudy}
-          onViewDeckDetails={isTemporaryStudy ? handleViewDeckDetails : undefined}
+          onViewDeckDetails={
+            isTemporaryStudy ? handleViewDeckDetails : undefined
+          }
         />
 
         {/* Study Mode Content - Based on Card Type */}
         {currentCard && (
           <>
-            {currentCard.cardType === 'classic-flip' && (
+            {currentCard.cardType === "classic-flip" && (
               <ClassicFlipMode
                 cards={sessionCards}
                 onNext={handleNext}
@@ -344,8 +375,8 @@ export function StudyScreen() {
                 backLanguage={deck?.backLanguage ?? undefined}
               />
             )}
-            
-            {currentCard.cardType === 'multiple-choice' && (
+
+            {currentCard.cardType === "multiple-choice" && (
               <MultipleChoiceMode
                 cards={sessionCards}
                 onNext={handleNext}
@@ -355,8 +386,8 @@ export function StudyScreen() {
                 frontLanguage={deck?.frontLanguage ?? undefined}
               />
             )}
-            
-            {currentCard.cardType === 'type-answer' && (
+
+            {currentCard.cardType === "type-answer" && (
               <TypeAnswerMode
                 cards={sessionCards}
                 onNext={handleNext}
@@ -370,5 +401,5 @@ export function StudyScreen() {
         )}
       </div>
     </AppLayout>
-  )
+  );
 }

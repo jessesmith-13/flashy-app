@@ -1,53 +1,66 @@
-import { Button } from '../../ui/button'
-import { useStore } from '../../../store/useStore'
-import { useNavigation } from '../../../hooks/useNavigation'
-import { Zap, Brain, Users, Trophy, Sparkles, ArrowRight, Check, Moon, Sun } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { Button } from "../../ui/button";
+import { useStore } from "@/shared/state/useStore";
+import { useNavigation } from "../../../hooks/useNavigation";
+import {
+  Zap,
+  Brain,
+  Users,
+  Trophy,
+  Sparkles,
+  ArrowRight,
+  Check,
+  Moon,
+  Sun,
+} from "lucide-react";
+import { useEffect, useState } from "react";
 
 export function LandingPage() {
-  const { darkMode, toggleDarkMode } = useStore()
-  const { navigateTo } = useNavigation()
-  const [isDarkMode, setIsDarkMode] = useState(false)
-  const [isFlipped, setIsFlipped] = useState(false)
+  const { darkMode, toggleDarkMode } = useStore();
+  const { navigateTo } = useNavigation();
+  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [isFlipped, setIsFlipped] = useState(false);
 
-
-  const logoLight = '/logoLight.png'
-  const logoDark = '/logoDark.png'
+  const logoLight = "/logoLight.png";
+  const logoDark = "/logoDark.png";
   useEffect(() => {
-    setIsDarkMode(darkMode)
-  }, [darkMode])
+    setIsDarkMode(darkMode);
+  }, [darkMode]);
 
   const features = [
     {
       icon: Brain,
-      title: 'AI-Powered Learning',
-      description: 'Generate flashcards instantly using advanced AI. Just provide a topic and let our AI create comprehensive study materials.'
+      title: "AI-Powered Learning",
+      description:
+        "Generate flashcards instantly using advanced AI. Just provide a topic and let our AI create comprehensive study materials.",
     },
     {
       icon: Zap,
-      title: 'Multiple Study Modes',
-      description: 'Master your content with classic flashcards, multiple choice, matching games, timed challenges, and marathon sessions.'
+      title: "Multiple Study Modes",
+      description:
+        "Master your content with classic flashcards, multiple choice, matching games, timed challenges, and marathon sessions.",
     },
     {
       icon: Users,
-      title: 'Community Decks',
-      description: 'Access thousands of shared decks created by learners worldwide. Publish your own and help others succeed.'
+      title: "Community Decks",
+      description:
+        "Access thousands of shared decks created by learners worldwide. Publish your own and help others succeed.",
     },
     {
       icon: Trophy,
-      title: 'Achievement System',
-      description: 'Stay motivated with achievements, streaks, and detailed progress tracking. Watch your knowledge grow over time.'
-    }
-  ]
+      title: "Achievement System",
+      description:
+        "Stay motivated with achievements, streaks, and detailed progress tracking. Watch your knowledge grow over time.",
+    },
+  ];
 
   const benefits = [
-    'Create unlimited flashcard decks',
-    'Study anywhere with mobile-responsive design',
-    'Track your progress with detailed analytics',
-    'Connect with friends and share decks',
-    'Dark mode for comfortable studying',
-    'Export and share decks with QR codes'
-  ]
+    "Create unlimited flashcard decks",
+    "Study anywhere with mobile-responsive design",
+    "Track your progress with detailed analytics",
+    "Connect with friends and share decks",
+    "Dark mode for comfortable studying",
+    "Export and share decks with QR codes",
+  ];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-white to-gray-50 dark:from-gray-900 dark:to-gray-800">
@@ -56,12 +69,14 @@ export function LandingPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-2">
-              <img 
-                src={isDarkMode ? logoDark : logoLight} 
-                alt="Flashy Logo" 
+              <img
+                src={isDarkMode ? logoDark : logoLight}
+                alt="Flashy Logo"
                 className="w-8 h-8"
               />
-              <span className="text-xl text-gray-900 dark:text-gray-100">Flashy</span>
+              <span className="text-xl text-gray-900 dark:text-gray-100">
+                Flashy
+              </span>
             </div>
             <div className="flex items-center gap-3">
               <Button
@@ -70,17 +85,21 @@ export function LandingPage() {
                 onClick={toggleDarkMode}
                 className="text-gray-700 dark:text-gray-300"
               >
-                {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+                {isDarkMode ? (
+                  <Sun className="w-5 h-5" />
+                ) : (
+                  <Moon className="w-5 h-5" />
+                )}
               </Button>
               <Button
                 variant="ghost"
-                onClick={() => navigateTo('login')}
+                onClick={() => navigateTo("login")}
                 className="text-gray-700 dark:text-gray-300"
               >
                 Sign In
               </Button>
               <Button
-                onClick={() => navigateTo('signup')}
+                onClick={() => navigateTo("signup")}
                 className="bg-emerald-600 hover:bg-emerald-700 text-white"
               >
                 Get Started
@@ -100,19 +119,20 @@ export function LandingPage() {
                 <span className="text-sm">AI-Powered Flashcard Learning</span>
               </div>
               <h1 className="text-5xl lg:text-6xl mb-6 text-gray-900 dark:text-gray-100">
-                Learn Anything,{' '}
+                Learn Anything,{" "}
                 <span className="bg-gradient-to-r from-emerald-600 to-blue-600 bg-clip-text text-transparent">
                   in a Flash
                 </span>
               </h1>
               <p className="text-xl text-gray-600 dark:text-gray-400 mb-8 leading-relaxed">
-                The most powerful flashcard app for students, professionals, and lifelong learners. 
-                Create, study, and master any subject with AI assistance and proven learning techniques.
+                The most powerful flashcard app for students, professionals, and
+                lifelong learners. Create, study, and master any subject with AI
+                assistance and proven learning techniques.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
                 <Button
                   size="lg"
-                  onClick={() => navigateTo('signup')}
+                  onClick={() => navigateTo("signup")}
                   className="bg-emerald-600 hover:bg-emerald-700 text-white text-lg px-8 py-6"
                 >
                   Start Learning Free
@@ -121,7 +141,7 @@ export function LandingPage() {
                 <Button
                   size="lg"
                   variant="outline"
-                  onClick={() => navigateTo('login')}
+                  onClick={() => navigateTo("login")}
                   className="text-lg px-8 py-6 border-gray-300 dark:border-gray-600"
                 >
                   Sign In
@@ -133,7 +153,7 @@ export function LandingPage() {
             </div>
             <div className="relative">
               <div className="absolute inset-0 bg-gradient-to-r from-emerald-400 to-blue-500 rounded-3xl blur-3xl opacity-20"></div>
-              
+
               {/* App Screenshots Showcase */}
               <div className="relative grid grid-cols-2 gap-4">
                 {/* Main large screenshot */}
@@ -153,7 +173,7 @@ export function LandingPage() {
                     </div>
                   </div>
                 </div>
-                
+
                 {/* Two smaller screenshots side by side */}
                 <div className="rounded-2xl shadow-xl overflow-hidden bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700">
                   <div className="bg-gradient-to-br from-purple-500 to-pink-500 p-4 text-white">
@@ -169,7 +189,9 @@ export function LandingPage() {
                       </div>
                       <div className="flex-1">
                         <div className="text-sm">Quick Learner</div>
-                        <div className="text-xs text-gray-500">Complete 10 cards</div>
+                        <div className="text-xs text-gray-500">
+                          Complete 10 cards
+                        </div>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
@@ -178,12 +200,14 @@ export function LandingPage() {
                       </div>
                       <div className="flex-1">
                         <div className="text-sm">Study Streak</div>
-                        <div className="text-xs text-gray-500">7 days in a row</div>
+                        <div className="text-xs text-gray-500">
+                          7 days in a row
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="rounded-2xl shadow-xl overflow-hidden bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700">
                   <div className="bg-gradient-to-br from-blue-500 to-cyan-500 p-4 text-white">
                     <div className="flex items-center gap-2 mb-2">
@@ -215,7 +239,8 @@ export function LandingPage() {
               Everything You Need to Succeed
             </h2>
             <p className="text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-              Powerful features designed to help you learn faster and retain more
+              Powerful features designed to help you learn faster and retain
+              more
             </p>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
@@ -239,7 +264,7 @@ export function LandingPage() {
         </div>
       </section>
 
-       {/* Benefits Section - Interactive Flip Flashcard */}
+      {/* Benefits Section - Interactive Flip Flashcard */}
       <section className="py-20 px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-12">
@@ -247,24 +272,24 @@ export function LandingPage() {
               Click to flip the card and see why thousands choose Flashy
             </p>
           </div>
-          
+
           {/* Flip Card Container */}
-          <div 
+          <div
             className="cursor-pointer"
-            style={{ perspective: '1000px' }}
+            style={{ perspective: "1000px" }}
             onClick={() => setIsFlipped(!isFlipped)}
           >
-            <div 
+            <div
               className="relative w-full h-[500px] sm:h-[500px] transition-all duration-700"
-              style={{ 
-                transformStyle: 'preserve-3d',
-                transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)'
+              style={{
+                transformStyle: "preserve-3d",
+                transform: isFlipped ? "rotateY(180deg)" : "rotateY(0deg)",
               }}
             >
               {/* Front of Card */}
-              <div 
+              <div
                 className="absolute inset-0 rounded-3xl shadow-2xl"
-                style={{ backfaceVisibility: 'hidden' }}
+                style={{ backfaceVisibility: "hidden" }}
               >
                 <div className="h-full bg-white dark:bg-gray-800 border-4 border-emerald-500 dark:border-emerald-600 rounded-3xl p-6 sm:p-12 flex flex-col items-center justify-center">
                   <div className="w-16 h-16 sm:w-24 sm:h-24 rounded-full bg-gradient-to-br from-emerald-400 to-blue-500 flex items-center justify-center mb-6 sm:mb-8">
@@ -285,20 +310,24 @@ export function LandingPage() {
               </div>
 
               {/* Back of Card */}
-              <div 
+              <div
                 className="absolute inset-0 rounded-3xl shadow-2xl"
-                style={{ 
-                  backfaceVisibility: 'hidden',
-                  transform: 'rotateY(180deg)'
+                style={{
+                  backfaceVisibility: "hidden",
+                  transform: "rotateY(180deg)",
                 }}
               >
                 <div className="h-full bg-gradient-to-br from-emerald-50 to-blue-50 dark:from-gray-800 dark:to-gray-900 border-4 border-emerald-500 dark:border-emerald-600 rounded-3xl p-6 sm:p-12 flex flex-col justify-center overflow-y-auto">
                   <h3 className="text-xl sm:text-3xl text-gray-900 dark:text-gray-100 mb-6 sm:mb-8 text-center">
-                    Join thousands of learners who are mastering new subjects every day
+                    Join thousands of learners who are mastering new subjects
+                    every day
                   </h3>
                   <div className="space-y-3 sm:space-y-4">
                     {benefits.map((benefit, index) => (
-                      <div key={index} className="flex items-start gap-2 sm:gap-3">
+                      <div
+                        key={index}
+                        className="flex items-start gap-2 sm:gap-3"
+                      >
                         <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-emerald-500 dark:bg-emerald-600 flex items-center justify-center flex-shrink-0 mt-0.5">
                           <Check className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                         </div>
@@ -327,11 +356,12 @@ export function LandingPage() {
             Ready to Transform Your Learning?
           </h2>
           <p className="text-xl text-emerald-50 mb-8">
-            Join Flashy today and start mastering new skills faster than ever before.
+            Join Flashy today and start mastering new skills faster than ever
+            before.
           </p>
           <Button
             size="lg"
-            onClick={() => navigateTo('signup')}
+            onClick={() => navigateTo("signup")}
             className="bg-white text-emerald-600 hover:bg-gray-100 text-lg px-8 py-6"
           >
             Get Started for Free
@@ -346,39 +376,109 @@ export function LandingPage() {
           <div className="grid md:grid-cols-4 gap-8 mb-8">
             <div>
               <div className="flex items-center gap-2 mb-4">
-                <img 
-                  src={isDarkMode ? '../../../public/logoDark.png' : '../../../public/logoLight.png'} 
-                  alt="Flashy Logo" 
+                <img
+                  src={
+                    isDarkMode
+                      ? "../../../public/logoDark.png"
+                      : "../../../public/logoLight.png"
+                  }
+                  alt="Flashy Logo"
                   className="w-8 h-8"
                 />
-                <span className="text-lg text-gray-900 dark:text-gray-100">Flashy</span>
+                <span className="text-lg text-gray-900 dark:text-gray-100">
+                  Flashy
+                </span>
               </div>
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                Learn anything, fast. The most powerful flashcard app for modern learners.
+                Learn anything, fast. The most powerful flashcard app for modern
+                learners.
               </p>
             </div>
             <div>
               <h4 className="mb-4 text-gray-900 dark:text-gray-100">Product</h4>
               <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
-                <li><button onClick={() => navigateTo('signup')} className="hover:text-emerald-600 dark:hover:text-emerald-400">Features</button></li>
-                <li><button onClick={() => navigateTo('signup')} className="hover:text-emerald-600 dark:hover:text-emerald-400">Pricing</button></li>
-                <li><button onClick={() => navigateTo('signup')} className="hover:text-emerald-600 dark:hover:text-emerald-400">AI Generation</button></li>
+                <li>
+                  <button
+                    onClick={() => navigateTo("signup")}
+                    className="hover:text-emerald-600 dark:hover:text-emerald-400"
+                  >
+                    Features
+                  </button>
+                </li>
+                <li>
+                  <button
+                    onClick={() => navigateTo("signup")}
+                    className="hover:text-emerald-600 dark:hover:text-emerald-400"
+                  >
+                    Pricing
+                  </button>
+                </li>
+                <li>
+                  <button
+                    onClick={() => navigateTo("signup")}
+                    className="hover:text-emerald-600 dark:hover:text-emerald-400"
+                  >
+                    AI Generation
+                  </button>
+                </li>
               </ul>
             </div>
             <div>
               <h4 className="mb-4 text-gray-900 dark:text-gray-100">Company</h4>
               <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
-                <li><button onClick={() => navigateTo('login')} className="hover:text-emerald-600 dark:hover:text-emerald-400">About</button></li>
-                <li><button onClick={() => navigateTo('login')} className="hover:text-emerald-600 dark:hover:text-emerald-400">Blog</button></li>
-                <li><button onClick={() => navigateTo('login')} className="hover:text-emerald-600 dark:hover:text-emerald-400">Careers</button></li>
+                <li>
+                  <button
+                    onClick={() => navigateTo("login")}
+                    className="hover:text-emerald-600 dark:hover:text-emerald-400"
+                  >
+                    About
+                  </button>
+                </li>
+                <li>
+                  <button
+                    onClick={() => navigateTo("login")}
+                    className="hover:text-emerald-600 dark:hover:text-emerald-400"
+                  >
+                    Blog
+                  </button>
+                </li>
+                <li>
+                  <button
+                    onClick={() => navigateTo("login")}
+                    className="hover:text-emerald-600 dark:hover:text-emerald-400"
+                  >
+                    Careers
+                  </button>
+                </li>
               </ul>
             </div>
             <div>
               <h4 className="mb-4 text-gray-900 dark:text-gray-100">Legal</h4>
               <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
-                <li><button onClick={() => navigateTo('login')} className="hover:text-emerald-600 dark:hover:text-emerald-400">Privacy</button></li>
-                <li><button onClick={() => navigateTo('login')} className="hover:text-emerald-600 dark:hover:text-emerald-400">Terms</button></li>
-                <li><button onClick={() => navigateTo('login')} className="hover:text-emerald-600 dark:hover:text-emerald-400">Contact</button></li>
+                <li>
+                  <button
+                    onClick={() => navigateTo("login")}
+                    className="hover:text-emerald-600 dark:hover:text-emerald-400"
+                  >
+                    Privacy
+                  </button>
+                </li>
+                <li>
+                  <button
+                    onClick={() => navigateTo("login")}
+                    className="hover:text-emerald-600 dark:hover:text-emerald-400"
+                  >
+                    Terms
+                  </button>
+                </li>
+                <li>
+                  <button
+                    onClick={() => navigateTo("login")}
+                    className="hover:text-emerald-600 dark:hover:text-emerald-400"
+                  >
+                    Contact
+                  </button>
+                </li>
               </ul>
             </div>
           </div>
@@ -388,5 +488,5 @@ export function LandingPage() {
         </div>
       </footer>
     </div>
-  )
+  );
 }

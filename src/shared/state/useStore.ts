@@ -1,6 +1,6 @@
 import { create } from "zustand";
-import { fetchUserAchievements } from "../utils/api/achievements";
-import { UIDeck, UICard } from "../src/types/decks";
+import { fetchUserAchievements } from "../../../utils/api/achievements";
+import { UIDeck, UICard } from "@/types/decks";
 import { UICommunityDeck } from "@/types/community";
 import { CommunityDeck } from "@/types/community";
 import { StudyOptions, StudySession, TemporaryStudyDeck } from "@/types/study";

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useStore } from "../../../store/useStore";
+import { useStore } from "@/shared/state/useStore";
 import { useNavigation } from "../../../hooks/useNavigation";
 // Import community-specific functions from API
 import { getUserDeck } from "../../../utils/api/users";
