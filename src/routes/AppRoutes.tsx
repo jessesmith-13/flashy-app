@@ -22,7 +22,7 @@ import { SuperuserScreen } from "@/components/Superuser/SuperuserScreen";
 import { ModeratorScreen } from "@/components/Moderation/ModeratorScreen";
 import { PrivacyPolicyScreen } from "@/components/Legal/PrivacyPolicyScreen";
 import { TermsScreen } from "@/components/Legal/TermsScreen";
-import { ContactScreen } from "@/components/Contact/ContactScreen";
+import { contactRoutes } from "@/features/contact";
 import { NotificationsScreen } from "@/components/Notifications/NotificationsScreen";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { BetaTestingPage } from "@/components/BetaTesting/BetaTestingPage";
@@ -188,7 +188,13 @@ export function AppRoutes({
 
       <Route path="/privacy" element={<PrivacyPolicyScreen />} />
       <Route path="/terms" element={<TermsScreen />} />
-      <Route path="/contact" element={<ContactScreen />} />
+      {contactRoutes.map((r) => (
+        <Route
+          key={r.path as string}
+          path={r.path as string}
+          element={r.element}
+        />
+      ))}
 
       <Route
         path="/notifications"
