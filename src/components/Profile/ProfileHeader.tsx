@@ -7,7 +7,7 @@ interface ProfileHeaderProps {
     displayName?: string;
     name?: string;
     userRole?:
-      | "professor"
+      | "educator"
       | "student"
       | "self_learner"
       | "researcher"

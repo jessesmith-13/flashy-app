@@ -38,7 +38,7 @@ interface AboutThisDeckProps {
   reviewedBy?: string;
   sources?: DeckSource[];
   creatorRole?:
-    | "professor"
+    | "educator"
     | "student"
     | "self_learner"
     | "researcher"

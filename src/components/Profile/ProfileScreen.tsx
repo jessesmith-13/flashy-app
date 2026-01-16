@@ -345,7 +345,7 @@ export function ProfileScreen() {
               name: user?.name,
               userRole:
                 (user?.userRole as
-                  | "professor"
+                  | "educator"
                   | "student"
                   | "self_learner"
                   | "researcher"

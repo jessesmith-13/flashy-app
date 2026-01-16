@@ -20,7 +20,7 @@ interface ProvenanceBadgesProps {
     | "needs_changes"
     | "rejected";
   creatorRole?:
-    | "professor"
+    | "educator"
     | "student"
     | "self_learner"
     | "researcher"
@@ -44,8 +44,8 @@ export function ProvenanceBadges({
   // Creator Role Badge (ALWAYS show if role exists, not just when verified)
   if (creatorRole && creatorRole !== "other") {
     const roleConfig = {
-      professor: {
-        label: "Professor",
+      educator: {
+        label: "educator",
         icon: GraduationCap,
         className:
           "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300",
@@ -88,7 +88,12 @@ export function ProvenanceBadges({
   }
 
   // Verification Status Badge (separate from role badge)
-  if (creatorRole && creatorRole !== "other") {
+  if (
+    creatorRole &&
+    (creatorRole === "educator" ||
+      creatorRole === "org" ||
+      creatorRole === "researcher")
+  ) {
     if (creatorRoleVerified) {
       badges.push({
         key: "verified",

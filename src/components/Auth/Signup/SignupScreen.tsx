@@ -13,9 +13,10 @@ import { UserRoleSelector } from "../../Provenance/UserRoleSelector";
 import { toast } from "sonner";
 import { UserPlus } from "lucide-react";
 import { AccountBannedError } from "@/types/errors";
+import { SubscriptionTier } from "@/types/users";
 
 type UserRole =
-  | "professor"
+  | "educator"
   | "student"
   | "self_learner"
   | "researcher"
@@ -79,49 +80,34 @@ export function SignUpScreen() {
         selectedRole
       );
 
-      // Create user - NOW WITH ROLE (handle undefined by passing undefined or the value)
+      // Create user - NOW WITH ROLE
       await signUp(email, password, displayName, selectedRole ?? undefined);
       console.log("Account created successfully");
 
       // Auto-login after signup
       console.log("Logging in with new credentials...");
-      const { session, user } = await signIn(email, password);
+      const { session } = await signIn(email, password);
 
       console.log("Login successful, session:", session ? "exists" : "null");
-      console.log("User data:", user);
-      console.log(
-        "User subscription tier:",
-        user.user_metadata?.subscriptionTier
-      );
 
-      if (session && user) {
-        let finalUser = user;
-
+      if (session) {
         // Apply referral code if present
         if (referralCode) {
           try {
             console.log("Applying referral code:", referralCode);
             const referralResult = await applyReferralCode(
               referralCode,
-              user.id
+              session.user.id
             );
             console.log("Referral applied:", referralResult);
 
-            // Show success message
             toast.success("Referral bonus applied!", {
               description:
                 "You and your friend both received 1 month of Premium!",
               duration: 5000,
             });
-
-            // Re-fetch user data to get updated subscription
-            const { user: updatedUser } = await signIn(email, password);
-            if (updatedUser) {
-              finalUser = updatedUser;
-            }
           } catch (referralError) {
             console.error("Failed to apply referral code:", referralError);
-            // Don't block signup if referral fails
             toast.error("Referral code could not be applied", {
               description:
                 referralError instanceof Error
@@ -132,23 +118,40 @@ export function SignUpScreen() {
           }
         }
 
-        setAuth(
-          {
-            id: finalUser.id,
-            email: finalUser.email || "",
-            name: finalUser.user_metadata?.name || displayName,
-            displayName:
-              finalUser.user_metadata?.displayName ||
-              finalUser.user_metadata?.name ||
-              displayName,
-            avatarUrl: finalUser.user_metadata?.avatarUrl,
-            decksPublic: finalUser.user_metadata?.decksPublic ?? false,
-            subscriptionTier:
-              finalUser.user_metadata?.subscriptionTier || "free",
-            subscriptionExpiry: finalUser.user_metadata?.subscriptionExpiry,
-          },
-          session.access_token
+        // ✅ FETCH FRESH PROFILE FROM DATABASE (like in App.tsx)
+        const { getUserProfileOnLogin } = await import(
+          "../../../../utils/api/auth"
         );
+        const userProfile = await getUserProfileOnLogin(session.access_token);
+
+        if (userProfile) {
+          setAuth(
+            {
+              id: session.user.id,
+              email: session.user.email || "",
+              name: userProfile.display_name || displayName,
+              displayName: userProfile.display_name || displayName,
+              avatarUrl: userProfile.avatar_url || undefined,
+              decksPublic: userProfile.decks_public ?? false,
+              subscriptionTier: (userProfile.subscription_tier ||
+                "free") as SubscriptionTier,
+              subscriptionExpiry: userProfile.subscription_expiry || undefined,
+              isSuperuser: false,
+              isModerator: false,
+              emailNotificationsEnabled:
+                userProfile.email_notifications_enabled ?? true,
+              emailOffers: userProfile.email_offers ?? true,
+              emailCommentReplies: userProfile.email_comment_replies ?? true,
+              emailFriendRequests: userProfile.email_friend_requests ?? true,
+              emailFlaggedContent: userProfile.email_flag_notifications ?? true,
+              emailModerationNotices:
+                userProfile.email_moderation_updates ?? true,
+              userRole: userProfile.user_role || undefined,
+              userRoleVerified: userProfile.user_role_verified || false,
+            },
+            session.access_token
+          );
+        }
 
         // Show success message briefly before redirecting
         setNewUserDisplayName(displayName);
@@ -162,12 +165,10 @@ export function SignUpScreen() {
             returnToSharedDeck
           );
           sessionStorage.removeItem("returnToSharedDeck");
-          // Redirect after showing success message
           setTimeout(() => {
             window.location.hash = `#/shared/${returnToSharedDeck}`;
           }, 2000);
         } else {
-          // Auto-redirect after 2 seconds
           setTimeout(() => {
             navigateTo("decks");
           }, 2000);

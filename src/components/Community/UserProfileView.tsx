@@ -321,7 +321,7 @@ export function UserProfileView({
                     <ProvenanceBadges
                       creatorRole={
                         profileUser.userRole as
-                          | "professor"
+                          | "educator"
                           | "student"
                           | "self_learner"
                           | "researcher"

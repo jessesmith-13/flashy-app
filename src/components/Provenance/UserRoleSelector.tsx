@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 
 type UserRole =
-  | "professor"
+  | "educator"
   | "student"
   | "self_learner"
   | "researcher"
@@ -28,8 +28,8 @@ interface UserRoleSelectorProps {
 
 const ROLE_OPTIONS = [
   {
-    value: "professor" as UserRole,
-    label: "Professor / Educator",
+    value: "educator" as UserRole,
+    label: "Educator",
     description: "I teach courses or create educational content",
     icon: GraduationCap,
     verifiable: true,

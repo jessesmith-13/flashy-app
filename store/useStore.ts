@@ -11,7 +11,7 @@ import { User } from "@/types/users";
 
 // Add UserRole type for provenance system
 export type UserRole =
-  | "professor"
+  | "educator"
   | "student"
   | "self_learner"
   | "researcher"
