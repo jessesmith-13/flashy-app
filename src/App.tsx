@@ -1,12 +1,5 @@
 import { useEffect, useState } from "react";
-import {
-  HashRouter,
-  Routes,
-  Route,
-  Navigate,
-  useNavigate,
-  useParams,
-} from "react-router-dom";
+import { HashRouter, useNavigate, useParams } from "react-router-dom";
 import { useStore } from "@/shared/state/useStore";
 import { signOut, getSession, recordTermsAcceptance } from "./shared/api/auth";
 import {
@@ -16,36 +9,13 @@ import {
 } from "./shared/api/friends";
 import { updateProfile } from "./shared/api/users";
 import { getUserProfileOnLogin } from "./shared/api/auth";
-import { LandingPage } from "./components/Landing/LandingPage";
-import { LoginScreen } from "./components/Auth/Login/LoginScreen";
-import { SignUpScreen } from "./components/Auth/Signup/SignupScreen";
-import { ResetPasswordScreen } from "./components/Auth/Login/ResetPasswordScreen";
-import { DecksScreen } from "./components/Decks/DecksScreen";
-import { DeckDetailScreen } from "./components/Decks/DeckDetail/DeckDetailScreen";
-import { StudyOptionsScreen } from "./components/Study/StudyOptionsScreen";
-import { StudyScreen } from "./components/Study/StudyScreen";
-import { CommunityScreen } from "./components/Community/CommunityScreen";
-import { ProfileScreen } from "./components/Profile/ProfileScreen";
-import { AIGenerateScreen } from "./components/AI/AIGenerateScreen";
-import { UpgradeModal } from "./components/UpgradeModal";
-import { PaymentSuccessScreen } from "./components/PaymentSuccessScreen";
-import { AllCardsScreen } from "./components/AllCardsScreen";
-import { SettingsScreen } from "./components/Settings/SettingsScreen";
-import { SuperuserScreen } from "./components/Superuser/SuperuserScreen";
-import { ModeratorScreen } from "./components/Moderation/ModeratorScreen";
-import { PrivacyPolicyScreen } from "./components/Legal/PrivacyPolicyScreen";
-import { TermsScreen } from "./components/Legal/TermsScreen";
-import { ContactScreen } from "./components/Contact/ContactScreen";
 import { SharedDeckView } from "./components/SharedDeckView";
-import { NotificationsScreen } from "./components/Notifications/NotificationsScreen";
-import ProtectedRoute from "./components/ProtectedRoute";
 import { Toaster } from "@/shared/ui/sonner";
 import { toast } from "sonner";
 import { SetDisplayModal } from "./components/Auth/Signup/SetDisplayModal";
 import { supabase } from "./shared/lib/supabase";
 import { SubscriptionTier } from "./types/users";
-import { BetaTestingPage } from "./components/BetaTesting/BetaTestingPage";
-import { IS_BETA_TESTING_ENABLED } from "./shared/config/featureFlags";
+import { AppRoutes } from "@/routes/AppRoutes";
 
 // Suppress Supabase auth errors from console
 const originalConsoleError = console.error;
@@ -639,145 +609,7 @@ function AppContent() {
         </div>
       ) : (
         <>
-          <Routes>
-            <Route path="/" element={<LandingPage />} />
-            <Route path="/login" element={<LoginScreen />} />
-            <Route path="/signup" element={<SignUpScreen />} />
-            <Route path="/reset-password" element={<ResetPasswordScreen />} />
-            <Route
-              path="/decks"
-              element={
-                <ProtectedRoute>
-                  <DecksScreen />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/deck-detail/:deckId"
-              element={
-                <ProtectedRoute>
-                  <DeckDetailScreen />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/study-options/:deckId"
-              element={
-                <ProtectedRoute>
-                  <StudyOptionsScreen />
-                </ProtectedRoute>
-              }
-            />
-            {/* Study route without deckId for all-cards and temporary decks */}
-            <Route
-              path="/study"
-              element={
-                <ProtectedRoute>
-                  <StudyScreen />
-                </ProtectedRoute>
-              }
-            />
-            {/* Study route with deckId for regular deck study */}
-            <Route
-              path="/study/:deckId"
-              element={
-                <ProtectedRoute>
-                  <StudyScreen />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/community"
-              element={
-                <ProtectedRoute>
-                  <CommunityScreen />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/profile"
-              element={
-                <ProtectedRoute>
-                  <ProfileScreen />
-                </ProtectedRoute>
-              }
-            />
-            {/* Beta Testing - Conditional */}
-            {IS_BETA_TESTING_ENABLED && (
-              <Route path="/beta-testing" element={<BetaTestingPage />} />
-            )}
-            <Route
-              path="/ai-generate"
-              element={
-                <ProtectedRoute>
-                  <AIGenerateScreen />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/upgrade"
-              element={
-                <ProtectedRoute>
-                  <UpgradeModal
-                    open={true}
-                    onOpenChange={(open) => !open && navigate("/decks")}
-                  />
-                </ProtectedRoute>
-              }
-            />
-            <Route path="/payment-success" element={<PaymentSuccessScreen />} />
-            <Route
-              path="/all-cards"
-              element={
-                <ProtectedRoute>
-                  <AllCardsScreen />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/settings"
-              element={
-                <ProtectedRoute>
-                  <SettingsScreen />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/superuser"
-              element={
-                <ProtectedRoute>
-                  <SuperuserScreen />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/moderator"
-              element={
-                <ProtectedRoute>
-                  <ModeratorScreen />
-                </ProtectedRoute>
-              }
-            />
-            <Route path="/privacy" element={<PrivacyPolicyScreen />} />
-            <Route path="/terms" element={<TermsScreen />} />
-            <Route path="/contact" element={<ContactScreen />} />
-            <Route
-              path="/notifications"
-              element={
-                <ProtectedRoute>
-                  <NotificationsScreen />
-                </ProtectedRoute>
-              }
-            />
-            <Route path="/shared/:shareId" element={<SharedDeckRoute />} />
-            {/* Catch-all route for unmatched paths */}
-            <Route
-              path="*"
-              element={
-                user ? <Navigate to="/decks" replace /> : <LandingPage />
-              }
-            />
-          </Routes>
+          <AppRoutes user={user} sharedDeckRoute={<SharedDeckRoute />} />
 
           {/* Display name modal for OAuth users */}
           {showDisplayNameModal && (

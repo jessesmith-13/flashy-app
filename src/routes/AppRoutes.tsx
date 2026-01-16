@@ -1,0 +1,214 @@
+import { Routes, Route, Navigate } from "react-router-dom";
+import type { ReactNode } from "react";
+
+import { landingRoutes } from "@/features/landing/routes";
+
+// Keep these imports as-is for now (we'll migrate them later)
+import { LoginScreen } from "@/components/Auth/Login/LoginScreen";
+import { SignUpScreen } from "@/components/Auth/Signup/SignupScreen";
+import { ResetPasswordScreen } from "@/components/Auth/Login/ResetPasswordScreen";
+import { DecksScreen } from "@/components/Decks/DecksScreen";
+import { DeckDetailScreen } from "@/components/Decks/DeckDetail/DeckDetailScreen";
+import { StudyOptionsScreen } from "@/components/Study/StudyOptionsScreen";
+import { StudyScreen } from "@/components/Study/StudyScreen";
+import { CommunityScreen } from "@/components/Community/CommunityScreen";
+import { ProfileScreen } from "@/components/Profile/ProfileScreen";
+import { AIGenerateScreen } from "@/components/AI/AIGenerateScreen";
+import { UpgradeModal } from "@/components/UpgradeModal";
+import { PaymentSuccessScreen } from "@/components/PaymentSuccessScreen";
+import { AllCardsScreen } from "@/components/AllCardsScreen";
+import { SettingsScreen } from "@/components/Settings/SettingsScreen";
+import { SuperuserScreen } from "@/components/Superuser/SuperuserScreen";
+import { ModeratorScreen } from "@/components/Moderation/ModeratorScreen";
+import { PrivacyPolicyScreen } from "@/components/Legal/PrivacyPolicyScreen";
+import { TermsScreen } from "@/components/Legal/TermsScreen";
+import { ContactScreen } from "@/components/Contact/ContactScreen";
+import { NotificationsScreen } from "@/components/Notifications/NotificationsScreen";
+import ProtectedRoute from "@/components/ProtectedRoute";
+import { BetaTestingPage } from "@/components/BetaTesting/BetaTestingPage";
+
+import { IS_BETA_TESTING_ENABLED } from "@/shared/config/featureFlags";
+
+type AppRoutesProps = {
+  user: unknown; // keep loose for now; tighten later if you want
+  sharedDeckRoute: ReactNode; // pass <SharedDeckRoute /> from App.tsx (uses hooks)
+  onCloseUpgrade?: () => void; // optional so App.tsx can keep old behavior
+};
+
+export function AppRoutes({
+  user,
+  sharedDeckRoute,
+  onCloseUpgrade,
+}: AppRoutesProps) {
+  return (
+    <Routes>
+      {landingRoutes.map((r) => (
+        <Route
+          key={r.path as string}
+          path={r.path as string}
+          element={r.element}
+        />
+      ))}
+
+      {/* everything else stays here for now */}
+      <Route path="/login" element={<LoginScreen />} />
+      <Route path="/signup" element={<SignUpScreen />} />
+      <Route path="/reset-password" element={<ResetPasswordScreen />} />
+
+      <Route
+        path="/decks"
+        element={
+          <ProtectedRoute>
+            <DecksScreen />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/deck-detail/:deckId"
+        element={
+          <ProtectedRoute>
+            <DeckDetailScreen />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/study-options/:deckId"
+        element={
+          <ProtectedRoute>
+            <StudyOptionsScreen />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Study route without deckId for all-cards and temporary decks */}
+      <Route
+        path="/study"
+        element={
+          <ProtectedRoute>
+            <StudyScreen />
+          </ProtectedRoute>
+        }
+      />
+      {/* Study route with deckId for regular deck study */}
+      <Route
+        path="/study/:deckId"
+        element={
+          <ProtectedRoute>
+            <StudyScreen />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/community"
+        element={
+          <ProtectedRoute>
+            <CommunityScreen />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/profile"
+        element={
+          <ProtectedRoute>
+            <ProfileScreen />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Beta Testing - Conditional */}
+      {IS_BETA_TESTING_ENABLED && (
+        <Route path="/beta-testing" element={<BetaTestingPage />} />
+      )}
+
+      <Route
+        path="/ai-generate"
+        element={
+          <ProtectedRoute>
+            <AIGenerateScreen />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/upgrade"
+        element={
+          <ProtectedRoute>
+            <UpgradeModal
+              open={true}
+              onOpenChange={(open) => {
+                // preserve old behavior: when modal closes, caller decides where to go
+                if (!open) onCloseUpgrade?.();
+              }}
+            />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route path="/payment-success" element={<PaymentSuccessScreen />} />
+
+      <Route
+        path="/all-cards"
+        element={
+          <ProtectedRoute>
+            <AllCardsScreen />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/settings"
+        element={
+          <ProtectedRoute>
+            <SettingsScreen />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/superuser"
+        element={
+          <ProtectedRoute>
+            <SuperuserScreen />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/moderator"
+        element={
+          <ProtectedRoute>
+            <ModeratorScreen />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route path="/privacy" element={<PrivacyPolicyScreen />} />
+      <Route path="/terms" element={<TermsScreen />} />
+      <Route path="/contact" element={<ContactScreen />} />
+
+      <Route
+        path="/notifications"
+        element={
+          <ProtectedRoute>
+            <NotificationsScreen />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* hooks route wrapper must be passed in */}
+      <Route path="/shared/:shareId" element={sharedDeckRoute} />
+
+      {/* Catch-all */}
+      <Route
+        path="*"
+        element={
+          user ? <Navigate to="/decks" replace /> : <Navigate to="/" replace />
+        }
+      />
+    </Routes>
+  );
+}

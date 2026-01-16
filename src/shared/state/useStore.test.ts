@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { act } from "@testing-library/react";
-import { useStore } from "../../src/shared/state/useStore";
+import { useStore } from "./useStore";
 
 describe("useStore", () => {
   beforeEach(() => {
@@ -11,17 +11,15 @@ describe("useStore", () => {
 
   it("sets authentication data correctly", () => {
     act(() => {
-      useStore
-        .getState()
-        .setAuth(
-          {
-            id: "1",
-            email: "test@flashy.app",
-            name: "Test User",
-            subscriptionTier: "free",
-          },
-          "fake_token"
-        );
+      useStore.getState().setAuth(
+        {
+          id: "1",
+          email: "test@flashy.app",
+          name: "Test User",
+          subscriptionTier: "free",
+        },
+        "fake_token"
+      );
     });
 
     const state = useStore.getState();
