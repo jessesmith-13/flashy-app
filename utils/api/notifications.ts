@@ -1,4 +1,4 @@
-import { API_BASE } from "../../src/supabase/runtime";
+import { API_BASE } from "@/supabase/runtime";
 
 /**
  * ============================================================
@@ -53,9 +53,7 @@ export interface Notification {
 /**
  * Map database notification to frontend notification
  */
-const mapNotification = (
-  dbNotification: NotificationFromDB,
-): Notification => {
+const mapNotification = (dbNotification: NotificationFromDB): Notification => {
   return {
     id: dbNotification.id,
     userId: dbNotification.user_id,
@@ -80,7 +78,7 @@ const mapNotification = (
  * Get all notifications for the current user
  */
 export const getNotifications = async (
-  accessToken: string,
+  accessToken: string
 ): Promise<Notification[]> => {
   const response = await fetch(`${API_BASE}/notifications`, {
     headers: {
@@ -97,20 +95,15 @@ export const getNotifications = async (
 
   if (!response.ok) {
     const errorMessage =
-      typeof data === "object" &&
-      data !== null &&
-      "error" in data
+      typeof data === "object" && data !== null && "error" in data
         ? (data as { error?: string }).error
         : undefined;
 
-    throw new Error(
-      errorMessage || "Failed to fetch notifications",
-    );
+    throw new Error(errorMessage || "Failed to fetch notifications");
   }
 
   const rawNotifications =
-    (data as { notifications?: NotificationFromDB[] })
-      .notifications || [];
+    (data as { notifications?: NotificationFromDB[] }).notifications || [];
 
   // Map database fields to camelCase
   return rawNotifications.map(mapNotification);
@@ -121,7 +114,7 @@ export const getNotifications = async (
  */
 export const markNotificationRead = async (
   accessToken: string,
-  notificationId: string,
+  notificationId: string
 ) => {
   const response = await fetch(
     `${API_BASE}/notifications/${notificationId}/read`,
@@ -130,19 +123,14 @@ export const markNotificationRead = async (
       headers: {
         Authorization: `Bearer ${accessToken}`,
       },
-    },
+    }
   );
 
   const data = await response.json();
 
   if (!response.ok) {
-    console.error(
-      "Failed to mark notification as read:",
-      data.error,
-    );
-    throw new Error(
-      data.error || "Failed to mark notification as read",
-    );
+    console.error("Failed to mark notification as read:", data.error);
+    throw new Error(data.error || "Failed to mark notification as read");
   }
 
   return data;
@@ -151,29 +139,19 @@ export const markNotificationRead = async (
 /**
  * Mark all notifications as seen
  */
-export const markAllNotificationsSeen = async (
-  accessToken: string,
-) => {
-  const response = await fetch(
-    `${API_BASE}/notifications/mark-seen`,
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
+export const markAllNotificationsSeen = async (accessToken: string) => {
+  const response = await fetch(`${API_BASE}/notifications/mark-seen`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
     },
-  );
+  });
 
   const data = await response.json();
 
   if (!response.ok) {
-    console.error(
-      "Failed to mark notifications as seen:",
-      data.error,
-    );
-    throw new Error(
-      data.error || "Failed to mark notifications as seen",
-    );
+    console.error("Failed to mark notifications as seen:", data.error);
+    throw new Error(data.error || "Failed to mark notifications as seen");
   }
 
   return data;
@@ -182,9 +160,7 @@ export const markAllNotificationsSeen = async (
 /**
  * Clear all notifications
  */
-export const clearAllNotifications = async (
-  accessToken: string,
-) => {
+export const clearAllNotifications = async (accessToken: string) => {
   const response = await fetch(`${API_BASE}/notifications`, {
     method: "DELETE",
     headers: {
@@ -196,9 +172,7 @@ export const clearAllNotifications = async (
 
   if (!response.ok) {
     console.error("Failed to clear notifications:", data.error);
-    throw new Error(
-      data.error || "Failed to clear notifications",
-    );
+    throw new Error(data.error || "Failed to clear notifications");
   }
 
   return data;

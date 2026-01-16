@@ -1,57 +1,61 @@
-import { Info, X } from 'lucide-react'
-import { Button } from '../../../ui/button'
+import { Info, X } from "lucide-react";
+import { Button } from "@/ui/button";
 
 interface MicrophonePermissionHelpProps {
-  onClose: () => void
+  onClose: () => void;
 }
 
-export function MicrophonePermissionHelp({ onClose }: MicrophonePermissionHelpProps) {
+export function MicrophonePermissionHelp({
+  onClose,
+}: MicrophonePermissionHelpProps) {
   // Detect browser
   const getBrowserName = () => {
-    const userAgent = navigator.userAgent
-    if (userAgent.includes('Chrome') && !userAgent.includes('Edg')) return 'Chrome'
-    if (userAgent.includes('Safari') && !userAgent.includes('Chrome')) return 'Safari'
-    if (userAgent.includes('Firefox')) return 'Firefox'
-    if (userAgent.includes('Edg')) return 'Edge'
-    return 'Other'
-  }
+    const userAgent = navigator.userAgent;
+    if (userAgent.includes("Chrome") && !userAgent.includes("Edg"))
+      return "Chrome";
+    if (userAgent.includes("Safari") && !userAgent.includes("Chrome"))
+      return "Safari";
+    if (userAgent.includes("Firefox")) return "Firefox";
+    if (userAgent.includes("Edg")) return "Edge";
+    return "Other";
+  };
 
-  const browser = getBrowserName()
+  const browser = getBrowserName();
 
   const getInstructions = () => {
     switch (browser) {
-      case 'Chrome':
-      case 'Edge':
+      case "Chrome":
+      case "Edge":
         return [
-          'Click the lock icon or camera icon in the address bar',
+          "Click the lock icon or camera icon in the address bar",
           'Find "Microphone" in the permissions list',
           'Select "Allow" from the dropdown',
-          'Refresh the page and try recording again'
-        ]
-      case 'Safari':
+          "Refresh the page and try recording again",
+        ];
+      case "Safari":
         return [
-          'Go to Safari menu → Settings (or Preferences)',
+          "Go to Safari menu → Settings (or Preferences)",
           'Click the "Websites" tab',
           'Select "Microphone" from the left sidebar',
           'Find this website and change permission to "Allow"',
-          'Refresh the page and try recording again'
-        ]
-      case 'Firefox':
+          "Refresh the page and try recording again",
+        ];
+      case "Firefox":
         return [
-          'Click the lock icon in the address bar',
+          "Click the lock icon in the address bar",
           'Find "Use the Microphone" in the permissions',
-          'Click the X to clear the blocked status',
-          'Try recording again - Firefox will prompt you to allow access'
-        ]
+          "Click the X to clear the blocked status",
+          "Try recording again - Firefox will prompt you to allow access",
+        ];
       default:
         return [
-          'Look for a camera or microphone icon in your address bar',
-          'Click it to access permissions settings',
-          'Enable microphone access for this website',
-          'Refresh the page and try recording again'
-        ]
+          "Look for a camera or microphone icon in your address bar",
+          "Click it to access permissions settings",
+          "Enable microphone access for this website",
+          "Refresh the page and try recording again",
+        ];
     }
-  }
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
@@ -74,7 +78,8 @@ export function MicrophonePermissionHelp({ onClose }: MicrophonePermissionHelpPr
           {/* Browser-specific instructions */}
           <div className="space-y-3">
             <p className="text-sm text-gray-600">
-              To record audio, you need to allow microphone access in your browser.
+              To record audio, you need to allow microphone access in your
+              browser.
             </p>
 
             {/* First-time permission prompt */}
@@ -83,7 +88,9 @@ export function MicrophonePermissionHelp({ onClose }: MicrophonePermissionHelpPr
                 First time recording?
               </p>
               <p className="text-sm text-green-800">
-                When you click the "Record" button, your browser will show a popup asking for microphone permission. Click "Allow" to enable recording.
+                When you click the "Record" button, your browser will show a
+                popup asking for microphone permission. Click "Allow" to enable
+                recording.
               </p>
             </div>
 
@@ -110,22 +117,22 @@ export function MicrophonePermissionHelp({ onClose }: MicrophonePermissionHelpPr
                 <li>• Make sure your microphone is properly connected</li>
                 <li>• Check that no other app is using your microphone</li>
                 <li>• Try closing and reopening your browser</li>
-                <li>• As an alternative, you can upload audio files instead of recording</li>
+                <li>
+                  • As an alternative, you can upload audio files instead of
+                  recording
+                </li>
               </ul>
             </div>
           </div>
 
           {/* Actions */}
           <div className="flex justify-end gap-2 pt-2">
-            <Button
-              variant="default"
-              onClick={onClose}
-            >
+            <Button variant="default" onClick={onClose}>
               Got it
             </Button>
           </div>
         </div>
       </div>
     </div>
-  )
+  );
 }

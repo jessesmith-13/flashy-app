@@ -1,6 +1,6 @@
-import { Label } from "../../ui/label";
-import { Checkbox } from "../../ui/checkbox";
-import { Textarea } from "../../ui/textarea";
+import { Label } from "@/ui/label";
+import { Checkbox } from "@/ui/checkbox";
+import { Textarea } from "@/ui/textarea";
 import { Info } from "lucide-react";
 
 interface DeckProvenancePanelProps {

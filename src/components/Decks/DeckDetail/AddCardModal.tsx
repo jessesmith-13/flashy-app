@@ -1,61 +1,97 @@
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../../../ui/dialog'
-import { Button } from '../../../ui/button'
-import { Input } from '../../../ui/input'
-import { Label } from '../../../ui/label'
-import { Textarea } from '../../../ui/textarea'
-import { Badge } from '../../../ui/badge'
-import { FlipVertical, CheckCircle, Keyboard, ImageIcon, Crown, X, Sparkles, Loader2, Plus } from 'lucide-react'
-import type { SubscriptionTier } from '@/types/users'
-import { CardType } from '@/types/decks'
-import { canAddImageToCard } from '../../../../utils/subscription'
-import { AudioRecorder } from './AudioRecorder'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/ui/dialog";
+import { Button } from "@/ui/button";
+import { Input } from "@/ui/input";
+import { Label } from "@/ui/label";
+import { Textarea } from "@/ui/textarea";
+import { Badge } from "@/ui/badge";
+import {
+  FlipVertical,
+  CheckCircle,
+  Keyboard,
+  ImageIcon,
+  Crown,
+  X,
+  Sparkles,
+  Loader2,
+  Plus,
+} from "lucide-react";
+import type { SubscriptionTier } from "@/types/users";
+import { CardType } from "@/types/decks";
+import { canAddImageToCard } from "../../../../utils/subscription";
+import { AudioRecorder } from "./AudioRecorder";
 
-const CARD_TYPES: { value: CardType; label: string; icon: typeof FlipVertical; description: string }[] = [
-  { value: 'classic-flip', label: 'Classic Flip', icon: FlipVertical, description: 'Flip card with ✓/✗ rating' },
-  { value: 'multiple-choice', label: 'Multiple Choice', icon: CheckCircle, description: 'Choose correct answer(s)' },
-  { value: 'type-answer', label: 'Type to Answer', icon: Keyboard, description: 'Type the exact answer' },
-]
+const CARD_TYPES: {
+  value: CardType;
+  label: string;
+  icon: typeof FlipVertical;
+  description: string;
+}[] = [
+  {
+    value: "classic-flip",
+    label: "Classic Flip",
+    icon: FlipVertical,
+    description: "Flip card with ✓/✗ rating",
+  },
+  {
+    value: "multiple-choice",
+    label: "Multiple Choice",
+    icon: CheckCircle,
+    description: "Choose correct answer(s)",
+  },
+  {
+    value: "type-answer",
+    label: "Type to Answer",
+    icon: Keyboard,
+    description: "Type the exact answer",
+  },
+];
 
 interface AddCardModalProps {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  cardType: CardType
-  front: string
-  back: string
-  frontImageUrl: string
-  frontImageFile: File | null
-  backImageUrl: string
-  backImageFile: File | null
-  frontAudio?: string
-  backAudio?: string
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  cardType: CardType;
+  front: string;
+  back: string;
+  frontImageUrl: string;
+  frontImageFile: File | null;
+  backImageUrl: string;
+  backImageFile: File | null;
+  frontAudio?: string;
+  backAudio?: string;
   // New structure for multiple-choice
-  correctAnswers: string[]  // Array of correct answers
-  incorrectAnswers: string[]  // Array of incorrect options
+  correctAnswers: string[]; // Array of correct answers
+  incorrectAnswers: string[]; // Array of incorrect options
   // For type-answer
-  acceptedAnswers: string[]  // Array of accepted alternative answers
-  creating: boolean
-  uploadingImage: boolean
-  uploadingBackImage: boolean
-  userTier?: SubscriptionTier
-  deckFrontLanguage?: string
-  deckBackLanguage?: string
-  onCardTypeChange: (type: CardType) => void
-  onFrontChange: (value: string) => void
-  onBackChange: (value: string) => void
-  onFrontImageChange: (file: File | null, url: string) => void
-  onBackImageChange: (file: File | null, url: string) => void
-  onFrontAudioChange?: (url: string) => void
-  onBackAudioChange?: (url: string) => void
-  onCorrectAnswersChange: (answers: string[]) => void
-  onIncorrectAnswersChange: (answers: string[]) => void
-  onAcceptedAnswersChange: (answers: string[]) => void
-  onSubmit: (e: React.FormEvent, closeDialog?: boolean) => void
-  onUpgradeClick: () => void
-  onTranslateFront?: () => Promise<void>
-  onTranslateBack?: () => Promise<void>
-  isSuperuser?: boolean
-  translatingFront?: boolean
-  translatingBack?: boolean
+  acceptedAnswers: string[]; // Array of accepted alternative answers
+  creating: boolean;
+  uploadingImage: boolean;
+  uploadingBackImage: boolean;
+  userTier?: SubscriptionTier;
+  deckFrontLanguage?: string;
+  deckBackLanguage?: string;
+  onCardTypeChange: (type: CardType) => void;
+  onFrontChange: (value: string) => void;
+  onBackChange: (value: string) => void;
+  onFrontImageChange: (file: File | null, url: string) => void;
+  onBackImageChange: (file: File | null, url: string) => void;
+  onFrontAudioChange?: (url: string) => void;
+  onBackAudioChange?: (url: string) => void;
+  onCorrectAnswersChange: (answers: string[]) => void;
+  onIncorrectAnswersChange: (answers: string[]) => void;
+  onAcceptedAnswersChange: (answers: string[]) => void;
+  onSubmit: (e: React.FormEvent, closeDialog?: boolean) => void;
+  onUpgradeClick: () => void;
+  onTranslateFront?: () => Promise<void>;
+  onTranslateBack?: () => Promise<void>;
+  isSuperuser?: boolean;
+  translatingFront?: boolean;
+  translatingBack?: boolean;
 }
 
 export function AddCardModal({
@@ -90,54 +126,54 @@ export function AddCardModal({
   onTranslateFront,
   onTranslateBack,
   translatingFront,
-  translatingBack
+  translatingBack,
 }: AddCardModalProps) {
   // Multiple choice handlers
   const handleAddCorrectAnswer = () => {
-    onCorrectAnswersChange([...correctAnswers, ''])
-  }
+    onCorrectAnswersChange([...correctAnswers, ""]);
+  };
 
   const handleRemoveCorrectAnswer = (index: number) => {
-    const newAnswers = correctAnswers.filter((_, i) => i !== index)
-    onCorrectAnswersChange(newAnswers.length > 0 ? newAnswers : [''])
-  }
+    const newAnswers = correctAnswers.filter((_, i) => i !== index);
+    onCorrectAnswersChange(newAnswers.length > 0 ? newAnswers : [""]);
+  };
 
   const handleCorrectAnswerChange = (index: number, value: string) => {
-    const newAnswers = [...correctAnswers]
-    newAnswers[index] = value
-    onCorrectAnswersChange(newAnswers)
-  }
+    const newAnswers = [...correctAnswers];
+    newAnswers[index] = value;
+    onCorrectAnswersChange(newAnswers);
+  };
 
   const handleAddIncorrectAnswer = () => {
-    onIncorrectAnswersChange([...incorrectAnswers, ''])
-  }
+    onIncorrectAnswersChange([...incorrectAnswers, ""]);
+  };
 
   const handleRemoveIncorrectAnswer = (index: number) => {
-    const newAnswers = incorrectAnswers.filter((_, i) => i !== index)
-    onIncorrectAnswersChange(newAnswers)
-  }
+    const newAnswers = incorrectAnswers.filter((_, i) => i !== index);
+    onIncorrectAnswersChange(newAnswers);
+  };
 
   const handleIncorrectAnswerChange = (index: number, value: string) => {
-    const newAnswers = [...incorrectAnswers]
-    newAnswers[index] = value
-    onIncorrectAnswersChange(newAnswers)
-  }
+    const newAnswers = [...incorrectAnswers];
+    newAnswers[index] = value;
+    onIncorrectAnswersChange(newAnswers);
+  };
 
   // Type-answer handlers
   const handleAddTypeAnswer = () => {
-    onAcceptedAnswersChange([...acceptedAnswers, ''])
-  }
+    onAcceptedAnswersChange([...acceptedAnswers, ""]);
+  };
 
   const handleRemoveTypeAnswer = (index: number) => {
-    const newAnswers = acceptedAnswers.filter((_, i) => i !== index)
-    onAcceptedAnswersChange(newAnswers)
-  }
+    const newAnswers = acceptedAnswers.filter((_, i) => i !== index);
+    onAcceptedAnswersChange(newAnswers);
+  };
 
   const handleTypeAnswerChange = (index: number, value: string) => {
-    const newAnswers = [...acceptedAnswers]
-    newAnswers[index] = value
-    onAcceptedAnswersChange(newAnswers)
-  }
+    const newAnswers = [...acceptedAnswers];
+    newAnswers[index] = value;
+    onAcceptedAnswersChange(newAnswers);
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -153,7 +189,7 @@ export function AddCardModal({
             <Label>Card Type</Label>
             <div className="grid grid-cols-1 gap-2 mt-2">
               {CARD_TYPES.map((type) => {
-                const Icon = type.icon
+                const Icon = type.icon;
                 return (
                   <button
                     key={type.value}
@@ -161,35 +197,45 @@ export function AddCardModal({
                     onClick={() => onCardTypeChange(type.value)}
                     className={`p-3 rounded-lg border-2 transition-all text-left ${
                       cardType === type.value
-                        ? 'border-emerald-600 bg-emerald-50 dark:bg-emerald-900/30'
-                        : 'border-gray-200 dark:border-gray-700 hover:border-emerald-300 dark:hover:border-emerald-600'
+                        ? "border-emerald-600 bg-emerald-50 dark:bg-emerald-900/30"
+                        : "border-gray-200 dark:border-gray-700 hover:border-emerald-300 dark:hover:border-emerald-600"
                     }`}
                   >
                     <div className="flex items-start gap-3">
-                      <Icon className={`w-5 h-5 mt-0.5 ${cardType === type.value ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-600 dark:text-gray-400'}`} />
+                      <Icon
+                        className={`w-5 h-5 mt-0.5 ${
+                          cardType === type.value
+                            ? "text-emerald-600 dark:text-emerald-400"
+                            : "text-gray-600 dark:text-gray-400"
+                        }`}
+                      />
                       <div>
-                        <div className="text-sm text-gray-900 dark:text-gray-100">{type.label}</div>
-                        <div className="text-xs text-gray-500 dark:text-gray-400">{type.description}</div>
+                        <div className="text-sm text-gray-900 dark:text-gray-100">
+                          {type.label}
+                        </div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400">
+                          {type.description}
+                        </div>
                       </div>
                     </div>
                   </button>
-                )
+                );
               })}
             </div>
           </div>
 
           <div>
             <Label htmlFor="cardFront">
-              {cardType === 'classic-flip' ? 'Front (Question)' : 'Question'}
+              {cardType === "classic-flip" ? "Front (Question)" : "Question"}
             </Label>
             <Textarea
               id="cardFront"
               placeholder={
-                cardType === 'classic-flip' 
-                  ? 'What is the capital of France? (or add an image below)'
-                  : cardType === 'multiple-choice'
-                  ? 'Which city is the capital of France?'
-                  : 'What is the capital of France?'
+                cardType === "classic-flip"
+                  ? "What is the capital of France? (or add an image below)"
+                  : cardType === "multiple-choice"
+                  ? "Which city is the capital of France?"
+                  : "What is the capital of France?"
               }
               value={front}
               onChange={(e) => onFrontChange(e.target.value)}
@@ -205,7 +251,7 @@ export function AddCardModal({
                 disabled={translatingFront}
               >
                 <Sparkles className="w-3 h-3 mr-1" />
-                {translatingFront ? 'Translating...' : 'Translate'}
+                {translatingFront ? "Translating..." : "Translate"}
               </Button>
             )}
           </div>
@@ -213,13 +259,19 @@ export function AddCardModal({
           {/* Question Image */}
           <div className="border-t pt-4">
             <div className="flex items-center justify-between mb-2">
-              <Label htmlFor="cardFrontImage" className="text-sm flex items-center gap-2">
+              <Label
+                htmlFor="cardFrontImage"
+                className="text-sm flex items-center gap-2"
+              >
                 <ImageIcon className="w-4 h-4" />
-                Question Image <span className="text-xs text-gray-500">(optional)</span>
+                Question Image{" "}
+                <span className="text-xs text-gray-500">(optional)</span>
               </Label>
-              {userTier === 'free' && <Crown className="w-4 h-4 text-amber-500" />}
+              {userTier === "free" && (
+                <Crown className="w-4 h-4 text-amber-500" />
+              )}
             </div>
-            {userTier === 'free' ? (
+            {userTier === "free" ? (
               <div className="p-3 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-lg">
                 <div className="flex items-start gap-2">
                   <Crown className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />
@@ -248,10 +300,10 @@ export function AddCardModal({
                   type="file"
                   accept="image/*"
                   onChange={(e) => {
-                    const file = e.target.files?.[0]
+                    const file = e.target.files?.[0];
                     if (file) {
-                      const previewUrl = URL.createObjectURL(file)
-                      onFrontImageChange(file, previewUrl)
+                      const previewUrl = URL.createObjectURL(file);
+                      onFrontImageChange(file, previewUrl);
                     }
                   }}
                   className="mt-1 text-gray-900 dark:text-gray-100"
@@ -259,19 +311,25 @@ export function AddCardModal({
                 />
                 {uploadingImage && (
                   <div className="mt-2 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg">
-                    <p className="text-sm text-blue-700 dark:text-blue-300">Uploading image...</p>
+                    <p className="text-sm text-blue-700 dark:text-blue-300">
+                      Uploading image...
+                    </p>
                   </div>
                 )}
                 {frontImageUrl && !uploadingImage && (
                   <div className="mt-2 space-y-2">
                     <div className="rounded-lg overflow-hidden border">
-                      <img src={frontImageUrl} alt="Question preview" className="w-full h-32 object-cover" />
+                      <img
+                        src={frontImageUrl}
+                        alt="Question preview"
+                        className="w-full h-32 object-cover"
+                      />
                     </div>
                     <Button
                       type="button"
                       variant="outline"
                       size="sm"
-                      onClick={() => onFrontImageChange(null, '')}
+                      onClick={() => onFrontImageChange(null, "")}
                       className="w-full"
                     >
                       Remove Image
@@ -288,7 +346,7 @@ export function AddCardModal({
               <AudioRecorder
                 onAudioSave={(url) => onFrontAudioChange(url)}
                 currentAudioUrl={frontAudio}
-                onAudioRemove={() => onFrontAudioChange('')}
+                onAudioRemove={() => onFrontAudioChange("")}
                 disabled={creating}
                 label="Question Audio (Optional)"
               />
@@ -296,19 +354,24 @@ export function AddCardModal({
           )}
 
           {/* Multiple Choice Options */}
-          {cardType === 'multiple-choice' && (
+          {cardType === "multiple-choice" && (
             <div className="space-y-4">
               <div>
                 <Label className="text-sm mb-2 block">Correct Answer(s)</Label>
                 <div className="space-y-2">
                   {correctAnswers.map((answer, index) => (
                     <div key={index} className="flex items-center gap-2">
-                      <Badge variant="outline" className="bg-green-50 text-green-700 border-green-300 flex-shrink-0">
+                      <Badge
+                        variant="outline"
+                        className="bg-green-50 text-green-700 border-green-300 flex-shrink-0"
+                      >
                         Correct
                       </Badge>
                       <Input
                         value={answer}
-                        onChange={(e) => handleCorrectAnswerChange(index, e.target.value)}
+                        onChange={(e) =>
+                          handleCorrectAnswerChange(index, e.target.value)
+                        }
                         placeholder={`Correct answer ${index + 1}`}
                         className="flex-1 text-gray-900 dark:text-gray-100"
                       />
@@ -343,12 +406,17 @@ export function AddCardModal({
                 <div className="space-y-2">
                   {incorrectAnswers.map((answer, index) => (
                     <div key={index} className="flex items-center gap-2">
-                      <Badge variant="outline" className="bg-red-50 text-red-700 border-red-300 flex-shrink-0">
+                      <Badge
+                        variant="outline"
+                        className="bg-red-50 text-red-700 border-red-300 flex-shrink-0"
+                      >
                         Wrong
                       </Badge>
                       <Input
                         value={answer}
-                        onChange={(e) => handleIncorrectAnswerChange(index, e.target.value)}
+                        onChange={(e) =>
+                          handleIncorrectAnswerChange(index, e.target.value)
+                        }
                         placeholder={`Incorrect option ${index + 1}`}
                         className="flex-1 text-gray-900 dark:text-gray-100"
                       />
@@ -381,7 +449,7 @@ export function AddCardModal({
           )}
 
           {/* Classic Flip Back */}
-          {cardType === 'classic-flip' && (
+          {cardType === "classic-flip" && (
             <>
               <div>
                 <Label htmlFor="cardBack">Back (Answer)</Label>
@@ -402,7 +470,7 @@ export function AddCardModal({
                     disabled={translatingBack}
                   >
                     <Sparkles className="w-3 h-3 mr-1" />
-                    {translatingBack ? 'Translating...' : 'Translate'}
+                    {translatingBack ? "Translating..." : "Translate"}
                   </Button>
                 )}
               </div>
@@ -411,9 +479,13 @@ export function AddCardModal({
               {canAddImageToCard(userTier) && (
                 <div>
                   <div className="flex items-center justify-between mb-2">
-                    <Label htmlFor="cardBackImage" className="text-sm flex items-center gap-2">
+                    <Label
+                      htmlFor="cardBackImage"
+                      className="text-sm flex items-center gap-2"
+                    >
                       <ImageIcon className="w-4 h-4" />
-                      Answer Image <span className="text-xs text-gray-500">(optional)</span>
+                      Answer Image{" "}
+                      <span className="text-xs text-gray-500">(optional)</span>
                     </Label>
                   </div>
                   <Input
@@ -421,10 +493,10 @@ export function AddCardModal({
                     type="file"
                     accept="image/*"
                     onChange={(e) => {
-                      const file = e.target.files?.[0]
+                      const file = e.target.files?.[0];
                       if (file) {
-                        const previewUrl = URL.createObjectURL(file)
-                        onBackImageChange(file, previewUrl)
+                        const previewUrl = URL.createObjectURL(file);
+                        onBackImageChange(file, previewUrl);
                       }
                     }}
                     className="mt-1 text-gray-900 dark:text-gray-100"
@@ -432,19 +504,25 @@ export function AddCardModal({
                   />
                   {uploadingBackImage && (
                     <div className="mt-2 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg">
-                      <p className="text-sm text-blue-700 dark:text-blue-300">Uploading image...</p>
+                      <p className="text-sm text-blue-700 dark:text-blue-300">
+                        Uploading image...
+                      </p>
                     </div>
                   )}
                   {backImageUrl && !uploadingBackImage && (
                     <div className="mt-2 space-y-2">
                       <div className="rounded-lg overflow-hidden border">
-                        <img src={backImageUrl} alt="Answer preview" className="w-full h-32 object-cover" />
+                        <img
+                          src={backImageUrl}
+                          alt="Answer preview"
+                          className="w-full h-32 object-cover"
+                        />
                       </div>
                       <Button
                         type="button"
                         variant="outline"
                         size="sm"
-                        onClick={() => onBackImageChange(null, '')}
+                        onClick={() => onBackImageChange(null, "")}
                         className="w-full"
                       >
                         Remove Image
@@ -460,7 +538,7 @@ export function AddCardModal({
                   <AudioRecorder
                     onAudioSave={(url) => onBackAudioChange(url)}
                     currentAudioUrl={backAudio}
-                    onAudioRemove={() => onBackAudioChange('')}
+                    onAudioRemove={() => onBackAudioChange("")}
                     disabled={creating}
                     label="Answer Audio (Optional)"
                   />
@@ -470,7 +548,7 @@ export function AddCardModal({
           )}
 
           {/* Type-Answer Accepted Answers */}
-          {cardType === 'type-answer' && (
+          {cardType === "type-answer" && (
             <>
               <div>
                 <Label htmlFor="cardBack">Answer *</Label>
@@ -491,7 +569,7 @@ export function AddCardModal({
                     disabled={translatingBack}
                   >
                     <Sparkles className="w-3 h-3 mr-1" />
-                    {translatingBack ? 'Translating...' : 'Translate'}
+                    {translatingBack ? "Translating..." : "Translate"}
                   </Button>
                 )}
               </div>
@@ -500,9 +578,13 @@ export function AddCardModal({
               {canAddImageToCard(userTier) && (
                 <div>
                   <div className="flex items-center justify-between mb-2">
-                    <Label htmlFor="cardBackImage" className="text-sm flex items-center gap-2">
+                    <Label
+                      htmlFor="cardBackImage"
+                      className="text-sm flex items-center gap-2"
+                    >
                       <ImageIcon className="w-4 h-4" />
-                      Answer Image <span className="text-xs text-gray-500">(optional)</span>
+                      Answer Image{" "}
+                      <span className="text-xs text-gray-500">(optional)</span>
                     </Label>
                   </div>
                   <Input
@@ -510,10 +592,10 @@ export function AddCardModal({
                     type="file"
                     accept="image/*"
                     onChange={(e) => {
-                      const file = e.target.files?.[0]
+                      const file = e.target.files?.[0];
                       if (file) {
-                        const previewUrl = URL.createObjectURL(file)
-                        onBackImageChange(file, previewUrl)
+                        const previewUrl = URL.createObjectURL(file);
+                        onBackImageChange(file, previewUrl);
                       }
                     }}
                     className="mt-1 text-gray-900 dark:text-gray-100"
@@ -521,19 +603,25 @@ export function AddCardModal({
                   />
                   {uploadingBackImage && (
                     <div className="mt-2 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg">
-                      <p className="text-sm text-blue-700 dark:text-blue-300">Uploading image...</p>
+                      <p className="text-sm text-blue-700 dark:text-blue-300">
+                        Uploading image...
+                      </p>
                     </div>
                   )}
                   {backImageUrl && !uploadingBackImage && (
                     <div className="mt-2 space-y-2">
                       <div className="rounded-lg overflow-hidden border">
-                        <img src={backImageUrl} alt="Answer preview" className="w-full h-32 object-cover" />
+                        <img
+                          src={backImageUrl}
+                          alt="Answer preview"
+                          className="w-full h-32 object-cover"
+                        />
                       </div>
                       <Button
                         type="button"
                         variant="outline"
                         size="sm"
-                        onClick={() => onBackImageChange(null, '')}
+                        onClick={() => onBackImageChange(null, "")}
                         className="w-full"
                       >
                         Remove Image
@@ -545,7 +633,8 @@ export function AddCardModal({
 
               <div>
                 <Label className="text-sm mb-2 block">
-                  Accepted Alternatives <span className="text-xs text-gray-500">(optional)</span>
+                  Accepted Alternatives{" "}
+                  <span className="text-xs text-gray-500">(optional)</span>
                 </Label>
                 {acceptedAnswers.length > 0 && (
                   <div className="space-y-2 mb-2">
@@ -553,8 +642,12 @@ export function AddCardModal({
                       <div key={index} className="flex items-center gap-2">
                         <Input
                           value={answer}
-                          onChange={(e) => handleTypeAnswerChange(index, e.target.value)}
-                          placeholder={`Alternative answer ${index + 1} (e.g., "paris", "París")`}
+                          onChange={(e) =>
+                            handleTypeAnswerChange(index, e.target.value)
+                          }
+                          placeholder={`Alternative answer ${
+                            index + 1
+                          } (e.g., "paris", "París")`}
                           className="flex-1 text-gray-900 dark:text-gray-100"
                         />
                         <Button
@@ -581,7 +674,8 @@ export function AddCardModal({
                   Add Alternative Answer
                 </Button>
                 <p className="text-xs text-gray-500 mt-2">
-                  Add alternative spellings or phrasings that should be accepted as correct (e.g., "correct", "corect").
+                  Add alternative spellings or phrasings that should be accepted
+                  as correct (e.g., "correct", "corect").
                 </p>
               </div>
             </>
@@ -608,12 +702,12 @@ export function AddCardModal({
                   Creating...
                 </>
               ) : (
-                'Add Card'
+                "Add Card"
               )}
             </Button>
           </div>
         </form>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

@@ -5,11 +5,11 @@ import { useLocation } from "react-router-dom";
 import { signUp, signIn, signInWithGoogle } from "../../../../utils/api/auth";
 import { applyReferralCode } from "../../../../utils/api/referrals";
 
-import { AuthHeader } from "../Login/AuthHeader";
+import { AuthHeader } from "@/components/Auth/Login/AuthHeader";
+import { GoogleLoginButton } from "@/components/Auth/Login/GoogleLoginButton";
+import { UserRoleSelector } from "@/components/Provenance/UserRoleSelector";
 import { SignupForm } from "./SignupForm";
 import { SignupSuccess } from "./SignupSuccess";
-import { GoogleLoginButton } from "../Login/GoogleLoginButton";
-import { UserRoleSelector } from "../../Provenance/UserRoleSelector";
 import { toast } from "sonner";
 import { UserPlus } from "lucide-react";
 import { AccountBannedError } from "@/types/errors";

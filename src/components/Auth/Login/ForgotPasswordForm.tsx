@@ -1,23 +1,29 @@
-import { useState } from 'react'
-import { Button } from '../../../ui/button'
-import { Input } from '../../../ui/input'
-import { Label } from '../../../ui/label'
+import { useState } from "react";
+import { Button } from "@/ui/button";
+import { Input } from "@/ui/input";
+import { Label } from "@/ui/label";
 
 interface ForgotPasswordFormProps {
-  onSubmit: (email: string) => Promise<void>
-  onBack: () => void
-  error?: string
-  loading?: boolean
-  success?: boolean
+  onSubmit: (email: string) => Promise<void>;
+  onBack: () => void;
+  error?: string;
+  loading?: boolean;
+  success?: boolean;
 }
 
-export function ForgotPasswordForm({ onSubmit, onBack, error, loading, success }: ForgotPasswordFormProps) {
-  const [email, setEmail] = useState('')
+export function ForgotPasswordForm({
+  onSubmit,
+  onBack,
+  error,
+  loading,
+  success,
+}: ForgotPasswordFormProps) {
+  const [email, setEmail] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    await onSubmit(email)
-  }
+    e.preventDefault();
+    await onSubmit(email);
+  };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
@@ -63,9 +69,9 @@ export function ForgotPasswordForm({ onSubmit, onBack, error, loading, success }
           className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white"
           disabled={loading}
         >
-          {loading ? 'Sending...' : 'Send Reset Link'}
+          {loading ? "Sending..." : "Send Reset Link"}
         </Button>
       </div>
     </form>
-  )
+  );
 }

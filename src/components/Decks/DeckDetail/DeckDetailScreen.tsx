@@ -23,7 +23,7 @@ import {
   uploadCardImage as apiUploadCardImage,
   uploadCardAudio as apiUploadCardAudio,
 } from "../../../../utils/api/storage";
-import { AppLayout } from "../../Layout/AppLayout";
+import { AppLayout } from "@/components/Layout/AppLayout";
 import { DeckHeader } from "./DeckHeader";
 import { AddCardModal } from "./AddCardModal";
 import { EditCardModal } from "./EditCardModal";
@@ -31,7 +31,7 @@ import { BulkAddCardsDialog, type CardFormData } from "./BulkAddCardsDialog";
 import { DeckSettingsDialog } from "./DeckSettingsDialog";
 import { PublishDeckDialog } from "./PublishDeckDialog";
 import { CardList } from "./CardList";
-import { UpgradeModal } from "../../UpgradeModal";
+import { UpgradeModal } from "@/components/UpgradeModal";
 import { toast } from "sonner";
 import { canPublishToCommunity } from "../../../../utils/subscription";
 import { handleAuthError } from "../../../../utils/authErrorHandler";

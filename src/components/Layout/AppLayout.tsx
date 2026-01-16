@@ -3,7 +3,7 @@ import { useStore } from "@/shared/state/useStore";
 import { useNavigation } from "../../../hooks/useNavigation";
 import { useLocation } from "react-router-dom";
 import { signOut } from "../../../utils/api/auth";
-import { Button } from "../../ui/button";
+import { Button } from "@/ui/button";
 import {
   Home,
   Users,
@@ -19,7 +19,7 @@ import {
   ShieldAlert,
   TestTube,
 } from "lucide-react";
-import { NotificationCenter } from "../Notifications/NotificationCenter";
+import { NotificationCenter } from "@/components/Notifications/NotificationCenter";
 import {
   Sheet,
   SheetContent,

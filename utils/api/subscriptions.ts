@@ -1,4 +1,4 @@
-import { STRIPE_API_BASE } from '../../src/supabase/runtime'
+import { STRIPE_API_BASE } from "@/supabase/runtime";
 
 /**
  * ============================================================
@@ -11,52 +11,52 @@ import { STRIPE_API_BASE } from '../../src/supabase/runtime'
  */
 export const createCheckoutSession = async (
   accessToken: string,
-  planType: 'monthly' | 'annual' | 'lifetime'
+  planType: "monthly" | "annual" | "lifetime"
 ): Promise<string> => {
   const response = await fetch(`${STRIPE_API_BASE}/subscriptions/checkout`, {
-    method: 'POST',
+    method: "POST",
     headers: {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
       Authorization: `Bearer ${accessToken}`,
     },
     body: JSON.stringify({ planType }),
-  })
+  });
 
-  const data = await response.json()
+  const data = await response.json();
 
   if (!response.ok) {
-    console.error('Failed to create checkout session:', data.error)
-    throw new Error(data.error || 'Failed to create checkout session')
+    console.error("Failed to create checkout session:", data.error);
+    throw new Error(data.error || "Failed to create checkout session");
   }
 
-  return data.url
-}
+  return data.url;
+};
 
 /**
  * Verify Stripe payment (fallback if webhook fails)
  */
-export const verifyPayment = async (
-  accessToken: string,
-  sessionId: string
-) => {
-  const response = await fetch(`${STRIPE_API_BASE}/subscriptions/verify-payment`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${accessToken}`,
-    },
-    body: JSON.stringify({ sessionId }),
-  })
+export const verifyPayment = async (accessToken: string, sessionId: string) => {
+  const response = await fetch(
+    `${STRIPE_API_BASE}/subscriptions/verify-payment`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify({ sessionId }),
+    }
+  );
 
-  const data = await response.json()
+  const data = await response.json();
 
   if (!response.ok) {
-    console.error('Failed to verify payment:', data.error)
-    throw new Error(data.error || 'Failed to verify payment')
+    console.error("Failed to verify payment:", data.error);
+    throw new Error(data.error || "Failed to verify payment");
   }
 
-  return data
-}
+  return data;
+};
 
 /**
  * Create Stripe Customer Portal Session
@@ -67,22 +67,22 @@ export const createPortalSession = async (
   const response = await fetch(
     `${STRIPE_API_BASE}/subscriptions/create-portal-session`,
     {
-      method: 'POST',
+      method: "POST",
       headers: {
         Authorization: `Bearer ${accessToken}`,
       },
     }
-  )
+  );
 
-  const data = await response.json()
+  const data = await response.json();
 
   if (!response.ok) {
-    console.error('Failed to create portal session:', data.error)
-    throw new Error(data.error || 'Failed to create portal session')
+    console.error("Failed to create portal session:", data.error);
+    throw new Error(data.error || "Failed to create portal session");
   }
 
-  return data.url
-}
+  return data.url;
+};
 
 /**
  * Cancel active subscription
@@ -91,48 +91,48 @@ export const cancelSubscription = async (accessToken: string) => {
   const response = await fetch(
     `${STRIPE_API_BASE}/subscriptions/cancel-subscription`,
     {
-      method: 'POST',
+      method: "POST",
       headers: {
         Authorization: `Bearer ${accessToken}`,
       },
     }
-  )
+  );
 
-  const data = await response.json()
+  const data = await response.json();
 
   if (!response.ok) {
-    console.error('Failed to cancel subscription:', data.error)
-    throw new Error(data.error || 'Failed to cancel subscription')
+    console.error("Failed to cancel subscription:", data.error);
+    throw new Error(data.error || "Failed to cancel subscription");
   }
 
-  return data
-}
+  return data;
+};
 
 /**
  * Change subscription plan
  */
 export const changeSubscriptionPlan = async (
   accessToken: string,
-  newPlan: 'monthly' | 'annual' | 'lifetime'
+  newPlan: "monthly" | "annual" | "lifetime"
 ) => {
   const response = await fetch(
     `${STRIPE_API_BASE}/subscriptions/change-subscription-plan`,
     {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
         Authorization: `Bearer ${accessToken}`,
       },
       body: JSON.stringify({ newPlan }),
     }
-  )
+  );
 
-  const data = await response.json()
+  const data = await response.json();
 
   if (!response.ok) {
-    console.error('Failed to change subscription plan:', data.error)
-    throw new Error(data.error || 'Failed to change subscription plan')
+    console.error("Failed to change subscription plan:", data.error);
+    throw new Error(data.error || "Failed to change subscription plan");
   }
 
-  return data
-}
+  return data;
+};

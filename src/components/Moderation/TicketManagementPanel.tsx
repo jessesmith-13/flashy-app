@@ -1,14 +1,14 @@
 import { useState, useEffect, useMemo } from "react";
-import { Button } from "../../ui/button";
+import { Button } from "@/ui/button";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "../../ui/select";
-import { Card } from "../../ui/card";
-import { Badge } from "../../ui/badge";
+} from "@/ui/select";
+import { Card } from "@/ui/card";
+import { Badge } from "@/ui/badge";
 import {
   AlertTriangle,
   CheckCircle,
@@ -22,7 +22,7 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { toast } from "sonner";
-import { Tabs, TabsList, TabsTrigger } from "../../ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/ui/tabs";
 import { useNavigation } from "../../../hooks/useNavigation";
 import { useStore } from "@/shared/state/useStore";
 import { TicketDetailView } from "./TicketDetailView";

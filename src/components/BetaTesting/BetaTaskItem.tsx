@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Check, X, ExternalLink } from "lucide-react";
-import { Button } from "../../ui/button";
-import type { BetaTaskDefinition } from "../../types/betaTesting";
+import { Button } from "@/ui/button";
+import type { BetaTaskDefinition } from "@/types/betaTesting";
 
 interface BetaTaskItemProps {
   task: BetaTaskDefinition;

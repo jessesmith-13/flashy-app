@@ -1,5 +1,5 @@
-import type { ApiCard } from "../../src/types/decks";
-import type { UICard as StoreCard } from "../../src/types/decks";
+import type { ApiCard } from "@/types/decks";
+import type { UICard as StoreCard } from "@/types/decks";
 
 export function mapApiCardToStoreCard(api: ApiCard): StoreCard {
   return {

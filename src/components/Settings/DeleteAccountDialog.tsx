@@ -7,19 +7,19 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '../../ui/alert-dialog'
-import { Trash2 } from 'lucide-react'
+} from "@/ui/alert-dialog";
+import { Trash2 } from "lucide-react";
 
 interface DeleteAccountDialogProps {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  onConfirm: () => void
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onConfirm: () => void;
 }
 
 export function DeleteAccountDialog({
   open,
   onOpenChange,
-  onConfirm
+  onConfirm,
 }: DeleteAccountDialogProps) {
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
@@ -27,8 +27,8 @@ export function DeleteAccountDialog({
         <AlertDialogHeader>
           <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
           <AlertDialogDescription>
-            This action cannot be undone. This will permanently delete your account
-            and remove your data from our servers.
+            This action cannot be undone. This will permanently delete your
+            account and remove your data from our servers.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
@@ -43,5 +43,5 @@ export function DeleteAccountDialog({
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
-  )
+  );
 }

@@ -1,70 +1,83 @@
-import { useState } from 'react'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../../ui/dialog'
-import { Button } from '../../ui/button'
-import { Input } from '../../ui/input'
-import { Label } from '../../ui/label'
-import { Mail, Gift, Copy, Check } from 'lucide-react'
-import { toast } from 'sonner'
-import { sendReferralInvite } from '../../../utils/api/referrals'
+import { useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/ui/dialog";
+import { Button } from "@/ui/button";
+import { Input } from "@/ui/input";
+import { Label } from "@/ui/label";
+import { Mail, Gift, Copy, Check } from "lucide-react";
+import { toast } from "sonner";
+import { sendReferralInvite } from "../../../utils/api/referrals";
 
 interface InviteFriendDialogProps {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  accessToken: string | null
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  accessToken: string | null;
 }
 
-export function InviteFriendDialog({ open, onOpenChange, accessToken }: InviteFriendDialogProps) {
-  const [email, setEmail] = useState('')
-  const [sending, setSending] = useState(false)
-  const [referralLink, setReferralLink] = useState<string | null>(null)
-  const [copied, setCopied] = useState(false)
+export function InviteFriendDialog({
+  open,
+  onOpenChange,
+  accessToken,
+}: InviteFriendDialogProps) {
+  const [email, setEmail] = useState("");
+  const [sending, setSending] = useState(false);
+  const [referralLink, setReferralLink] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   const handleSendInvite = async () => {
     if (!accessToken) {
-      toast.error('Not authenticated')
-      return
+      toast.error("Not authenticated");
+      return;
     }
 
-    if (!email || !email.includes('@')) {
-      toast.error('Please enter a valid email address')
-      return
+    if (!email || !email.includes("@")) {
+      toast.error("Please enter a valid email address");
+      return;
     }
 
-    setSending(true)
+    setSending(true);
     try {
-      const result = await sendReferralInvite(accessToken, email)
-      
-      toast.success('Referral invite sent!')
-      setReferralLink(result.referralLink)
-      setEmail('')
-      
+      const result = await sendReferralInvite(accessToken, email);
+
+      toast.success("Referral invite sent!");
+      setReferralLink(result.referralLink);
+      setEmail("");
+
       // Show info about the bonus
-      toast.info('When your friend signs up, you both get 1 month of Premium free!', {
-        duration: 5000
-      })
+      toast.info(
+        "When your friend signs up, you both get 1 month of Premium free!",
+        {
+          duration: 5000,
+        }
+      );
     } catch (error: any) {
-      console.error('Failed to send referral:', error)
-      toast.error(error.message || 'Failed to send invite')
+      console.error("Failed to send referral:", error);
+      toast.error(error.message || "Failed to send invite");
     } finally {
-      setSending(false)
+      setSending(false);
     }
-  }
+  };
 
   const handleCopyLink = () => {
     if (referralLink) {
-      navigator.clipboard.writeText(referralLink)
-      setCopied(true)
-      toast.success('Referral link copied to clipboard!')
-      setTimeout(() => setCopied(false), 2000)
+      navigator.clipboard.writeText(referralLink);
+      setCopied(true);
+      toast.success("Referral link copied to clipboard!");
+      setTimeout(() => setCopied(false), 2000);
     }
-  }
+  };
 
   const handleClose = () => {
-    setEmail('')
-    setReferralLink(null)
-    setCopied(false)
-    onOpenChange(false)
-  }
+    setEmail("");
+    setReferralLink(null);
+    setCopied(false);
+    onOpenChange(false);
+  };
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
@@ -75,7 +88,8 @@ export function InviteFriendDialog({ open, onOpenChange, accessToken }: InviteFr
             Invite a Friend
           </DialogTitle>
           <DialogDescription>
-            Send an invite and you both get 1 month of Premium free when they sign up!
+            Send an invite and you both get 1 month of Premium free when they
+            sign up!
           </DialogDescription>
         </DialogHeader>
 
@@ -89,7 +103,8 @@ export function InviteFriendDialog({ open, onOpenChange, accessToken }: InviteFr
                   Referral Reward
                 </div>
                 <div className="text-xs text-emerald-700 dark:text-emerald-300">
-                  Both you and your friend get 1 month of Premium when they sign up
+                  Both you and your friend get 1 month of Premium when they sign
+                  up
                 </div>
               </div>
             </div>
@@ -110,20 +125,20 @@ export function InviteFriendDialog({ open, onOpenChange, accessToken }: InviteFr
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      handleSendInvite()
+                    if (e.key === "Enter") {
+                      handleSendInvite();
                     }
                   }}
                   className="pl-10"
                   disabled={sending}
                 />
               </div>
-              <Button 
+              <Button
                 onClick={handleSendInvite}
                 disabled={!email || sending}
                 className="bg-emerald-600 hover:bg-emerald-700"
               >
-                {sending ? 'Sending...' : 'Send'}
+                {sending ? "Sending..." : "Send"}
               </Button>
             </div>
           </div>
@@ -133,11 +148,7 @@ export function InviteFriendDialog({ open, onOpenChange, accessToken }: InviteFr
             <div className="space-y-2 pt-2 border-t border-gray-200 dark:border-gray-700">
               <Label className="text-sm">Referral Link (for testing)</Label>
               <div className="flex gap-2">
-                <Input
-                  value={referralLink}
-                  readOnly
-                  className="text-xs"
-                />
+                <Input value={referralLink} readOnly className="text-xs" />
                 <Button
                   size="sm"
                   variant="outline"
@@ -156,14 +167,17 @@ export function InviteFriendDialog({ open, onOpenChange, accessToken }: InviteFr
                 </Button>
               </div>
               <p className="text-xs text-gray-500 dark:text-gray-400">
-                Note: In production, this would be sent via email. For testing, copy this link and use it to sign up.
+                Note: In production, this would be sent via email. For testing,
+                copy this link and use it to sign up.
               </p>
             </div>
           )}
 
           {/* Info */}
           <div className="text-xs text-gray-500 dark:text-gray-400 space-y-1">
-            <p>• Your friend will receive a signup link with your referral code</p>
+            <p>
+              • Your friend will receive a signup link with your referral code
+            </p>
             <p>• When they complete signup, you both get 1 month of Premium</p>
             <p>• If you already have Premium, it will be extended by 1 month</p>
           </div>
@@ -176,5 +190,5 @@ export function InviteFriendDialog({ open, onOpenChange, accessToken }: InviteFr
         </div>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

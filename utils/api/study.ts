@@ -1,29 +1,29 @@
-import { API_BASE } from '../../src/supabase/runtime'
-import type { StudySession, StudySessionPayload } from '@/types/study'
-const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+import { API_BASE } from "@/supabase/runtime";
+import type { StudySession, StudySessionPayload } from "@/types/study";
+const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 type StudySessionRow = {
-  id: string
-  user_id: string
-  deck_id: string
-  date: string
-  correct_answers: number
-  incorrect_answers: number
-  total_questions: number
-  score: number
-  duration_minutes: number | null
-  created_at: string
-  updated_at: string
-  started_at: string | null
-  ended_at: string | null
-  cards_studied: number | null
-  correct_count: number | null
-  incorrect_count: number | null
-  skipped_count: number | null
-  study_mode: string | null
-  time_spent_seconds: number | null
-  session_data: Record<string, unknown> | null
-}
+  id: string;
+  user_id: string;
+  deck_id: string;
+  date: string;
+  correct_answers: number;
+  incorrect_answers: number;
+  total_questions: number;
+  score: number;
+  duration_minutes: number | null;
+  created_at: string;
+  updated_at: string;
+  started_at: string | null;
+  ended_at: string | null;
+  cards_studied: number | null;
+  correct_count: number | null;
+  incorrect_count: number | null;
+  skipped_count: number | null;
+  study_mode: string | null;
+  time_spent_seconds: number | null;
+  session_data: Record<string, unknown> | null;
+};
 
 const mapStudySession = (row: StudySessionRow): StudySession => ({
   id: row.id,
@@ -46,8 +46,8 @@ const mapStudySession = (row: StudySessionRow): StudySession => ({
   studyMode: row.study_mode,
   timeSpentSeconds: row.time_spent_seconds,
   sessionData: row.session_data,
-  timeSpent: 0
-})
+  timeSpent: 0,
+});
 
 /**
  * ============================================================
@@ -61,41 +61,39 @@ export const fetchStudySessions = async (
   const response = await fetch(`${API_BASE}/study/sessions`, {
     headers: {
       Authorization: `Bearer ${accessToken}`,
-      'apikey': anonKey,
+      apikey: anonKey,
     },
-  })
+  });
 
-  const data = await response.json()
+  const data = await response.json();
 
   if (!response.ok) {
-    throw new Error(data.error || 'Failed to fetch study sessions')
+    throw new Error(data.error || "Failed to fetch study sessions");
   }
 
-  return (data.sessions ?? []).map(mapStudySession)
-
-  
-}
+  return (data.sessions ?? []).map(mapStudySession);
+};
 
 export const saveStudySessionApi = async (
   accessToken: string,
   session: StudySessionPayload
 ) => {
   const response = await fetch(`${API_BASE}/study/sessions`, {
-    method: 'POST',
+    method: "POST",
     headers: {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
       Authorization: `Bearer ${accessToken}`,
-      'apikey': anonKey,
+      apikey: anonKey,
     },
     body: JSON.stringify(session),
-  })
+  });
 
-  const data = await response.json()
+  const data = await response.json();
 
   if (!response.ok) {
-    console.error('Failed to save study session:', data)
-    throw new Error(data.error || 'Failed to save study session')
+    console.error("Failed to save study session:", data);
+    throw new Error(data.error || "Failed to save study session");
   }
 
-  return data.session
-}
+  return data.session;
+};

@@ -9,9 +9,9 @@ import {
 import { uploadCardAudio } from "../../../utils/api/storage";
 import { getSession } from "../../../utils/api/auth";
 import { createCardsBatch } from "../../../utils/api/decks";
-import { AppLayout } from "../Layout/AppLayout";
-import { Button } from "../../ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../ui/tabs";
+import { AppLayout } from "@/components/Layout/AppLayout";
+import { Button } from "@/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/ui/tabs";
 import {
   ArrowLeft,
   Sparkles,
@@ -21,13 +21,13 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import * as audioSynthesis from "../../../utils/audioSynthesis";
-import { GeneratedCard } from "./GeneratedCardItem";
-import { ReviewCardsScreen } from "./ReviewCardsScreen";
-import { LoadingOverlay } from "./LoadingOverlay";
-import { PremiumWarningBanner } from "./PremiumWarningBanner";
-import { AIChatTab } from "./AIChatTab";
-import { CSVUploadTab } from "./CSVUploadTab";
-import { PDFUploadTab } from "./PDFUploadTab";
+import { GeneratedCard } from "@/components/AI/GeneratedCardItem";
+import { ReviewCardsScreen } from "@/components/AI/ReviewCardsScreen";
+import { LoadingOverlay } from "@/components/AI/LoadingOverlay";
+import { PremiumWarningBanner } from "@/components/AI/PremiumWarningBanner";
+import { AIChatTab } from "@/components/AI/AIChatTab";
+import { CSVUploadTab } from "@/components/AI/CSVUploadTab";
+import { PDFUploadTab } from "@/components/AI/PDFUploadTab";
 import { mapApiCardToStoreCard } from "../../../utils/mappers/cardMapper";
 import { ApiCard } from "@/types/decks";
 import { AI_API_BASE } from "../../supabase/runtime";

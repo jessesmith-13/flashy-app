@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
-import { Button } from "../../ui/button";
-import { Badge } from "../../ui/badge";
-import { Input } from "../../ui/input";
-import { ScrollArea } from "../../ui/scroll-area";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../ui/tabs";
+import { Button } from "@/ui/button";
+import { Badge } from "@/ui/badge";
+import { Input } from "@/ui/input";
+import { ScrollArea } from "@/ui/scroll-area";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/ui/tabs";
 import {
   Users,
   Shield,
@@ -36,16 +36,16 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "../../ui/alert-dialog";
-import { Textarea } from "../../ui/textarea";
+} from "@/ui/alert-dialog";
+import { Textarea } from "@/ui/textarea";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "../../ui/select";
-import { Label } from "../../ui/label";
+} from "@/ui/select";
+import { Label } from "@/ui/label";
 import { useStore } from "@/shared/state/useStore";
 import { useNavigation } from "../../../hooks/useNavigation";
 

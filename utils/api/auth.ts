@@ -1,5 +1,5 @@
-import { API_BASE } from "../../src/supabase/runtime";
-import { supabase } from "../../src/lib/supabase";
+import { API_BASE } from "@/supabase/runtime";
+import { supabase } from "@/lib/supabase";
 const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 import { Session, User as SupabaseUser } from "@supabase/supabase-js";
 

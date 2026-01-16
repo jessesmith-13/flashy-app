@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
-import { Button } from "../../ui/button";
-import { Badge } from "../../ui/badge";
-import { Input } from "../../ui/input";
-import { ScrollArea } from "../../ui/scroll-area";
+import { Button } from "@/ui/button";
+import { Badge } from "@/ui/badge";
+import { Input } from "@/ui/input";
+import { ScrollArea } from "@/ui/scroll-area";
 import {
   Search,
   Filter,

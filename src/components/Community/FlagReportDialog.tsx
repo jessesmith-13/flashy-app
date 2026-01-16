@@ -1,58 +1,74 @@
-import { useState } from 'react'
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../../ui/dialog'
-import { Button } from '../../ui/button'
-import { Textarea } from '../../ui/textarea'
-import { Label } from '../../ui/label'
-import { Flag, AlertTriangle } from 'lucide-react'
-import { toast } from 'sonner'
+import { useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/ui/dialog";
+import { Button } from "@/ui/button";
+import { Textarea } from "@/ui/textarea";
+import { Label } from "@/ui/label";
+import { Flag, AlertTriangle } from "lucide-react";
+import { toast } from "sonner";
 
 interface FlagReportDialogProps {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  itemType: 'deck' | 'card'
-  itemId: string
-  itemName: string
-  onFlagSubmit: (itemId: string, reason: string, details: string) => void
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  itemType: "deck" | "card";
+  itemId: string;
+  itemName: string;
+  onFlagSubmit: (itemId: string, reason: string, details: string) => void;
 }
 
-export function FlagReportDialog({ 
-  open, 
-  onOpenChange, 
-  itemType, 
-  itemId, 
+export function FlagReportDialog({
+  open,
+  onOpenChange,
+  itemType,
+  itemId,
   itemName,
-  onFlagSubmit 
+  onFlagSubmit,
 }: FlagReportDialogProps) {
-  const [selectedReason, setSelectedReason] = useState('')
-  const [additionalDetails, setAdditionalDetails] = useState('')
-  const [submitting, setSubmitting] = useState(false)
+  const [selectedReason, setSelectedReason] = useState("");
+  const [additionalDetails, setAdditionalDetails] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   const reasons = [
-    { value: 'incorrect', label: '⚠️ Incorrect or Misleading', description: 'Information is wrong, outdated, or misleading' },
-    { value: 'spam', label: '🚫 Spam or Inappropriate', description: 'Contains spam, profanity, or inappropriate content' }
-  ]
+    {
+      value: "incorrect",
+      label: "⚠️ Incorrect or Misleading",
+      description: "Information is wrong, outdated, or misleading",
+    },
+    {
+      value: "spam",
+      label: "🚫 Spam or Inappropriate",
+      description: "Contains spam, profanity, or inappropriate content",
+    },
+  ];
 
   const handleSubmit = async () => {
     if (!selectedReason) {
-      toast.error('Please select a reason')
-      return
+      toast.error("Please select a reason");
+      return;
     }
 
-    setSubmitting(true)
+    setSubmitting(true);
     try {
-      await onFlagSubmit(itemId, selectedReason, additionalDetails)
-      toast.success(`${itemType === 'deck' ? 'Deck' : 'Card'} has been flagged for review`)
-      onOpenChange(false)
-      setSelectedReason('')
-      setAdditionalDetails('')
+      await onFlagSubmit(itemId, selectedReason, additionalDetails);
+      toast.success(
+        `${itemType === "deck" ? "Deck" : "Card"} has been flagged for review`
+      );
+      onOpenChange(false);
+      setSelectedReason("");
+      setAdditionalDetails("");
     } catch (error: unknown) {
       if (error instanceof Error) {
-        toast.error('Failed to submit report')
+        toast.error("Failed to submit report");
       }
     } finally {
-      setSubmitting(false)
+      setSubmitting(false);
     }
-  }
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -60,7 +76,7 @@ export function FlagReportDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Flag className="w-5 h-5 text-orange-600" />
-            Report {itemType === 'deck' ? 'Deck' : 'Card'}
+            Report {itemType === "deck" ? "Deck" : "Card"}
           </DialogTitle>
           <DialogDescription>
             Flag "{itemName}" for moderator review
@@ -76,8 +92,8 @@ export function FlagReportDialog({
                   key={reason.value}
                   className={`flex items-start gap-3 p-4 rounded-lg border cursor-pointer transition-all ${
                     selectedReason === reason.value
-                      ? 'border-orange-500 bg-orange-50 dark:bg-orange-900/20 shadow-sm'
-                      : 'border-gray-200 dark:border-gray-700 hover:border-orange-300 dark:hover:border-orange-700 hover:shadow-sm'
+                      ? "border-orange-500 bg-orange-50 dark:bg-orange-900/20 shadow-sm"
+                      : "border-gray-200 dark:border-gray-700 hover:border-orange-300 dark:hover:border-orange-700 hover:shadow-sm"
                   }`}
                 >
                   <input
@@ -115,8 +131,9 @@ export function FlagReportDialog({
           <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3 flex gap-2">
             <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
             <p className="text-xs text-amber-800 dark:text-amber-300">
-              Reports are reviewed by moderators. The {itemType} will remain publicly available 
-              until reviewed. False reports may result in account restrictions.
+              Reports are reviewed by moderators. The {itemType} will remain
+              publicly available until reviewed. False reports may result in
+              account restrictions.
             </p>
           </div>
         </div>
@@ -125,9 +142,9 @@ export function FlagReportDialog({
           <Button
             variant="outline"
             onClick={() => {
-              onOpenChange(false)
-              setSelectedReason('')
-              setAdditionalDetails('')
+              onOpenChange(false);
+              setSelectedReason("");
+              setAdditionalDetails("");
             }}
           >
             Cancel
@@ -137,10 +154,10 @@ export function FlagReportDialog({
             disabled={!selectedReason || submitting}
             className="bg-orange-600 hover:bg-orange-700 text-white"
           >
-            {submitting ? 'Submitting...' : 'Submit Report'}
+            {submitting ? "Submitting..." : "Submit Report"}
           </Button>
         </div>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

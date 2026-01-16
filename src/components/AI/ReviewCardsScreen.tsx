@@ -1,5 +1,5 @@
-import { AppLayout } from "../Layout/AppLayout";
-import { Button } from "../../ui/button";
+import { AppLayout } from "@/components/Layout/AppLayout";
+import { Button } from "@/ui/button";
 import { ArrowLeft, X, Check } from "lucide-react";
 import { GeneratedCard, GeneratedCardItem } from "./GeneratedCardItem";
 

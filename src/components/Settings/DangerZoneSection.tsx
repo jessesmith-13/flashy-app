@@ -1,20 +1,20 @@
-import { Button } from '../../ui/button'
-import { Trash2 } from 'lucide-react'
+import { Button } from "@/ui/button";
+import { Trash2 } from "lucide-react";
 
 interface DangerZoneSectionProps {
-  onDeleteAccount: () => void
+  onDeleteAccount: () => void;
 }
 
-export function DangerZoneSection({
-  onDeleteAccount
-}: DangerZoneSectionProps) {
+export function DangerZoneSection({ onDeleteAccount }: DangerZoneSectionProps) {
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-red-200 dark:border-red-900">
-      <h2 className="text-lg text-red-600 dark:text-red-400 mb-4">Danger Zone</h2>
+      <h2 className="text-lg text-red-600 dark:text-red-400 mb-4">
+        Danger Zone
+      </h2>
       <div className="space-y-3">
         <p className="text-sm text-gray-600 dark:text-gray-400">
-          Deleting your account will permanently remove all your data. This action
-          cannot be undone.
+          Deleting your account will permanently remove all your data. This
+          action cannot be undone.
         </p>
         <Button
           variant="outline"
@@ -26,5 +26,5 @@ export function DangerZoneSection({
         </Button>
       </div>
     </div>
-  )
+  );
 }

@@ -1,4 +1,4 @@
-import { Button } from "../../../ui/button";
+import { Button } from "@/ui/button";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -9,7 +9,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "../../../ui/alert-dialog";
+} from "@/ui/alert-dialog";
 import {
   GripVertical,
   Edit,
@@ -20,7 +20,7 @@ import {
   CheckCircle,
   Keyboard,
 } from "lucide-react";
-import type { UICard, CardType } from "../../../types/decks";
+import type { UICard, CardType } from "@/types/decks";
 import { UnsplashAttribution } from "../../AI/UnsplashAttribution";
 
 const CARD_TYPES: {

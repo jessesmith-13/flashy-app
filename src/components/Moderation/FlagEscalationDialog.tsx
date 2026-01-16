@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -6,54 +6,54 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '../../ui/dialog'
-import { Button } from '../../ui/button'
-import { Label } from '../../ui/label'
-import { Textarea } from '../../ui/textarea'
-import { AlertTriangle } from 'lucide-react'
+} from "@/ui/dialog";
+import { Button } from "@/ui/button";
+import { Label } from "@/ui/label";
+import { Textarea } from "@/ui/textarea";
+import { AlertTriangle } from "lucide-react";
 
 interface FlagEscalationDialogProps {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  onEscalate: (reason: string) => Promise<void>
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onEscalate: (reason: string) => Promise<void>;
   flagDetails?: {
-    targetType: string
-    targetName: string
-    reason: string
-    reporterNotes?: string
-  }
+    targetType: string;
+    targetName: string;
+    reason: string;
+    reporterNotes?: string;
+  };
 }
 
-export function FlagEscalationDialog({ 
-  open, 
-  onOpenChange, 
+export function FlagEscalationDialog({
+  open,
+  onOpenChange,
   onEscalate,
-  flagDetails 
+  flagDetails,
 }: FlagEscalationDialogProps) {
-  const [escalationReason, setEscalationReason] = useState('')
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [escalationReason, setEscalationReason] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleEscalate = async () => {
     if (!escalationReason.trim()) {
-      return
+      return;
     }
 
-    setIsSubmitting(true)
+    setIsSubmitting(true);
     try {
-      await onEscalate(escalationReason)
-      setEscalationReason('')
-      onOpenChange(false)
+      await onEscalate(escalationReason);
+      setEscalationReason("");
+      onOpenChange(false);
     } catch (error) {
-      console.error('Failed to escalate:', error)
+      console.error("Failed to escalate:", error);
     } finally {
-      setIsSubmitting(false)
+      setIsSubmitting(false);
     }
-  }
+  };
 
   const handleCancel = () => {
-    setEscalationReason('')
-    onOpenChange(false)
-  }
+    setEscalationReason("");
+    onOpenChange(false);
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -73,21 +73,27 @@ export function FlagEscalationDialog({
           {flagDetails && (
             <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 space-y-2">
               <div className="text-sm">
-                <span className="text-gray-500 dark:text-gray-400">Target Type:</span>{' '}
+                <span className="text-gray-500 dark:text-gray-400">
+                  Target Type:
+                </span>{" "}
                 <span className="font-medium text-gray-900 dark:text-gray-100 capitalize">
                   {flagDetails.targetType}
                 </span>
               </div>
               <div className="text-sm">
-                <span className="text-gray-500 dark:text-gray-400">Target:</span>{' '}
+                <span className="text-gray-500 dark:text-gray-400">
+                  Target:
+                </span>{" "}
                 <span className="font-medium text-gray-900 dark:text-gray-100">
                   {flagDetails.targetName}
                 </span>
               </div>
               <div className="text-sm">
-                <span className="text-gray-500 dark:text-gray-400">Original Reason:</span>{' '}
+                <span className="text-gray-500 dark:text-gray-400">
+                  Original Reason:
+                </span>{" "}
                 <span className="font-medium text-gray-900 dark:text-gray-100 capitalize">
-                  {flagDetails.reason.replace('_', ' ')}
+                  {flagDetails.reason.replace("_", " ")}
                 </span>
               </div>
             </div>
@@ -96,7 +102,8 @@ export function FlagEscalationDialog({
           {/* Escalation Reason */}
           <div className="space-y-2">
             <Label htmlFor="escalation-reason">
-              Why does this need admin attention? <span className="text-red-500">*</span>
+              Why does this need admin attention?{" "}
+              <span className="text-red-500">*</span>
             </Label>
             <Textarea
               id="escalation-reason"
@@ -107,7 +114,8 @@ export function FlagEscalationDialog({
               className="resize-none"
             />
             <p className="text-xs text-gray-500 dark:text-gray-400">
-              This will add a comment to the ticket and change its priority to alert admins
+              This will add a comment to the ticket and change its priority to
+              alert admins
             </p>
           </div>
         </div>
@@ -126,10 +134,10 @@ export function FlagEscalationDialog({
             className="bg-orange-600 hover:bg-orange-700 text-white"
           >
             <AlertTriangle className="w-4 h-4 mr-2" />
-            {isSubmitting ? 'Escalating...' : 'Escalate to Admin'}
+            {isSubmitting ? "Escalating..." : "Escalate to Admin"}
           </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

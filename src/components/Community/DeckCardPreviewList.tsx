@@ -1,21 +1,20 @@
-import { Button } from '../../ui/button'
-import { Flag } from 'lucide-react'
-import { Pagination } from '../Pagination/Pagination'
-import { useEffect, useRef } from 'react'
-import { UICard } from '../../types/decks'
-
+import { Button } from "@/ui/button";
+import { Flag } from "lucide-react";
+import { Pagination } from "@/components/Pagination/Pagination";
+import { useEffect, useRef } from "react";
+import { UICard } from "@/types/decks";
 
 interface DeckCardPreviewListProps {
-  cards: UICard[]
-  deckId: string
-  currentPage: number
-  cardsPerPage: number
-  flaggedCards: Set<string>
-  targetCardIndex?: number | null
-  isSuperuser?: boolean
-  onPageChange: (page: number) => void
-  onFlagCard: (cardId: string, cardName: string, cardFront: string) => void
-  onDeleteCard?: (cardId: string, cardName: string, deckId: string) => void
+  cards: UICard[];
+  deckId: string;
+  currentPage: number;
+  cardsPerPage: number;
+  flaggedCards: Set<string>;
+  targetCardIndex?: number | null;
+  isSuperuser?: boolean;
+  onPageChange: (page: number) => void;
+  onFlagCard: (cardId: string, cardName: string, cardFront: string) => void;
+  onDeleteCard?: (cardId: string, cardName: string, deckId: string) => void;
 }
 
 export function DeckCardPreviewList({
@@ -28,23 +27,23 @@ export function DeckCardPreviewList({
   isSuperuser = false,
   onPageChange,
   onFlagCard,
-  onDeleteCard
+  onDeleteCard,
 }: DeckCardPreviewListProps) {
-  const cardRefs = useRef<Record<number, HTMLDivElement | null>>({})
+  const cardRefs = useRef<Record<number, HTMLDivElement | null>>({});
 
   useEffect(() => {
     if (targetCardIndex !== null && targetCardIndex !== undefined) {
-      const targetPage = Math.ceil((targetCardIndex + 1) / cardsPerPage)
+      const targetPage = Math.ceil((targetCardIndex + 1) / cardsPerPage);
       if (targetPage !== currentPage) {
-        onPageChange(targetPage)
+        onPageChange(targetPage);
       } else {
         setTimeout(() => {
-          const currentRef = cardRefs.current[targetCardIndex]
-          currentRef?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-        }, 300)
+          const currentRef = cardRefs.current[targetCardIndex];
+          currentRef?.scrollIntoView({ behavior: "smooth", block: "center" });
+        }, 300);
       }
     }
-  }, [targetCardIndex, currentPage, cardsPerPage, onPageChange])
+  }, [targetCardIndex, currentPage, cardsPerPage, onPageChange]);
 
   if (!cards || cards.length === 0) {
     return (
@@ -54,17 +53,17 @@ export function DeckCardPreviewList({
           This deck has no cards.
         </p>
       </div>
-    )
+    );
   }
 
-  console.log(cards)
+  console.log(cards);
 
-  const totalPages = Math.ceil(cards.length / cardsPerPage)
+  const totalPages = Math.ceil(cards.length / cardsPerPage);
   const paginatedCards = cards.slice(
     (currentPage - 1) * cardsPerPage,
     currentPage * cardsPerPage
-  )
-  const startIndex = (currentPage - 1) * cardsPerPage
+  );
+  const startIndex = (currentPage - 1) * cardsPerPage;
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-md">
@@ -72,18 +71,20 @@ export function DeckCardPreviewList({
 
       <div className="space-y-3">
         {paginatedCards.map((card, index) => {
-          const cardIndex = startIndex + index
-          const cardId = `${deckId}-card-${cardIndex}`
-          const isTarget = targetCardIndex === cardIndex
+          const cardIndex = startIndex + index;
+          const cardId = `${deckId}-card-${cardIndex}`;
+          const isTarget = targetCardIndex === cardIndex;
 
           return (
             <div
               key={card.id}
-              ref={(el) => { cardRefs.current[cardIndex] = el }}
+              ref={(el) => {
+                cardRefs.current[cardIndex] = el;
+              }}
               className={`border rounded-lg p-4 transition ${
                 isTarget
-                  ? 'bg-emerald-50 dark:bg-emerald-900/20 ring-2 ring-emerald-500'
-                  : 'border-gray-200 dark:border-gray-700'
+                  ? "bg-emerald-50 dark:bg-emerald-900/20 ring-2 ring-emerald-500"
+                  : "border-gray-200 dark:border-gray-700"
               }`}
             >
               <div className="flex gap-3">
@@ -96,17 +97,17 @@ export function DeckCardPreviewList({
                 <div className="flex-1 min-w-0">
                   {/* Card type badge */}
                   <div className="flex items-center gap-2 mb-2 flex-wrap">
-                    {card.cardType === 'classic-flip' && (
+                    {card.cardType === "classic-flip" && (
                       <span className="text-xs px-2 py-0.5 rounded bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400">
                         Classic Flip
                       </span>
                     )}
-                    {card.cardType === 'multiple-choice' && (
+                    {card.cardType === "multiple-choice" && (
                       <span className="text-xs px-2 py-0.5 rounded bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400">
                         Multiple Choice
                       </span>
                     )}
-                    {card.cardType === 'type-answer' && (
+                    {card.cardType === "type-answer" && (
                       <span className="text-xs px-2 py-0.5 rounded bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400">
                         Type Answer
                       </span>
@@ -126,19 +127,20 @@ export function DeckCardPreviewList({
                   </p>
 
                   {/* BACK (not for multiple-choice) */}
-                  {card.cardType !== 'multiple-choice' && (
+                  {card.cardType !== "multiple-choice" && (
                     <p className="text-sm text-emerald-600 dark:text-emerald-400 mb-2 break-words">
                       {card.back}
                     </p>
                   )}
 
                   {/* MULTIPLE CHOICE */}
-                  {card.cardType === 'multiple-choice' && (
+                  {card.cardType === "multiple-choice" && (
                     <div className="mt-2 pl-4 border-l-2 border-gray-200 dark:border-gray-700 space-y-2">
                       {card.correctAnswers?.length ? (
                         <div>
                           <p className="text-xs text-emerald-600 dark:text-emerald-400 mb-1">
-                            Correct answer{card.correctAnswers.length > 1 ? 's' : ''}:
+                            Correct answer
+                            {card.correctAnswers.length > 1 ? "s" : ""}:
                           </p>
                           <ul className="list-disc list-inside text-xs text-emerald-700 dark:text-emerald-300">
                             {card.correctAnswers.map((a, i) => (
@@ -164,14 +166,14 @@ export function DeckCardPreviewList({
                   )}
 
                   {/* TYPE ANSWER */}
-                  {card.cardType === 'type-answer' &&
+                  {card.cardType === "type-answer" &&
                     card.acceptedAnswers?.length && (
                       <div className="mt-2 pl-4 border-l-2 border-gray-200 dark:border-gray-700">
                         <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">
                           Accepted answers:
                         </p>
                         <p className="text-xs text-gray-600 dark:text-gray-400">
-                          {card.acceptedAnswers.join(', ')}
+                          {card.acceptedAnswers.join(", ")}
                         </p>
                       </div>
                     )}
@@ -183,7 +185,11 @@ export function DeckCardPreviewList({
                     size="icon"
                     variant="ghost"
                     onClick={() =>
-                      onFlagCard(cardId, `Card ${cardIndex + 1}`, card.front || '')
+                      onFlagCard(
+                        cardId,
+                        `Card ${cardIndex + 1}`,
+                        card.front || ""
+                      )
                     }
                     className="text-orange-600 dark:text-orange-400"
                   >
@@ -195,11 +201,7 @@ export function DeckCardPreviewList({
                       size="icon"
                       variant="ghost"
                       onClick={() =>
-                        onDeleteCard(
-                          card.id,
-                          `Card ${cardIndex + 1}`,
-                          deckId
-                        )
+                        onDeleteCard(card.id, `Card ${cardIndex + 1}`, deckId)
                       }
                       className="text-red-600 dark:text-red-400"
                     >
@@ -209,7 +211,7 @@ export function DeckCardPreviewList({
                 </div>
               </div>
             </div>
-          )
+          );
         })}
       </div>
 
@@ -220,5 +222,5 @@ export function DeckCardPreviewList({
         scrollToTop={false}
       />
     </div>
-  )
+  );
 }

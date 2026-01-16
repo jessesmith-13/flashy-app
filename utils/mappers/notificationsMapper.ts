@@ -1,6 +1,8 @@
-import { NotificationFromDB, Notification } from '../../src/types/notifications'
+import { NotificationFromDB, Notification } from "@/types/notifications";
 
-export function mapApiNotificationToUINotification(notification: NotificationFromDB): Notification {
+export function mapApiNotificationToUINotification(
+  notification: NotificationFromDB
+): Notification {
   return {
     id: notification.id,
     userId: notification.user_id,
@@ -17,5 +19,5 @@ export function mapApiNotificationToUINotification(notification: NotificationFro
     isRead: notification.is_read,
     isSeen: notification.is_seen,
     createdAt: notification.created_at,
-  }
+  };
 }

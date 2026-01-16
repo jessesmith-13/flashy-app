@@ -1,22 +1,24 @@
-import { Button } from '../../ui/button'
-import { Switch } from '../../ui/switch'
-import { Label } from '../../ui/label'
-import { Download, Eye } from 'lucide-react'
+import { Button } from "@/ui/button";
+import { Switch } from "@/ui/switch";
+import { Label } from "@/ui/label";
+import { Download, Eye } from "lucide-react";
 
 interface DataPrivacySectionProps {
-  decksPublic: boolean
-  onDecksPublicChange: (checked: boolean) => void
-  onExportData: () => void
+  decksPublic: boolean;
+  onDecksPublicChange: (checked: boolean) => void;
+  onExportData: () => void;
 }
 
 export function DataPrivacySection({
   decksPublic,
   onDecksPublicChange,
-  onExportData
+  onExportData,
 }: DataPrivacySectionProps) {
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
-      <h2 className="text-lg text-gray-900 dark:text-gray-100 mb-4">Data & Privacy</h2>
+      <h2 className="text-lg text-gray-900 dark:text-gray-100 mb-4">
+        Data & Privacy
+      </h2>
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -49,5 +51,5 @@ export function DataPrivacySection({
         </div>
       </div>
     </div>
-  )
+  );
 }

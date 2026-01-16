@@ -1,9 +1,9 @@
-import { Button } from '../../../ui/button'
-import { CheckCircle2 } from 'lucide-react'
+import { Button } from "@/ui/button";
+import { CheckCircle2 } from "lucide-react";
 
 interface SignupSuccessProps {
-  displayName: string
-  onContinue: () => void
+  displayName: string;
+  onContinue: () => void;
 }
 
 export function SignupSuccess({ displayName, onContinue }: SignupSuccessProps) {
@@ -14,7 +14,7 @@ export function SignupSuccess({ displayName, onContinue }: SignupSuccessProps) {
           <CheckCircle2 className="w-8 h-8 text-emerald-600 dark:text-emerald-400" />
         </div>
       </div>
-      
+
       <div>
         <h2 className="text-2xl text-gray-900 dark:text-gray-100 mb-2">
           Welcome to Flashy, {displayName}!
@@ -37,5 +37,5 @@ export function SignupSuccess({ displayName, onContinue }: SignupSuccessProps) {
         Continue to Flashy
       </Button>
     </div>
-  )
+  );
 }

@@ -1,14 +1,20 @@
-import { Switch } from '../../ui/switch'
-import { Label } from '../../ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../ui/select'
-import { Moon, Volume2, Crown } from 'lucide-react'
+import { Switch } from "@/ui/switch";
+import { Label } from "@/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/ui/select";
+import { Moon, Volume2, Crown } from "lucide-react";
 
 interface AppearanceSectionProps {
-  darkMode: boolean
-  onDarkModeChange: (checked: boolean) => void
-  ttsProvider: 'browser' | 'openai'
-  onTTSProviderChange: (provider: 'browser' | 'openai') => void
-  isPremium: boolean
+  darkMode: boolean;
+  onDarkModeChange: (checked: boolean) => void;
+  ttsProvider: "browser" | "openai";
+  onTTSProviderChange: (provider: "browser" | "openai") => void;
+  isPremium: boolean;
 }
 
 export function AppearanceSection({
@@ -16,11 +22,13 @@ export function AppearanceSection({
   onDarkModeChange,
   ttsProvider,
   onTTSProviderChange,
-  isPremium
+  isPremium,
 }: AppearanceSectionProps) {
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
-      <h2 className="text-lg text-gray-900 dark:text-gray-100 mb-4">Appearance & Features</h2>
+      <h2 className="text-lg text-gray-900 dark:text-gray-100 mb-4">
+        Appearance & Features
+      </h2>
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -29,7 +37,9 @@ export function AppearanceSection({
               <Label htmlFor="darkMode" className="text-sm">
                 Dark Mode
               </Label>
-              <p className="text-xs text-gray-500 dark:text-gray-400">Toggle between light and dark theme</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Toggle between light and dark theme
+              </p>
             </div>
           </div>
           <Switch
@@ -54,23 +64,24 @@ export function AppearanceSection({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="browser">
-                    Browser TTS (Free)
-                  </SelectItem>
+                  <SelectItem value="browser">Browser TTS (Free)</SelectItem>
                   <SelectItem value="openai" disabled={!isPremium}>
                     <div className="flex items-center gap-2">
                       OpenAI TTS (Premium)
-                      {!isPremium && <Crown className="w-3 h-3 text-yellow-500" />}
+                      {!isPremium && (
+                        <Crown className="w-3 h-3 text-yellow-500" />
+                      )}
                     </div>
                   </SelectItem>
                 </SelectContent>
               </Select>
-              {ttsProvider === 'browser' && (
+              {ttsProvider === "browser" && (
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                  Using your browser&apos;s built-in text-to-speech. Free and works offline!
+                  Using your browser&apos;s built-in text-to-speech. Free and
+                  works offline!
                 </p>
               )}
-              {ttsProvider === 'openai' && isPremium && (
+              {ttsProvider === "openai" && isPremium && (
                 <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-2">
                   Using OpenAI&apos;s premium TTS with natural-sounding voices
                 </p>
@@ -85,5 +96,5 @@ export function AppearanceSection({
         </div>
       </div>
     </div>
-  )
+  );
 }

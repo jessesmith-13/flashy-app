@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useStore } from "@/shared/state/useStore";
 import { useNavigation } from "../../../hooks/useNavigation";
-import { AppLayout } from "../Layout/AppLayout";
-import { Button } from "../../ui/button";
+import { AppLayout } from "@/components/Layout/AppLayout";
+import { Button } from "@/ui/button";
 import {
   ArrowLeft,
   Play,

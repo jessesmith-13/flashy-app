@@ -1,5 +1,5 @@
 import { Edit2, Flame, Trophy, Users, Camera, UserPlus } from "lucide-react";
-import { ProvenanceBadges } from "../Provenance/ProvenanceBadges";
+import { ProvenanceBadges } from "@/components/Provenance/ProvenanceBadges";
 
 interface ProfileHeaderProps {
   user: {

@@ -1,17 +1,17 @@
-import { Switch } from '../../ui/switch'
-import { Label } from '../../ui/label'
-import { Mail, Tag, MessageSquare, UserPlus } from 'lucide-react'
+import { Switch } from "@/ui/switch";
+import { Label } from "@/ui/label";
+import { Mail, Tag, MessageSquare, UserPlus } from "lucide-react";
 
 interface NotificationsSectionProps {
-  userEmail: string | undefined
-  emailNotifications: boolean
-  emailOffers: boolean
-  emailCommentReplies: boolean
-  emailFriendRequests: boolean
-  onEmailNotificationsChange: (checked: boolean) => void
-  onEmailOffersChange: (checked: boolean) => void
-  onEmailCommentRepliesChange: (checked: boolean) => void
-  onEmailFriendRequestsChange: (checked: boolean) => void
+  userEmail: string | undefined;
+  emailNotifications: boolean;
+  emailOffers: boolean;
+  emailCommentReplies: boolean;
+  emailFriendRequests: boolean;
+  onEmailNotificationsChange: (checked: boolean) => void;
+  onEmailOffersChange: (checked: boolean) => void;
+  onEmailCommentRepliesChange: (checked: boolean) => void;
+  onEmailFriendRequestsChange: (checked: boolean) => void;
 }
 
 export function NotificationsSection({
@@ -23,11 +23,13 @@ export function NotificationsSection({
   onEmailNotificationsChange,
   onEmailOffersChange,
   onEmailCommentRepliesChange,
-  onEmailFriendRequestsChange
+  onEmailFriendRequestsChange,
 }: NotificationsSectionProps) {
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
-      <h2 className="text-lg text-gray-900 dark:text-gray-100 mb-4">Email Notifications</h2>
+      <h2 className="text-lg text-gray-900 dark:text-gray-100 mb-4">
+        Email Notifications
+      </h2>
       <div className="space-y-4">
         {/* Main Email Notifications Toggle */}
         <div className="flex items-center justify-between">
@@ -121,5 +123,5 @@ export function NotificationsSection({
         )}
       </div>
     </div>
-  )
+  );
 }

@@ -1,11 +1,13 @@
-import { Lock, Crown } from 'lucide-react'
-import { Button } from '../../ui/button'
+import { Lock, Crown } from "lucide-react";
+import { Button } from "@/ui/button";
 
 interface PremiumWarningBannerProps {
-  onUpgradeClick: () => void
+  onUpgradeClick: () => void;
 }
 
-export function PremiumWarningBanner({ onUpgradeClick }: PremiumWarningBannerProps) {
+export function PremiumWarningBanner({
+  onUpgradeClick,
+}: PremiumWarningBannerProps) {
   return (
     <div className="mb-6 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 border-2 border-amber-300 dark:border-amber-700 rounded-lg p-4">
       <div className="flex items-start gap-3">
@@ -18,7 +20,9 @@ export function PremiumWarningBanner({ onUpgradeClick }: PremiumWarningBannerPro
             Premium Feature
           </h3>
           <p className="text-xs text-amber-800 dark:text-amber-300 mb-3">
-            AI card generation is available exclusively for Premium and Pro subscribers. Upgrade to unlock AI-powered flashcard creation with customizable difficulty levels and card types.
+            AI card generation is available exclusively for Premium and Pro
+            subscribers. Upgrade to unlock AI-powered flashcard creation with
+            customizable difficulty levels and card types.
           </p>
           <Button
             size="sm"
@@ -31,5 +35,5 @@ export function PremiumWarningBanner({ onUpgradeClick }: PremiumWarningBannerPro
         </div>
       </div>
     </div>
-  )
+  );
 }

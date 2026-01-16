@@ -26,8 +26,8 @@ import {
   canPublishToCommunity,
 } from "../../../utils/subscription";
 import { useIsSuperuser } from "../../../utils/userUtils";
-import { AppLayout } from "../Layout/AppLayout";
-import { Button } from "../../ui/button";
+import { AppLayout } from "@/components/Layout/AppLayout";
+import { Button } from "@/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -35,15 +35,15 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "../../ui/dialog";
+} from "@/ui/dialog";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "../../ui/select";
-import { Label } from "../../ui/label";
+} from "@/ui/select";
+import { Label } from "@/ui/label";
 import { Upload } from "lucide-react";
 import { CommunityDeckGrid } from "./CommunityDeckGrid";
 import { CommunityDeckDetail } from "./CommunityDeckDetail";
@@ -55,8 +55,8 @@ import { UpgradeModal } from "../UpgradeModal";
 import { FlagDialog } from "./FlagDialog";
 import { DeletionDialog } from "./DeletionDialog";
 import { UpdateDeckWarningDialog } from "./UpdateDeckWarningDialog";
-import { UIDeck } from "../../types/decks";
-import { UICommunityDeck, UICommunityCard } from "../../types/community";
+import { UIDeck } from "@/types/decks";
+import { UICommunityDeck, UICommunityCard } from "@/types/community";
 
 interface FlagItemDetails {
   deckId?: string;
