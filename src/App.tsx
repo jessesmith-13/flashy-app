@@ -204,6 +204,8 @@ function AppContent() {
                   emailFlaggedContent: profile.email_flag_notifications ?? true,
                   emailModerationNotices:
                     profile.email_moderation_updates ?? true,
+                  userRole: profile.user_role || undefined,
+                  userRoleVerified: profile.user_role_verified || false,
                 },
                 session.access_token
               );
@@ -269,6 +271,8 @@ function AppContent() {
             emailFriendRequests: profile.email_friend_requests ?? true,
             emailFlaggedContent: profile.email_flag_notifications ?? true,
             emailModerationNotices: profile.email_moderation_updates ?? true,
+            userRole: profile.user_role || undefined,
+            userRoleVerified: profile.user_role_verified || false,
           },
           session.access_token
         );
@@ -468,6 +472,8 @@ function AppContent() {
                   userProfile.email_flag_notifications ?? true,
                 emailModerationNotices:
                   userProfile.email_moderation_updates ?? true,
+                userRole: userProfile.user_role || undefined,
+                userRoleVerified: userProfile.user_role_verified || false,
               },
               session.access_token
             );
@@ -502,6 +508,8 @@ function AppContent() {
                   userProfile.email_flag_notifications ?? true,
                 emailModerationNotices:
                   userProfile.email_moderation_updates ?? true,
+                userRole: userProfile.user_role || undefined,
+                userRoleVerified: userProfile.user_role_verified || false,
               },
               session.access_token
             );
