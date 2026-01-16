@@ -8,16 +8,16 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/ui/alert-dialog";
-import { Label } from "@/ui/label";
+} from "@/shared/ui/alert-dialog";
+import { Label } from "@/shared/ui/label";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/ui/select";
-import { Textarea } from "@/ui/textarea";
+} from "@/shared/ui/select";
+import { Textarea } from "@/shared/ui/textarea";
 
 interface DeletionDialogProps {
   open: boolean;

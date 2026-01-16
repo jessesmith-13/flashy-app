@@ -9,7 +9,7 @@ import {
   Loader2,
   Info,
 } from "lucide-react";
-import { Button } from "@/ui/button";
+import { Button } from "@/shared/ui/button";
 import { toast } from "sonner";
 import { uploadCardAudio } from "../../../../utils/api/storage";
 import { MicrophonePermissionHelp } from "./MicrophonePermissionHelp";

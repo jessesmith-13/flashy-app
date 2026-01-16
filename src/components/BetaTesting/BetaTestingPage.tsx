@@ -7,8 +7,8 @@ import {
   Info,
   Loader2,
 } from "lucide-react";
-import { Button } from "@/ui/button";
-import { Progress } from "@/ui/progress";
+import { Button } from "@/shared/ui/button";
+import { Progress } from "@/shared/ui/progress";
 import { BetaTaskCategory } from "./BetaTaskCategory";
 import { BetaFeedbackModal } from "./BetaFeedbackModal";
 import {

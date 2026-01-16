@@ -1,6 +1,6 @@
 import React from "react";
-import { Button } from "@/ui/button";
-import { Label } from "@/ui/label";
+import { Button } from "@/shared/ui/button";
+import { Label } from "@/shared/ui/label";
 import { Upload, FileSpreadsheet } from "lucide-react";
 
 interface CSVUploadTabProps {

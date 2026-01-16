@@ -1,13 +1,13 @@
-import { Input } from "@/ui/input";
-import { Button } from "@/ui/button";
+import { Input } from "@/shared/ui/input";
+import { Button } from "@/shared/ui/button";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/ui/select";
-import { Tabs, TabsList, TabsTrigger } from "@/ui/tabs";
+} from "@/shared/ui/select";
+import { Tabs, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 import {
   Search,
   Filter,

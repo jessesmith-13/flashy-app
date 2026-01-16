@@ -1,5 +1,5 @@
 import { CheckCircle2, Lock } from "lucide-react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 import {
   getAchievementsByCategory,
   CATEGORY_LABELS,

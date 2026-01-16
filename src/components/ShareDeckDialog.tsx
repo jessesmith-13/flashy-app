@@ -5,8 +5,8 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "@/ui/dialog";
-import { Button } from "@/ui/button";
+} from "@/shared/ui/dialog";
+import { Button } from "@/shared/ui/button";
 import {
   Share2,
   Copy,
@@ -18,7 +18,7 @@ import {
 import { toast } from "sonner";
 import * as api from "../../utils/api/decks";
 import { QRCodeSVG } from "qrcode.react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 
 interface ShareDeckDialogProps {
   open: boolean;

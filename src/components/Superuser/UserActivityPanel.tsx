@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
-import { Button } from "@/ui/button";
-import { Badge } from "@/ui/badge";
-import { Input } from "@/ui/input";
-import { ScrollArea } from "@/ui/scroll-area";
+import { Button } from "@/shared/ui/button";
+import { Badge } from "@/shared/ui/badge";
+import { Input } from "@/shared/ui/input";
+import { ScrollArea } from "@/shared/ui/scroll-area";
 import {
   Search,
   Filter,
@@ -24,7 +24,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "../../ui/select";
+} from "@/shared/ui/select";
 
 interface ActivityItem {
   id: string;

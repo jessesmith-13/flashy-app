@@ -1,5 +1,5 @@
-import { Switch } from "@/ui/switch";
-import { Label } from "@/ui/label";
+import { Switch } from "@/shared/ui/switch";
+import { Label } from "@/shared/ui/label";
 import { Mail, Tag, MessageSquare, UserPlus } from "lucide-react";
 
 interface NotificationsSectionProps {

@@ -1,5 +1,5 @@
 import { Target, Calendar, TrendingUp, Award } from "lucide-react";
-import { Progress } from "@/ui/progress";
+import { Progress } from "@/shared/ui/progress";
 
 interface UserStats {
   totalDecks: number;

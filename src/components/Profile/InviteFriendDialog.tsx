@@ -5,10 +5,10 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
-} from "@/ui/dialog";
-import { Button } from "@/ui/button";
-import { Input } from "@/ui/input";
-import { Label } from "@/ui/label";
+} from "@/shared/ui/dialog";
+import { Button } from "@/shared/ui/button";
+import { Input } from "@/shared/ui/input";
+import { Label } from "@/shared/ui/label";
 import { Mail, Gift, Copy, Check } from "lucide-react";
 import { toast } from "sonner";
 import { sendReferralInvite } from "../../../utils/api/referrals";

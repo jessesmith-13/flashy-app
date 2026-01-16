@@ -13,7 +13,7 @@ import { ProfileAchievements } from "@/components/Profile/ProfileAchievements";
 import { ProfileFriends } from "@/components/Profile/ProfileFriends";
 import { EditProfileDialog } from "@/components/Profile/EditProfileDialog";
 import { InviteFriendDialog } from "@/components/Profile/InviteFriendDialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 import { BarChart3, Trophy, Users } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 

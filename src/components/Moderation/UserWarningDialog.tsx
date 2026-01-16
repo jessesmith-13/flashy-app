@@ -6,11 +6,11 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-} from "@/ui/dialog";
-import { Button } from "@/ui/button";
-import { Label } from "@/ui/label";
-import { Textarea } from "@/ui/textarea";
-import { RadioGroup, RadioGroupItem } from "@/ui/radio-group";
+} from "@/shared/ui/dialog";
+import { Button } from "@/shared/ui/button";
+import { Label } from "@/shared/ui/label";
+import { Textarea } from "@/shared/ui/textarea";
+import { RadioGroup, RadioGroupItem } from "@/shared/ui/radio-group";
 import { AlertTriangle } from "lucide-react";
 
 interface UserWarningDialogProps {

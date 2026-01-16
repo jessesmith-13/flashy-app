@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "motion/react";
-import { Button } from "@/ui/button";
+import { Button } from "@/shared/ui/button";
 import { X, Check, RotateCcw, Pause, Play } from "lucide-react";
 import { Card } from "@/types/decks";
 

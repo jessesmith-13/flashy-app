@@ -5,7 +5,7 @@ import { updateProfile } from "../../../utils/api/users";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { AppLayout } from "@/components/Layout/AppLayout";
-import { Button } from "@/ui/button";
+import { Button } from "@/shared/ui/button";
 import { ArrowLeft, Crown, AlertCircle } from "lucide-react";
 import { SubscriptionSection } from "./SubscriptionSection";
 import { NotificationsSection } from "./NotificationsSection";

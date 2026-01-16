@@ -5,10 +5,10 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "@/ui/dialog";
-import { Button } from "@/ui/button";
-import { Textarea } from "@/ui/textarea";
-import { Label } from "@/ui/label";
+} from "@/shared/ui/dialog";
+import { Button } from "@/shared/ui/button";
+import { Textarea } from "@/shared/ui/textarea";
+import { Label } from "@/shared/ui/label";
 import { Star, Send, Loader2 } from "lucide-react";
 
 interface BetaFeedbackModalProps {

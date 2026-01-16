@@ -11,7 +11,7 @@ import {
   declineFriendRequest,
 } from "../../../utils/api/friends";
 import { toast } from "sonner";
-import { Button } from "@/ui/button";
+import { Button } from "@/shared/ui/button";
 import {
   Bell,
   X,

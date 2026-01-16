@@ -7,8 +7,8 @@ import { DeletedItemsPanel } from "./DeletedItemsPanel";
 import { UserManagementPanel } from "./UserManagementPanel";
 import { UserActivityPanel } from "./UserActivityPanel";
 import { useIsSuperuser } from "../../../utils/userUtils";
-import { Button } from "@/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/ui/tabs";
+import { Button } from "@/shared/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 import { useState } from "react";
 
 export function SuperuserScreen() {

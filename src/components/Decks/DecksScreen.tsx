@@ -16,9 +16,9 @@ import {
 } from "../../../utils/api/community";
 import { fetchStudySessions } from "../../../utils/api/study";
 import { AppLayout } from "@/components/Layout/AppLayout";
-import { Button } from "@/ui/button";
+import { Button } from "@/shared/ui/button";
 import { Pagination } from "@/components/Pagination/Pagination";
-import { Input } from "@/ui/input";
+import { Input } from "@/shared/ui/input";
 import {
   Plus,
   BookOpen,
@@ -43,7 +43,7 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "../../ui/dialog";
+} from "@/shared/ui/dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -54,15 +54,15 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "../../ui/alert-dialog";
-import { Tabs, TabsList, TabsTrigger } from "../../ui/tabs";
+} from "@/shared/ui/alert-dialog";
+import { Tabs, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "../../ui/select";
+} from "@/shared/ui/select";
 import { toast } from "sonner";
 import { DECK_CATEGORIES } from "../../../utils/categories";
 import { ShareDeckDialog } from "../ShareDeckDialog";

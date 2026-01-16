@@ -2,18 +2,18 @@ import { useState } from "react";
 import { useStore } from "@/shared/state/useStore";
 import { useNavigation } from "../../../hooks/useNavigation";
 import { AppLayout } from "@/components/Layout/AppLayout";
-import { Button } from "@/ui/button";
+import { Button } from "@/shared/ui/button";
 import { ArrowLeft, Mail, MessageSquare, Send } from "lucide-react";
-import { Input } from "@/ui/input";
-import { Label } from "@/ui/label";
-import { Textarea } from "@/ui/textarea";
+import { Input } from "@/shared/ui/input";
+import { Label } from "@/shared/ui/label";
+import { Textarea } from "@/shared/ui/textarea";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/ui/select";
+} from "@/shared/ui/select";
 import { toast } from "sonner";
 import { API_BASE } from "../../supabase/runtime";
 

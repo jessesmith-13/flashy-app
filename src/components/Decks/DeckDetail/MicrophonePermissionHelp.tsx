@@ -1,5 +1,5 @@
 import { Info, X } from "lucide-react";
-import { Button } from "@/ui/button";
+import { Button } from "@/shared/ui/button";
 
 interface MicrophonePermissionHelpProps {
   onClose: () => void;

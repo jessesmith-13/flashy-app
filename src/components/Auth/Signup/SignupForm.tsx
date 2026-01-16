@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
-import { Button } from "@/ui/button";
-import { Input } from "@/ui/input";
-import { Label } from "@/ui/label";
+import { Button } from "@/shared/ui/button";
+import { Input } from "@/shared/ui/input";
+import { Label } from "@/shared/ui/label";
 import { TermsAcceptanceCheckboxes } from "./TermsAcceptanceCheckboxes";
 import { Check, X, Loader2 } from "lucide-react";
 const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;

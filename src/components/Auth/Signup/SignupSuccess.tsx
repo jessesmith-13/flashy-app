@@ -1,4 +1,4 @@
-import { Button } from "@/ui/button";
+import { Button } from "@/shared/ui/button";
 import { CheckCircle2 } from "lucide-react";
 
 interface SignupSuccessProps {

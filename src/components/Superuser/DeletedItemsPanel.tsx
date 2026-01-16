@@ -1,8 +1,8 @@
 import { useState, useEffect, useMemo } from "react";
-import { Button } from "@/ui/button";
-import { Badge } from "@/ui/badge";
-import { ScrollArea } from "@/ui/scroll-area";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/ui/tabs";
+import { Button } from "@/shared/ui/button";
+import { Badge } from "@/shared/ui/badge";
+import { ScrollArea } from "@/shared/ui/scroll-area";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 import {
   MessageCircle,
   BookOpen,
@@ -25,7 +25,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/ui/alert-dialog";
+} from "@/shared/ui/alert-dialog";
 
 interface DeletedComment {
   id: string;

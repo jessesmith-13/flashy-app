@@ -6,17 +6,17 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/ui/dialog";
-import { Button } from "@/ui/button";
-import { Textarea } from "@/ui/textarea";
-import { Label } from "@/ui/label";
+} from "@/shared/ui/dialog";
+import { Button } from "@/shared/ui/button";
+import { Textarea } from "@/shared/ui/textarea";
+import { Label } from "@/shared/ui/label";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/ui/select";
+} from "@/shared/ui/select";
 import { CheckCircle, XCircle, Trash2 } from "lucide-react";
 
 interface FlagResolutionDialogProps {

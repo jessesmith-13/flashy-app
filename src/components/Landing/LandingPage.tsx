@@ -1,4 +1,4 @@
-import { Button } from "@/ui/button";
+import { Button } from "@/shared/ui/button";
 import { useStore } from "@/shared/state/useStore";
 import { useNavigation } from "../../../hooks/useNavigation";
 import {

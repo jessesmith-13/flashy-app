@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { useNavigation } from "../../hooks/useNavigation";
-import { Button } from "../ui/button";
+import { Button } from "@/shared/ui/button";
 import { Check, Sparkles } from "lucide-react";
 import { AppLayout } from "./Layout/AppLayout";
 import { useStore } from "@/shared/state/useStore";

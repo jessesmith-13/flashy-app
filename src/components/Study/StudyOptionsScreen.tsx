@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useStore } from "@/shared/state/useStore";
 import { useNavigation } from "../../../hooks/useNavigation";
 import { AppLayout } from "@/components/Layout/AppLayout";
-import { Button } from "@/ui/button";
+import { Button } from "@/shared/ui/button";
 import {
   ArrowLeft,
   Play,
@@ -12,8 +12,8 @@ import {
   Star,
   EyeOff,
 } from "lucide-react";
-import { Label } from "../../ui/label";
-import { Switch } from "../../ui/switch";
+import { Label } from "@/shared/ui/label";
+import { Switch } from "@/shared/ui/switch";
 
 export function StudyOptionsScreen() {
   const { decks, selectedDeckId, cards, setStudyOptions, setStudyAllCards } =

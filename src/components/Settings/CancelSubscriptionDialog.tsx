@@ -7,7 +7,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/ui/alert-dialog";
+} from "@/shared/ui/alert-dialog";
 
 interface CancelSubscriptionDialogProps {
   open: boolean;
