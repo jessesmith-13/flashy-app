@@ -17,8 +17,8 @@ import {
 } from "@/shared/ui/select";
 import { ColorPicker } from "@/components/ColorPicker";
 import { EmojiPicker } from "@/components/EmojiPicker";
-import { DECK_CATEGORIES } from "../../../../utils/categories";
-import { DECK_LANGUAGES } from "../../../../utils/languages";
+import { DECK_CATEGORIES } from "../../../shared/catelog/categories";
+import { DECK_LANGUAGES } from "../../../shared/catelog/languages";
 
 interface DeckSettingsDialogProps {
   open: boolean;

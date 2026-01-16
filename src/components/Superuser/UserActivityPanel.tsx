@@ -16,7 +16,7 @@ import {
   User,
   Crown,
 } from "lucide-react";
-import { getUserActivity, getAllUsers } from "../../../utils/api/admin";
+import { getUserActivity, getAllUsers } from "../../shared/api/admin";
 import { toast } from "sonner";
 import {
   Select,

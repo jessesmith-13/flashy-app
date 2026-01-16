@@ -16,8 +16,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/shared/ui/select";
-import { DECK_CATEGORIES } from "../../../../utils/categories";
-import { DECK_LANGUAGES } from "../../../../utils/languages";
+import { DECK_CATEGORIES } from "../../../shared/catelog/categories";
+import { DECK_LANGUAGES } from "../../../shared/catelog/languages";
 import { ColorPicker } from "@/components/ColorPicker";
 import { EmojiPicker } from "@/components/EmojiPicker";
 import { UIDeck } from "@/types/decks";

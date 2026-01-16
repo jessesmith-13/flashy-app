@@ -16,9 +16,9 @@ import {
   Users,
   Upload,
 } from "lucide-react";
-import { SUBSCRIPTION_PRICES } from "../../utils/subscription";
+import { SUBSCRIPTION_PRICES } from "../shared/entitlements/subscription";
 import { useStore } from "@/shared/state/useStore";
-import { createCheckoutSession } from "../../utils/api/subscriptions";
+import { createCheckoutSession } from "../shared/api/subscriptions";
 import { useState } from "react";
 import { toast } from "sonner";
 

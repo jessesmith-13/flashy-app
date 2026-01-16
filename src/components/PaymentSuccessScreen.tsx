@@ -4,7 +4,7 @@ import { Button } from "@/shared/ui/button";
 import { Check, Sparkles } from "lucide-react";
 import { AppLayout } from "./Layout/AppLayout";
 import { useStore } from "@/shared/state/useStore";
-import { verifyPayment } from "../../utils/api/subscriptions";
+import { verifyPayment } from "../shared/api/subscriptions";
 
 export function PaymentSuccessScreen() {
   const { navigateTo } = useNavigation();

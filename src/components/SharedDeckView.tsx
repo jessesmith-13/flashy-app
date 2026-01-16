@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useStore } from "@/shared/state/useStore";
 import { useNavigation } from "../shared/hooks/useNavigation";
-import { getSharedDeck } from "../../utils/api/decks";
+import { getSharedDeck } from "../shared/api/decks";
 import { Button } from "@/shared/ui/button";
 import { ArrowLeft, BookOpen, Check } from "lucide-react";
 import { toast } from "sonner";

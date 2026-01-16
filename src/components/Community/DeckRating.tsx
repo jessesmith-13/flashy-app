@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useStore } from "@/shared/state/useStore";
 import { Star, Lock } from "lucide-react";
-import { getDeckRatings, rateDeck } from "../../../utils/api/community";
+import { getDeckRatings, rateDeck } from "../../shared/api/community";
 import { toast } from "sonner";
 import { UpgradeModal } from "../UpgradeModal";
 

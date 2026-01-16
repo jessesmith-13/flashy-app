@@ -1,5 +1,5 @@
 import { useStore } from "@/shared/state/useStore";
-import { signOut } from "./api/auth";
+import { signOut } from "../../shared/api/auth";
 
 export class AuthenticationError extends Error {
   constructor(message: string = "Authentication failed") {

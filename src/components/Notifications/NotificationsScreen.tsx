@@ -6,11 +6,11 @@ import {
   getNotifications,
   clearAllNotifications,
   markNotificationRead,
-} from "../../../utils/api/notifications";
+} from "../../shared/api/notifications";
 import {
   acceptFriendRequest,
   declineFriendRequest,
-} from "../../../utils/api/friends";
+} from "../../shared/api/friends";
 import {
   ArrowLeft,
   Bell,

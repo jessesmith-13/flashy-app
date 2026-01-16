@@ -8,13 +8,13 @@ import {
   updateDeckPositions,
   deleteDeck,
   fetchCards,
-} from "../../../utils/api/decks";
+} from "../../shared/api/decks";
 import {
   publishDeck,
   unpublishDeck,
   updateCommunityDeck,
-} from "../../../utils/api/community";
-import { fetchStudySessions } from "../../../utils/api/study";
+} from "../../shared/api/community";
+import { fetchStudySessions } from "../../shared/api/study";
 import { AppLayout } from "@/components/Layout/AppLayout";
 import { Button } from "@/shared/ui/button";
 import { Pagination } from "@/components/Pagination/Pagination";
@@ -64,7 +64,7 @@ import {
   SelectValue,
 } from "@/shared/ui/select";
 import { toast } from "sonner";
-import { DECK_CATEGORIES } from "../../../utils/categories";
+import { DECK_CATEGORIES } from "../../shared/catelog/categories";
 import { ShareDeckDialog } from "../ShareDeckDialog";
 import { CreateDeckDialog } from "./DeckDetail/CreateDeckDialog";
 import { EditDeckDialog } from "./DeckDetail/EditDeckDialog";
@@ -84,8 +84,8 @@ import { UpgradeModal } from "../UpgradeModal";
 import {
   canCreateDeck,
   canPublishToCommunity,
-} from "../../../utils/subscription";
-import { useIsSuperuser } from "../../../utils/userUtils";
+} from "../../shared/entitlements/subscription";
+import { useIsSuperuser } from "../../shared/auth/roles";
 
 export function DecksScreen() {
   const {

@@ -11,7 +11,7 @@ import {
   SelectValue,
 } from "@/shared/ui/select";
 import { Sparkles, Music, Volume2 } from "lucide-react";
-import { DECK_LANGUAGES } from "../../../utils/languages";
+import { DECK_LANGUAGES } from "../../shared/catelog/languages";
 
 export interface CardTypes {
   classicFlip: boolean;

@@ -5,11 +5,11 @@ import { useNavigation } from "../../shared/hooks/useNavigation";
 import {
   markAllNotificationsSeen,
   getNotifications,
-} from "../../../utils/api/notifications";
+} from "../../shared/api/notifications";
 import {
   acceptFriendRequest,
   declineFriendRequest,
-} from "../../../utils/api/friends";
+} from "../../shared/api/friends";
 import { toast } from "sonner";
 import { Button } from "@/shared/ui/button";
 import {

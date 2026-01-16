@@ -15,15 +15,15 @@ import {
   Flag,
 } from "lucide-react";
 import { Button } from "@/shared/ui/button";
-import { getUserProfile, getUserFriends } from "../../../utils/api/users";
-import { sendFriendRequest, removeFriend } from "../../../utils/api/friends";
-import { banUser, toggleModeratorStatus } from "../../../utils/api/admin";
+import { getUserProfile, getUserFriends } from "../../shared/api/users";
+import { sendFriendRequest, removeFriend } from "../../shared/api/friends";
+import { banUser, toggleModeratorStatus } from "../../shared/api/admin";
 import { toast } from "sonner";
 import {
   getAchievementsByCategory,
   CATEGORY_LABELS,
   AchievementCategory,
-} from "../../../utils/achievements";
+} from "@/features/achievements/achievements";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 import {
   AlertDialog,

@@ -4,7 +4,7 @@ import {
   getAchievementsByCategory,
   CATEGORY_LABELS,
   AchievementCategory,
-} from "../../../utils/achievements";
+} from "../../features/achievements/achievements";
 
 interface ProfileAchievementsProps {
   unlockedAchievementIds: string[];

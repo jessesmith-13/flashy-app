@@ -8,14 +8,14 @@ import {
   useParams,
 } from "react-router-dom";
 import { useStore } from "@/shared/state/useStore";
-import { signOut, getSession, recordTermsAcceptance } from "../utils/api/auth";
+import { signOut, getSession, recordTermsAcceptance } from "./shared/api/auth";
 import {
   getFriends,
   getFriendRequests,
   getPendingFriendRequests,
-} from "../utils/api/friends";
-import { updateProfile } from "../utils/api/users";
-import { getUserProfileOnLogin } from "../utils/api/auth";
+} from "./shared/api/friends";
+import { updateProfile } from "./shared/api/users";
+import { getUserProfileOnLogin } from "./shared/api/auth";
 import { LandingPage } from "./components/Landing/LandingPage";
 import { LoginScreen } from "./components/Auth/Login/LoginScreen";
 import { SignUpScreen } from "./components/Auth/Signup/SignupScreen";
@@ -42,10 +42,10 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import { Toaster } from "@/shared/ui/sonner";
 import { toast } from "sonner";
 import { SetDisplayModal } from "./components/Auth/Signup/SetDisplayModal";
-import { supabase } from "../src/lib/supabase";
+import { supabase } from "./shared/lib/supabase";
 import { SubscriptionTier } from "./types/users";
 import { BetaTestingPage } from "./components/BetaTesting/BetaTestingPage";
-import { IS_BETA_TESTING_ENABLED } from "../utils/config";
+import { IS_BETA_TESTING_ENABLED } from "./shared/config/featureFlags";
 
 // Suppress Supabase auth errors from console
 const originalConsoleError = console.error;

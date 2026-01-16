@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
 import { useStore } from "@/shared/state/useStore";
 import { useNavigation } from "../../shared/hooks/useNavigation";
-import { updateProfile, getUserFriends } from "../../../utils/api/users";
-import { uploadAvatar } from "../../../utils/api/storage";
-import { removeFriend as removeFriendApi } from "../../../utils/api/friends";
+import { updateProfile, getUserFriends } from "../../shared/api/users";
+import { uploadAvatar } from "../../shared/api/storage";
+import { removeFriend as removeFriendApi } from "../../shared/api/friends";
 import { toast } from "sonner";
-import { getAchievementsByCategory } from "../../../utils/achievements";
+import { getAchievementsByCategory } from "../../features/achievements/achievements";
 import { AppLayout } from "@/components/Layout/AppLayout";
 import { ProfileHeader } from "./ProfileHeader";
 import { ProfileStats } from "@/components/Profile/ProfileStats";

@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/shared/ui/button";
 import { toast } from "sonner";
-import { uploadCardAudio } from "../../../../utils/api/storage";
+import { uploadCardAudio } from "../../../shared/api/storage";
 import { MicrophonePermissionHelp } from "./MicrophonePermissionHelp";
 
 interface AudioRecorderProps {

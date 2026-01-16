@@ -21,8 +21,8 @@ import {
 } from "@/shared/ui/select";
 import { Label } from "@/shared/ui/label";
 import { toast } from "sonner";
-import { likeComment } from "../../../utils/api/community";
-import { deleteDeckComment } from "../../../utils/api/moderation";
+import { likeComment } from "../../shared/api/community";
+import { deleteDeckComment } from "../../shared/api/moderation";
 
 export interface Comment {
   id: string;

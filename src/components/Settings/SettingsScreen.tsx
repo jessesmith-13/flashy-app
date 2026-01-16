@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useStore } from "@/shared/state/useStore";
 import { useNavigation } from "../../shared/hooks/useNavigation";
-import { updateProfile } from "../../../utils/api/users";
-import { supabase } from "@/lib/supabase";
+import { updateProfile } from "../../shared/api/users";
+import { supabase } from "@/shared/lib/supabase";
 import { toast } from "sonner";
 import { AppLayout } from "@/components/Layout/AppLayout";
 import { Button } from "@/shared/ui/button";
@@ -12,7 +12,7 @@ import { NotificationsSection } from "./NotificationsSection";
 import {
   cancelSubscription,
   changeSubscriptionPlan,
-} from "../../../utils/api/subscriptions";
+} from "../../shared/api/subscriptions";
 import { AppearanceSection } from "./AppearanceSection";
 import { DataPrivacySection } from "./DataPrivacySection";
 import { DangerZoneSection } from "./DangerZoneSection";

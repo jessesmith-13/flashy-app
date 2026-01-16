@@ -19,7 +19,7 @@ import {
   getBetaTestingTasks,
   markBetaTaskComplete,
   submitBetaFeedback,
-} from "../../../utils/api/betaTesting";
+} from "../../shared/api/betaTesting";
 import type { BetaTestingTask } from "@/types/betaTesting";
 import { toast } from "sonner";
 import { useStore } from "@/shared/state/useStore";

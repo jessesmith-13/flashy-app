@@ -20,7 +20,7 @@ import {
   User,
   RefreshCw,
 } from "lucide-react";
-import { DECK_CATEGORIES } from "@/../utils/categories";
+import { DECK_CATEGORIES } from "@/shared/catelog/categories";
 
 interface CommunityFiltersProps {
   searchQuery: string;

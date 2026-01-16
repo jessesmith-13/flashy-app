@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { fetchUserAchievements } from "../../../utils/api/achievements";
+import { fetchUserAchievements } from "../api/achievements";
 import { UIDeck, UICard } from "@/types/decks";
 import { UICommunityDeck } from "@/types/community";
 import { CommunityDeck } from "@/types/community";
