@@ -17,7 +17,7 @@ import {
 import { toast } from "sonner";
 import { API_BASE } from "../../supabase/runtime";
 
-export function ContactScreen() {
+export function ContactPage() {
   const { user, accessToken } = useStore();
   const { navigate } = useNavigation();
   const [subject, setSubject] = useState("");
@@ -65,9 +65,15 @@ export function ContactScreen() {
       setSubject("");
       setCategory("");
       setMessage("");
-    } catch (error: any) {
+    } catch (error) {
       console.error("Failed to submit contact form:", error);
-      toast.error(error.message || "Failed to send message. Please try again.");
+
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Failed to send message. Please try again.";
+
+      toast.error(message);
     } finally {
       setSending(false);
     }
