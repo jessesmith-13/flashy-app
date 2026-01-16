@@ -1,7 +1,7 @@
 import { API_BASE } from "../../src/supabase/runtime";
 import { supabase } from "../../src/lib/supabase";
 const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-import { User } from "@/types/users";
+import { Session, User as SupabaseUser } from "@supabase/supabase-js";
 
 // ============================================================
 // AUTH – SIGN UP / SIGN IN
@@ -41,8 +41,8 @@ export const signIn = async (
   email: string,
   password: string
 ): Promise<{
-  session: any;
-  user: User;
+  session: Session;
+  user: SupabaseUser;
   profile: {
     name: string;
     displayName: string;
