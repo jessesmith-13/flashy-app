@@ -1,6 +1,7 @@
-import { API_BASE } from '../../src/supabase/runtime'
-import { supabase } from '../../src/lib/supabase'
-const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+import { API_BASE } from "../../src/supabase/runtime";
+import { supabase } from "../../src/lib/supabase";
+const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+import { User } from "@/types/users";
 
 // ============================================================
 // AUTH – SIGN UP / SIGN IN
@@ -9,26 +10,27 @@ const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 export const signUp = async (
   email: string,
   password: string,
-  name: string
+  name: string,
+  userRole: string | undefined
 ) => {
   const response = await fetch(`${API_BASE}/auth/signup`, {
-    method: 'POST',
+    method: "POST",
     headers: {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
       Authorization: `Bearer ${anonKey}`,
-      'apikey': anonKey,
+      apikey: anonKey,
     },
-    body: JSON.stringify({ email, password, name }),
-  })
+    body: JSON.stringify({ email, password, name, userRole }),
+  });
 
-  const data = await response.json()
+  const data = await response.json();
 
   if (!response.ok) {
-    throw new Error(data.error || 'Sign up failed')
+    throw new Error(data.error || "Sign up failed");
   }
 
-  return data
-}
+  return data;
+};
 
 /**
  * Sign in with email/password and fetch fresh user profile from database.
@@ -39,157 +41,150 @@ export const signIn = async (
   email: string,
   password: string
 ): Promise<{
-  session: any
-  user: any
+  session: any;
+  user: User;
   profile: {
-    name: string
-    displayName: string
-    avatarUrl: string | null
-    decksPublic: boolean
-    subscriptionTier: string
-    subscriptionExpiry: string | null
-    isSuperuser: boolean
-    isModerator: boolean
-  }
+    name: string;
+    displayName: string;
+    avatarUrl: string | null;
+    decksPublic: boolean;
+    subscriptionTier: string;
+    subscriptionExpiry: string | null;
+    isSuperuser: boolean;
+    isModerator: boolean;
+    userRole: string | null;
+    userRoleVerified: boolean;
+  };
 }> => {
   // Step 1: Authenticate with Supabase Auth
   const { data, error } = await supabase.auth.signInWithPassword({
     email,
     password,
-  })
+  });
 
   if (error) {
-    throw new Error(error.message)
+    throw new Error(error.message);
   }
 
   if (!data.session || !data.user) {
-    throw new Error('Login failed - no session returned')
+    throw new Error("Login failed - no session returned");
   }
 
   // 🔍 DEBUG: verify which Supabase project issued this token
-  const token = data.session.access_token
-  const payload = JSON.parse(atob(token.split('.')[1]))
+  const token = data.session.access_token;
+  const payload = JSON.parse(atob(token.split(".")[1]));
 
-  console.log(
-    'JWT DEBUG → ref:',
-    payload.ref,
-    'iss:',
-    payload.iss
-  )
+  console.log("JWT DEBUG → ref:", payload.ref, "iss:", payload.iss);
 
   // Step 2: Fetch fresh user profile from database (includes ban status)
-  const response = await fetch(
-    `${API_BASE}/auth/login`,
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${data.session.access_token}`,
-        'apikey': anonKey,
-      },
-    }
-  )
+  const response = await fetch(`${API_BASE}/auth/login`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${data.session.access_token}`,
+      apikey: anonKey,
+    },
+  });
 
   if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}))
-    
+    const errorData = await response.json().catch(() => ({}));
+
     // Handle banned user
     if (response.status === 403 && errorData.banned) {
-      const banReason = errorData.banReason || ''
-      
-      console.log('=== USER BANNED ===')
-      console.log('Ban Reason:', banReason || 'No reason provided')
-      console.log('==================')
-      
+      const banReason = errorData.banReason || "";
+
+      console.log("=== USER BANNED ===");
+      console.log("Ban Reason:", banReason || "No reason provided");
+      console.log("==================");
+
       // Sign out the user
-      await supabase.auth.signOut()
-      
+      await supabase.auth.signOut();
+
       // Throw custom banned error
       class BannedError extends Error {
-        banReason: string
+        banReason: string;
         constructor(message: string, banReason: string) {
-          super(message)
-          this.name = 'ACCOUNT_BANNED'
-          this.banReason = banReason
+          super(message);
+          this.name = "ACCOUNT_BANNED";
+          this.banReason = banReason;
         }
       }
-      
+
       throw new BannedError(
-        'Your account has been banned. Please contact support for more information.',
+        "Your account has been banned. Please contact support for more information.",
         banReason
-      )
+      );
     }
-    
-    throw new Error(errorData.error || 'Failed to fetch user profile')
+
+    throw new Error(errorData.error || "Failed to fetch user profile");
   }
 
-  const profile = await response.json()
+  const profile = await response.json();
 
   return {
     session: data.session,
     user: data.user,
     profile: {
-      name: profile.name || '',
-      displayName: profile.displayName || profile.name || '',
+      name: profile.name || "",
+      displayName: profile.displayName || profile.name || "",
       avatarUrl: profile.avatarUrl || null,
       decksPublic: profile.decksPublic ?? false,
-      subscriptionTier: profile.subscriptionTier || 'free',
+      subscriptionTier: profile.subscriptionTier || "free",
       subscriptionExpiry: profile.subscriptionExpiry || null,
       isSuperuser: profile.isSuperuser || false,
       isModerator: profile.isModerator || false,
+      userRole: profile.userRole || null,
+      userRoleVerified: profile.userRoleVerified || false,
     },
-  }
-}
+  };
+};
 
 // ============================================================
 // AUTH – OAUTH
 // ============================================================
 
 export const signInWithGoogle = async () => {
-  const { data, error } =
-    await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: window.location.origin,
-      },
-    })
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: "google",
+    options: {
+      redirectTo: window.location.origin,
+    },
+  });
 
   if (error) {
-    throw new Error(error.message)
+    throw new Error(error.message);
   }
 
-  return data
-}
+  return data;
+};
 
 // ============================================================
 // AUTH – PASSWORD MANAGEMENT
 // ============================================================
 
 export const resetPassword = async (email: string) => {
-  const { data, error } =
-    await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
-    })
+  const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${window.location.origin}/reset-password`,
+  });
 
   if (error) {
-    throw new Error(error.message)
+    throw new Error(error.message);
   }
 
-  return data
-}
+  return data;
+};
 
 export const updatePassword = async (newPassword: string) => {
-  const { data, error } =
-    await supabase.auth.updateUser({
-      password: newPassword,
-    })
+  const { data, error } = await supabase.auth.updateUser({
+    password: newPassword,
+  });
 
   if (error) {
-    throw new Error(error.message)
+    throw new Error(error.message);
   }
 
-  return data
-}
+  return data;
+};
 
 // ============================================================
 // AUTH – SESSION
@@ -197,89 +192,91 @@ export const updatePassword = async (newPassword: string) => {
 
 export const getSession = async () => {
   try {
-    const { data, error } =
-      await supabase.auth.getSession()
+    const { data, error } = await supabase.auth.getSession();
 
     if (error) {
       if (
-        error.message.includes('Refresh Token') ||
-        error.message.includes('Auth session missing')
+        error.message.includes("Refresh Token") ||
+        error.message.includes("Auth session missing")
       ) {
-        return null
+        return null;
       }
 
-      console.warn('Session error:', error.message)
-      return null
+      console.warn("Session error:", error.message);
+      return null;
     }
 
-    return data.session
+    return data.session;
   } catch (err) {
-    console.warn('Session check failed:', err)
-    return null
+    console.warn("Session check failed:", err);
+    return null;
   }
-}
+};
 
 export const signOut = async () => {
   try {
-    const { error } =
-      await supabase.auth.signOut()
+    const { error } = await supabase.auth.signOut();
 
-    if (
-      error &&
-      error.message !== 'Auth session missing!'
-    ) {
-      throw error
+    if (error && error.message !== "Auth session missing!") {
+      throw error;
     }
   } catch (err) {
-    console.warn('Supabase signOut warning:', err)
+    console.warn("Supabase signOut warning:", err);
   }
-}
+};
 
-export const setDisplayName = async (token: string, displayName: string): Promise<void> => {
+export const setDisplayName = async (
+  token: string,
+  displayName: string
+): Promise<void> => {
   const response = await fetch(`${API_BASE}/auth/set-display-name`, {
-    method: 'POST',
+    method: "POST",
     headers: {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
       Authorization: `Bearer ${token}`,
-      'apikey': anonKey,
+      apikey: anonKey,
     },
     body: JSON.stringify({ displayName }),
-  })
+  });
 
   if (!response.ok) {
-    const error = await response.text()
-    throw new Error(error || 'Failed to set display name')
+    const error = await response.text();
+    throw new Error(error || "Failed to set display name");
   }
-}
+};
 
-export const getUserProfileOnLogin = async (token: string): Promise<{
-  display_name: string | null
-  avatar_url: string | null
-  decks_public: boolean
-  subscription_tier: string
-  subscription_expiry: string | null
-  email_notifications_enabled: boolean 
-  email_offers: boolean              
-  email_comment_replies: boolean       
-  email_friend_requests: boolean       
-  email_flag_notifications: boolean  
-  email_moderation_updates: boolean   
+export const getUserProfileOnLogin = async (
+  token: string
+): Promise<{
+  user_role_verified: boolean;
+  user_role: undefined;
+  display_name: string | null;
+  avatar_url: string | null;
+  decks_public: boolean;
+  subscription_tier: string;
+  subscription_expiry: string | null;
+  email_notifications_enabled: boolean;
+  email_offers: boolean;
+  email_comment_replies: boolean;
+  email_friend_requests: boolean;
+  email_flag_notifications: boolean;
+  email_moderation_updates: boolean;
 }> => {
   const response = await fetch(`${API_BASE}/auth/user-profile`, {
-    method: 'GET',
+    method: "GET",
     headers: {
       Authorization: `Bearer ${token}`,
-      'apikey': anonKey,
+      apikey: anonKey,
     },
-  })
+  });
 
   if (!response.ok) {
-    const error = await response.text()
-    throw new Error(error || 'Failed to fetch user profile')
+    const error = await response.text();
+    throw new Error(error || "Failed to fetch user profile");
   }
 
-  return response.json()
-}
+  return response.json();
+};
 
 // ============================================================
 // AUTH – TERMS / LEGAL
@@ -289,30 +286,22 @@ export const recordTermsAcceptance = async (
   accessToken: string,
   termsAcceptedAt: string
 ) => {
-  const response = await fetch(
-    `${API_BASE}/auth/terms/accept`,
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${accessToken}`,
-        'apikey': anonKey,
-      },
-      body: JSON.stringify({ termsAcceptedAt }),
-    }
-  )
+  const response = await fetch(`${API_BASE}/auth/terms/accept`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${accessToken}`,
+      apikey: anonKey,
+    },
+    body: JSON.stringify({ termsAcceptedAt }),
+  });
 
-  const data = await response.json()
+  const data = await response.json();
 
   if (!response.ok) {
-    console.error(
-      'Failed to record terms acceptance:',
-      data.error
-    )
-    throw new Error(
-      data.error || 'Failed to record terms acceptance'
-    )
+    console.error("Failed to record terms acceptance:", data.error);
+    throw new Error(data.error || "Failed to record terms acceptance");
   }
 
-  return data
-}
+  return data;
+};

@@ -8,11 +8,11 @@ import { toast } from "sonner";
 import { getAchievementsByCategory } from "../../../utils/achievements";
 import { AppLayout } from "../Layout/AppLayout";
 import { ProfileHeader } from "./ProfileHeader";
-import { ProfileStats } from "./ProfileStats";
-import { ProfileAchievements } from "./ProfileAchievements";
-import { ProfileFriends } from "./ProfileFriends";
-import { EditProfileDialog } from "./EditProfileDialog";
-import { InviteFriendDialog } from "./InviteFriendDialog";
+import { ProfileStats } from "../Profile/ProfileStats";
+import { ProfileAchievements } from "../Profile/ProfileAchievements";
+import { ProfileFriends } from "../Profile/ProfileFriends";
+import { EditProfileDialog } from "../Profile/EditProfileDialog";
+import { InviteFriendDialog } from "../Profile/InviteFriendDialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../ui/tabs";
 import { BarChart3, Trophy, Users } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
@@ -343,6 +343,16 @@ export function ProfileScreen() {
               avatarUrl: user?.avatarUrl,
               displayName: user?.displayName,
               name: user?.name,
+              userRole:
+                (user?.userRole as
+                  | "educator"
+                  | "student"
+                  | "self_learner"
+                  | "researcher"
+                  | "org"
+                  | "other"
+                  | undefined) || undefined,
+              userRoleVerified: user?.userRoleVerified,
             }}
             studyStreak={userStats?.studyStreak || 0}
             unlockedAchievements={unlockedCount}

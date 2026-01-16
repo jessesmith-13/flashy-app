@@ -1,13 +1,30 @@
-import { useState, useEffect } from 'react'
-import { AppLayout } from '../Layout/AppLayout'
-import { Flame, Trophy, Target, ArrowLeft, UserPlus, UserMinus, Lock, CheckCircle2, ShieldOff, Shield, Users, Flag } from 'lucide-react'
-import { Button } from '../../ui/button'
-import { getUserProfile, getUserFriends } from '../../../utils/api/users'
-import { sendFriendRequest, removeFriend } from '../../../utils/api/friends'
-import { banUser, toggleModeratorStatus } from '../../../utils/api/admin'
-import { toast } from 'sonner'
-import { getAchievementsByCategory, CATEGORY_LABELS, AchievementCategory } from '../../../utils/achievements'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../ui/tabs'
+import { useState, useEffect } from "react";
+import { AppLayout } from "../Layout/AppLayout";
+import {
+  Flame,
+  Trophy,
+  Target,
+  ArrowLeft,
+  UserPlus,
+  UserMinus,
+  Lock,
+  CheckCircle2,
+  ShieldOff,
+  Shield,
+  Users,
+  Flag,
+} from "lucide-react";
+import { Button } from "../../ui/button";
+import { getUserProfile, getUserFriends } from "../../../utils/api/users";
+import { sendFriendRequest, removeFriend } from "../../../utils/api/friends";
+import { banUser, toggleModeratorStatus } from "../../../utils/api/admin";
+import { toast } from "sonner";
+import {
+  getAchievementsByCategory,
+  CATEGORY_LABELS,
+  AchievementCategory,
+} from "../../../utils/achievements";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../ui/tabs";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -17,184 +34,203 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '../../ui/alert-dialog'
-import { useStore } from '../../../store/useStore'
-import { UICommunityDeck } from '@/types/community'
+} from "../../ui/alert-dialog";
+import { useStore } from "../../../store/useStore";
+import { UICommunityDeck } from "@/types/community";
+import { ProvenanceBadges } from "../Provenance/ProvenanceBadges";
 
 interface UserProfileViewProps {
-  userId: string
-  onBack: () => void
-  onViewDeck?: (deckId: string, userId: string) => void
-  onViewUser?: (userId: string) => void
-  onFlagUser?: (userId: string, userName: string) => void
+  userId: string;
+  onBack: () => void;
+  onViewDeck?: (deckId: string, userId: string) => void;
+  onViewUser?: (userId: string) => void;
+  onFlagUser?: (userId: string, userName: string) => void;
 }
 
-export function UserProfileView({ userId, onBack, onViewDeck, onViewUser, onFlagUser }: UserProfileViewProps) {
-  const { accessToken, friends, pendingFriendRequests, removeFriend: removeFriendFromStore, addPendingFriendRequest, user } = useStore()
-  const [profileUser, setProfileUser] = useState<any>(null)
-  const [loading, setLoading] = useState(true)
-  const [actionLoading, setActionLoading] = useState(false)
-  const [showBanDialog, setShowBanDialog] = useState(false)
-  const [banLoading, setBanLoading] = useState(false)
-  const [showModeratorDialog, setShowModeratorDialog] = useState(false)
-  const [moderatorLoading, setModeratorLoading] = useState(false)
-  const [userFriends, setUserFriends] = useState<any[]>([])
-  const [friendsLoading, setFriendsLoading] = useState(false)
+export function UserProfileView({
+  userId,
+  onBack,
+  onViewDeck,
+  onViewUser,
+  onFlagUser,
+}: UserProfileViewProps) {
+  const {
+    accessToken,
+    friends,
+    pendingFriendRequests,
+    removeFriend: removeFriendFromStore,
+    addPendingFriendRequest,
+    user,
+  } = useStore();
+  const [profileUser, setProfileUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState(false);
+  const [showBanDialog, setShowBanDialog] = useState(false);
+  const [banLoading, setBanLoading] = useState(false);
+  const [showModeratorDialog, setShowModeratorDialog] = useState(false);
+  const [moderatorLoading, setModeratorLoading] = useState(false);
+  const [userFriends, setUserFriends] = useState<any[]>([]);
+  const [friendsLoading, setFriendsLoading] = useState(false);
 
-  const isFriend = friends.includes(userId)
-  const isPending = pendingFriendRequests.includes(userId)
-  const isOwnProfile = user?.id === userId
-  const isSuperuser = user?.isSuperuser === true
-  const isUserBanned = profileUser?.isBanned === true
+  const isFriend = friends.includes(userId);
+  const isPending = pendingFriendRequests.includes(userId);
+  const isOwnProfile = user?.id === userId;
+  const isSuperuser = user?.isSuperuser === true;
+  const isUserBanned = profileUser?.isBanned === true;
 
-  // Debug logging
   useEffect(() => {
-    console.log('=== UserProfileView Friend Status Debug ===')
-    console.log('Viewing userId:', userId)
-    console.log('Current user ID:', user?.id)
-    console.log('Friends array from store:', friends)
-    console.log('Pending requests array from store:', pendingFriendRequests)
-    console.log('isFriend:', isFriend)
-    console.log('isPending:', isPending)
-    console.log('isOwnProfile:', isOwnProfile)
-    console.log('========================================')
-  }, [userId, friends, isFriend, isPending, pendingFriendRequests, user])
-
-  useEffect(() => {
-    loadUserProfile()
-    loadUserFriends() // Load friends when profile loads
-  }, [userId])
+    loadUserProfile();
+    loadUserFriends(); // Load friends when profile loads
+  }, [userId]);
 
   useEffect(() => {
     // Debug log to check superuser status
-    console.log('UserProfileView - Current user:', user)
-    console.log('UserProfileView - isSuperuser:', isSuperuser)
-    console.log('UserProfileView - isOwnProfile:', isOwnProfile)
-  }, [user, isSuperuser, isOwnProfile])
+    console.log("UserProfileView - Current user:", user);
+    console.log("UserProfileView - isSuperuser:", isSuperuser);
+    console.log("UserProfileView - isOwnProfile:", isOwnProfile);
+  }, [user, isSuperuser, isOwnProfile]);
 
   const loadUserProfile = async () => {
     try {
-      setLoading(true)
-      
+      setLoading(true);
+
       // Load from API only
-      const userData = await getUserProfile(userId)
-      console.log('UserProfileView - Loaded user data:', userData)
-      console.log('UserProfileView - Achievements:', userData.achievements)
-      console.log('UserProfileView - Decks:', userData.decks)
-      console.log('UserProfileView - decksPublic:', userData.decksPublic)
-      console.log('UserProfileView - Number of decks:', userData.decks?.length || 0)
-      setProfileUser(userData)
+      const userData = await getUserProfile(userId);
+      console.log("UserProfileView - Loaded user data:", userData);
+      console.log("UserProfileView - Achievements:", userData.achievements);
+      console.log("UserProfileView - Decks:", userData.decks);
+      console.log("UserProfileView - decksPublic:", userData.decksPublic);
+      console.log(
+        "UserProfileView - Number of decks:",
+        userData.decks?.length || 0
+      );
+      console.log("UserProfileView - User Role:", userData.userRole);
+      console.log(
+        "UserProfileView - User Role Verified:",
+        userData.userRoleVerified
+      );
+      setProfileUser(userData);
     } catch (error) {
-      console.error('Failed to load user profile:', error)
-      toast.error('Failed to load user profile')
+      console.error("Failed to load user profile:", error);
+      toast.error("Failed to load user profile");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const handleSendFriendRequest = async () => {
-    if (!accessToken) return
-    
-    setActionLoading(true)
+    if (!accessToken) return;
+
+    setActionLoading(true);
     try {
-      await sendFriendRequest(accessToken, userId)
-      addPendingFriendRequest(userId)
-      toast.success('Friend request sent!')
+      await sendFriendRequest(accessToken, userId);
+      addPendingFriendRequest(userId);
+      toast.success("Friend request sent!");
     } catch (error) {
-      console.error('Failed to send friend request:', error)
-      toast.error('Failed to send friend request')
+      console.error("Failed to send friend request:", error);
+      toast.error("Failed to send friend request");
     } finally {
-      setActionLoading(false)
+      setActionLoading(false);
     }
-  }
+  };
 
   const handleRemoveFriend = async () => {
-    if (!accessToken) return
-    
-    setActionLoading(true)
+    if (!accessToken) return;
+
+    setActionLoading(true);
     try {
-      await removeFriend(accessToken, userId)
-      removeFriendFromStore(userId)
-      toast.success('Friend removed')
+      await removeFriend(accessToken, userId);
+      removeFriendFromStore(userId);
+      toast.success("Friend removed");
     } catch (error) {
-      console.error('Failed to remove friend:', error)
-      toast.error('Failed to remove friend')
+      console.error("Failed to remove friend:", error);
+      toast.error("Failed to remove friend");
     } finally {
-      setActionLoading(false)
+      setActionLoading(false);
     }
-  }
+  };
 
   const handleBanUser = async () => {
-    if (!accessToken || !isSuperuser) return
-    
-    setBanLoading(true)
+    if (!accessToken || !isSuperuser) return;
+
+    setBanLoading(true);
     try {
-      const newBannedStatus = !isUserBanned
-      await banUser(accessToken, userId, newBannedStatus)
-      
+      const newBannedStatus = !isUserBanned;
+      await banUser(accessToken, userId, newBannedStatus);
+
       // Update local state
       setProfileUser((prev: any) => ({
         ...prev,
-        isBanned: newBannedStatus
-      }))
-      
-      toast.success(newBannedStatus ? 'User banned successfully' : 'User unbanned successfully')
-      setShowBanDialog(false)
+        isBanned: newBannedStatus,
+      }));
+
+      toast.success(
+        newBannedStatus
+          ? "User banned successfully"
+          : "User unbanned successfully"
+      );
+      setShowBanDialog(false);
     } catch (error) {
-      console.error('Failed to ban/unban user:', error)
-      toast.error('Failed to ban/unban user')
+      console.error("Failed to ban/unban user:", error);
+      toast.error("Failed to ban/unban user");
     } finally {
-      setBanLoading(false)
+      setBanLoading(false);
     }
-  }
+  };
 
   const handleToggleModerator = async () => {
-    if (!accessToken || !isSuperuser) return
-    
-    setModeratorLoading(true)
+    if (!accessToken || !isSuperuser) return;
+
+    setModeratorLoading(true);
     try {
-      const newModeratorStatus = !profileUser.isModerator
-      await toggleModeratorStatus(accessToken, userId, newModeratorStatus)
-      
+      const newModeratorStatus = !profileUser.isModerator;
+      await toggleModeratorStatus(accessToken, userId, newModeratorStatus);
+
       // Update local state
       setProfileUser((prev: any) => ({
         ...prev,
-        isModerator: newModeratorStatus
-      }))
-      
-      toast.success(newModeratorStatus ? 'User promoted to moderator' : 'User removed from moderator role')
-      setShowModeratorDialog(false)
+        isModerator: newModeratorStatus,
+      }));
+
+      toast.success(
+        newModeratorStatus
+          ? "User promoted to moderator"
+          : "User removed from moderator role"
+      );
+      setShowModeratorDialog(false);
     } catch (error) {
-      console.error('Failed to toggle moderator status:', error)
-      toast.error('Failed to toggle moderator status')
+      console.error("Failed to toggle moderator status:", error);
+      toast.error("Failed to toggle moderator status");
     } finally {
-      setModeratorLoading(false)
+      setModeratorLoading(false);
     }
-  }
+  };
 
   const loadUserFriends = async () => {
-    if (!accessToken) return
-    
-    setFriendsLoading(true)
+    if (!accessToken) return;
+
+    setFriendsLoading(true);
     try {
-      const friendsData = await getUserFriends(accessToken, userId)
-      setUserFriends(friendsData)
+      const friendsData = await getUserFriends(accessToken, userId);
+      setUserFriends(friendsData);
     } catch (error) {
-      console.error('Failed to load user friends:', error)
-      toast.error('Failed to load user friends')
+      console.error("Failed to load user friends:", error);
+      toast.error("Failed to load user friends");
     } finally {
-      setFriendsLoading(false)
+      setFriendsLoading(false);
     }
-  }
+  };
 
   if (loading) {
     return (
       <AppLayout>
         <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex items-center justify-center">
-          <div className="text-emerald-600 dark:text-emerald-400">Loading...</div>
+          <div className="text-emerald-600 dark:text-emerald-400">
+            Loading...
+          </div>
         </div>
       </AppLayout>
-    )
+    );
   }
 
   if (!profileUser) {
@@ -204,26 +240,32 @@ export function UserProfileView({ userId, onBack, onViewDeck, onViewUser, onFlag
           <div className="text-gray-600 dark:text-gray-400">User not found</div>
         </div>
       </AppLayout>
-    )
+    );
   }
 
   // Get user's achievements and decks
-  const userAchievementIds = profileUser.achievements || []
-  const achievementsByCategory = getAchievementsByCategory(userAchievementIds)
-  const unlockedCount = userAchievementIds.length
+  const userAchievementIds = profileUser.achievements || [];
+  const achievementsByCategory = getAchievementsByCategory(userAchievementIds);
+  const unlockedCount = userAchievementIds.length;
 
-  const userDecks = profileUser.decks || []
-  const showDecks = profileUser.decksPublic !== false
-  
+  const userDecks = profileUser.decks || [];
+  const showDecks = profileUser.decksPublic !== false;
+
   // Filter out any null or undefined decks as a safety measure
-  const validDecks = userDecks.filter((deck: UICommunityDeck) => deck && deck.id && deck.name)
-  
+  const validDecks = userDecks.filter(
+    (deck: UICommunityDeck) => deck && deck.id && deck.name
+  );
+
   // Debug logging
-  console.log('UserProfileView - Computed values:')
-  console.log('  userDecks:', userDecks)
-  console.log('  showDecks:', showDecks)
-  console.log('  validDecks:', validDecks)
-  console.log('  validDecks.length:', validDecks.length)
+  console.log("UserProfileView - Computed values:");
+  console.log("  userDecks:", userDecks);
+  console.log("  showDecks:", showDecks);
+  console.log("  validDecks:", validDecks);
+  console.log("  validDecks.length:", validDecks.length);
+
+  // Only show role badge if role exists and is not "other"
+  const shouldShowRoleBadge =
+    profileUser.userRole && profileUser.userRole !== "other";
 
   return (
     <AppLayout>
@@ -250,13 +292,17 @@ export function UserProfileView({ userId, onBack, onViewDeck, onViewUser, onFlag
                   />
                 ) : (
                   <div className="w-24 h-24 rounded-full bg-gradient-to-br from-emerald-400 to-blue-500 flex items-center justify-center text-white text-4xl">
-                    {(profileUser.displayName || profileUser.name || '?').charAt(0).toUpperCase()}
+                    {(profileUser.displayName || profileUser.name || "?")
+                      .charAt(0)
+                      .toUpperCase()}
                   </div>
                 )}
               </div>
               <div className="flex-1 text-center md:text-left">
                 <div className="flex items-center gap-3 justify-center md:justify-start mb-2">
-                  <h1 className="text-3xl text-gray-900 dark:text-gray-100">{profileUser.displayName || profileUser.name}</h1>
+                  <h1 className="text-3xl text-gray-900 dark:text-gray-100">
+                    {profileUser.displayName || profileUser.name}
+                  </h1>
                   {isUserBanned && (
                     <span className="px-3 py-1 bg-red-100 dark:bg-red-900/30 border border-red-300 dark:border-red-700 text-red-700 dark:text-red-400 text-sm rounded-full">
                       Banned
@@ -268,24 +314,47 @@ export function UserProfileView({ userId, onBack, onViewDeck, onViewUser, onFlag
                     </span>
                   )}
                 </div>
-                
+
+                {/* Role Badge - Only show if role exists and is not "other" */}
+                {shouldShowRoleBadge && (
+                  <div className="flex justify-center md:justify-start mb-3">
+                    <ProvenanceBadges
+                      creatorRole={
+                        profileUser.userRole as
+                          | "educator"
+                          | "student"
+                          | "self_learner"
+                          | "researcher"
+                          | "org"
+                      }
+                      creatorRoleVerified={profileUser.userRoleVerified}
+                    />
+                  </div>
+                )}
+
                 <div className="flex flex-wrap gap-4 justify-center md:justify-start mb-4">
                   <div className="flex items-center gap-2 px-4 py-2 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg">
                     <Trophy className="w-5 h-5 text-emerald-500 dark:text-emerald-400" />
-                    <span className="text-gray-900 dark:text-gray-100">{unlockedCount} achievements</span>
+                    <span className="text-gray-900 dark:text-gray-100">
+                      {unlockedCount} achievements
+                    </span>
                   </div>
                   {showDecks && (
                     <div className="flex items-center gap-2 px-4 py-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
                       <Target className="w-5 h-5 text-blue-500 dark:text-blue-400" />
-                      <span className="text-gray-900 dark:text-gray-100">{userDecks.length} decks</span>
+                      <span className="text-gray-900 dark:text-gray-100">
+                        {userDecks.length} decks
+                      </span>
                     </div>
                   )}
                   <div className="flex items-center gap-2 px-4 py-2 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
                     <Users className="w-5 h-5 text-purple-500 dark:text-purple-400" />
-                    <span className="text-gray-900 dark:text-gray-100">{friendsLoading ? '...' : userFriends.length} friends</span>
+                    <span className="text-gray-900 dark:text-gray-100">
+                      {friendsLoading ? "..." : userFriends.length} friends
+                    </span>
                   </div>
                 </div>
-                
+
                 {!isOwnProfile && (
                   <div className="flex flex-wrap gap-2 justify-center md:justify-start">
                     {isFriend ? (
@@ -317,16 +386,17 @@ export function UserProfileView({ userId, onBack, onViewDeck, onViewUser, onFlag
                         Add Friend
                       </Button>
                     )}
-                    
+
                     {/* Superuser Ban/Unban Button */}
                     {isSuperuser && (
                       <>
                         <Button
                           onClick={() => setShowBanDialog(true)}
                           variant="outline"
-                          className={isUserBanned 
-                            ? "border-emerald-300 dark:border-emerald-700 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
-                            : "border-red-300 dark:border-red-700 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
+                          className={
+                            isUserBanned
+                              ? "border-emerald-300 dark:border-emerald-700 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
+                              : "border-red-300 dark:border-red-700 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
                           }
                         >
                           {isUserBanned ? (
@@ -341,13 +411,14 @@ export function UserProfileView({ userId, onBack, onViewDeck, onViewUser, onFlag
                             </>
                           )}
                         </Button>
-                        
+
                         <Button
                           onClick={() => setShowModeratorDialog(true)}
                           variant="outline"
-                          className={profileUser.isModerator 
-                            ? "border-orange-300 dark:border-orange-700 text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20"
-                            : "border-blue-300 dark:border-blue-700 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                          className={
+                            profileUser.isModerator
+                              ? "border-orange-300 dark:border-orange-700 text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20"
+                              : "border-blue-300 dark:border-blue-700 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20"
                           }
                         >
                           {profileUser.isModerator ? (
@@ -364,11 +435,16 @@ export function UserProfileView({ userId, onBack, onViewDeck, onViewUser, onFlag
                         </Button>
                       </>
                     )}
-                    
+
                     {/* Flag User Button */}
                     {onFlagUser && (
                       <Button
-                        onClick={() => onFlagUser(userId, profileUser.displayName || profileUser.name)}
+                        onClick={() =>
+                          onFlagUser(
+                            userId,
+                            profileUser.displayName || profileUser.name
+                          )
+                        }
                         variant="outline"
                         className="border-red-300 dark:border-red-600 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
                       >
@@ -392,65 +468,77 @@ export function UserProfileView({ userId, onBack, onViewDeck, onViewUser, onFlag
             {/* Achievements Tab */}
             <TabsContent value="achievements">
               <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm">
-                <h2 className="text-xl text-gray-900 dark:text-gray-100 mb-6">Achievements</h2>
-                
+                <h2 className="text-xl text-gray-900 dark:text-gray-100 mb-6">
+                  Achievements
+                </h2>
+
                 <div className="space-y-8">
-                  {Object.entries(achievementsByCategory).map(([category, { unlocked, locked }]) => {
-                    const total = unlocked.length + locked.length
-                    if (total === 0) return null
-                    
-                    return (
-                      <div key={category}>
-                        <div className="flex items-center justify-between mb-4">
-                          <h3 className="text-gray-900 dark:text-gray-100">
-                            {CATEGORY_LABELS[category as AchievementCategory]}
-                          </h3>
-                          <span className="text-sm text-gray-500 dark:text-gray-400">
-                            {unlocked.length}/{total}
-                          </span>
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                          {/* Show unlocked first */}
-                          {unlocked.map((achievement) => (
-                            <div
-                              key={achievement.id}
-                              className="p-4 rounded-xl border-2 border-emerald-200 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-900/20 transition-all"
-                            >
-                              <div className="flex items-start gap-3">
-                                <div className="text-3xl">{achievement.icon}</div>
-                                <div className="flex-1 min-w-0">
-                                  <h4 className="text-gray-900 dark:text-gray-100 mb-1 flex items-center gap-2">
-                                    {achievement.title}
-                                    <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
-                                  </h4>
-                                  <p className="text-sm text-gray-600 dark:text-gray-400">{achievement.description}</p>
+                  {Object.entries(achievementsByCategory).map(
+                    ([category, { unlocked, locked }]) => {
+                      const total = unlocked.length + locked.length;
+                      if (total === 0) return null;
+
+                      return (
+                        <div key={category}>
+                          <div className="flex items-center justify-between mb-4">
+                            <h3 className="text-gray-900 dark:text-gray-100">
+                              {CATEGORY_LABELS[category as AchievementCategory]}
+                            </h3>
+                            <span className="text-sm text-gray-500 dark:text-gray-400">
+                              {unlocked.length}/{total}
+                            </span>
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {/* Show unlocked first */}
+                            {unlocked.map((achievement) => (
+                              <div
+                                key={achievement.id}
+                                className="p-4 rounded-xl border-2 border-emerald-200 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-900/20 transition-all"
+                              >
+                                <div className="flex items-start gap-3">
+                                  <div className="text-3xl">
+                                    {achievement.icon}
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <h4 className="text-gray-900 dark:text-gray-100 mb-1 flex items-center gap-2">
+                                      {achievement.title}
+                                      <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
+                                    </h4>
+                                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                                      {achievement.description}
+                                    </p>
+                                  </div>
                                 </div>
                               </div>
-                            </div>
-                          ))}
-                          
-                          {/* Show locked achievements */}
-                          {locked.map((achievement) => (
-                            <div
-                              key={achievement.id}
-                              className="p-4 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/30 opacity-60 transition-all"
-                            >
-                              <div className="flex items-start gap-3">
-                                <div className="text-3xl grayscale">{achievement.icon}</div>
-                                <div className="flex-1 min-w-0">
-                                  <h4 className="text-gray-900 dark:text-gray-100 mb-1 flex items-center gap-2">
-                                    {achievement.title}
-                                    <Lock className="w-3 h-3 text-gray-400 dark:text-gray-500 flex-shrink-0" />
-                                  </h4>
-                                  <p className="text-sm text-gray-600 dark:text-gray-400">{achievement.description}</p>
+                            ))}
+
+                            {/* Show locked achievements */}
+                            {locked.map((achievement) => (
+                              <div
+                                key={achievement.id}
+                                className="p-4 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/30 opacity-60 transition-all"
+                              >
+                                <div className="flex items-start gap-3">
+                                  <div className="text-3xl grayscale">
+                                    {achievement.icon}
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <h4 className="text-gray-900 dark:text-gray-100 mb-1 flex items-center gap-2">
+                                      {achievement.title}
+                                      <Lock className="w-3 h-3 text-gray-400 dark:text-gray-500 flex-shrink-0" />
+                                    </h4>
+                                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                                      {achievement.description}
+                                    </p>
+                                  </div>
                                 </div>
                               </div>
-                            </div>
-                          ))}
+                            ))}
+                          </div>
                         </div>
-                      </div>
-                    )
-                  })}
+                      );
+                    }
+                  )}
                 </div>
               </div>
             </TabsContent>
@@ -458,16 +546,22 @@ export function UserProfileView({ userId, onBack, onViewDeck, onViewUser, onFlag
             {/* Decks Tab */}
             <TabsContent value="decks">
               <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm">
-                <h2 className="text-xl text-gray-900 dark:text-gray-100 mb-6">Decks</h2>
-                
+                <h2 className="text-xl text-gray-900 dark:text-gray-100 mb-6">
+                  Decks
+                </h2>
+
                 {!showDecks ? (
                   <div className="text-center py-12">
                     <Lock className="w-12 h-12 text-gray-400 dark:text-gray-500 mx-auto mb-4" />
-                    <p className="text-gray-600 dark:text-gray-400">This user's decks are private</p>
+                    <p className="text-gray-600 dark:text-gray-400">
+                      This user's decks are private
+                    </p>
                   </div>
                 ) : validDecks.length === 0 ? (
                   <div className="text-center py-12">
-                    <p className="text-gray-600 dark:text-gray-400">No decks yet</p>
+                    <p className="text-gray-600 dark:text-gray-400">
+                      No decks yet
+                    </p>
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -476,17 +570,23 @@ export function UserProfileView({ userId, onBack, onViewDeck, onViewUser, onFlag
                         key={deck.id}
                         onClick={() => onViewDeck?.(deck.id, userId)}
                         className="p-6 rounded-xl border-2 border-gray-200 dark:border-gray-700 hover:border-emerald-300 dark:hover:border-emerald-600 transition-all cursor-pointer"
-                        style={{ borderColor: deck.color + '40', backgroundColor: deck.color + '10' }}
+                        style={{
+                          borderColor: deck.color + "40",
+                          backgroundColor: deck.color + "10",
+                        }}
                       >
                         <div className="flex items-center gap-3 mb-3">
                           <span className="text-4xl">{deck.emoji}</span>
                           <div className="flex-1 min-w-0">
-                            <h3 className="text-gray-900 dark:text-gray-100 truncate">{deck.name}</h3>
+                            <h3 className="text-gray-900 dark:text-gray-100 truncate">
+                              {deck.name}
+                            </h3>
                           </div>
                         </div>
                         <div className="flex items-center justify-between">
                           <span className="text-sm text-gray-600 dark:text-gray-400">
-                            {deck.cardCount} {deck.cardCount === 1 ? 'card' : 'cards'}
+                            {deck.cardCount}{" "}
+                            {deck.cardCount === 1 ? "card" : "cards"}
                           </span>
                         </div>
                       </div>
@@ -499,16 +599,22 @@ export function UserProfileView({ userId, onBack, onViewDeck, onViewUser, onFlag
             {/* Friends Tab */}
             <TabsContent value="friends">
               <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm">
-                <h2 className="text-xl text-gray-900 dark:text-gray-100 mb-6">Friends</h2>
-                
+                <h2 className="text-xl text-gray-900 dark:text-gray-100 mb-6">
+                  Friends
+                </h2>
+
                 {friendsLoading ? (
                   <div className="text-center py-12">
                     <Flame className="w-12 h-12 text-gray-400 dark:text-gray-500 mx-auto mb-4" />
-                    <p className="text-gray-600 dark:text-gray-400">Loading friends...</p>
+                    <p className="text-gray-600 dark:text-gray-400">
+                      Loading friends...
+                    </p>
                   </div>
                 ) : userFriends.length === 0 ? (
                   <div className="text-center py-12">
-                    <p className="text-gray-600 dark:text-gray-400">No friends yet</p>
+                    <p className="text-gray-600 dark:text-gray-400">
+                      No friends yet
+                    </p>
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -528,12 +634,16 @@ export function UserProfileView({ userId, onBack, onViewDeck, onViewUser, onFlag
                               />
                             ) : (
                               <div className="w-12 h-12 rounded-full bg-gradient-to-br from-emerald-400 to-blue-500 flex items-center justify-center text-white text-3xl">
-                                {(friend.displayName || friend.name || '?').charAt(0).toUpperCase()}
+                                {(friend.displayName || friend.name || "?")
+                                  .charAt(0)
+                                  .toUpperCase()}
                               </div>
                             )}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <h3 className="text-gray-900 dark:text-gray-100 truncate">{friend.displayName || friend.name}</h3>
+                            <h3 className="text-gray-900 dark:text-gray-100 truncate">
+                              {friend.displayName || friend.name}
+                            </h3>
                           </div>
                         </div>
                       </div>
@@ -551,18 +661,20 @@ export function UserProfileView({ userId, onBack, onViewDeck, onViewUser, onFlag
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              {isUserBanned ? 'Unban User?' : 'Ban User?'}
+              {isUserBanned ? "Unban User?" : "Ban User?"}
             </AlertDialogTitle>
             <AlertDialogDescription>
               {isUserBanned ? (
                 <>
-                  Are you sure you want to unban <strong>{profileUser.displayName || profileUser.name}</strong>? 
-                  They will regain full access to the platform.
+                  Are you sure you want to unban{" "}
+                  <strong>{profileUser.displayName || profileUser.name}</strong>
+                  ? They will regain full access to the platform.
                 </>
               ) : (
                 <>
-                  Are you sure you want to ban <strong>{profileUser.displayName || profileUser.name}</strong>? 
-                  This will restrict their access to the platform.
+                  Are you sure you want to ban{" "}
+                  <strong>{profileUser.displayName || profileUser.name}</strong>
+                  ? This will restrict their access to the platform.
                 </>
               )}
             </AlertDialogDescription>
@@ -571,54 +683,75 @@ export function UserProfileView({ userId, onBack, onViewDeck, onViewUser, onFlag
             <AlertDialogCancel disabled={banLoading}>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleBanUser}
-              className={isUserBanned 
-                ? "bg-emerald-600 hover:bg-emerald-700" 
-                : "bg-red-600 hover:bg-red-700"
+              className={
+                isUserBanned
+                  ? "bg-emerald-600 hover:bg-emerald-700"
+                  : "bg-red-600 hover:bg-red-700"
               }
               disabled={banLoading}
             >
-              {banLoading ? 'Processing...' : (isUserBanned ? 'Unban User' : 'Ban User')}
+              {banLoading
+                ? "Processing..."
+                : isUserBanned
+                ? "Unban User"
+                : "Ban User"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
       {/* Moderator Toggle Confirmation Dialog */}
-      <AlertDialog open={showModeratorDialog} onOpenChange={setShowModeratorDialog}>
+      <AlertDialog
+        open={showModeratorDialog}
+        onOpenChange={setShowModeratorDialog}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              {profileUser.isModerator ? 'Remove Moderator Role?' : 'Make Moderator?'}
+              {profileUser.isModerator
+                ? "Remove Moderator Role?"
+                : "Make Moderator?"}
             </AlertDialogTitle>
             <AlertDialogDescription>
               {profileUser.isModerator ? (
                 <>
-                  Are you sure you want to remove <strong>{profileUser.displayName || profileUser.name}</strong> from the moderator role? 
-                  They will lose access to all moderator tools and privileges.
+                  Are you sure you want to remove{" "}
+                  <strong>{profileUser.displayName || profileUser.name}</strong>{" "}
+                  from the moderator role? They will lose access to all
+                  moderator tools and privileges.
                 </>
               ) : (
                 <>
-                  Are you sure you want to promote <strong>{profileUser.displayName || profileUser.name}</strong> to moderator? 
-                  They will gain access to flag management, content moderation, and all premium features.
+                  Are you sure you want to promote{" "}
+                  <strong>{profileUser.displayName || profileUser.name}</strong>{" "}
+                  to moderator? They will gain access to flag management,
+                  content moderation, and all premium features.
                 </>
               )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={moderatorLoading}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={moderatorLoading}>
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleToggleModerator}
-              className={profileUser.isModerator 
-                ? "bg-orange-600 hover:bg-orange-700" 
-                : "bg-blue-600 hover:bg-blue-700"
+              className={
+                profileUser.isModerator
+                  ? "bg-orange-600 hover:bg-orange-700"
+                  : "bg-blue-600 hover:bg-blue-700"
               }
               disabled={moderatorLoading}
             >
-              {moderatorLoading ? 'Processing...' : (profileUser.isModerator ? 'Remove Moderator' : 'Make Moderator')}
+              {moderatorLoading
+                ? "Processing..."
+                : profileUser.isModerator
+                ? "Remove Moderator"
+                : "Make Moderator"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
     </AppLayout>
-  )
+  );
 }
