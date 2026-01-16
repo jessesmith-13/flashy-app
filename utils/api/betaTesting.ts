@@ -1,8 +1,5 @@
-import { API_BASE } from "../../src/supabase/runtime";
-import type {
-  BetaTestingTask,
-  BetaTestingStats,
-} from "../../src/types/betaTesting";
+import { API_BASE } from "@/supabase/runtime";
+import type { BetaTestingTask, BetaTestingStats } from "@/types/betaTesting";
 
 /**
  * Get all beta testing tasks for the current user

@@ -1,26 +1,50 @@
-import { Button } from '../../../ui/button'
-import { ArrowLeft, FileEdit, Upload, Trash2, Play, Plus, Crown, Users, Sparkles, BarChart3, Target, LayoutGrid, UploadCloud } from 'lucide-react'
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../../../ui/alert-dialog'
-import type { UIDeck } from '@/types/decks'
+import { Button } from "@/ui/button";
+import {
+  ArrowLeft,
+  FileEdit,
+  Upload,
+  Trash2,
+  Play,
+  Plus,
+  Crown,
+  Users,
+  Sparkles,
+  BarChart3,
+  Target,
+  LayoutGrid,
+  UploadCloud,
+} from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/ui/alert-dialog";
+import type { UIDeck } from "@/types/decks";
 
 interface DeckHeaderProps {
-  deck: UIDeck
-  cardCount: number
-  onBack: () => void
-  onOpenSettings: () => void
-  onOpenPublish: () => void
-  onUnpublish?: () => void
-  onDelete: () => void
-  onStartStudy: () => void
-  onAddCard: () => void
-  onBulkAddCards: () => void
-  onAIGenerate: () => void
-  deleting: boolean
-  unpublishing?: boolean
-  canPublish: boolean
-  communityDeckAuthor?: { id: string; name: string } | null
-  studyCount?: number
-  averageScore?: number
+  deck: UIDeck;
+  cardCount: number;
+  onBack: () => void;
+  onOpenSettings: () => void;
+  onOpenPublish: () => void;
+  onUnpublish?: () => void;
+  onDelete: () => void;
+  onStartStudy: () => void;
+  onAddCard: () => void;
+  onBulkAddCards: () => void;
+  onAIGenerate: () => void;
+  deleting: boolean;
+  unpublishing?: boolean;
+  canPublish: boolean;
+  communityDeckAuthor?: { id: string; name: string } | null;
+  studyCount?: number;
+  averageScore?: number;
 }
 
 export function DeckHeader({
@@ -40,7 +64,7 @@ export function DeckHeader({
   canPublish,
   communityDeckAuthor,
   studyCount,
-  averageScore
+  averageScore,
 }: DeckHeaderProps) {
   return (
     <>
@@ -57,9 +81,9 @@ export function DeckHeader({
 
           {/* Only show publish button for decks created by the user (not imported from community) */}
           {!deck.sourceCommunityDeckId && (
-            <Button 
-              variant="ghost" 
-              size="icon" 
+            <Button
+              variant="ghost"
+              size="icon"
               className="text-emerald-600 hover:text-emerald-700"
               onClick={onOpenPublish}
             >
@@ -68,42 +92,50 @@ export function DeckHeader({
           )}
 
           {/* Show unpublish button for published decks created by the user */}
-          {!deck.sourceCommunityDeckId && deck.communityPublishedId && onUnpublish && (
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="text-red-600 hover:text-red-700"
-                  disabled={unpublishing}
-                >
-                  <UploadCloud className="w-5 h-5 rotate-180" />
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Unpublish Deck?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    This will remove your deck from the community. Users who have added it to their collection will keep their copies, but new users won&apos;t be able to discover it.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction
-                    onClick={onUnpublish}
+          {!deck.sourceCommunityDeckId &&
+            deck.communityPublishedId &&
+            onUnpublish && (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="text-red-600 hover:text-red-700"
                     disabled={unpublishing}
-                    className="bg-red-600 hover:bg-red-700"
                   >
-                    {unpublishing ? 'Unpublishing...' : 'Unpublish'}
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          )}
+                    <UploadCloud className="w-5 h-5 rotate-180" />
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Unpublish Deck?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This will remove your deck from the community. Users who
+                      have added it to their collection will keep their copies,
+                      but new users won&apos;t be able to discover it.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={onUnpublish}
+                      disabled={unpublishing}
+                      className="bg-red-600 hover:bg-red-700"
+                    >
+                      {unpublishing ? "Unpublishing..." : "Unpublish"}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )}
 
           <AlertDialog>
             <AlertDialogTrigger asChild>
-              <Button variant="ghost" size="icon" className="text-red-600 hover:text-red-700">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-red-600 hover:text-red-700"
+              >
                 <Trash2 className="w-5 h-5" />
               </Button>
             </AlertDialogTrigger>
@@ -111,9 +143,10 @@ export function DeckHeader({
               <AlertDialogHeader>
                 <AlertDialogTitle>Delete Deck?</AlertDialogTitle>
                 <AlertDialogDescription>
-                  This will permanently delete this deck and all its cards. 
-                  {deck.communityPublishedId && ' The deck will also be unpublished from the community.'}
-                  {' '}This action cannot be undone.
+                  This will permanently delete this deck and all its cards.
+                  {deck.communityPublishedId &&
+                    " The deck will also be unpublished from the community."}{" "}
+                  This action cannot be undone.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
@@ -123,7 +156,7 @@ export function DeckHeader({
                   disabled={deleting}
                   className="bg-red-600 hover:bg-red-700"
                 >
-                  {deleting ? 'Deleting...' : 'Delete Deck'}
+                  {deleting ? "Deleting..." : "Delete Deck"}
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
@@ -147,7 +180,7 @@ export function DeckHeader({
               </h1>
               <div className="flex items-center gap-2 flex-wrap">
                 <p className="text-gray-600 dark:text-gray-400">
-                  {cardCount} {cardCount === 1 ? 'card' : 'cards'}
+                  {cardCount} {cardCount === 1 ? "card" : "cards"}
                 </p>
                 {deck.category && (
                   <span className="text-gray-400 dark:text-gray-600">•</span>
@@ -163,17 +196,30 @@ export function DeckHeader({
                   </span>
                 )}
                 {deck.difficulty && (
-                  <span className={`text-sm px-2 py-0.5 rounded-full ${
-                    deck.difficulty === 'beginner' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' :
-                    deck.difficulty === 'intermediate' ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400' :
-                    deck.difficulty === 'advanced' ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400' :
-                    deck.difficulty === 'expert' ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400' :
-                    'bg-gradient-to-r from-purple-100 to-pink-100 dark:from-purple-900/30 dark:to-pink-900/30 text-purple-700 dark:text-purple-400'
-                  }`}>
-                    {deck.difficulty === 'beginner' ? '🟢' :
-                     deck.difficulty === 'intermediate' ? '🟡' :
-                     deck.difficulty === 'advanced' ? '🟠' :
-                     deck.difficulty === 'expert' ? '🔴' : '🌈'} {deck.difficulty.charAt(0).toUpperCase() + deck.difficulty.slice(1)}
+                  <span
+                    className={`text-sm px-2 py-0.5 rounded-full ${
+                      deck.difficulty === "beginner"
+                        ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400"
+                        : deck.difficulty === "intermediate"
+                        ? "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400"
+                        : deck.difficulty === "advanced"
+                        ? "bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400"
+                        : deck.difficulty === "expert"
+                        ? "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400"
+                        : "bg-gradient-to-r from-purple-100 to-pink-100 dark:from-purple-900/30 dark:to-pink-900/30 text-purple-700 dark:text-purple-400"
+                    }`}
+                  >
+                    {deck.difficulty === "beginner"
+                      ? "🟢"
+                      : deck.difficulty === "intermediate"
+                      ? "🟡"
+                      : deck.difficulty === "advanced"
+                      ? "🟠"
+                      : deck.difficulty === "expert"
+                      ? "🔴"
+                      : "🌈"}{" "}
+                    {deck.difficulty.charAt(0).toUpperCase() +
+                      deck.difficulty.slice(1)}
                   </span>
                 )}
                 {deck.communityPublishedId && (
@@ -198,12 +244,16 @@ export function DeckHeader({
                 <div className="flex items-center gap-4 mt-3">
                   <div className="flex items-center gap-1.5 text-sm text-gray-600 dark:text-gray-400">
                     <BarChart3 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                    <span className="font-medium">{studyCount}</span> {studyCount === 1 ? 'study session' : 'study sessions'}
+                    <span className="font-medium">{studyCount}</span>{" "}
+                    {studyCount === 1 ? "study session" : "study sessions"}
                   </div>
                   {averageScore !== undefined && (
                     <div className="flex items-center gap-1.5 text-sm text-gray-600 dark:text-gray-400">
                       <Target className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                      <span className="font-medium">{averageScore.toFixed(1)}%</span> avg score
+                      <span className="font-medium">
+                        {averageScore.toFixed(1)}%
+                      </span>{" "}
+                      avg score
                     </div>
                   )}
                 </div>
@@ -246,5 +296,5 @@ export function DeckHeader({
         </div>
       </div>
     </>
-  )
+  );
 }

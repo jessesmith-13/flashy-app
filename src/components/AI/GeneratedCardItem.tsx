@@ -1,8 +1,8 @@
 import { useState } from "react";
-import { Button } from "../../ui/button";
-import { Input } from "../../ui/input";
-import { Label } from "../../ui/label";
-import { Textarea } from "../../ui/textarea";
+import { Button } from "@/ui/button";
+import { Input } from "@/ui/input";
+import { Label } from "@/ui/label";
+import { Textarea } from "@/ui/textarea";
 import { Edit2, X, Check, Image as ImageIcon } from "lucide-react";
 import { UnsplashAttribution } from "./UnsplashAttribution";
 

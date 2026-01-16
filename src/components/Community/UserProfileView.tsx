@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { AppLayout } from "../Layout/AppLayout";
+import { AppLayout } from "@/components/Layout/AppLayout";
 import {
   Flame,
   Trophy,
@@ -14,7 +14,7 @@ import {
   Users,
   Flag,
 } from "lucide-react";
-import { Button } from "../../ui/button";
+import { Button } from "@/ui/button";
 import { getUserProfile, getUserFriends } from "../../../utils/api/users";
 import { sendFriendRequest, removeFriend } from "../../../utils/api/friends";
 import { banUser, toggleModeratorStatus } from "../../../utils/api/admin";
@@ -24,7 +24,7 @@ import {
   CATEGORY_LABELS,
   AchievementCategory,
 } from "../../../utils/achievements";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/ui/tabs";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -34,10 +34,10 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "../../ui/alert-dialog";
+} from "@/ui/alert-dialog";
 import { useStore } from "@/shared/state/useStore";
 import { UICommunityDeck } from "@/types/community";
-import { ProvenanceBadges } from "../Provenance/ProvenanceBadges";
+import { ProvenanceBadges } from "@/components/Provenance/ProvenanceBadges";
 
 interface UserProfileViewProps {
   userId: string;

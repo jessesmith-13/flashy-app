@@ -1,13 +1,18 @@
-import { Button } from '../../../ui/button'
+import { Button } from "@/ui/button";
 
 interface GoogleLoginButtonProps {
-  onClick: () => void
-  loading?: boolean
-  text?: string // Allow custom text
-  showDivider?: boolean // Optional divider
+  onClick: () => void;
+  loading?: boolean;
+  text?: string; // Allow custom text
+  showDivider?: boolean; // Optional divider
 }
 
-export function GoogleLoginButton({ onClick, loading, text = 'Sign in with Google', showDivider = false }: GoogleLoginButtonProps) {
+export function GoogleLoginButton({
+  onClick,
+  loading,
+  text = "Sign in with Google",
+  showDivider = false,
+}: GoogleLoginButtonProps) {
   return (
     <div className="mt-4">
       {showDivider && (
@@ -28,7 +33,9 @@ export function GoogleLoginButton({ onClick, loading, text = 'Sign in with Googl
         variant="outline"
         onClick={onClick}
         disabled={loading}
-        className={`w-full border-gray-300 dark:border-gray-600 ${showDivider ? 'mt-4' : ''}`}
+        className={`w-full border-gray-300 dark:border-gray-600 ${
+          showDivider ? "mt-4" : ""
+        }`}
       >
         <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
           <path
@@ -51,5 +58,5 @@ export function GoogleLoginButton({ onClick, loading, text = 'Sign in with Googl
         {text}
       </Button>
     </div>
-  )
+  );
 }

@@ -1,23 +1,28 @@
-import { useState } from 'react'
-import { Button } from '../../../ui/button'
-import { Input } from '../../../ui/input'
-import { Label } from '../../../ui/label'
+import { useState } from "react";
+import { Button } from "@/ui/button";
+import { Input } from "@/ui/input";
+import { Label } from "@/ui/label";
 
 interface LoginFormProps {
-  onSubmit: (email: string, password: string) => Promise<void>
-  onForgotPassword: () => void
-  error?: string
-  loading?: boolean
+  onSubmit: (email: string, password: string) => Promise<void>;
+  onForgotPassword: () => void;
+  error?: string;
+  loading?: boolean;
 }
 
-export function LoginForm({ onSubmit, onForgotPassword, error, loading }: LoginFormProps) {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
+export function LoginForm({
+  onSubmit,
+  onForgotPassword,
+  error,
+  loading,
+}: LoginFormProps) {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    await onSubmit(email, password)
-  }
+    e.preventDefault();
+    await onSubmit(email, password);
+  };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
@@ -67,8 +72,8 @@ export function LoginForm({ onSubmit, onForgotPassword, error, loading }: LoginF
         className="w-full bg-emerald-600 hover:bg-emerald-700 text-white"
         disabled={loading}
       >
-        {loading ? 'Logging in...' : 'Login'}
+        {loading ? "Logging in..." : "Login"}
       </Button>
     </form>
-  )
+  );
 }

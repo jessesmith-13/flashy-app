@@ -1,14 +1,14 @@
 import { useStore } from "@/shared/state/useStore";
 import { useNavigation } from "../../../hooks/useNavigation";
-import { AppLayout } from "../Layout/AppLayout";
-import { Button } from "../../ui/button";
+import { AppLayout } from "@/components/Layout/AppLayout";
 import { ArrowLeft, Shield, Trash2, Flag, Users, History } from "lucide-react";
-import { TicketManagementPanel } from "../Moderation/TicketManagementPanel";
+import { TicketManagementPanel } from "@/components/Moderation/TicketManagementPanel";
 import { DeletedItemsPanel } from "./DeletedItemsPanel";
 import { UserManagementPanel } from "./UserManagementPanel";
 import { UserActivityPanel } from "./UserActivityPanel";
 import { useIsSuperuser } from "../../../utils/userUtils";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../ui/tabs";
+import { Button } from "@/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/ui/tabs";
 import { useState } from "react";
 
 export function SuperuserScreen() {

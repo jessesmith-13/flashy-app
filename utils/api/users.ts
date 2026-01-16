@@ -1,20 +1,20 @@
 // api/users.ts
 
-import { API_BASE } from '../../src/supabase/runtime'
-const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+import { API_BASE } from "@/supabase/runtime";
+const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 // ============================================================
 // TYPES
 // ============================================================
 
 export type UpdateProfilePayload = {
-  displayName?: string
-  avatarUrl?: string
-  decksPublic?: boolean
-  subscriptionTier?: string
-  subscriptionExpiry?: string
-  isSuperuser?: boolean
-}
+  displayName?: string;
+  avatarUrl?: string;
+  decksPublic?: boolean;
+  subscriptionTier?: string;
+  subscriptionExpiry?: string;
+  isSuperuser?: boolean;
+};
 
 // ============================================================
 // USERS – PUBLIC
@@ -26,18 +26,18 @@ export const getUserProfile = async (userId: string) => {
     headers: {
       Authorization: `Bearer ${anonKey}`,
     },
-  })
+  });
 
-  const data = await response.json()
-  console.log('user profile data:', data)
+  const data = await response.json();
+  console.log("user profile data:", data);
 
   if (!response.ok) {
-    console.error('Failed to fetch user profile:', data.error)
-    throw new Error(data.error || 'Failed to fetch user profile')
+    console.error("Failed to fetch user profile:", data.error);
+    throw new Error(data.error || "Failed to fetch user profile");
   }
 
-  return data.user
-}
+  return data.user;
+};
 
 // ============================================================
 // USERS – AUTHENTICATED
@@ -48,27 +48,24 @@ export const updateProfile = async (
   accessToken: string,
   updates: UpdateProfilePayload
 ) => {
-  const response = await fetch(
-    `${API_BASE}/users/${userId}/profile`,
-    {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${accessToken}`,
-      },
-      body: JSON.stringify(updates),
-    }
-  )
+  const response = await fetch(`${API_BASE}/users/${userId}/profile`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify(updates),
+  });
 
-  const data = await response.json()
+  const data = await response.json();
 
   if (!response.ok) {
-    console.error('Failed to update profile:', data.error)
-    throw new Error(data.error || 'Failed to update profile')
+    console.error("Failed to update profile:", data.error);
+    throw new Error(data.error || "Failed to update profile");
   }
 
-  return data.user
-}
+  return data.user;
+};
 
 // ============================================================
 // USERS – DECK ACCESS (READ-ONLY)
@@ -79,53 +76,44 @@ export const getUserDeck = async (
   userId: string,
   deckId: string
 ) => {
-  const response = await fetch(
-    `${API_BASE}/users/${userId}/decks/${deckId}`,
-    {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-    }
-  )
+  const response = await fetch(`${API_BASE}/users/${userId}/decks/${deckId}`, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
 
-  const data = await response.json()
+  const data = await response.json();
 
   if (!response.ok) {
-    console.error('Failed to fetch user deck:', data.error)
-    throw new Error(data.error || 'Failed to fetch user deck')
+    console.error("Failed to fetch user deck:", data.error);
+    throw new Error(data.error || "Failed to fetch user deck");
   }
 
-  return data
-}
+  return data;
+};
 
 // ============================================================
 // USERS – FRIENDS (READ)
 // ============================================================
 
-export const getUserFriends = async (
-  accessToken: string,
-  userId: string
-) => {
-  const response = await fetch(
-    `${API_BASE}/users/${userId}/friends`,
-    {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-    }
-  )
+export const getUserFriends = async (accessToken: string, userId: string) => {
+  const response = await fetch(`${API_BASE}/users/${userId}/friends`, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
 
-  const data = await response.json()
+  const data = await response.json();
 
   if (!response.ok) {
-    console.error('Failed to fetch user friends:', {
+    console.error("Failed to fetch user friends:", {
       status: response.status,
       statusText: response.statusText,
       error: data.error,
       url: `${API_BASE}/users/${userId}/friends`,
-    })
-    throw new Error(data.error || 'Failed to fetch user friends')
+    });
+    throw new Error(data.error || "Failed to fetch user friends");
   }
 
-  return data.friends
-}
+  return data.friends;
+};

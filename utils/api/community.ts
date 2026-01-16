@@ -1,10 +1,10 @@
-import { API_BASE } from "../../src/supabase/runtime";
-import { CommunityCard } from "../../src/types/community";
+import { API_BASE } from "@/supabase/runtime";
+import { CommunityCard } from "@/types/community";
 import { toast } from "sonner";
 import { ACHIEVEMENTS } from "../../utils/achievements";
-import type { Comment, Reply } from "../../src/types/community";
+import type { Comment, Reply } from "@/types/community";
 import { useStore } from "@/shared/state/useStore";
-import type { UICommunityDeck } from "../../src/types/community";
+import type { UICommunityDeck } from "@/types/community";
 
 const { fetchUserAchievements } = useStore.getState();
 

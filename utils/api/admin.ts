@@ -1,4 +1,4 @@
-import { API_BASE } from '../../src/supabase/runtime'
+import { API_BASE } from "@/supabase/runtime";
 
 /**
  * ============================================================
@@ -16,23 +16,23 @@ export const banUser = async (
   reason?: string
 ) => {
   const response = await fetch(`${API_BASE}/admin/users/${userId}/ban`, {
-    method: 'POST',
+    method: "POST",
     headers: {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
       Authorization: `Bearer ${accessToken}`,
     },
     body: JSON.stringify({ isBanned: banned, reason }),
-  })
+  });
 
-  const data = await response.json()
+  const data = await response.json();
 
   if (!response.ok) {
-    console.error('Failed to ban/unban user:', data.error)
-    throw new Error(data.error || 'Failed to ban/unban user')
+    console.error("Failed to ban/unban user:", data.error);
+    throw new Error(data.error || "Failed to ban/unban user");
   }
 
-  return data
-}
+  return data;
+};
 
 /**
  * Toggle moderator status (Superuser only)
@@ -43,23 +43,23 @@ export const toggleModeratorStatus = async (
   isModerator: boolean
 ) => {
   const response = await fetch(`${API_BASE}/admin/users/${userId}/role`, {
-    method: 'POST',
+    method: "POST",
     headers: {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
       Authorization: `Bearer ${accessToken}`,
     },
     body: JSON.stringify({ isModerator }),
-  })
+  });
 
-  const data = await response.json()
+  const data = await response.json();
 
   if (!response.ok) {
-    console.error('Failed to toggle moderator status:', data.error)
-    throw new Error(data.error || 'Failed to toggle moderator status')
+    console.error("Failed to toggle moderator status:", data.error);
+    throw new Error(data.error || "Failed to toggle moderator status");
   }
 
-  return data
-}
+  return data;
+};
 
 /**
  * Grant premium manually (Superuser only)
@@ -72,48 +72,45 @@ export const grantPremium = async (
   customReason?: string
 ) => {
   const response = await fetch(`${API_BASE}/admin/users/${userId}/premium`, {
-    method: 'POST',
+    method: "POST",
     headers: {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
       Authorization: `Bearer ${accessToken}`,
     },
     body: JSON.stringify({ reason, tier, customReason }),
-  })
+  });
 
-  const data = await response.json()
+  const data = await response.json();
 
   if (!response.ok) {
-    console.error('Failed to grant premium:', data.error)
-    throw new Error(data.error || 'Failed to grant premium')
+    console.error("Failed to grant premium:", data.error);
+    throw new Error(data.error || "Failed to grant premium");
   }
 
-  return data
-}
+  return data;
+};
 
 /**
  * Demote premium user to free (Superuser only)
  */
-export const demotePremium = async (
-  accessToken: string,
-  userId: string
-) => {
+export const demotePremium = async (accessToken: string, userId: string) => {
   const response = await fetch(`${API_BASE}/admin/users/${userId}/demote`, {
-    method: 'POST',
+    method: "POST",
     headers: {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
       Authorization: `Bearer ${accessToken}`,
     },
-  })
+  });
 
-  const data = await response.json()
+  const data = await response.json();
 
   if (!response.ok) {
-    console.error('Failed to demote user:', data.error)
-    throw new Error(data.error || 'Failed to demote user')
+    console.error("Failed to demote user:", data.error);
+    throw new Error(data.error || "Failed to demote user");
   }
 
-  return data
-}
+  return data;
+};
 
 /**
  * Get all users (Superuser only)
@@ -123,40 +120,37 @@ export const getAllUsers = async (accessToken: string) => {
     headers: {
       Authorization: `Bearer ${accessToken}`,
     },
-  })
+  });
 
-  const data = await response.json()
+  const data = await response.json();
 
   if (!response.ok) {
-    console.error('Failed to get all users:', data.error)
-    throw new Error(data.error || 'Failed to get all users')
+    console.error("Failed to get all users:", data.error);
+    throw new Error(data.error || "Failed to get all users");
   }
 
-  return data.users
-}
+  return data.users;
+};
 
 /**
  * Get user activity history (Superuser only)
  */
-export const getUserActivity = async (
-  accessToken: string,
-  userId: string
-) => {
+export const getUserActivity = async (accessToken: string, userId: string) => {
   const response = await fetch(`${API_BASE}/admin/users/${userId}/activity`, {
     headers: {
       Authorization: `Bearer ${accessToken}`,
     },
-  })
+  });
 
-  const data = await response.json()
+  const data = await response.json();
 
   if (!response.ok) {
-    console.error('Failed to get user activity:', data.error)
-    throw new Error(data.error || 'Failed to get user activity')
+    console.error("Failed to get user activity:", data.error);
+    throw new Error(data.error || "Failed to get user activity");
   }
 
-  return data
-}
+  return data;
+};
 
 /**
  * Delete a community deck (Superuser only)
@@ -169,24 +163,24 @@ export const deleteCommunityDeck = async (
   const response = await fetch(
     `${API_BASE}/admin/community/decks/${communityDeckId}`,
     {
-      method: 'DELETE',
+      method: "DELETE",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
         Authorization: `Bearer ${accessToken}`,
       },
       body: JSON.stringify({ reason }),
     }
-  )
+  );
 
-  const data = await response.json()
+  const data = await response.json();
 
   if (!response.ok) {
-    console.error('Failed to delete community deck:', data.error)
-    throw new Error(data.error || 'Failed to delete community deck')
+    console.error("Failed to delete community deck:", data.error);
+    throw new Error(data.error || "Failed to delete community deck");
   }
 
-  return data
-}
+  return data;
+};
 
 /**
  * Delete a community card (Superuser only)
@@ -197,28 +191,28 @@ export const deleteCommunityCard = async (
   cardId: string,
   reason: string
 ) => {
-  console.log(`COMMUNITY DECK ID`, communityDeckId)
+  console.log(`COMMUNITY DECK ID`, communityDeckId);
   const response = await fetch(
     `${API_BASE}/admin/community/decks/${communityDeckId}/cards/${cardId}`,
     {
-      method: 'DELETE',
+      method: "DELETE",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
         Authorization: `Bearer ${accessToken}`,
       },
       body: JSON.stringify({ reason }),
     }
-  )
+  );
 
-  const data = await response.json()
+  const data = await response.json();
 
   if (!response.ok) {
-    console.error('Failed to delete community card:', data.error)
-    throw new Error(data.error || 'Failed to delete community card')
+    console.error("Failed to delete community card:", data.error);
+    throw new Error(data.error || "Failed to delete community card");
   }
 
-  return data
-}
+  return data;
+};
 
 /**
  * Feature / unfeature a community deck (Superuser only)
@@ -230,23 +224,23 @@ export const toggleCommunityDeckFeatured = async (
   const response = await fetch(
     `${API_BASE}/admin/community/decks/${communityDeckId}/featured`,
     {
-      method: 'PATCH',
+      method: "PATCH",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
         Authorization: `Bearer ${accessToken}`,
       },
     }
-  )
+  );
 
-  const data = await response.json()
+  const data = await response.json();
 
   if (!response.ok) {
-    console.error('Failed to toggle featured status:', data.error)
-    throw new Error(data.error || 'Failed to toggle featured status')
+    console.error("Failed to toggle featured status:", data.error);
+    throw new Error(data.error || "Failed to toggle featured status");
   }
 
-  return data
-}
+  return data;
+};
 
 /**
  * Get deleted items (Superuser only)
@@ -256,17 +250,17 @@ export const getDeletedItems = async (accessToken: string) => {
     headers: {
       Authorization: `Bearer ${accessToken}`,
     },
-  })
+  });
 
-  const data = await response.json()
+  const data = await response.json();
 
   if (!response.ok) {
-    console.error('Failed to fetch deleted items:', data.error)
-    throw new Error(data.error || 'Failed to fetch deleted items')
+    console.error("Failed to fetch deleted items:", data.error);
+    throw new Error(data.error || "Failed to fetch deleted items");
   }
 
-  return data
-}
+  return data;
+};
 
 /**
  * Restore deleted item (Superuser only)
@@ -274,26 +268,23 @@ export const getDeletedItems = async (accessToken: string) => {
 export const restoreDeletedItem = async (
   accessToken: string,
   itemId: string,
-  itemType: 'comment' | 'deck' | 'card'
+  itemType: "comment" | "deck" | "card"
 ) => {
-  const response = await fetch(
-    `${API_BASE}/admin/deleted-items/restore`,
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${accessToken}`,
-      },
-      body: JSON.stringify({ itemId, itemType }),
-    }
-  )
+  const response = await fetch(`${API_BASE}/admin/deleted-items/restore`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify({ itemId, itemType }),
+  });
 
-  const data = await response.json()
+  const data = await response.json();
 
   if (!response.ok) {
-    console.error('Failed to restore item:', data.error)
-    throw new Error(data.error || 'Failed to restore item')
+    console.error("Failed to restore item:", data.error);
+    throw new Error(data.error || "Failed to restore item");
   }
 
-  return data
-}
+  return data;
+};

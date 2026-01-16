@@ -15,10 +15,10 @@ import {
   updateCommunityDeck,
 } from "../../../utils/api/community";
 import { fetchStudySessions } from "../../../utils/api/study";
-import { AppLayout } from "../Layout/AppLayout";
-import { Button } from "../../ui/button";
-import { Pagination } from "../Pagination/Pagination";
-import { Input } from "../../ui/input";
+import { AppLayout } from "@/components/Layout/AppLayout";
+import { Button } from "@/ui/button";
+import { Pagination } from "@/components/Pagination/Pagination";
+import { Input } from "@/ui/input";
 import {
   Plus,
   BookOpen,

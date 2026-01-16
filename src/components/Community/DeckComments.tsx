@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useStore } from "@/shared/state/useStore";
-import { Button } from "../../ui/button";
+import { Button } from "@/ui/button";
 import { MessageCircle, Send, Reply } from "lucide-react";
 import { getDeckComments, postDeckComment } from "../../../utils/api/community";
 import { toast } from "sonner";

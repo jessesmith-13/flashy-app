@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Button } from "../../ui/button";
+import { Button } from "@/ui/button";
 import {
   ArrowLeft,
   Star,
@@ -14,7 +14,7 @@ import { DeckRatingDisplay } from "./DeckRatingDisplay";
 import { DeckRating } from "./DeckRating";
 import { DeckComments } from "./DeckComments";
 import { DeckCardPreviewList } from "./DeckCardPreviewList";
-import { AppLayout } from "../Layout/AppLayout";
+import { AppLayout } from "@/components/Layout/AppLayout";
 import { FlagDialog } from "./FlagDialog";
 import { DeletionDialog } from "./DeletionDialog";
 import { toast } from "sonner";

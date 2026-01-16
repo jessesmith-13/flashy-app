@@ -2,10 +2,10 @@ import { useState, useEffect } from "react";
 import { useStore } from "@/shared/state/useStore";
 import { useNavigation } from "../../hooks/useNavigation";
 import { getSharedDeck } from "../../utils/api/decks";
-import { Button } from "../ui/button";
+import { Button } from "@/ui/button";
 import { ArrowLeft, BookOpen, Check } from "lucide-react";
 import { toast } from "sonner";
-import { AppLayout } from "./Layout/AppLayout";
+import { AppLayout } from "@/components/Layout/AppLayout";
 import { UICard } from "@/types/decks";
 
 interface SharedDeckViewProps {

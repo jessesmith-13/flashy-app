@@ -7,20 +7,23 @@ import {
   Info,
   Loader2,
 } from "lucide-react";
-import { Button } from "../../ui/button";
-import { Progress } from "../../ui/progress";
+import { Button } from "@/ui/button";
+import { Progress } from "@/ui/progress";
 import { BetaTaskCategory } from "./BetaTaskCategory";
 import { BetaFeedbackModal } from "./BetaFeedbackModal";
-import { BETA_TASK_CATEGORIES, getTotalTaskCount } from "../constants";
+import {
+  BETA_TASK_CATEGORIES,
+  getTotalTaskCount,
+} from "@/components/constants";
 import {
   getBetaTestingTasks,
   markBetaTaskComplete,
   submitBetaFeedback,
 } from "../../../utils/api/betaTesting";
-import type { BetaTestingTask } from "../../types/betaTesting";
+import type { BetaTestingTask } from "@/types/betaTesting";
 import { toast } from "sonner";
 import { useStore } from "@/shared/state/useStore";
-import { AppLayout } from "../Layout/AppLayout";
+import { AppLayout } from "@/components/Layout/AppLayout";
 
 export function BetaTestingPage() {
   const navigate = useNavigate();

@@ -1,44 +1,44 @@
-import { AppLayout } from '../Layout/AppLayout'
-import { Button } from '../../ui/button'
-import { ArrowLeft, Play } from 'lucide-react'
-import { Deck } from '../../types/decks'
+import { AppLayout } from "@/components/Layout/AppLayout";
+import { Button } from "@/ui/button";
+import { ArrowLeft, Play } from "lucide-react";
+import { Deck } from "@/types/decks";
 
-type CardType = 'classic-flip' | 'multiple-choice' | 'type-answer'
+type CardType = "classic-flip" | "multiple-choice" | "type-answer";
 
 interface ViewerCard {
-  id: string
-  position?: number
-  cardType: CardType
-  front: string
-  back: string
-  correctAnswers?: string[] | null
-  incorrectAnswers?: string[] | null
-  acceptedAnswers?: string[] | null
-  frontImageUrl?: string | null
-  backImageUrl?: string | null
+  id: string;
+  position?: number;
+  cardType: CardType;
+  front: string;
+  back: string;
+  correctAnswers?: string[] | null;
+  incorrectAnswers?: string[] | null;
+  acceptedAnswers?: string[] | null;
+  frontImageUrl?: string | null;
+  backImageUrl?: string | null;
 }
 
 interface UserDeckViewerProps {
   deck: {
-    id: string
-    name: string
-    emoji: string
-    color: string
-    category?: string | null
-    subtopic?: string | null
-    owner_id: string
-    is_public: boolean
-    created_at: string,
-    updated_at: string,
-    card_count: number,
-    difficulty?: string | null,
-    is_published?: boolean,
-  }
-  cards: ViewerCard[]
-  ownerId: string
-  isOwner: boolean
-  onBack: () => void
-  onStudy: (deck: Deck, cards: ViewerCard[]) => void
+    id: string;
+    name: string;
+    emoji: string;
+    color: string;
+    category?: string | null;
+    subtopic?: string | null;
+    owner_id: string;
+    is_public: boolean;
+    created_at: string;
+    updated_at: string;
+    card_count: number;
+    difficulty?: string | null;
+    is_published?: boolean;
+  };
+  cards: ViewerCard[];
+  ownerId: string;
+  isOwner: boolean;
+  onBack: () => void;
+  onStudy: (deck: Deck, cards: ViewerCard[]) => void;
 }
 
 export function UserDeckViewer({
@@ -46,11 +46,11 @@ export function UserDeckViewer({
   cards,
   isOwner,
   onBack,
-  onStudy
+  onStudy,
 }: UserDeckViewerProps) {
   const sortedCards = [...cards].sort(
     (a, b) => (a.position ?? 0) - (b.position ?? 0)
-  )
+  );
 
   return (
     <AppLayout>
@@ -80,7 +80,9 @@ export function UserDeckViewer({
                   {deck.name}
                 </h1>
                 <div className="flex flex-wrap gap-2 text-sm text-gray-600 dark:text-gray-400">
-                  <span>{cards.length} {cards.length === 1 ? 'card' : 'cards'}</span>
+                  <span>
+                    {cards.length} {cards.length === 1 ? "card" : "cards"}
+                  </span>
                   {deck.category && (
                     <>
                       <span>•</span>
@@ -98,14 +100,19 @@ export function UserDeckViewer({
 
               {!isOwner && cards.length > 0 && (
                 <Button
-                  onClick={() => onStudy({
-                    ...deck,
-                    user_id: deck.owner_id,
-                    updated_at: deck.created_at,
-                    card_count: cards.length,
-                    difficulty: 'mixed',
-                    is_published: false
-                  } as Deck, cards)}
+                  onClick={() =>
+                    onStudy(
+                      {
+                        ...deck,
+                        user_id: deck.owner_id,
+                        updated_at: deck.created_at,
+                        card_count: cards.length,
+                        difficulty: "mixed",
+                        is_published: false,
+                      } as Deck,
+                      cards
+                    )
+                  }
                   className="bg-emerald-600 hover:bg-emerald-700 text-white w-full sm:w-auto"
                 >
                   <Play className="w-4 h-4 mr-2" />
@@ -117,7 +124,8 @@ export function UserDeckViewer({
             {!isOwner && (
               <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
                 <p className="text-sm text-blue-800 dark:text-blue-200">
-                  You're viewing this deck in read-only mode. You can study it, but cannot edit it.
+                  You're viewing this deck in read-only mode. You can study it,
+                  but cannot edit it.
                 </p>
               </div>
             )}
@@ -151,9 +159,11 @@ export function UserDeckViewer({
                         {/* Card Type Badge */}
                         <div className="flex items-center gap-2">
                           <span className="text-xs px-2 py-1 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300">
-                            {card.cardType === 'classic-flip' ? 'Classic Flip' : 
-                            card.cardType === 'multiple-choice' ? 'Multiple Choice' : 
-                            'Type Answer'}
+                            {card.cardType === "classic-flip"
+                              ? "Classic Flip"
+                              : card.cardType === "multiple-choice"
+                              ? "Multiple Choice"
+                              : "Type Answer"}
                           </span>
                         </div>
 
@@ -176,21 +186,22 @@ export function UserDeckViewer({
                         </div>
 
                         {/* MULTIPLE CHOICE */}
-                        {card.cardType === 'multiple-choice' ? (
+                        {card.cardType === "multiple-choice" ? (
                           <>
                             {/* DEBUG - Remove this after checking */}
-                            {console.log('MC Card:', card.id, {
+                            {console.log("MC Card:", card.id, {
                               correctAnswers: card.correctAnswers,
                               incorrectAnswers: card.incorrectAnswers,
-                              back: card.back
+                              back: card.back,
                             })}
-                            
+
                             <div>
                               <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">
                                 Correct answers
                               </p>
                               <div className="space-y-1">
-                                {card.correctAnswers && card.correctAnswers.length > 0 ? (
+                                {card.correctAnswers &&
+                                card.correctAnswers.length > 0 ? (
                                   card.correctAnswers.map((answer, i) => (
                                     <p
                                       key={`correct-${i}`}
@@ -212,7 +223,8 @@ export function UserDeckViewer({
                                 Incorrect answers
                               </p>
                               <div className="space-y-1">
-                                {card.incorrectAnswers && card.incorrectAnswers.length > 0 ? (
+                                {card.incorrectAnswers &&
+                                card.incorrectAnswers.length > 0 ? (
                                   card.incorrectAnswers.map((answer, i) => (
                                     <p
                                       key={`incorrect-${i}`}
@@ -250,13 +262,14 @@ export function UserDeckViewer({
                         )}
 
                         {/* TYPE ANSWER - Accepted answers */}
-                        {card.cardType === 'type-answer' && card.acceptedAnswers?.length ? (
+                        {card.cardType === "type-answer" &&
+                        card.acceptedAnswers?.length ? (
                           <div>
                             <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">
                               Accepted answers
                             </p>
                             <p className="text-sm text-gray-600 dark:text-gray-400">
-                              {card.acceptedAnswers.join(', ')}
+                              {card.acceptedAnswers.join(", ")}
                             </p>
                           </div>
                         ) : null}
@@ -270,5 +283,5 @@ export function UserDeckViewer({
         </div>
       </div>
     </AppLayout>
-  )
+  );
 }

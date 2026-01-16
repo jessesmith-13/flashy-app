@@ -4,7 +4,7 @@ import { BetaTaskItem } from "./BetaTaskItem";
 import type {
   BetaTaskCategory as BetaTaskCategoryType,
   BetaTestingTask,
-} from "../../types/betaTesting";
+} from "@/types/betaTesting";
 
 interface BetaTaskCategoryProps {
   category: BetaTaskCategoryType;

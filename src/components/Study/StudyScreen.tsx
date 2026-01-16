@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useStore } from "@/shared/state/useStore";
 import { useNavigation } from "../../../hooks/useNavigation";
-import { AppLayout } from "../Layout/AppLayout";
+import { AppLayout } from "@/components/Layout/AppLayout";
 import { ClassicFlipMode } from "./ClassicFlipMode";
 import { MultipleChoiceMode } from "./MultipleChoiceMode";
 import { TypeAnswerMode } from "./TypeAnswerMode";

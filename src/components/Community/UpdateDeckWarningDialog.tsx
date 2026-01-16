@@ -1,26 +1,32 @@
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../../ui/dialog'
-import { Button } from '../../ui/button'
-import { Card } from '../../types/decks'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/ui/dialog";
+import { Button } from "@/ui/button";
+import { Card } from "@/types/decks";
 
 interface UpdateDeckWarningDialogProps {
-  open: boolean
-  onOpenChange: (open: boolean) => void
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   communityDeck: {
-    id: string
-    name: string
-    emoji: string
-    color: string
-    cards?: Card[]
-  } | null
+    id: string;
+    name: string;
+    emoji: string;
+    color: string;
+    cards?: Card[];
+  } | null;
   importedDeck: {
-    id: string
-    name: string
-    emoji: string
-    color: string
-    cardCount: number
-  } | null
-  onCancel: () => void
-  onUpdate: () => void
+    id: string;
+    name: string;
+    emoji: string;
+    color: string;
+    cardCount: number;
+  } | null;
+  onCancel: () => void;
+  onUpdate: () => void;
 }
 
 export function UpdateDeckWarningDialog({
@@ -40,12 +46,12 @@ export function UpdateDeckWarningDialog({
             Updating will replace all your changes with the community version
           </DialogDescription>
         </DialogHeader>
-        
+
         {communityDeck && importedDeck && (
           <div className="space-y-4 py-4">
             <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4">
               <div className="flex items-center gap-2 mb-2">
-                <div 
+                <div
                   className="w-10 h-10 rounded-lg flex items-center justify-center text-xl"
                   style={{ backgroundColor: importedDeck.color }}
                 >
@@ -71,11 +77,7 @@ export function UpdateDeckWarningDialog({
         )}
 
         <div className="flex flex-col gap-2">
-          <Button
-            onClick={onCancel}
-            variant="outline"
-            className="w-full"
-          >
+          <Button onClick={onCancel} variant="outline" className="w-full">
             Cancel
           </Button>
           <Button
@@ -87,5 +89,5 @@ export function UpdateDeckWarningDialog({
         </div>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

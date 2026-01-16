@@ -1,85 +1,101 @@
-import { useState, useEffect } from 'react'
-import { motion } from 'motion/react'
-import { Button } from '../../ui/button'
-import { ChevronRight, Clock, X, Check } from 'lucide-react'
-import { Card } from '@/types/decks'
+import { useState, useEffect } from "react";
+import { motion } from "motion/react";
+import { Button } from "@/ui/button";
+import { ChevronRight, Clock, X, Check } from "lucide-react";
+import { Card } from "@/types/decks";
 
 interface TimedModeProps {
-  cards: Card[]
-  onNext: (wasCorrect?: boolean) => void
-  currentIndex: number
-  isLastCard: boolean
+  cards: Card[];
+  onNext: (wasCorrect?: boolean) => void;
+  currentIndex: number;
+  isLastCard: boolean;
 }
 
-const TIME_PER_CARD = 15 // seconds
+const TIME_PER_CARD = 15; // seconds
 
-export function TimedMode({ cards, onNext, currentIndex, isLastCard }: TimedModeProps) {
-  const [isFlipped, setIsFlipped] = useState(false)
-  const [timeLeft, setTimeLeft] = useState(TIME_PER_CARD)
-  const [hasAnswered, setHasAnswered] = useState(false)
-  const [timedOut, setTimedOut] = useState(false)
+export function TimedMode({
+  cards,
+  onNext,
+  currentIndex,
+  isLastCard,
+}: TimedModeProps) {
+  const [isFlipped, setIsFlipped] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(TIME_PER_CARD);
+  const [hasAnswered, setHasAnswered] = useState(false);
+  const [timedOut, setTimedOut] = useState(false);
 
-  const currentCard = cards[currentIndex]
-
-  useEffect(() => {
-    setIsFlipped(false)
-    setTimeLeft(TIME_PER_CARD)
-    setHasAnswered(false)
-    setTimedOut(false)
-  }, [currentIndex])
+  const currentCard = cards[currentIndex];
 
   useEffect(() => {
-    if (hasAnswered || timedOut) return
+    setIsFlipped(false);
+    setTimeLeft(TIME_PER_CARD);
+    setHasAnswered(false);
+    setTimedOut(false);
+  }, [currentIndex]);
+
+  useEffect(() => {
+    if (hasAnswered || timedOut) return;
 
     const timer = setInterval(() => {
       setTimeLeft((prev) => {
         if (prev <= 1) {
-          setTimedOut(true)
-          setIsFlipped(true)
-          return 0
+          setTimedOut(true);
+          setIsFlipped(true);
+          return 0;
         }
-        return prev - 1
-      })
-    }, 1000)
+        return prev - 1;
+      });
+    }, 1000);
 
-    return () => clearInterval(timer)
-  }, [hasAnswered, timedOut])
+    return () => clearInterval(timer);
+  }, [hasAnswered, timedOut]);
 
   const handleFlip = () => {
     if (!hasAnswered && !timedOut) {
-      setIsFlipped(!isFlipped)
+      setIsFlipped(!isFlipped);
     }
-  }
+  };
 
   const handleRating = (correct: boolean) => {
-    setHasAnswered(true)
+    setHasAnswered(true);
     setTimeout(() => {
-      onNext(correct)
-    }, 500)
-  }
+      onNext(correct);
+    }, 500);
+  };
 
-  if (!currentCard) return null
+  if (!currentCard) return null;
 
-  const timePercentage = (timeLeft / TIME_PER_CARD) * 100
-  const isLowTime = timeLeft <= 5
+  const timePercentage = (timeLeft / TIME_PER_CARD) * 100;
+  const isLowTime = timeLeft <= 5;
 
   return (
-    <div className="flex items-center justify-center p-4 lg:p-8" style={{ minHeight: 'calc(100vh - 200px)' }}>
+    <div
+      className="flex items-center justify-center p-4 lg:p-8"
+      style={{ minHeight: "calc(100vh - 200px)" }}
+    >
       <div className="w-full max-w-3xl">
         {/* Timer */}
         <div className="mb-6">
           <div className="flex items-center justify-center gap-3 mb-3">
-            <Clock className={`w-6 h-6 ${isLowTime ? 'text-red-600 animate-pulse' : 'text-orange-600'}`} />
-            <span className={`text-3xl ${isLowTime ? 'text-red-600' : 'text-orange-600'}`}>
+            <Clock
+              className={`w-6 h-6 ${
+                isLowTime ? "text-red-600 animate-pulse" : "text-orange-600"
+              }`}
+            />
+            <span
+              className={`text-3xl ${
+                isLowTime ? "text-red-600" : "text-orange-600"
+              }`}
+            >
               {timeLeft}s
             </span>
           </div>
           <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
             <motion.div
               className={`h-3 rounded-full transition-colors ${
-                isLowTime ? 'bg-red-600' : 'bg-orange-600'
+                isLowTime ? "bg-red-600" : "bg-orange-600"
               }`}
-              initial={{ width: '100%' }}
+              initial={{ width: "100%" }}
               animate={{ width: `${timePercentage}%` }}
               transition={{ duration: 0.3 }}
             />
@@ -89,26 +105,32 @@ export function TimedMode({ cards, onNext, currentIndex, isLastCard }: TimedMode
         <div className="perspective-1000">
           <motion.div
             className="relative w-full cursor-pointer"
-            style={{ 
-              minHeight: '400px',
-              transformStyle: 'preserve-3d'
+            style={{
+              minHeight: "400px",
+              transformStyle: "preserve-3d",
             }}
             onClick={handleFlip}
             animate={{ rotateY: isFlipped ? 180 : 0 }}
-            transition={{ duration: 0.6, type: 'spring' }}
+            transition={{ duration: 0.6, type: "spring" }}
             whileHover={!hasAnswered && !timedOut ? { scale: 1.02 } : {}}
           >
             {/* Front */}
             <div
               className="absolute inset-0 bg-white rounded-2xl shadow-2xl p-8 md:p-12 flex flex-col items-center justify-center backface-hidden"
               style={{
-                backfaceVisibility: 'hidden',
+                backfaceVisibility: "hidden",
               }}
             >
-              <div className="text-xs text-orange-600 mb-6 uppercase tracking-wide">Question</div>
-              <p className="text-2xl md:text-3xl text-center max-w-2xl">{currentCard.front}</p>
+              <div className="text-xs text-orange-600 mb-6 uppercase tracking-wide">
+                Question
+              </div>
+              <p className="text-2xl md:text-3xl text-center max-w-2xl">
+                {currentCard.front}
+              </p>
               {!hasAnswered && !timedOut && (
-                <div className="absolute bottom-8 text-sm text-gray-400">Click to reveal answer</div>
+                <div className="absolute bottom-8 text-sm text-gray-400">
+                  Click to reveal answer
+                </div>
               )}
             </div>
 
@@ -116,14 +138,20 @@ export function TimedMode({ cards, onNext, currentIndex, isLastCard }: TimedMode
             <div
               className="absolute inset-0 bg-orange-600 text-white rounded-2xl shadow-2xl p-8 md:p-12 flex flex-col items-center justify-center backface-hidden"
               style={{
-                backfaceVisibility: 'hidden',
-                transform: 'rotateY(180deg)',
+                backfaceVisibility: "hidden",
+                transform: "rotateY(180deg)",
               }}
             >
-              <div className="text-xs text-orange-200 mb-6 uppercase tracking-wide">Answer</div>
-              <p className="text-2xl md:text-3xl text-center max-w-2xl">{currentCard.back}</p>
+              <div className="text-xs text-orange-200 mb-6 uppercase tracking-wide">
+                Answer
+              </div>
+              <p className="text-2xl md:text-3xl text-center max-w-2xl">
+                {currentCard.back}
+              </p>
               {!hasAnswered && !timedOut && (
-                <div className="absolute bottom-8 text-sm text-orange-200">Rate your answer below</div>
+                <div className="absolute bottom-8 text-sm text-orange-200">
+                  Rate your answer below
+                </div>
               )}
             </div>
           </motion.div>
@@ -152,7 +180,9 @@ export function TimedMode({ cards, onNext, currentIndex, isLastCard }: TimedMode
           </motion.div>
         ) : isFlipped && !hasAnswered ? (
           <div className="flex flex-col gap-4 mt-8 max-w-md mx-auto">
-            <p className="text-center text-sm text-gray-600">Did you get it right?</p>
+            <p className="text-center text-sm text-gray-600">
+              Did you get it right?
+            </p>
             <div className="flex items-center gap-4">
               <Button
                 variant="outline"
@@ -182,5 +212,5 @@ export function TimedMode({ cards, onNext, currentIndex, isLastCard }: TimedMode
         ) : null}
       </div>
     </div>
-  )
+  );
 }
