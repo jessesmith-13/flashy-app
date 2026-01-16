@@ -1,5 +1,5 @@
 import { useStore } from "@/shared/state/useStore";
-import { useNavigation } from "../../../hooks/useNavigation";
+import { useNavigation } from "../../shared/hooks/useNavigation";
 import { AppLayout } from "@/components/Layout/AppLayout";
 import { ArrowLeft, Shield, Trash2, Flag, Users, History } from "lucide-react";
 import { TicketManagementPanel } from "@/components/Moderation/TicketManagementPanel";

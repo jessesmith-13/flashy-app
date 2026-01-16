@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useStore } from "@/shared/state/useStore";
 import { CardType, UICard } from "@/types/decks";
 import { CommunityDeck } from "@/types/community";
-import { useNavigation } from "../../../../hooks/useNavigation";
+import { useNavigation } from "../../../shared/hooks/useNavigation";
 import {
   fetchCards as apiFetchCards,
   createCard as apiCreateCard,

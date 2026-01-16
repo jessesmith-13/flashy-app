@@ -29,7 +29,7 @@
   "include": [
     "src",
     "store",
-    "hooks",
+    "src/shared/hooks",
     "utils",
     "vite.config.ts",
     "vitest.setup.ts"
