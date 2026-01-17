@@ -9,17 +9,14 @@ import {
 } from "lucide-react";
 import { Button } from "@/shared/ui/button";
 import { Progress } from "@/shared/ui/progress";
-import { BetaTaskCategory } from "./BetaTaskCategory";
-import { BetaFeedbackModal } from "./BetaFeedbackModal";
-import {
-  BETA_TASK_CATEGORIES,
-  getTotalTaskCount,
-} from "@/components/constants";
+import { BetaTaskCategory } from "./components/BetaTaskCategory";
+import { BetaFeedbackModal } from "./components/BetaFeedbackModal";
+import { BETA_TASK_CATEGORIES, getTotalTaskCount } from "./constants";
 import {
   getBetaTestingTasks,
   markBetaTaskComplete,
   submitBetaFeedback,
-} from "../../shared/api/betaTesting";
+} from "@/shared/api/betaTesting";
 import type { BetaTestingTask } from "@/types/betaTesting";
 import { toast } from "sonner";
 import { useStore } from "@/shared/state/useStore";
