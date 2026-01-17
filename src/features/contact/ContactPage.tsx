@@ -15,15 +15,20 @@ import {
   SelectValue,
 } from "@/shared/ui/select";
 import { toast } from "sonner";
-import { API_BASE } from "../../supabase/runtime";
+import { submitContactMessage } from "@/shared/api/support";
+import type { SupportContactCategory } from "@/shared/api/support/types";
 
 export function ContactPage() {
   const { user, accessToken } = useStore();
   const { navigate } = useNavigation();
   const [subject, setSubject] = useState("");
-  const [category, setCategory] = useState("");
+  const [category, setCategory] = useState<SupportContactCategory | "">("");
   const [message, setMessage] = useState("");
   const [sending, setSending] = useState(false);
+
+  const handleCategoryChange = (value: string) => {
+    setCategory(value as SupportContactCategory);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,39 +46,26 @@ export function ContactPage() {
     setSending(true);
 
     try {
-      const response = await fetch(`${API_BASE}/support/contact`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${accessToken}`,
-        },
-        body: JSON.stringify({
-          category,
-          subject,
-          message,
-        }),
+      await submitContactMessage(accessToken, {
+        category: category as SupportContactCategory, // safe because you validate it’s non-empty
+        subject,
+        message,
       });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to submit contact form");
-      }
 
       toast.success("Message sent successfully! We'll get back to you soon.");
 
-      // Clear form
       setSubject("");
       setCategory("");
       setMessage("");
     } catch (error) {
       console.error("Failed to submit contact form:", error);
 
-      const message =
+      const msg =
         error instanceof Error
           ? error.message
           : "Failed to send message. Please try again.";
 
-      toast.error(message);
+      toast.error(msg);
     } finally {
       setSending(false);
     }
@@ -140,7 +132,11 @@ export function ContactPage() {
 
               <div>
                 <Label htmlFor="category">Category</Label>
-                <Select value={category} onValueChange={setCategory} required>
+                <Select
+                  value={category}
+                  onValueChange={handleCategoryChange}
+                  required
+                >
                   <SelectTrigger className="mt-1">
                     <SelectValue placeholder="Select a category" />
                   </SelectTrigger>
