@@ -25,7 +25,7 @@ import { TermsScreen } from "@/components/Legal/TermsScreen";
 import { contactRoutes } from "@/features/contact";
 import { NotificationsScreen } from "@/components/Notifications/NotificationsScreen";
 import ProtectedRoute from "@/components/ProtectedRoute";
-import { BetaTestingPage } from "@/components/BetaTesting/BetaTestingPage";
+import { betaTestingRoutes } from "@/features/beta-testing";
 
 import { IS_BETA_TESTING_ENABLED } from "@/shared/config/featureFlags";
 
@@ -120,9 +120,7 @@ export function AppRoutes({
       />
 
       {/* Beta Testing - Conditional */}
-      {IS_BETA_TESTING_ENABLED && (
-        <Route path="/beta-testing" element={<BetaTestingPage />} />
-      )}
+      {IS_BETA_TESTING_ENABLED && betaTestingRoutes}
 
       <Route
         path="/ai-generate"

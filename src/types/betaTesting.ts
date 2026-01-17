@@ -1,10 +1,12 @@
+export type BetaTaskStatus = "not_tested" | "works" | "broken";
+
 export interface BetaTestingTask {
   id: string;
   userId: string;
   taskId: string;
   taskCategory: string;
   completed: boolean; // Keep for backwards compatibility
-  status: "not_tested" | "works" | "broken"; // NEW: 3-state system
+  status: BetaTaskStatus;
   completedAt?: string;
   notes?: string;
   createdAt: string;
