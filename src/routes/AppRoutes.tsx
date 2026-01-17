@@ -16,7 +16,7 @@ import { ProfileScreen } from "@/components/Profile/ProfileScreen";
 import { AIGenerateScreen } from "@/components/AI/AIGenerateScreen";
 import { UpgradeModal } from "@/components/UpgradeModal";
 import { PaymentSuccessScreen } from "@/components/PaymentSuccessScreen";
-import { AllCardsScreen } from "@/components/AllCardsScreen";
+import { allCardsRoutes } from "@/features/all-cards";
 import { SettingsScreen } from "@/components/Settings/SettingsScreen";
 import { SuperuserScreen } from "@/components/Superuser/SuperuserScreen";
 import { ModeratorScreen } from "@/components/Moderation/ModeratorScreen";
@@ -148,14 +148,13 @@ export function AppRoutes({
 
       <Route path="/payment-success" element={<PaymentSuccessScreen />} />
 
-      <Route
-        path="/all-cards"
-        element={
-          <ProtectedRoute>
-            <AllCardsScreen />
-          </ProtectedRoute>
-        }
-      />
+      {allCardsRoutes.map((r) => (
+        <Route
+          key={r.path as string}
+          path={r.path as string}
+          element={r.element}
+        />
+      ))}
 
       <Route
         path="/settings"
