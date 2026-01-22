@@ -1,7 +1,5 @@
 import { renderHook, act } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { useCommunityDecks } from "../useCommunityDecks";
-import * as communityApi from "../../../../shared/api/community";
 import type { UICommunityDeck } from "../../../../types/community";
 
 const toastErrorMock = vi.fn();
@@ -12,17 +10,39 @@ vi.mock("sonner", () => ({
   },
 }));
 
+/**
+ * IMPORTANT:
+ * Mock the community API module so we never import Supabase runtime in tests/CI.
+ */
+vi.mock("../../../../shared/api/community", () => ({
+  fetchCommunityDecks: vi.fn(),
+  fetchFeaturedCommunityDecks: vi.fn(),
+  fetchDownloadCounts: vi.fn(),
+  getDeckRatings: vi.fn(),
+  getCommunityDeck: vi.fn(),
+}));
+
+import {
+  fetchCommunityDecks,
+  fetchFeaturedCommunityDecks,
+  fetchDownloadCounts,
+  getDeckRatings,
+  getCommunityDeck,
+} from "../../../../shared/api/community";
+
+// typed helpers for mocked fns
+const fetchCommunityDecksMock = vi.mocked(fetchCommunityDecks);
+const fetchFeaturedCommunityDecksMock = vi.mocked(fetchFeaturedCommunityDecks);
+const fetchDownloadCountsMock = vi.mocked(fetchDownloadCounts);
+const getDeckRatingsMock = vi.mocked(getDeckRatings);
+const getCommunityDeckMock = vi.mocked(getCommunityDeck);
+
 function makeDeck(overrides: Partial<UICommunityDeck> = {}): UICommunityDeck {
   const now = new Date().toISOString();
 
-  // NOTE:
-  // Your UICommunityDeck type is `CommunityDeck & { ...camelCase... }`,
-  // so it REQUIRES both snake_case (CommunityDeck) and camelCase (UI fields).
-  // We keep assertions + overrides camelCase, but still satisfy the intersection type.
+  // put required base values first
   const base: UICommunityDeck = {
-    // -------------------------
-    // CommunityDeck (snake_case)
-    // -------------------------
+    // ---- snake_case (CommunityDeck base) ----
     id: "deck-1",
     owner_id: "user-1",
     original_deck_id: null,
@@ -53,7 +73,7 @@ function makeDeck(overrides: Partial<UICommunityDeck> = {}): UICommunityDeck {
     back_language: null,
     color: "#10B981",
     emoji: "📚",
-    difficulty: null,
+    difficulty: null, // or a real enum value if required
 
     published_at: null,
     created_at: now,
@@ -62,9 +82,7 @@ function makeDeck(overrides: Partial<UICommunityDeck> = {}): UICommunityDeck {
     download_count: 5,
     source_content_updated_at: null,
 
-    // -------------------------
-    // UICommunityDeck (camelCase)
-    // -------------------------
+    // ---- camelCase (UICommunityDeck additions) ----
     ownerId: "user-1",
     originalDeckId: null,
 
@@ -95,33 +113,37 @@ function makeDeck(overrides: Partial<UICommunityDeck> = {}): UICommunityDeck {
     sourceContentUpdatedAt: null,
 
     commentCount: 0,
+
+    // overrides last
+    ...overrides,
   };
 
-  return { ...base, ...overrides };
+  // defensive: keep snake_case + camelCase in sync if overrides set one side
+  return {
+    ...base,
+    owner_id: overrides.owner_id ?? base.owner_id,
+    ownerId: overrides.ownerId ?? base.ownerId,
+  };
 }
 
 describe("useCommunityDecks", () => {
   beforeEach(() => {
-    vi.restoreAllMocks();
+    vi.clearAllMocks();
     toastErrorMock.mockClear();
   });
 
   it("loads community and featured decks with ratings and downloads", async () => {
-    vi.spyOn(communityApi, "fetchCommunityDecks").mockResolvedValue([
-      makeDeck({ id: "deck-1", downloadCount: 5 }),
+    // Import the hook AFTER mocks are in place (safe in vitest, but this is extra-safe)
+    const { useCommunityDecks } = await import("../useCommunityDecks");
+
+    fetchCommunityDecksMock.mockResolvedValue([makeDeck({ id: "deck-1" })]);
+    fetchFeaturedCommunityDecksMock.mockResolvedValue([
+      makeDeck({ id: "deck-1", featured: true }),
     ]);
 
-    // The API file is typed oddly, but hook normalizes featured decks.
-    // Return a single deck to satisfy the declared type without casts.
-    vi.spyOn(communityApi, "fetchFeaturedCommunityDecks").mockResolvedValue(
-      makeDeck({ id: "deck-1", featured: true }),
-    );
+    fetchDownloadCountsMock.mockResolvedValue({ "deck-1": 10 });
 
-    vi.spyOn(communityApi, "fetchDownloadCounts").mockResolvedValue({
-      "deck-1": 10,
-    });
-
-    vi.spyOn(communityApi, "getDeckRatings").mockResolvedValue({
+    getDeckRatingsMock.mockResolvedValue({
       averageRating: 4.5,
       totalRatings: 20,
       userRating: null,
@@ -134,24 +156,25 @@ describe("useCommunityDecks", () => {
     });
 
     expect(result.current.loading).toBe(false);
-
     expect(result.current.communityDecks).toHaveLength(1);
-    const deck = result.current.communityDecks[0];
 
-    // ✅ camelCase assertions (no any)
-    expect(deck.downloadCount).toBe(10);
-    expect(deck.averageRating).toBe(4.5);
-    expect(deck.ratingCount).toBe(20);
+    // Assert fields that actually exist on UICommunityDeck (no casts)
+    expect(result.current.communityDecks[0]!.downloadCount).toBe(10);
+    expect(result.current.communityDecks[0]!.averageRating).toBe(4.5);
+    expect(result.current.communityDecks[0]!.ratingCount).toBe(20);
 
     expect(result.current.featuredDecks).toHaveLength(1);
   });
 
   it("returns null when fetching a missing deck", async () => {
-    vi.spyOn(communityApi, "getCommunityDeck").mockResolvedValue(null);
+    const { useCommunityDecks } = await import("../useCommunityDecks");
+
+    getCommunityDeckMock.mockResolvedValue(null);
 
     const { result } = renderHook(() => useCommunityDecks());
 
     let deck: UICommunityDeck | null = null;
+
     await act(async () => {
       deck = await result.current.fetchDeckById("missing-id");
     });

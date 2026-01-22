@@ -11,7 +11,6 @@ import {
 import {
   getCommunityDeck,
   addDeckFromCommunity,
-  searchCommunityUsers,
   unpublishDeck,
 } from "../../../shared/api/community";
 import { updateImportedDeck, fetchDecks } from "@/shared/api/decks";
@@ -52,8 +51,11 @@ import { FlagDialog } from "../FlagDialog";
 import { DeletionDialog } from "../DeletionDialog";
 import { UpdateDeckWarningDialog } from "../UpdateDeckWarningDialog";
 import { UIDeck } from "@/types/decks";
-import { UICommunityDeck, UICommunityCard } from "@/types/community";
+import { UICommunityDeck } from "@/types/community";
 import { useCommunityDecks } from "../hooks/useCommunityDecks";
+import { useCommunityUsersSearch } from "../hooks/useCommunityUsersSearch";
+import { useCommunityViewState } from "../hooks/useCommunityViewState";
+import { UISharedDeck } from "@/types/study";
 
 interface FlagItemDetails {
   deckId?: string;
@@ -90,25 +92,37 @@ export function CommunityPage() {
     loadCommunityDecks,
     fetchDeckById,
   } = useCommunityDecks();
+  const [searchQuery, setSearchQuery] = useState("");
+  const { searchedUsers } = useCommunityUsersSearch(searchQuery);
+  const {
+    selectedUserId,
+    setSelectedUserId,
+    viewingUserDeck,
+    setViewingUserDeck,
+    viewingDeck,
+    setViewingDeck,
+    deckDetailPage,
+    setDeckDetailPage,
+  } = useCommunityViewState({
+    returnToCommunityDeck,
+    returnToUserDeck,
+    viewingCommunityDeckId,
+    setViewingCommunityDeckId,
+    viewingUserId,
+    setViewingUserId,
+    communityDecks,
+    loading,
+    fetchDeckById,
+    targetCardIndex: targetCardIndex ?? null,
+  });
   const { navigateTo } = useNavigation();
   const isSuperuser = useIsSuperuser();
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
-  const [viewingUserDeck, setViewingUserDeck] = useState<{
-    deck: UICommunityDeck;
-    cards: UICommunityCard[];
-    ownerId: string;
-  } | null>(null);
   const [addingDeckId, setAddingDeckId] = useState<string | null>(null);
   const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
   const [upgradeFeature, setUpgradeFeature] = useState<string | undefined>();
   const [publishDialogOpen, setPublishDialogOpen] = useState(false);
   const [selectedDeckId, setSelectedDeckId] = useState("");
   const [publishing, setPublishing] = useState(false);
-  const [viewingDeck, setViewingDeck] = useState<UICommunityDeck | null>(null);
-  const [searchedUsers, setSearchedUsers] = useState<
-    { id: string; name: string; deckCount: number }[]
-  >([]);
   const [updateWarningOpen, setUpdateWarningOpen] = useState(false);
   const [pendingUpdate, setPendingUpdate] = useState<{
     communityDeck: UICommunityDeck;
@@ -136,7 +150,6 @@ export function CommunityPage() {
   const [showMyPublishedOnly, setShowMyPublishedOnly] = useState(false);
   const [showUpdatesOnly, setShowUpdatesOnly] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const [deckDetailPage, setDeckDetailPage] = useState(1);
   const ITEMS_PER_PAGE = 12;
   const CARDS_PER_PAGE = 20;
 
@@ -166,19 +179,6 @@ export function CommunityPage() {
     deckId: string;
   } | null>(null);
 
-  // Restore viewing deck when returning from study
-  useEffect(() => {
-    if (returnToCommunityDeck) {
-      setViewingDeck(returnToCommunityDeck);
-    }
-    if (returnToUserDeck) {
-      setViewingUserDeck({
-        ...returnToUserDeck,
-        cards: returnToUserDeck.cards as UICommunityCard[],
-      });
-    }
-  }, []);
-
   // Reset to page 1 when filters or sorting changes
   useEffect(() => {
     setCurrentPage(1);
@@ -197,82 +197,6 @@ export function CommunityPage() {
   useEffect(() => {
     void loadCommunityDecks();
   }, [loadCommunityDecks]);
-
-  // Search for users when search query changes
-  useEffect(() => {
-    const searchUsers = async () => {
-      if (searchQuery.length >= 2) {
-        try {
-          const users = await searchCommunityUsers(searchQuery);
-          setSearchedUsers(users);
-        } catch (error) {
-          console.error("Failed to search users:", error);
-          setSearchedUsers([]);
-        }
-      } else {
-        setSearchedUsers([]);
-      }
-    };
-
-    // Debounce the search
-    const timeoutId = setTimeout(searchUsers, 300);
-    return () => clearTimeout(timeoutId);
-  }, [searchQuery]);
-
-  // Reset deck detail page when viewing a new deck (unless we're navigating to a specific card)
-  useEffect(() => {
-    if (!targetCardIndex) {
-      setDeckDetailPage(1);
-    }
-  }, [viewingDeck?.id]);
-
-  // Listen for custom event to view user profile
-  useEffect(() => {
-    const handleViewUserProfile = (event: any) => {
-      if (event.detail?.userId) {
-        setSelectedUserId(event.detail.userId);
-      }
-    };
-
-    window.addEventListener("viewUserProfile", handleViewUserProfile);
-
-    return () => {
-      window.removeEventListener("viewUserProfile", handleViewUserProfile);
-    };
-  }, []);
-
-  // Watch for viewingUserId from Zustand store
-  useEffect(() => {
-    if (viewingUserId) {
-      setSelectedUserId(viewingUserId);
-      setViewingUserId(null);
-    }
-  }, [viewingUserId, setViewingUserId]);
-
-  // Listen for notification-triggered deck viewing
-  useEffect(() => {
-    if (viewingCommunityDeckId && !loading) {
-      const deckToView = communityDecks.find(
-        (d) => d.id === viewingCommunityDeckId,
-      );
-
-      if (deckToView) {
-        setViewingDeck(deckToView);
-        setViewingCommunityDeckId(null);
-      } else {
-        void fetchDeckById(viewingCommunityDeckId).then((deck) => {
-          if (deck) setViewingDeck(deck);
-          setViewingCommunityDeckId(null);
-        });
-      }
-    }
-  }, [
-    viewingCommunityDeckId,
-    communityDecks,
-    loading,
-    fetchDeckById,
-    setViewingCommunityDeckId,
-  ]);
 
   const handleAddDeck = async (deck: UICommunityDeck) => {
     if (!accessToken || !user) return;
@@ -633,11 +557,8 @@ export function CommunityPage() {
     }
   };
 
-  const handleStudyDeck = (deck: any) => {
-    setTemporaryStudyDeck({
-      deck: deck,
-      cards: deck.cards,
-    });
+  const handleStudyDeck = (deck: UICommunityDeck) => {
+    setTemporaryStudyDeck({ deck: deck as UISharedDeck, cards: deck.cards });
     setReturnToCommunityDeck(deck);
     navigateTo("study");
   };
