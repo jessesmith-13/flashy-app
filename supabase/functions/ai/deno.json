@@ -1,0 +1,6 @@
+{
+  "imports": {
+    "hono": "npm:hono@^4.10.8",
+    "openai": "npm:openai@^4.104.0"
+  }
+}

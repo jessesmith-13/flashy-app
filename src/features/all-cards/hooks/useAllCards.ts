@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { useStore } from "@/shared/state/useStore";
 import { fetchDecks, fetchCards } from "@/shared/api/decks";
-import type { Deck, UICard } from "@/types/decks";
+import type { UICard, UIDeck } from "@/types/decks";
 
 function dedupeById<T extends { id: string }>(items: T[]): T[] {
   const map = new Map<string, T>();
@@ -11,14 +11,8 @@ function dedupeById<T extends { id: string }>(items: T[]): T[] {
 }
 
 export function useAllCards() {
-  const {
-    accessToken,
-    cards,
-    decks,
-    setCards,
-    setDecks, // <-- make sure your store has this setter
-    setStudyAllCards,
-  } = useStore();
+  const { accessToken, cards, decks, setCards, setDecks, setStudyAllCards } =
+    useStore();
 
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -31,11 +25,12 @@ export function useAllCards() {
 
     setLoading(true);
     try {
-      const allDecks = await fetchDecks(accessToken);
+      // IMPORTANT: fetchDecks returns UIDeck[] (UI shape)
+      const allDecks = (await fetchDecks(accessToken)) as UIDeck[];
       setDecks(allDecks);
 
       const cardsArrays = await Promise.all(
-        allDecks.map((deck: Deck) => fetchCards(accessToken, deck.id))
+        allDecks.map((deck) => fetchCards(accessToken, deck.id)),
       );
 
       const allCards = dedupeById(cardsArrays.flat() as UICard[]);

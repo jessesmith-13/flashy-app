@@ -68,7 +68,7 @@ interface AppState {
   setCommunityDecks: (decks: CommunityDeck[]) => void;
   updateCommunityDeck: (
     deckId: string,
-    updates: Partial<CommunityDeck>
+    updates: Partial<CommunityDeck>,
   ) => void;
 
   // Study sessions
@@ -142,7 +142,7 @@ interface AppState {
       | "privacy"
       | "terms"
       | "contact"
-      | "notifications"
+      | "notifications",
   ) => void;
   setCurrentSection: (section: "flashcards" | "community" | "profile") => void;
   setSelectedDeckId: (deckId: string | null) => void;
@@ -154,7 +154,11 @@ interface AppState {
   setTemporaryStudyDeck: (deck: TemporaryStudyDeck | null) => void;
   setReturnToCommunityDeck: (deck: UICommunityDeck | null) => void;
   setReturnToUserDeck: (
-    userDeck: { deck: UICommunityDeck; cards: UICard[]; ownerId: string } | null
+    userDeck: {
+      deck: UICommunityDeck;
+      cards: UICard[];
+      ownerId: string;
+    } | null,
   ) => void;
   setReturnToSharedDeckId: (deckId: string | null) => void;
   setViewingCommunityDeckId: (deckId: string | null) => void;
@@ -163,7 +167,7 @@ interface AppState {
   setViewingUserId: (userId: string | null) => void;
   setViewingTicketId: (ticketId: string | null) => void;
   setUserProfileReturnView: (
-    view: "community" | "profile" | "superuser" | null
+    view: "community" | "profile" | "superuser" | null,
   ) => void;
 }
 
@@ -232,7 +236,7 @@ export const useStore = create<AppState>((set, get) => ({
   removePendingFriendRequest: (userId) =>
     set((state) => ({
       pendingFriendRequests: state.pendingFriendRequests.filter(
-        (id) => id !== userId
+        (id) => id !== userId,
       ),
     })),
 
@@ -243,7 +247,7 @@ export const useStore = create<AppState>((set, get) => ({
   removeMentionNotification: (notificationId) =>
     set((state) => ({
       mentionNotifications: state.mentionNotifications.filter(
-        (notification) => notification.id !== notificationId
+        (notification) => notification.id !== notificationId,
       ),
     })),
   clearAllMentionNotifications: () => set({ mentionNotifications: [] }),
@@ -263,22 +267,20 @@ export const useStore = create<AppState>((set, get) => ({
     set((state) => {
       console.log(
         "   Current deck count:",
-        state.decks.find((d) => d.id === deckId)?.cardCount
+        state.decks.find((d) => d.id === deckId)?.cardCount,
       );
 
       const newDecks = state.decks.map((deck) =>
-        deck.id === deckId ? { ...deck, ...updates } : deck
+        deck.id === deckId ? { ...deck, ...updates } : deck,
       );
 
       console.log(
         "   New deck count:",
-        newDecks.find((d) => d.id === deckId)?.cardCount
+        newDecks.find((d) => d.id === deckId)?.cardCount,
       );
 
-      return {
-        decks: newDecks,
-        decksCacheInvalidated: true,
-      };
+      // ✅ no cache invalidation here
+      return { decks: newDecks };
     });
   },
   removeDeck: (deckId) =>
@@ -311,7 +313,7 @@ export const useStore = create<AppState>((set, get) => ({
   updateCard: (cardId, updates) =>
     set((state) => ({
       cards: state.cards.map((card) =>
-        card.id === cardId ? { ...card, ...updates } : card
+        card.id === cardId ? { ...card, ...updates } : card,
       ),
     })),
   removeCard: (cardId) =>
@@ -324,7 +326,7 @@ export const useStore = create<AppState>((set, get) => ({
   updateCommunityDeck: (deckId, updates) =>
     set((state) => ({
       communityDecks: state.communityDecks.map((deck) =>
-        deck.id === deckId ? { ...deck, ...updates } : deck
+        deck.id === deckId ? { ...deck, ...updates } : deck,
       ),
     })),
 
@@ -350,7 +352,7 @@ export const useStore = create<AppState>((set, get) => ({
               Authorization: `Bearer ${state.accessToken}`,
             },
             body: JSON.stringify({ session }),
-          }
+          },
         );
 
         if (!response.ok) {
@@ -374,7 +376,7 @@ export const useStore = create<AppState>((set, get) => ({
               toast.success(`🎉 ${achievement.icon} ${achievement.title}!`, {
                 description: achievement.description,
               });
-            }
+            },
           );
         }
 
@@ -385,7 +387,7 @@ export const useStore = create<AppState>((set, get) => ({
           }/functions/v1/server/achievements`,
           {
             headers: { Authorization: `Bearer ${state.accessToken}` },
-          }
+          },
         );
 
         if (achievementsResponse.ok) {

@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useStore } from "@/shared/state/useStore";
 import { useNavigation } from "../../shared/hooks/useNavigation";
 // Import community-specific functions from API
-import { getUserDeck } from "../../shared/api/users";
+import { getUserDeck } from "@/shared/api/users";
 import {
   toggleCommunityDeckFeatured,
   deleteCommunityDeck,
@@ -18,13 +18,13 @@ import {
   searchCommunityUsers,
   unpublishDeck,
 } from "../../shared/api/community";
-import { updateImportedDeck, fetchDecks } from "../../shared/api/decks";
+import { updateImportedDeck, fetchDecks } from "@/shared/api/decks";
 import { publishDeck } from "../../shared/api/community";
 import { toast } from "sonner";
 import {
   canImportCommunityDecks,
   canPublishToCommunity,
-} from "../../shared/entitlements/subscription";
+} from "@/shared/entitlements/subscription";
 import { useIsSuperuser } from "../../shared/auth/roles";
 import { AppLayout } from "@/components/Layout/AppLayout";
 import { Button } from "@/shared/ui/button";
@@ -118,7 +118,7 @@ export function CommunityScreen() {
   const [deletingDeckId, setDeletingDeckId] = useState<string | null>(null);
   const [featuringDeckId, setFeaturingDeckId] = useState<string | null>(null);
   const [unpublishingDeckId, setUnpublishingDeckId] = useState<string | null>(
-    null
+    null,
   );
   const [unpublishDialogOpen, setUnpublishDialogOpen] = useState(false);
   const [unpublishingDeck, setUnpublishingDeck] =
@@ -128,7 +128,7 @@ export function CommunityScreen() {
   const [filterCategory, setFilterCategory] = useState<string>("all");
   const [filterSubtopic, setFilterSubtopic] = useState<string>("all");
   const [sortBy, setSortBy] = useState<"popular" | "rating" | "newest">(
-    "popular"
+    "popular",
   );
   const [showFeaturedOnly, setShowFeaturedOnly] = useState(false);
   const [showFlashyDecksOnly, setShowFlashyDecksOnly] = useState(false);
@@ -253,7 +253,7 @@ export function CommunityScreen() {
   useEffect(() => {
     if (viewingCommunityDeckId && !loading) {
       const deckToView = communityDecks.find(
-        (d) => d.id === viewingCommunityDeckId
+        (d) => d.id === viewingCommunityDeckId,
       );
       if (deckToView) {
         setViewingDeck(deckToView);
@@ -276,14 +276,14 @@ export function CommunityScreen() {
       } else {
         console.log("❌ Deck returned null/undefined");
         toast.error(
-          "This deck is not available in the community. It may have been deleted or is a personal deck."
+          "This deck is not available in the community. It may have been deleted or is a personal deck.",
         );
         setViewingCommunityDeckId(null);
       }
     } catch (error) {
       console.error("❌ Failed to fetch deck:", error);
       toast.error(
-        "This deck is not available in the community. It may have been deleted or is a personal deck."
+        "This deck is not available in the community. It may have been deleted or is a personal deck.",
       );
       setViewingCommunityDeckId(null);
     }
@@ -315,13 +315,16 @@ export function CommunityScreen() {
           averageRating: 0,
           totalRatings: 0,
           userRating: null,
-        }))
+        })),
       );
       const ratingsData = await Promise.all(ratingsPromises);
-      const ratingsMap = allDeckIds.reduce((acc, id, index) => {
-        acc[id] = ratingsData[index];
-        return acc;
-      }, {} as Record<string, any>);
+      const ratingsMap = allDeckIds.reduce(
+        (acc, id, index) => {
+          acc[id] = ratingsData[index];
+          return acc;
+        },
+        {} as Record<string, any>,
+      );
 
       // Update decks with real download counts and ratings
       const updatedDecks = allDecks.map((deck) => ({
@@ -370,7 +373,7 @@ export function CommunityScreen() {
     if (deck.ownerId === user.id) {
       // ✅ ADD: && !d.isDeleted
       const alreadyInCollection = decks.find(
-        (d) => d.communityPublishedId === deck.id && !d.isDeleted
+        (d) => d.communityPublishedId === deck.id && !d.isDeleted,
       );
       if (alreadyInCollection) {
         toast.info('This is your own deck - it\'s already in "My Decks"');
@@ -383,7 +386,7 @@ export function CommunityScreen() {
     if (deck.ownerId !== user.id) {
       // ✅ ADD: && !d.isDeleted
       const alreadyImported = decks.find(
-        (d) => d.sourceCommunityDeckId === deck.id && !d.isDeleted
+        (d) => d.sourceCommunityDeckId === deck.id && !d.isDeleted,
       );
       if (alreadyImported) {
         toast.info("You have already added this deck to your collection");
@@ -439,7 +442,7 @@ export function CommunityScreen() {
 
   const handleUpdateDeck = async (
     communityDeck: UICommunityDeck,
-    importedDeck: UIDeck
+    importedDeck: UIDeck,
   ) => {
     if (!accessToken) {
       toast.error("Please login to update decks");
@@ -466,7 +469,7 @@ export function CommunityScreen() {
 
   const performUpdate = async (
     communityDeck: UICommunityDeck,
-    importedDeck: UIDeck
+    importedDeck: UIDeck,
   ) => {
     if (!accessToken) {
       toast.error("You must be logged in to update decks");
@@ -485,7 +488,7 @@ export function CommunityScreen() {
           category: communityDeck.category || "",
           subtopic: communityDeck.subtopic || "",
           version: communityDeck.version || 1,
-        }
+        },
       );
 
       updateDeck(importedDeck.id, updatedDeck);
@@ -513,7 +516,7 @@ export function CommunityScreen() {
 
     if (selectedDeck.sourceCommunityDeckId) {
       toast.error(
-        "Cannot publish decks imported from the community. Only decks you created can be published."
+        "Cannot publish decks imported from the community. Only decks you created can be published.",
       );
       return;
     }
@@ -588,7 +591,7 @@ export function CommunityScreen() {
     type: "deck" | "card" | "comment" | "user",
     id: string,
     name: string,
-    deckId?: string
+    deckId?: string,
   ) => {
     setFlagItemType(type);
     setFlagItemId(id);
@@ -605,7 +608,7 @@ export function CommunityScreen() {
 
   const handleDeleteCommunityDeck = async (
     deckId: string,
-    deckName: string
+    deckName: string,
   ) => {
     if (!accessToken || !isSuperuser) {
       toast.error("Unauthorized");
@@ -694,7 +697,7 @@ export function CommunityScreen() {
       await unpublishDeck(accessToken, unpublishingDeck.originalDeckId);
 
       toast.success(
-        `"${unpublishingDeck.name}" has been unpublished from the community`
+        `"${unpublishingDeck.name}" has been unpublished from the community`,
       );
 
       await loadCommunityDecks();
@@ -730,7 +733,7 @@ export function CommunityScreen() {
   const handleDeleteCard = (
     cardId: string,
     cardName: string,
-    deckId: string
+    deckId: string,
   ) => {
     if (!accessToken || !isSuperuser) {
       toast.error("Unauthorized");
@@ -749,7 +752,7 @@ export function CommunityScreen() {
         accessToken,
         cardToDelete.deckId,
         cardToDelete.id,
-        reason
+        reason,
       );
       toast.success("Card deleted successfully");
 
@@ -950,7 +953,7 @@ export function CommunityScreen() {
     !showFeaturedOnly;
   const decksForGrid = showingFeaturedSection
     ? filteredDecks.filter(
-        (deck) => !featuredDecks.some((fd) => fd.id === deck.id)
+        (deck) => !featuredDecks.some((fd) => fd.id === deck.id),
       )
     : filteredDecks;
 
@@ -958,11 +961,11 @@ export function CommunityScreen() {
   const totalPages = Math.ceil(decksForGrid.length / ITEMS_PER_PAGE);
   const paginatedDecks = decksForGrid.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
-    currentPage * ITEMS_PER_PAGE
+    currentPage * ITEMS_PER_PAGE,
   );
 
   const publishableDecks = decks.filter(
-    (d) => !d.sourceCommunityDeckId && d.cardCount > 0
+    (d) => !d.sourceCommunityDeckId && d.cardCount > 0,
   );
 
   if (loading) {
@@ -1006,7 +1009,7 @@ export function CommunityScreen() {
                         !canPublishToCommunity(
                           user?.subscriptionTier,
                           user?.isSuperuser,
-                          user?.isModerator
+                          user?.isModerator,
                         )
                       ) {
                         e.preventDefault();
@@ -1068,7 +1071,7 @@ export function CommunityScreen() {
                     {selectedDeckId &&
                       (() => {
                         const selectedDeck = decks.find(
-                          (d) => d.id === selectedDeckId
+                          (d) => d.id === selectedDeckId,
                         );
                         if (!selectedDeck) return null;
 
@@ -1138,7 +1141,7 @@ export function CommunityScreen() {
                         ? "Publishing..."
                         : (() => {
                             const selectedDeck = decks.find(
-                              (d) => d.id === selectedDeckId
+                              (d) => d.id === selectedDeckId,
                             );
                             return selectedDeck?.communityPublishedId
                               ? "Update Published Deck"
@@ -1310,7 +1313,7 @@ export function CommunityScreen() {
           if (pendingUpdate) {
             await performUpdate(
               pendingUpdate.communityDeck,
-              pendingUpdate.importedDeck
+              pendingUpdate.importedDeck,
             );
             setUpdateWarningOpen(false);
             setPendingUpdate(null);

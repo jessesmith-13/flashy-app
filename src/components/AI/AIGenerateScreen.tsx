@@ -119,7 +119,7 @@ export function AIGenerateScreen() {
         includeImages,
         difficulty,
         frontLanguage,
-        backLanguage
+        backLanguage,
       );
 
       if (response.cards && response.cards.length > 0) {
@@ -128,12 +128,12 @@ export function AIGenerateScreen() {
           response.cards as AIGeneratedCardWithNotes[]
         ).filter(
           (c: AIGeneratedCardWithNotes) =>
-            c.note !== undefined || c.notes !== undefined
+            c.note !== undefined || c.notes !== undefined,
         );
         if (cardsWithNotes.length > 0) {
           console.warn(
             "⚠️ WARNING: OpenAI generated cards with note fields:",
-            cardsWithNotes
+            cardsWithNotes,
           );
         }
 
@@ -160,7 +160,7 @@ export function AIGenerateScreen() {
             front: c.front,
             frontAudio: c.frontAudio,
             backAudio: c.backAudio,
-          }))
+          })),
         );
         setGeneratedCards(processedCards);
         toast.success(`Generated ${processedCards.length} flashcards!`);
@@ -189,7 +189,7 @@ export function AIGenerateScreen() {
 
   // Process cards to detect musical content and generate audio
   const processCardsWithAudio = async (
-    cards: GeneratedCard[]
+    cards: GeneratedCard[],
   ): Promise<GeneratedCard[]> => {
     const processedCards = await Promise.all(
       cards.map(async (card) => {
@@ -206,18 +206,18 @@ export function AIGenerateScreen() {
             console.log(`Detected music in front: ${card.front}`, frontRequest);
             const audioBlob = await audioSynthesis.generateAudioFile(
               card.front,
-              2
+              2,
             );
             if (audioBlob && accessToken) {
               // Upload to Supabase storage
               const audioUrl = await uploadAudioToStorage(
                 audioBlob,
-                `generated-${Date.now()}-front.wav`
+                `generated-${Date.now()}-front.wav`,
               );
               if (audioUrl) {
                 frontAudio = audioUrl;
                 console.log(
-                  `Generated and uploaded audio for front: ${audioUrl}`
+                  `Generated and uploaded audio for front: ${audioUrl}`,
                 );
               }
             }
@@ -228,18 +228,18 @@ export function AIGenerateScreen() {
             console.log(`Detected music in back: ${card.back}`, backRequest);
             const audioBlob = await audioSynthesis.generateAudioFile(
               card.back,
-              2
+              2,
             );
             if (audioBlob && accessToken) {
               // Upload to Supabase storage
               const audioUrl = await uploadAudioToStorage(
                 audioBlob,
-                `generated-${Date.now()}-back.wav`
+                `generated-${Date.now()}-back.wav`,
               );
               if (audioUrl) {
                 backAudio = audioUrl;
                 console.log(
-                  `Generated and uploaded audio for back: ${audioUrl}`
+                  `Generated and uploaded audio for back: ${audioUrl}`,
                 );
               }
             }
@@ -254,7 +254,7 @@ export function AIGenerateScreen() {
           console.error("Error processing card audio:", error);
           return card;
         }
-      })
+      }),
     );
 
     return processedCards;
@@ -263,7 +263,7 @@ export function AIGenerateScreen() {
   // Upload audio blob to Supabase storage
   const uploadAudioToStorage = async (
     audioBlob: Blob,
-    filename: string
+    filename: string,
   ): Promise<string | null> => {
     try {
       if (!accessToken) return null;
@@ -298,7 +298,7 @@ export function AIGenerateScreen() {
 
       const response = await generateCardsFromCSV(
         session.access_token,
-        csvFile
+        csvFile,
       );
 
       if (response.cards && response.cards.length > 0) {
@@ -338,7 +338,7 @@ export function AIGenerateScreen() {
         pdfFile,
         cardCount,
         pdfCustomInstructions,
-        pdfCardTypes
+        pdfCardTypes,
       );
 
       if (response.cards && response.cards.length > 0) {
@@ -348,7 +348,7 @@ export function AIGenerateScreen() {
         toast.error(response.error);
       } else {
         toast.error(
-          "Failed to process PDF. Please try using AI Chat with extracted text."
+          "Failed to process PDF. Please try using AI Chat with extracted text.",
         );
       }
     } catch (error) {
@@ -362,7 +362,7 @@ export function AIGenerateScreen() {
         toast.error("PDF import requires a Premium or Pro subscription");
       } else {
         toast.error(
-          errorMessage || "Failed to process PDF. Try using AI Chat instead."
+          errorMessage || "Failed to process PDF. Try using AI Chat instead.",
         );
       }
     } finally {
@@ -373,7 +373,7 @@ export function AIGenerateScreen() {
 
   const handleUpdateCard = (index: number, updatedCard: GeneratedCard) => {
     setGeneratedCards((prev) =>
-      prev.map((card, i) => (i === index ? updatedCard : card))
+      prev.map((card, i) => (i === index ? updatedCard : card)),
     );
     toast.success("Card updated");
   };
@@ -412,7 +412,7 @@ export function AIGenerateScreen() {
       // ✅ Trigger Unsplash download tracking
       if (downloadUrls.length > 0) {
         console.log(
-          `📸 Triggering Unsplash download tracking for ${downloadUrls.length} images`
+          `📸 Triggering Unsplash download tracking for ${downloadUrls.length} images`,
         );
         try {
           const response = await fetch(
@@ -424,13 +424,13 @@ export function AIGenerateScreen() {
                 "Content-Type": "application/json",
               },
               body: JSON.stringify({ downloadUrls }),
-            }
+            },
           );
 
           if (!response.ok) {
             console.error(
               "❌ Failed to track Unsplash downloads:",
-              await response.text()
+              await response.text(),
             );
           } else {
             console.log("✅ Successfully tracked Unsplash downloads");
@@ -506,14 +506,14 @@ export function AIGenerateScreen() {
           cardData.frontImageAttribution = card.frontImageAttribution;
           console.log(
             "📸 Saving front image attribution:",
-            card.frontImageAttribution
+            card.frontImageAttribution,
           );
         }
         if (card.backImageAttribution) {
           cardData.backImageAttribution = card.backImageAttribution;
           console.log(
             "📸 Saving back image attribution:",
-            card.backImageAttribution
+            card.backImageAttribution,
           );
         }
 
@@ -523,15 +523,15 @@ export function AIGenerateScreen() {
       console.log(
         "💾 Saving cards with attribution:",
         cardsToSave.filter(
-          (c) => c.frontImageAttribution || c.backImageAttribution
-        )
+          (c) => c.frontImageAttribution || c.backImageAttribution,
+        ),
       );
 
       // Use batch API for much faster saving
       const newCards: ApiCard[] = await createCardsBatch(
         accessToken,
         selectedDeckId,
-        cardsToSave
+        cardsToSave,
       );
 
       // Add all cards to store
@@ -547,7 +547,7 @@ export function AIGenerateScreen() {
       }
 
       toast.success(
-        `Saved ${newCards.length} cards to ${currentDeck?.name || "deck"}`
+        `Saved ${newCards.length} cards to ${currentDeck?.name || "deck"}`,
       );
 
       // Reset state and navigate back

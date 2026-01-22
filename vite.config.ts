@@ -4,10 +4,7 @@ import tsconfigPaths from "vite-tsconfig-paths";
 import path from "path";
 
 export default defineConfig({
-  plugins: [
-    react(),
-    tsconfigPaths(), // ✅ keep TS + Vite + Vitest aligned
-  ],
+  plugins: [react(), tsconfigPaths()],
   test: {
     globals: true,
     environment: "jsdom",

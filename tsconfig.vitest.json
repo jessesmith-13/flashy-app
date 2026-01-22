@@ -1,7 +1,17 @@
 {
   "extends": "./tsconfig.app.json",
   "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"]
+    },
     "types": ["vitest/globals", "node"]
   },
-  "include": ["src", "vitest.setup.ts", "vite.config.ts"]
+  "include": [
+    "src/**/*.test.ts",
+    "src/**/*.test.tsx",
+    "src/**/__tests__/**/*.ts",
+    "src/**/__tests__/**/*.tsx",
+    "vitest.setup.ts"
+  ]
 }

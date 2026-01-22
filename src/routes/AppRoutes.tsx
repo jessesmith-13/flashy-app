@@ -7,8 +7,7 @@ import { landingRoutes } from "@/features/landing/routes";
 import { LoginScreen } from "@/components/Auth/Login/LoginScreen";
 import { SignUpScreen } from "@/components/Auth/Signup/SignupScreen";
 import { ResetPasswordScreen } from "@/components/Auth/Login/ResetPasswordScreen";
-import { DecksScreen } from "@/components/Decks/DecksScreen";
-import { DeckDetailScreen } from "@/components/Decks/DeckDetail/DeckDetailScreen";
+import { decksRoutes } from "@/features/decks";
 import { StudyOptionsScreen } from "@/components/Study/StudyOptionsScreen";
 import { StudyScreen } from "@/components/Study/StudyScreen";
 import { CommunityScreen } from "@/components/Community/CommunityScreen";
@@ -55,23 +54,13 @@ export function AppRoutes({
       <Route path="/signup" element={<SignUpScreen />} />
       <Route path="/reset-password" element={<ResetPasswordScreen />} />
 
-      <Route
-        path="/decks"
-        element={
-          <ProtectedRoute>
-            <DecksScreen />
-          </ProtectedRoute>
-        }
-      />
-
-      <Route
-        path="/deck-detail/:deckId"
-        element={
-          <ProtectedRoute>
-            <DeckDetailScreen />
-          </ProtectedRoute>
-        }
-      />
+      {decksRoutes.map((r) => (
+        <Route
+          key={r.path as string}
+          path={r.path as string}
+          element={r.element}
+        />
+      ))}
 
       <Route
         path="/study-options/:deckId"

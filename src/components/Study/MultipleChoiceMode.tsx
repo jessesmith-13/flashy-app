@@ -5,7 +5,7 @@ import { ChevronRight, Check, X, Star, EyeOff, Volume2 } from "lucide-react";
 import { useStore } from "@/shared/state/useStore";
 import { UICard } from "@/types/decks";
 import { toast } from "sonner";
-import { updateCard as apiUpdateCard } from "../../shared/api/decks";
+import { updateCard as apiUpdateCard } from "@/shared/api/decks";
 import { speak } from "../../shared/tts/textToSpeech";
 
 interface MultipleChoiceModeProps {
@@ -110,7 +110,7 @@ export function MultipleChoiceMode({
 
     // Combine and shuffle all options
     const allOptions = [...correctOptions, ...incorrectOptions].sort(
-      () => Math.random() - 0.5
+      () => Math.random() - 0.5,
     );
     setOptions(allOptions);
   };
@@ -141,13 +141,13 @@ export function MultipleChoiceMode({
   const handleNext = () => {
     // Count how many correct options were selected and how many incorrect were selected
     const selectedOptions = options.filter((opt) =>
-      selectedOptionIds.includes(opt.id)
+      selectedOptionIds.includes(opt.id),
     );
     const correctlySelected = selectedOptions.filter(
-      (opt) => opt.isCorrect
+      (opt) => opt.isCorrect,
     ).length;
     const incorrectlySelected = selectedOptions.filter(
-      (opt) => !opt.isCorrect
+      (opt) => !opt.isCorrect,
     ).length;
     const totalCorrect = options.filter((opt) => opt.isCorrect).length;
 
@@ -171,7 +171,7 @@ export function MultipleChoiceMode({
         favorite: newFavoriteValue,
       });
       toast.success(
-        newFavoriteValue ? "Added to favorites" : "Removed from favorites"
+        newFavoriteValue ? "Added to favorites" : "Removed from favorites",
       );
     } catch (error) {
       // Revert on error
@@ -196,7 +196,7 @@ export function MultipleChoiceMode({
       toast.success(
         newIgnoredValue
           ? "Card ignored - will be excluded from future study sessions"
-          : "Card unignored"
+          : "Card unignored",
       );
     } catch (error) {
       // Revert on error
@@ -210,13 +210,13 @@ export function MultipleChoiceMode({
 
   // Calculate correctness for display
   const selectedOptions = options.filter((opt) =>
-    selectedOptionIds.includes(opt.id)
+    selectedOptionIds.includes(opt.id),
   );
   const correctlySelected = selectedOptions.filter(
-    (opt) => opt.isCorrect
+    (opt) => opt.isCorrect,
   ).length;
   const incorrectlySelected = selectedOptions.filter(
-    (opt) => !opt.isCorrect
+    (opt) => !opt.isCorrect,
   ).length;
   const totalCorrect = options.filter((opt) => opt.isCorrect).length;
   const isCorrect =

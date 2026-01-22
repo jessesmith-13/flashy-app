@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useStore } from "@/shared/state/useStore";
 import { useNavigation } from "../shared/hooks/useNavigation";
-import { getSharedDeck } from "../shared/api/decks";
+import { getSharedDeck } from "@/shared/api/decks";
 import { Button } from "@/shared/ui/button";
 import { ArrowLeft, BookOpen, Check } from "lucide-react";
 import { toast } from "sonner";
@@ -32,7 +32,7 @@ export function SharedDeckView({ shareId, onBack }: SharedDeckViewProps) {
       "SharedDeckView mounted/updated - shareId:",
       shareId,
       "user:",
-      user ? `logged in as ${user.email}` : "not logged in"
+      user ? `logged in as ${user.email}` : "not logged in",
     );
     loadSharedDeck();
   }, [shareId]);
@@ -41,7 +41,7 @@ export function SharedDeckView({ shareId, onBack }: SharedDeckViewProps) {
   useEffect(() => {
     console.log(
       "User state changed in SharedDeckView:",
-      user ? `logged in as ${user.email}` : "not logged in"
+      user ? `logged in as ${user.email}` : "not logged in",
     );
   }, [user]);
 
@@ -65,11 +65,11 @@ export function SharedDeckView({ shareId, onBack }: SharedDeckViewProps) {
 
     console.log(
       "handleStudyDeck called - user:",
-      user ? `logged in as ${user.email}` : "not logged in"
+      user ? `logged in as ${user.email}` : "not logged in",
     );
     console.log(
       "Setting up temporary study deck with cards:",
-      deckData.cards.length
+      deckData.cards.length,
     );
 
     // Set default study options for shared decks
@@ -110,7 +110,7 @@ export function SharedDeckView({ shareId, onBack }: SharedDeckViewProps) {
     console.log(
       "Temporary study deck set with type:",
       actualDeckType,
-      "navigating to study screen"
+      "navigating to study screen",
     );
 
     // Clear the shared deck view
@@ -346,23 +346,23 @@ export function SharedDeckView({ shareId, onBack }: SharedDeckViewProps) {
                           deckData.difficulty === "beginner"
                             ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400"
                             : deckData.difficulty === "intermediate"
-                            ? "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400"
-                            : deckData.difficulty === "advanced"
-                            ? "bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400"
-                            : deckData.difficulty === "expert"
-                            ? "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400"
-                            : "bg-gradient-to-r from-purple-100 to-pink-100 dark:from-purple-900/30 dark:to-pink-900/30 text-purple-700 dark:text-purple-400"
+                              ? "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400"
+                              : deckData.difficulty === "advanced"
+                                ? "bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400"
+                                : deckData.difficulty === "expert"
+                                  ? "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400"
+                                  : "bg-gradient-to-r from-purple-100 to-pink-100 dark:from-purple-900/30 dark:to-pink-900/30 text-purple-700 dark:text-purple-400"
                         }`}
                       >
                         {deckData.difficulty === "beginner"
                           ? "🟢"
                           : deckData.difficulty === "intermediate"
-                          ? "🟡"
-                          : deckData.difficulty === "advanced"
-                          ? "🟠"
-                          : deckData.difficulty === "expert"
-                          ? "🔴"
-                          : "🌈"}{" "}
+                            ? "🟡"
+                            : deckData.difficulty === "advanced"
+                              ? "🟠"
+                              : deckData.difficulty === "expert"
+                                ? "🔴"
+                                : "🌈"}{" "}
                         {deckData.difficulty.charAt(0).toUpperCase() +
                           deckData.difficulty.slice(1)}
                       </span>
@@ -405,7 +405,7 @@ export function SharedDeckView({ shareId, onBack }: SharedDeckViewProps) {
                 {deckData.cards
                   .slice(0, 10)
                   .map((card: UICard, index: number) =>
-                    renderCardPreview(card, index)
+                    renderCardPreview(card, index),
                   )}
 
                 {deckData.cards.length > 10 && (
