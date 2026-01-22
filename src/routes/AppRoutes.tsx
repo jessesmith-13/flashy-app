@@ -10,7 +10,7 @@ import { ResetPasswordScreen } from "@/components/Auth/Login/ResetPasswordScreen
 import { decksRoutes } from "@/features/decks";
 import { StudyOptionsScreen } from "@/components/Study/StudyOptionsScreen";
 import { StudyScreen } from "@/components/Study/StudyScreen";
-import { CommunityScreen } from "@/components/Community/CommunityScreen";
+import { communityRoutes } from "@/features/community";
 import { ProfileScreen } from "@/components/Profile/ProfileScreen";
 import { AIGenerateScreen } from "@/components/AI/AIGenerateScreen";
 import { UpgradeModal } from "@/components/UpgradeModal";
@@ -90,14 +90,13 @@ export function AppRoutes({
         }
       />
 
-      <Route
-        path="/community"
-        element={
-          <ProtectedRoute>
-            <CommunityScreen />
-          </ProtectedRoute>
-        }
-      />
+      {communityRoutes.map((r) => (
+        <Route
+          key={r.path as string}
+          path={r.path as string}
+          element={r.element}
+        />
+      ))}
 
       <Route
         path="/profile"

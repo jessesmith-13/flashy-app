@@ -10,19 +10,19 @@ import {
   Check,
   Upload,
 } from "lucide-react";
-import { DeckRatingDisplay } from "./DeckRatingDisplay";
-import { DeckRating } from "./DeckRating";
-import { DeckComments } from "./DeckComments";
-import { DeckCardPreviewList } from "./DeckCardPreviewList";
+import { DeckRatingDisplay } from "../DeckRatingDisplay";
+import { DeckRating } from "../DeckRating";
+import { DeckComments } from "../DeckComments";
+import { DeckCardPreviewList } from "../DeckCardPreviewList";
 import { AppLayout } from "@/components/Layout/AppLayout";
-import { FlagDialog } from "./FlagDialog";
-import { DeletionDialog } from "./DeletionDialog";
+import { FlagDialog } from "../FlagDialog";
+import { DeletionDialog } from "../DeletionDialog";
 import { toast } from "sonner";
 import { useStore } from "@/shared/state/useStore";
 import {
   deleteCommunityDeck,
   deleteCommunityCard,
-} from "../../shared/api/admin";
+} from "../../../shared/api/admin";
 import { UIDeck } from "@/types/decks";
 import { UICommunityDeck, UICommunityCard } from "@/types/community";
 import { UICard } from "@/types/decks";
@@ -74,7 +74,7 @@ interface CommunityDeckDetailProps {
   onFlagComment: (
     commentId: string,
     commentText: string,
-    deckId: string
+    deckId: string,
   ) => void;
   onFlagUser: (userId: string, userName: string) => void;
   onStudyDeck: (deck: UICommunityDeck) => void;
@@ -82,7 +82,7 @@ interface CommunityDeckDetailProps {
   onRatingChange: () => void;
 }
 
-export function CommunityDeckDetail({
+export function CommunityDeckDetailPage({
   deck,
   userDecks,
   isSuperuser,
@@ -106,7 +106,7 @@ export function CommunityDeckDetail({
 }: CommunityDeckDetailProps) {
   const { accessToken, setTargetCardIndex, setTargetCommentId } = useStore();
   const importedDeck = userDecks.find(
-    (d) => d.sourceCommunityDeckId === deck.id && !d.isDeleted
+    (d) => d.sourceCommunityDeckId === deck.id && !d.isDeleted,
   );
   const isAdded = !!importedDeck;
   const updateAvailable =
@@ -132,7 +132,7 @@ export function CommunityDeckDetail({
       // Calculate which page the card is on
       const targetPage = Math.floor((targetCardIndex ?? 0) / cardsPerPage) + 1;
       console.log(
-        `🎴 Navigating to card at index ${targetCardIndex}, page ${targetPage}, current page: ${deckDetailPage}`
+        `🎴 Navigating to card at index ${targetCardIndex}, page ${targetPage}, current page: ${deckDetailPage}`,
       );
 
       // Change to the target page
@@ -174,7 +174,7 @@ export function CommunityDeckDetail({
     type: FlagTargetType,
     id: string,
     name: string,
-    details?: FlagTargetDetails
+    details?: FlagTargetDetails,
   ) => {
     console.log("🚩 Flag button clicked!", { type, id, name, details });
     setFlagTarget({
@@ -201,7 +201,7 @@ export function CommunityDeckDetail({
   const handleDeleteCardLocal = (
     cardId: string,
     cardName: string,
-    deckId: string
+    deckId: string,
   ) => {
     setCardToDelete({ id: cardId, name: cardName, deckId });
     setDeleteCardDialogOpen(true);
@@ -343,7 +343,7 @@ export function CommunityDeckDetail({
                               year: "numeric",
                               month: "short",
                               day: "numeric",
-                            }
+                            },
                           )}
                         </span>
                       </div>
@@ -358,7 +358,7 @@ export function CommunityDeckDetail({
                               year: "numeric",
                               month: "short",
                               day: "numeric",
-                            }
+                            },
                           )}
                         </span>
                       </div>
@@ -390,8 +390,8 @@ export function CommunityDeckDetail({
                       {featuringDeckId === deck.id
                         ? "Updating..."
                         : deck.featured
-                        ? "Unfeature"
-                        : "Feature"}
+                          ? "Unfeature"
+                          : "Feature"}
                     </Button>
                     <Button
                       variant="outline"
@@ -491,7 +491,7 @@ export function CommunityDeckDetail({
               {deck.difficulty && (
                 <span
                   className={`inline-flex items-center px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-xs sm:text-sm ${getDifficultyClassName(
-                    deck.difficulty
+                    deck.difficulty,
                   )}`}
                 >
                   {getDifficultyEmoji(deck.difficulty)}{" "}

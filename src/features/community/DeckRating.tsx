@@ -3,7 +3,7 @@ import { useStore } from "@/shared/state/useStore";
 import { Star, Lock } from "lucide-react";
 import { getDeckRatings, rateDeck } from "../../shared/api/community";
 import { toast } from "sonner";
-import { UpgradeModal } from "../UpgradeModal";
+import { UpgradeModal } from "../../components/UpgradeModal";
 
 interface DeckRatingProps {
   deckId: string;

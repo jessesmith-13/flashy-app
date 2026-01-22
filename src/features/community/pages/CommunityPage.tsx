@@ -1,31 +1,27 @@
 import { useState, useEffect } from "react";
 import { useStore } from "@/shared/state/useStore";
-import { useNavigation } from "../../shared/hooks/useNavigation";
+import { useNavigation } from "../../../shared/hooks/useNavigation";
 // Import community-specific functions from API
 import { getUserDeck } from "@/shared/api/users";
 import {
   toggleCommunityDeckFeatured,
   deleteCommunityDeck,
   deleteCommunityCard,
-} from "../../shared/api/admin";
+} from "../../../shared/api/admin";
 import {
-  fetchCommunityDecks,
-  fetchFeaturedCommunityDecks,
   getCommunityDeck,
-  fetchDownloadCounts,
-  getDeckRatings,
   addDeckFromCommunity,
   searchCommunityUsers,
   unpublishDeck,
-} from "../../shared/api/community";
+} from "../../../shared/api/community";
 import { updateImportedDeck, fetchDecks } from "@/shared/api/decks";
-import { publishDeck } from "../../shared/api/community";
+import { publishDeck } from "../../../shared/api/community";
 import { toast } from "sonner";
 import {
   canImportCommunityDecks,
   canPublishToCommunity,
 } from "@/shared/entitlements/subscription";
-import { useIsSuperuser } from "../../shared/auth/roles";
+import { useIsSuperuser } from "../../../shared/auth/roles";
 import { AppLayout } from "@/components/Layout/AppLayout";
 import { Button } from "@/shared/ui/button";
 import {
@@ -45,18 +41,19 @@ import {
 } from "@/shared/ui/select";
 import { Label } from "@/shared/ui/label";
 import { Upload } from "lucide-react";
-import { CommunityDeckGrid } from "./CommunityDeckGrid";
-import { CommunityDeckDetail } from "./CommunityDeckDetail";
-import { CommunityFilters } from "./CommunityFilters";
-import { UserProfileView } from "./UserProfileView";
-import { UserDeckViewer } from "./UserDeckViewer";
-import { Pagination } from "../Pagination/Pagination";
-import { UpgradeModal } from "../UpgradeModal";
-import { FlagDialog } from "./FlagDialog";
-import { DeletionDialog } from "./DeletionDialog";
-import { UpdateDeckWarningDialog } from "./UpdateDeckWarningDialog";
+import { CommunityDeckGrid } from "../CommunityDeckGrid";
+import { CommunityDeckDetailPage } from "./CommunityDeckDetailPage";
+import { CommunityFilters } from "../CommunityFilters";
+import { UserProfileView } from "../UserProfileView";
+import { UserDeckViewer } from "../UserDeckViewer";
+import { Pagination } from "../../../components/Pagination/Pagination";
+import { UpgradeModal } from "../../../components/UpgradeModal";
+import { FlagDialog } from "../FlagDialog";
+import { DeletionDialog } from "../DeletionDialog";
+import { UpdateDeckWarningDialog } from "../UpdateDeckWarningDialog";
 import { UIDeck } from "@/types/decks";
 import { UICommunityDeck, UICommunityCard } from "@/types/community";
+import { useCommunityDecks } from "../hooks/useCommunityDecks";
 
 interface FlagItemDetails {
   deckId?: string;
@@ -64,7 +61,7 @@ interface FlagItemDetails {
   front?: string;
 }
 
-export function CommunityScreen() {
+export function CommunityPage() {
   const {
     user,
     accessToken,
@@ -86,6 +83,13 @@ export function CommunityScreen() {
     userProfileReturnView,
     setUserProfileReturnView,
   } = useStore();
+  const {
+    communityDecks,
+    featuredDecks,
+    loading,
+    loadCommunityDecks,
+    fetchDeckById,
+  } = useCommunityDecks();
   const { navigateTo } = useNavigation();
   const isSuperuser = useIsSuperuser();
   const [searchQuery, setSearchQuery] = useState("");
@@ -102,9 +106,6 @@ export function CommunityScreen() {
   const [selectedDeckId, setSelectedDeckId] = useState("");
   const [publishing, setPublishing] = useState(false);
   const [viewingDeck, setViewingDeck] = useState<UICommunityDeck | null>(null);
-  const [communityDecks, setCommunityDecks] = useState<UICommunityDeck[]>([]);
-  const [featuredDecks, setFeaturedDecks] = useState<UICommunityDeck[]>([]);
-  const [loading, setLoading] = useState(true);
   const [searchedUsers, setSearchedUsers] = useState<
     { id: string; name: string; deckCount: number }[]
   >([]);
@@ -165,12 +166,6 @@ export function CommunityScreen() {
     deckId: string;
   } | null>(null);
 
-  // Fetch community decks on mount
-  useEffect(() => {
-    console.log("🚀 CommunityScreen mounted - calling loadCommunityDecks()");
-    loadCommunityDecks();
-  }, []);
-
   // Restore viewing deck when returning from study
   useEffect(() => {
     if (returnToCommunityDeck) {
@@ -197,6 +192,11 @@ export function CommunityScreen() {
     showMyPublishedOnly,
     showUpdatesOnly,
   ]);
+
+  // Load community decks on mount
+  useEffect(() => {
+    void loadCommunityDecks();
+  }, [loadCommunityDecks]);
 
   // Search for users when search query changes
   useEffect(() => {
@@ -255,111 +255,24 @@ export function CommunityScreen() {
       const deckToView = communityDecks.find(
         (d) => d.id === viewingCommunityDeckId,
       );
+
       if (deckToView) {
         setViewingDeck(deckToView);
         setViewingCommunityDeckId(null);
       } else {
-        fetchDeckById(viewingCommunityDeckId);
+        void fetchDeckById(viewingCommunityDeckId).then((deck) => {
+          if (deck) setViewingDeck(deck);
+          setViewingCommunityDeckId(null);
+        });
       }
     }
-  }, [viewingCommunityDeckId, communityDecks, loading]);
-
-  const fetchDeckById = async (deckId: string) => {
-    console.log("🔍 fetchDeckById called with:", deckId);
-    try {
-      console.log("📡 Calling getCommunityDeck...");
-      const deck = await getCommunityDeck(deckId);
-      console.log("✅ Got deck:", deck);
-      if (deck) {
-        setViewingDeck(deck);
-        setViewingCommunityDeckId(null);
-      } else {
-        console.log("❌ Deck returned null/undefined");
-        toast.error(
-          "This deck is not available in the community. It may have been deleted or is a personal deck.",
-        );
-        setViewingCommunityDeckId(null);
-      }
-    } catch (error) {
-      console.error("❌ Failed to fetch deck:", error);
-      toast.error(
-        "This deck is not available in the community. It may have been deleted or is a personal deck.",
-      );
-      setViewingCommunityDeckId(null);
-    }
-  };
-
-  const loadCommunityDecks = async () => {
-    console.log("📡 loadCommunityDecks called");
-    try {
-      console.log("  Fetching published and featured decks...");
-      const [publishedDecks, featuredPublishedDecks] = await Promise.all([
-        fetchCommunityDecks(),
-        fetchFeaturedCommunityDecks(),
-      ]);
-
-      // Use only real published decks
-      const allDecks = publishedDecks;
-
-      // Get all deck IDs
-      const allDeckIds = allDecks.map((d) => d.id);
-
-      console.log("  📊 Fetching download counts and ratings...");
-
-      // Get download counts for all decks
-      const downloadCounts = await fetchDownloadCounts(allDeckIds);
-
-      // Get ratings for all decks
-      const ratingsPromises = allDeckIds.map((id) =>
-        getDeckRatings(id).catch(() => ({
-          averageRating: 0,
-          totalRatings: 0,
-          userRating: null,
-        })),
-      );
-      const ratingsData = await Promise.all(ratingsPromises);
-      const ratingsMap = allDeckIds.reduce(
-        (acc, id, index) => {
-          acc[id] = ratingsData[index];
-          return acc;
-        },
-        {} as Record<string, any>,
-      );
-
-      // Update decks with real download counts and ratings
-      const updatedDecks = allDecks.map((deck) => ({
-        ...deck,
-        downloads: downloadCounts[deck.id] || deck.downloadCount || 0,
-        rating: ratingsMap[deck.id]?.averageRating || 0,
-        ratingCount: ratingsMap[deck.id]?.totalRatings || 0,
-      }));
-
-      // Update featured decks with ratings and download counts
-      const updatedFeaturedDecks = (
-        Array.isArray(featuredPublishedDecks)
-          ? featuredPublishedDecks
-          : [featuredPublishedDecks]
-      ).map((deck: UICommunityDeck) => ({
-        ...deck,
-        downloads: downloadCounts[deck.id] || deck.downloadCount || 0,
-        rating: ratingsMap[deck.id]?.averageRating || 0,
-        ratingCount: ratingsMap[deck.id]?.totalRatings || 0,
-      }));
-
-      console.log("  📊 Final deck counts:");
-      console.log("    - Community decks:", updatedDecks.length);
-      console.log("    - Featured decks:", updatedFeaturedDecks.length);
-
-      setCommunityDecks(updatedDecks);
-      setFeaturedDecks(updatedFeaturedDecks);
-    } catch (error) {
-      console.error("❌ Failed to load community decks:", error);
-      setCommunityDecks([]);
-      setFeaturedDecks([]);
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [
+    viewingCommunityDeckId,
+    communityDecks,
+    loading,
+    fetchDeckById,
+    setViewingCommunityDeckId,
+  ]);
 
   const handleAddDeck = async (deck: UICommunityDeck) => {
     if (!accessToken || !user) return;
@@ -858,7 +771,7 @@ export function CommunityScreen() {
   // If viewing a deck, show deck details
   if (viewingDeck) {
     return (
-      <CommunityDeckDetail
+      <CommunityDeckDetailPage
         deck={viewingDeck}
         cards={(viewingDeck.cards || []) as any[]}
         userDecks={decks}
