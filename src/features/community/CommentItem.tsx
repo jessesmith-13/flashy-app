@@ -104,7 +104,7 @@ export function CommentItem({
         accessToken,
         comment.communityDeckId,
         comment.id,
-        fullReason
+        fullReason,
       );
       toast.success("Comment deleted successfully");
       setShowDeleteDialog(false);
@@ -155,7 +155,7 @@ export function CommentItem({
   useEffect(() => {
     if (level === 0 && targetCommentId) {
       const isReplyTarget = comment.replies?.some(
-        (r) => r.id === targetCommentId
+        (r) => r.id === targetCommentId,
       );
       if (comment.id === targetCommentId || isReplyTarget) {
         setShowReplies(true);
@@ -245,7 +245,7 @@ export function CommentItem({
                 onReply(
                   comment.id,
                   comment.userName,
-                  rootCommentId || comment.id
+                  rootCommentId || comment.id,
                 )
               }
               className="text-xs text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 font-medium flex items-center gap-1 transition-colors"

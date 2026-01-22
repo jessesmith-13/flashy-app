@@ -1,8 +1,7 @@
 import { create } from "zustand";
 import { fetchUserAchievements } from "../api/achievements";
 import { UIDeck, UICard } from "@/types/decks";
-import { UICommunityDeck } from "@/types/community";
-import { CommunityDeck } from "@/types/community";
+import { UICommunityDeck, UICommunityCard } from "@/types/community";
 import { StudyOptions, StudySession, TemporaryStudyDeck } from "@/types/study";
 import { UserStats, UserAchievements } from "@/types/users";
 import { FriendRequest } from "@/types/friends";
@@ -64,11 +63,11 @@ interface AppState {
   updateCard: (cardId: string, updates: Partial<UICard>) => void;
   removeCard: (cardId: string) => void;
 
-  communityDecks: CommunityDeck[];
-  setCommunityDecks: (decks: CommunityDeck[]) => void;
+  communityDecks: UICommunityDeck[];
+  setCommunityDecks: (decks: UICommunityDeck[]) => void;
   updateCommunityDeck: (
     deckId: string,
-    updates: Partial<CommunityDeck>,
+    updates: Partial<UICommunityDeck>,
   ) => void;
 
   // Study sessions
@@ -114,9 +113,9 @@ interface AppState {
   returnToCommunityDeck: UICommunityDeck | null; // Track which community deck to return to after studying
   returnToUserDeck: {
     deck: UICommunityDeck;
-    cards: UICard[];
+    cards: UICommunityCard[];
     ownerId: string;
-  } | null; // Track which user deck to return to after studying
+  } | null;
   returnToSharedDeckId: string | null; // Track which shared deck to return to after studying
   viewingCommunityDeckId: string | null; // Track which community deck to view (for notifications)
   targetCommentId: string | null; // Track which comment to scroll to (for notifications)
@@ -156,7 +155,7 @@ interface AppState {
   setReturnToUserDeck: (
     userDeck: {
       deck: UICommunityDeck;
-      cards: UICard[];
+      cards: UICommunityCard[];
       ownerId: string;
     } | null,
   ) => void;

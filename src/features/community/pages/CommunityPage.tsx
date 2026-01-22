@@ -1,25 +1,10 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useStore } from "@/shared/state/useStore";
 import { useNavigation } from "@/shared/hooks/useNavigation";
 // Import community-specific functions from API
 import { getUserDeck } from "@/shared/api/users";
-import {
-  toggleCommunityDeckFeatured,
-  deleteCommunityDeck,
-  deleteCommunityCard,
-} from "@/shared/api/admin";
-import {
-  getCommunityDeck,
-  addDeckFromCommunity,
-  unpublishDeck,
-} from "@/shared/api/community";
-import { updateImportedDeck, fetchDecks } from "@/shared/api/decks";
-import { publishDeck } from "@/shared/api/community";
 import { toast } from "sonner";
-import {
-  canImportCommunityDecks,
-  canPublishToCommunity,
-} from "@/shared/entitlements/subscription";
+import { canPublishToCommunity } from "@/shared/entitlements/subscription";
 import { useIsSuperuser } from "@/shared/auth/roles";
 import { AppLayout } from "@/components/Layout/AppLayout";
 import { Button } from "@/shared/ui/button";
@@ -41,7 +26,6 @@ import {
 import { Label } from "@/shared/ui/label";
 import { Upload } from "lucide-react";
 import { CommunityDeckGrid } from "../CommunityDeckGrid";
-import { CommunityDeckDetailPage } from "./CommunityDeckDetailPage";
 import { CommunityFilters } from "../CommunityFilters";
 import { UserProfileView } from "../UserProfileView";
 import { UserDeckViewer } from "../UserDeckViewer";
@@ -50,18 +34,11 @@ import { UpgradeModal } from "@/components/UpgradeModal";
 import { FlagDialog } from "../FlagDialog";
 import { DeletionDialog } from "../DeletionDialog";
 import { UpdateDeckWarningDialog } from "../UpdateDeckWarningDialog";
-import { UIDeck } from "@/types/decks";
-import { UICommunityDeck } from "@/types/community";
 import { useCommunityDecks } from "../hooks/useCommunityDecks";
 import { useCommunityUsersSearch } from "../hooks/useCommunityUsersSearch";
 import { useCommunityViewState } from "../hooks/useCommunityViewState";
-import { useCommunityStudyNavigation } from "../hooks/useCommunityStudyNavigation";
-
-interface FlagItemDetails {
-  deckId?: string;
-  commentText?: string;
-  front?: string;
-}
+import { useCommunityActions } from "../hooks/useCommunityActions";
+import { UIDeck, UICard } from "@/types/decks";
 
 function useDebouncedValue<T>(value: T, delayMs: number) {
   const [debounced, setDebounced] = useState(value);
@@ -75,24 +52,23 @@ function useDebouncedValue<T>(value: T, delayMs: number) {
 }
 
 const ITEMS_PER_PAGE = 12;
-const CARDS_PER_PAGE = 20;
+const DEFAULT_COLOR = "#10B981";
+const DEFAULT_EMOJI = "📚";
+
+const safeColor = (c: string | null | undefined) => c ?? DEFAULT_COLOR;
+const safeEmoji = (e: string | null | undefined) => e ?? DEFAULT_EMOJI;
 
 export function CommunityPage() {
   const {
     user,
     accessToken,
-    updateDeck,
     decks,
-    setDecks,
     setTemporaryStudyDeck,
-    setReturnToCommunityDeck,
     setReturnToUserDeck,
     returnToCommunityDeck,
     returnToUserDeck,
     viewingCommunityDeckId,
     setViewingCommunityDeckId,
-    targetCommentId,
-    setTargetCommentId,
     targetCardIndex,
     viewingUserId,
     setViewingUserId,
@@ -113,17 +89,12 @@ export function CommunityPage() {
     [debouncedSearchQuery],
   );
 
-  const { studyCommunityDeck } = useCommunityStudyNavigation();
   const { searchedUsers } = useCommunityUsersSearch(debouncedSearchQuery);
   const {
     selectedUserId,
     setSelectedUserId,
     viewingUserDeck,
     setViewingUserDeck,
-    viewingDeck,
-    setViewingDeck,
-    deckDetailPage,
-    setDeckDetailPage,
   } = useCommunityViewState({
     returnToCommunityDeck,
     returnToUserDeck,
@@ -138,27 +109,8 @@ export function CommunityPage() {
   });
   const { navigateTo } = useNavigation();
   const isSuperuser = useIsSuperuser();
-  const [addingDeckId, setAddingDeckId] = useState<string | null>(null);
   const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
   const [upgradeFeature, setUpgradeFeature] = useState<string | undefined>();
-  const [publishDialogOpen, setPublishDialogOpen] = useState(false);
-  const [selectedDeckId, setSelectedDeckId] = useState("");
-  const [publishing, setPublishing] = useState(false);
-  const [updateWarningOpen, setUpdateWarningOpen] = useState(false);
-  const [pendingUpdate, setPendingUpdate] = useState<{
-    communityDeck: UICommunityDeck;
-    importedDeck: UIDeck;
-  } | null>(null);
-
-  // Superuser state
-  const [deletingDeckId, setDeletingDeckId] = useState<string | null>(null);
-  const [featuringDeckId, setFeaturingDeckId] = useState<string | null>(null);
-  const [unpublishingDeckId, setUnpublishingDeckId] = useState<string | null>(
-    null,
-  );
-  const [unpublishDialogOpen, setUnpublishDialogOpen] = useState(false);
-  const [unpublishingDeck, setUnpublishingDeck] =
-    useState<UICommunityDeck | null>(null);
 
   // Filters
   const [filterCategory, setFilterCategory] = useState<string>("all");
@@ -171,32 +123,6 @@ export function CommunityPage() {
   const [showMyPublishedOnly, setShowMyPublishedOnly] = useState(false);
   const [showUpdatesOnly, setShowUpdatesOnly] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-
-  // Flag/Report state
-  const [flagDialogOpen, setFlagDialogOpen] = useState(false);
-  const [flagItemType, setFlagItemType] = useState<
-    "deck" | "card" | "comment" | "user"
-  >("deck");
-  const [flagItemId, setFlagItemId] = useState("");
-  const [flagItemName, setFlagItemName] = useState("");
-  const [flagItemDetails, setFlagItemDetails] = useState<
-    FlagItemDetails | undefined
-  >(undefined);
-  const [flaggedDecks, setFlaggedDecks] = useState<Set<string>>(new Set());
-  const [flaggedCards, setFlaggedCards] = useState<Set<string>>(new Set());
-
-  // Deletion dialog state
-  const [deleteDeckDialogOpen, setDeleteDeckDialogOpen] = useState(false);
-  const [deckToDelete, setDeckToDelete] = useState<{
-    id: string;
-    name: string;
-  } | null>(null);
-  const [deleteCardDialogOpen, setDeleteCardDialogOpen] = useState(false);
-  const [cardToDelete, setCardToDelete] = useState<{
-    id: string;
-    name: string;
-    deckId: string;
-  } | null>(null);
 
   // Reset to page 1 when filters or sorting changes
   useEffect(() => {
@@ -212,219 +138,17 @@ export function CommunityPage() {
     showUpdatesOnly,
   ]);
 
+  const actions = useCommunityActions({
+    loadCommunityDecks,
+    communityDecks,
+    setUpgradeModalOpen,
+    setUpgradeFeature,
+  });
+
   // Load community decks on mount
   useEffect(() => {
     void loadCommunityDecks();
   }, [loadCommunityDecks]);
-
-  const handleAddDeck = async (deck: UICommunityDeck) => {
-    if (!accessToken || !user) return;
-
-    if (!canImportCommunityDecks(user?.subscriptionTier, isSuperuser)) {
-      setUpgradeFeature("importing Community decks");
-      setUpgradeModalOpen(true);
-      return;
-    }
-
-    if (deck.ownerId === user.id) {
-      // ✅ ADD: && !d.isDeleted
-      const alreadyInCollection = decks.find(
-        (d) => d.communityPublishedId === deck.id && !d.isDeleted,
-      );
-      if (alreadyInCollection) {
-        toast.info('This is your own deck - it\'s already in "My Decks"');
-        return;
-      } else {
-        toast.info('Re-adding your published deck to "My Decks"');
-      }
-    }
-
-    if (deck.ownerId !== user.id) {
-      // ✅ ADD: && !d.isDeleted
-      const alreadyImported = decks.find(
-        (d) => d.sourceCommunityDeckId === deck.id && !d.isDeleted,
-      );
-      if (alreadyImported) {
-        toast.info("You have already added this deck to your collection");
-        return;
-      }
-    }
-
-    setAddingDeckId(deck.id);
-    try {
-      const newDeck = await addDeckFromCommunity(accessToken, {
-        communityDeckId: deck.id,
-        name: deck.name,
-        color: deck.color || "#10B981",
-        emoji: deck.emoji || "📚",
-        cards: (deck.cards || []).map((card) => ({
-          front: card.front || "",
-          back: card.back || "", // In case back is null for MC cards
-          cardType: card.cardType,
-          correctAnswers: card.correctAnswers || undefined,
-          incorrectAnswers: card.incorrectAnswers || undefined,
-          acceptedAnswers: card.acceptedAnswers || undefined,
-        })),
-        category: deck.category,
-        subtopic: deck.subtopic,
-        version: deck.version || 1,
-      });
-
-      toast.success(`"${deck.name}" added to your decks!`);
-      console.log("Added deck from community:", newDeck);
-
-      const updatedDecks = await fetchDecks(accessToken);
-      setDecks(updatedDecks);
-
-      await loadCommunityDecks();
-
-      if (viewingDeck && viewingDeck.id === deck.id) {
-        setViewingDeck({
-          ...viewingDeck,
-          downloadCount: (viewingDeck.downloadCount || 0) + 1,
-        });
-      }
-    } catch (error: any) {
-      console.error("Failed to add deck:", error);
-      if (error.message.includes("already added")) {
-        toast.info(error.message);
-      } else {
-        toast.error(error.message);
-      }
-    } finally {
-      setAddingDeckId(null);
-    }
-  };
-
-  const handleUpdateDeck = async (
-    communityDeck: UICommunityDeck,
-    importedDeck: UIDeck,
-  ) => {
-    if (!accessToken) {
-      toast.error("Please login to update decks");
-      return;
-    }
-
-    // ✅ CHECK: Has user made local edits?
-    const userHasEdits =
-      importedDeck.updatedAt && importedDeck.lastSyncedAt
-        ? new Date(importedDeck.updatedAt).getTime() >
-          new Date(importedDeck.lastSyncedAt).getTime()
-        : false;
-
-    if (userHasEdits) {
-      // Show warning dialog
-      setPendingUpdate({ communityDeck, importedDeck });
-      setUpdateWarningOpen(true);
-      return;
-    }
-
-    // No edits, proceed with update
-    await performUpdate(communityDeck, importedDeck);
-  };
-
-  const performUpdate = async (
-    communityDeck: UICommunityDeck,
-    importedDeck: UIDeck,
-  ) => {
-    if (!accessToken) {
-      toast.error("You must be logged in to update decks");
-      return;
-    }
-    setAddingDeckId(communityDeck.id);
-    try {
-      const updatedDeck = await updateImportedDeck(
-        accessToken,
-        importedDeck.id,
-        {
-          name: communityDeck.name,
-          color: communityDeck.color || "#10B981",
-          emoji: communityDeck.emoji || "📚",
-          cards: communityDeck.cards || [],
-          category: communityDeck.category || "",
-          subtopic: communityDeck.subtopic || "",
-          version: communityDeck.version || 1,
-        },
-      );
-
-      updateDeck(importedDeck.id, updatedDeck);
-      toast.success(`${communityDeck.name} updated!`);
-    } catch (error: any) {
-      console.error("Failed to update deck:", error);
-      toast.error(`Failed to update deck: ${error.message}`);
-    } finally {
-      setAddingDeckId(null);
-    }
-  };
-
-  const handlePublishDeck = async () => {
-    if (!accessToken || !selectedDeckId) {
-      toast.error("Please select a deck");
-      return;
-    }
-
-    const selectedDeck = decks.find((d) => d.id === selectedDeckId);
-
-    if (!selectedDeck) {
-      toast.error("Deck not found");
-      return;
-    }
-
-    if (selectedDeck.sourceCommunityDeckId) {
-      toast.error(
-        "Cannot publish decks imported from the community. Only decks you created can be published.",
-      );
-      return;
-    }
-
-    if (!selectedDeck.category || !selectedDeck.subtopic) {
-      toast.error("Please set a category and subtopic in deck settings first");
-      return;
-    }
-
-    if (selectedDeck.cardCount < 10) {
-      toast.error("Deck must have at least 10 cards to be published");
-      return;
-    }
-
-    setPublishing(true);
-    try {
-      console.log("📤 Publishing deck:", selectedDeckId);
-      const result = await publishDeck(accessToken, selectedDeckId, {
-        category: selectedDeck.category,
-        subtopic: selectedDeck.subtopic,
-      });
-
-      console.log("✅ Publish result:", result);
-
-      if (result.republished) {
-        toast.success("Deck re-published successfully!");
-      } else if (result.published) {
-        toast.success("Deck published to community!");
-      } else {
-        toast.success("Deck updated successfully!");
-      }
-
-      // Update the deck in the local store
-      if (result.deck) {
-        updateDeck(selectedDeckId, {
-          communityPublishedId: result.deck.id,
-          isPublished: true,
-        });
-      }
-
-      setPublishDialogOpen(false);
-      setSelectedDeckId("");
-
-      // Reload community decks to show the newly published deck
-      await loadCommunityDecks();
-    } catch (error: any) {
-      console.error("❌ Failed to publish deck:", error);
-      toast.error(error.message || "Failed to publish deck");
-    } finally {
-      setPublishing(false);
-    }
-  };
 
   const handleViewDeckFromProfile = async (deckId: string, userId: string) => {
     try {
@@ -437,110 +161,17 @@ export function CommunityPage() {
 
       setViewingUserDeck({ deck, cards, ownerId: userId });
       setSelectedUserId(null);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Failed to load user deck:", error);
-      toast.error(error.message || "Failed to load deck");
-    }
-  };
 
-  const openFlagDialog = (
-    type: "deck" | "card" | "comment" | "user",
-    id: string,
-    name: string,
-    deckId?: string,
-  ) => {
-    setFlagItemType(type);
-    setFlagItemId(id);
-    setFlagItemName(name);
-    if (type === "card" && deckId) {
-      setFlagItemDetails({ deckId });
-    } else {
-      setFlagItemDetails(undefined);
-    }
+      const message =
+        error instanceof Error
+          ? error.message
+          : typeof error === "string"
+            ? error
+            : "Failed to load deck";
 
-    setFlagDialogOpen(true);
-
-    if (type === "deck") {
-      setFlaggedDecks((prev) => new Set(prev).add(id));
-    }
-    if (type === "card") {
-      setFlaggedCards((prev) => new Set(prev).add(id));
-    }
-  };
-
-  const handleDeleteCommunityDeck = async (
-    deckId: string,
-    deckName: string,
-  ) => {
-    if (!accessToken || !isSuperuser) {
-      toast.error("Unauthorized");
-      return;
-    }
-
-    setDeckToDelete({ id: deckId, name: deckName });
-    setDeleteDeckDialogOpen(true);
-  };
-
-  const confirmDeleteDeck = async (reason: string) => {
-    if (!deckToDelete || !accessToken) return;
-
-    setDeletingDeckId(deckToDelete.id);
-    try {
-      await deleteCommunityDeck(accessToken, deckToDelete.id, reason);
-      toast.success("Deck deleted successfully");
-
-      await loadCommunityDecks();
-
-      if (viewingDeck && viewingDeck.id === deckToDelete.id) {
-        setViewingDeck(null);
-        setReturnToCommunityDeck(null);
-      }
-
-      setDeleteDeckDialogOpen(false);
-      setDeckToDelete(null);
-    } catch (error: any) {
-      console.error("Failed to delete deck:", error);
-      toast.error(error.message || "Failed to delete deck");
-    } finally {
-      setDeletingDeckId(null);
-    }
-  };
-
-  const handleToggleFeatured = async (deckId: string) => {
-    if (!accessToken || !isSuperuser) {
-      toast.error("Unauthorized");
-      return;
-    }
-
-    setFeaturingDeckId(deckId);
-    try {
-      const result = await toggleCommunityDeckFeatured(accessToken, deckId);
-      // toast.success(result.message)
-
-      await loadCommunityDecks();
-
-      if (viewingDeck && viewingDeck.id === deckId) {
-        setViewingDeck(result.deck);
-      }
-    } catch (error: any) {
-      console.error("Failed to toggle featured status:", error);
-      toast.error(error.message || "Failed to toggle featured status");
-    } finally {
-      toast.success("Deck featured status updated");
-      setFeaturingDeckId(null);
-    }
-  };
-
-  const handleUnpublishDeck = async (deckId: string) => {
-    if (!accessToken) {
-      toast.error("Please log in to unpublish decks");
-      return;
-    }
-
-    const deck = communityDecks.find((d) => d.id === deckId);
-    if (deck) {
-      setUnpublishingDeck(deck);
-      setUnpublishDialogOpen(true);
+      toast.error(message);
     }
   };
 
@@ -638,92 +269,6 @@ export function CommunityPage() {
     };
   }, [decksForGrid, currentPage]);
 
-  const publishableDecks = useMemo(() => {
-    return decks.filter((d) => !d.sourceCommunityDeckId && d.cardCount > 0);
-  }, [decks]);
-
-  const confirmUnpublish = async () => {
-    if (!unpublishingDeck || !accessToken) return;
-
-    // ✅ Check if originalDeckId exists
-    if (!unpublishingDeck.originalDeckId) {
-      toast.error("Cannot unpublish: Missing original deck ID");
-      return;
-    }
-
-    setUnpublishingDeckId(unpublishingDeck.id);
-    try {
-      // ✅ Now TypeScript knows it's not null
-      await unpublishDeck(accessToken, unpublishingDeck.originalDeckId);
-
-      toast.success(
-        `"${unpublishingDeck.name}" has been unpublished from the community`,
-      );
-
-      await loadCommunityDecks();
-
-      // Fetch USER's personal decks, not community decks
-      const updatedDecks = await fetchDecks(accessToken);
-      setDecks(updatedDecks);
-
-      if (viewingDeck && viewingDeck.id === unpublishingDeck.id) {
-        setViewingDeck(null);
-      }
-
-      setUnpublishDialogOpen(false);
-      setUnpublishingDeck(null);
-    } catch (error: any) {
-      console.error("Failed to unpublish deck:", error);
-      toast.error(error.message || "Failed to unpublish deck");
-    } finally {
-      setUnpublishingDeckId(null);
-    }
-  };
-
-  // I think this is for admin/superuser only
-  const handleDeleteCard = (
-    cardId: string,
-    cardName: string,
-    deckId: string,
-  ) => {
-    if (!accessToken || !isSuperuser) {
-      toast.error("Unauthorized");
-      return;
-    }
-
-    setCardToDelete({ id: cardId, name: cardName, deckId });
-    setDeleteCardDialogOpen(true);
-  };
-
-  const confirmDeleteCard = async (reason: string) => {
-    if (!cardToDelete || !accessToken) return;
-
-    try {
-      await deleteCommunityCard(
-        accessToken,
-        cardToDelete.deckId,
-        cardToDelete.id,
-        reason,
-      );
-      toast.success("Card deleted successfully");
-
-      if (viewingDeck && viewingDeck.id === cardToDelete.deckId) {
-        await loadCommunityDecks();
-
-        const updatedDeck = await getCommunityDeck(cardToDelete.deckId);
-        if (updatedDeck) {
-          setViewingDeck(updatedDeck);
-        }
-      }
-
-      setDeleteCardDialogOpen(false);
-      setCardToDelete(null);
-    } catch (error: any) {
-      console.error("Failed to delete card:", error);
-      toast.error(error.message || "Failed to delete card");
-    }
-  };
-
   // If viewing a user profile, show that instead
   if (selectedUserId) {
     return (
@@ -744,22 +289,34 @@ export function CommunityPage() {
       />
     );
   }
-
-  // If viewing a user deck (read-only), show that
   if (viewingUserDeck) {
+    // Normalize deck into camel-only shape for UserDeckViewer
+    const viewerDeck = {
+      ...viewingUserDeck.deck,
+
+      // force required UI fields to be non-null
+      id: viewingUserDeck.deck.id,
+      ownerId: viewingUserDeck.ownerId,
+      cardCount: viewingUserDeck.cards.length,
+      createdAt: viewingUserDeck.deck.createdAt ?? new Date().toISOString(),
+      updatedAt: viewingUserDeck.deck.updatedAt ?? new Date().toISOString(),
+
+      // UI-only
+      isPublic: viewingUserDeck.deck.isPublished ?? false,
+      emoji: safeEmoji(viewingUserDeck.deck.emoji),
+      color: safeColor(viewingUserDeck.deck.color),
+    };
+
+    const viewerCards = viewingUserDeck.cards.map((card) => ({
+      ...card,
+      front: card.front ?? "",
+      back: card.back ?? "",
+    }));
+
     return (
       <UserDeckViewer
-        deck={{
-          ...viewingUserDeck.deck,
-          is_public: viewingUserDeck.deck.isPublished || false,
-          emoji: viewingUserDeck.deck.emoji || "📚",
-          color: viewingUserDeck.deck.color || "#10B981",
-        }}
-        cards={viewingUserDeck.cards.map((card) => ({
-          ...card,
-          front: card.front || "",
-          back: card.back || "",
-        }))}
+        deck={viewerDeck}
+        cards={viewerCards}
         ownerId={viewingUserDeck.ownerId}
         isOwner={user?.id === viewingUserDeck.ownerId}
         onBack={() => {
@@ -768,91 +325,67 @@ export function CommunityPage() {
           setReturnToUserDeck(null);
         }}
         onStudy={(deck, cards) => {
-          const mappedCards = cards.map((card, index) => ({
-            ...card,
+          // Build study cards that satisfy UICard exactly (no optional booleans)
+          const mappedCards: UICard[] = cards.map((card, index) => ({
+            id: card.id,
+            front: card.front ?? "",
+            back: card.back ?? "",
+            cardType: card.cardType,
+            correctAnswers: card.correctAnswers ?? null,
+            incorrectAnswers: card.incorrectAnswers ?? null,
+            acceptedAnswers: card.acceptedAnswers ?? null,
+            audioUrl: card.audioUrl ?? null,
+            frontImageUrl: card.frontImageUrl ?? null,
+            backImageUrl: card.backImageUrl ?? null,
+            frontAudio: card.frontAudio ?? null,
+            backAudio: card.backAudio ?? null,
+            position: card.position ?? index,
+
+            // REQUIRED booleans
             favorite: false,
             isIgnored: false,
+
+            // required by your app card type
             deckId: deck.id,
             createdAt: new Date().toISOString(),
-            position: card.position ?? index,
+            updatedAt: new Date().toISOString(),
           }));
 
+          // Build study deck (UIDeck)
+          // Build study deck (UIDeck)
+          const studyDeck: UIDeck = {
+            id: deck.id,
+            name: deck.name,
+            color: safeColor(deck.color),
+            emoji: safeEmoji(deck.emoji),
+            cardCount: mappedCards.length,
+            category: deck.category ?? "",
+            subtopic: deck.subtopic ?? "",
+
+            // ✅ required by UIDeck
+            userId: user?.id ?? "", // or viewingUserDeck.ownerId if that's what UIDeck expects
+            isPublic: false,
+            isPublished: false,
+            difficulty: deck.difficulty ?? "beginner", // adjust to your union if needed
+
+            createdAt: deck.createdAt ?? new Date().toISOString(),
+            updatedAt: deck.updatedAt ?? new Date().toISOString(),
+
+            frontLanguage: deck.frontLanguage ?? null,
+            backLanguage: deck.backLanguage ?? null,
+          };
+
           setTemporaryStudyDeck({
-            deck: {
-              id: deck.id,
-              name: deck.name,
-              color: deck.color,
-              emoji: deck.emoji,
-              cardCount: viewingUserDeck.deck.card_count,
-              category: deck.category || "",
-              subtopic: deck.subtopic || "",
-              ownerId: viewingUserDeck.ownerId,
-              ownerDisplayName:
-                viewingUserDeck.deck.owner_display_name || "Unknown",
-              cards: mappedCards,
-              publishedAt:
-                viewingUserDeck.deck.published_at || new Date().toISOString(),
-              downloadCount: viewingUserDeck.deck.download_count || 0,
-              createdAt: viewingUserDeck.deck.created_at,
-              frontLanguage: deck.front_language,
-              backLanguage: deck.back_language,
-            },
+            deck: studyDeck,
             cards: mappedCards,
           });
+
           setReturnToUserDeck(viewingUserDeck);
           navigateTo("study");
         }}
       />
     );
   }
-
-  // If viewing a deck, show deck details
-  if (viewingDeck) {
-    return (
-      <CommunityDeckDetailPage
-        deck={viewingDeck}
-        cards={(viewingDeck.cards || []) as any[]}
-        userDecks={decks}
-        isSuperuser={isSuperuser}
-        addingDeckId={addingDeckId}
-        deletingDeckId={deletingDeckId}
-        featuringDeckId={featuringDeckId}
-        deckDetailPage={deckDetailPage}
-        cardsPerPage={CARDS_PER_PAGE}
-        flaggedDecks={flaggedDecks}
-        flaggedCards={flaggedCards}
-        targetCommentId={targetCommentId}
-        targetCardIndex={targetCardIndex}
-        onBack={() => {
-          setViewingDeck(null);
-          setReturnToCommunityDeck(null);
-          setTargetCommentId(null);
-        }}
-        onViewUser={setSelectedUserId}
-        onAddDeck={handleAddDeck}
-        onUpdateDeck={handleUpdateDeck}
-        onToggleFeatured={handleToggleFeatured}
-        onDeleteDeck={handleDeleteCommunityDeck}
-        onFlagDeck={(deckId, deckName) =>
-          openFlagDialog("deck", deckId, deckName)
-        }
-        onFlagCard={(cardId, cardName) =>
-          openFlagDialog("card", cardId, cardName, viewingDeck.id)
-        }
-        onFlagComment={(commentId, commentText) =>
-          openFlagDialog("comment", commentId, commentText)
-        }
-        onFlagUser={(userId, userName) =>
-          openFlagDialog("user", userId, userName)
-        }
-        onStudyDeck={studyCommunityDeck}
-        onDeckDetailPageChange={setDeckDetailPage}
-        onRatingChange={loadCommunityDecks}
-        onDeleteCard={handleDeleteCard}
-      />
-    );
-  }
-
   if (loading) {
     return (
       <AppLayout>
@@ -883,8 +416,8 @@ export function CommunityPage() {
 
               {/* Publish Deck Button */}
               <Dialog
-                open={publishDialogOpen}
-                onOpenChange={setPublishDialogOpen}
+                open={actions.publishDialogOpen}
+                onOpenChange={actions.setPublishDialogOpen}
               >
                 <DialogTrigger asChild>
                   <Button
@@ -918,14 +451,14 @@ export function CommunityPage() {
                     <div className="space-y-2">
                       <Label htmlFor="deck">Select Deck</Label>
                       <Select
-                        value={selectedDeckId}
-                        onValueChange={setSelectedDeckId}
+                        value={actions.selectedDeckId}
+                        onValueChange={actions.setSelectedDeckId}
                       >
                         <SelectTrigger>
                           <SelectValue placeholder="Choose a deck..." />
                         </SelectTrigger>
                         <SelectContent>
-                          {publishableDecks.map((deck) => (
+                          {actions.publishableDecks.map((deck) => (
                             <SelectItem
                               key={deck.id}
                               value={deck.id}
@@ -943,7 +476,7 @@ export function CommunityPage() {
                                 : ""}
                             </SelectItem>
                           ))}
-                          {publishableDecks.length === 0 && (
+                          {actions.publishableDecks.length === 0 && (
                             <div className="px-2 py-1 text-sm text-gray-500">
                               No decks available to publish. Create a deck with
                               10+ cards and set its category.
@@ -953,10 +486,10 @@ export function CommunityPage() {
                       </Select>
                     </div>
 
-                    {selectedDeckId &&
+                    {actions.selectedDeckId &&
                       (() => {
                         const selectedDeck = decks.find(
-                          (d) => d.id === selectedDeckId,
+                          (d) => d.id === actions.selectedDeckId,
                         );
                         if (!selectedDeck) return null;
 
@@ -1018,15 +551,15 @@ export function CommunityPage() {
                       })()}
 
                     <Button
-                      onClick={handlePublishDeck}
-                      disabled={publishing || !selectedDeckId}
+                      onClick={actions.handlePublishDeck}
+                      disabled={actions.publishing || !actions.selectedDeckId}
                       className="w-full bg-emerald-600 hover:bg-emerald-700"
                     >
-                      {publishing
+                      {actions.publishing
                         ? "Publishing..."
                         : (() => {
                             const selectedDeck = decks.find(
-                              (d) => d.id === selectedDeckId,
+                              (d) => d.id === actions.selectedDeckId,
                             );
                             return selectedDeck?.communityPublishedId
                               ? "Update Published Deck"
@@ -1123,17 +656,19 @@ export function CommunityPage() {
             userDecks={decks}
             userId={user?.id || null}
             isSuperuser={isSuperuser}
-            addingDeckId={addingDeckId}
-            deletingDeckId={deletingDeckId}
-            featuringDeckId={featuringDeckId}
-            unpublishingDeckId={unpublishingDeckId}
-            onViewDeck={setViewingDeck}
+            addingDeckId={actions.addingDeckId}
+            deletingDeckId={actions.deletingDeckId}
+            featuringDeckId={actions.featuringDeckId}
+            unpublishingDeckId={actions.unpublishingDeckId}
+            onViewDeck={(deck) =>
+              navigateTo("community-deck-detail", { deckId: deck.id })
+            }
             onViewUser={setSelectedUserId}
-            onAddDeck={handleAddDeck}
-            onUpdateDeck={handleUpdateDeck}
-            onToggleFeatured={handleToggleFeatured}
-            onDeleteDeck={handleDeleteCommunityDeck}
-            onUnpublishDeck={handleUnpublishDeck}
+            onAddDeck={actions.handleAddDeck}
+            onUpdateDeck={actions.handleUpdateDeck}
+            onToggleFeatured={actions.handleToggleFeatured}
+            onDeleteDeck={actions.handleDeleteCommunityDeck}
+            onUnpublishDeck={actions.handleUnpublishDeck}
           />
 
           <Pagination
@@ -1151,65 +686,68 @@ export function CommunityPage() {
       />
 
       <FlagDialog
-        open={flagDialogOpen}
-        onOpenChange={setFlagDialogOpen}
-        targetType={flagItemType}
-        targetId={flagItemId}
-        targetName={flagItemName}
-        targetDetails={flagItemDetails}
+        open={actions.flagDialogOpen}
+        onOpenChange={actions.setFlagDialogOpen}
+        targetType={actions.flagItemType}
+        targetId={actions.flagItemId}
+        targetName={actions.flagItemName}
+        targetDetails={actions.flagItemDetails}
         accessToken={accessToken}
       />
 
       <DeletionDialog
-        open={deleteDeckDialogOpen}
-        onOpenChange={setDeleteDeckDialogOpen}
+        open={actions.deleteDeckDialogOpen}
+        onOpenChange={actions.setDeleteDeckDialogOpen}
         targetType="deck"
-        targetId={deckToDelete?.id}
-        targetName={deckToDelete?.name}
-        onConfirm={confirmDeleteDeck}
+        targetId={actions.deckToDelete?.id}
+        targetName={actions.deckToDelete?.name}
+        onConfirm={actions.confirmDeleteDeck}
       />
 
       <DeletionDialog
-        open={deleteCardDialogOpen}
-        onOpenChange={setDeleteCardDialogOpen}
+        open={actions.deleteCardDialogOpen}
+        onOpenChange={actions.setDeleteCardDialogOpen}
         targetType="card"
-        targetId={cardToDelete?.id}
-        targetName={cardToDelete?.name}
-        onConfirm={confirmDeleteCard}
+        targetId={actions.cardToDelete?.id}
+        targetName={actions.cardToDelete?.name}
+        onConfirm={actions.confirmDeleteCard}
       />
 
       <UpdateDeckWarningDialog
-        open={updateWarningOpen}
-        onOpenChange={setUpdateWarningOpen}
+        open={actions.updateWarningOpen}
+        onOpenChange={actions.setUpdateWarningOpen}
         communityDeck={
-          pendingUpdate?.communityDeck
+          actions.pendingUpdate?.communityDeck
             ? {
-                id: pendingUpdate.communityDeck.id,
-                name: pendingUpdate.communityDeck.name,
-                emoji: pendingUpdate.communityDeck.emoji || "📚",
-                color: pendingUpdate.communityDeck.color || "#10B981",
+                id: actions.pendingUpdate.communityDeck.id,
+                name: actions.pendingUpdate.communityDeck.name,
+                emoji: actions.pendingUpdate.communityDeck.emoji || "📚",
+                color: actions.pendingUpdate.communityDeck.color || "#10B981",
               }
             : null
         }
-        importedDeck={pendingUpdate?.importedDeck || null}
+        importedDeck={actions.pendingUpdate?.importedDeck || null}
         onCancel={() => {
-          setUpdateWarningOpen(false);
-          setPendingUpdate(null);
+          actions.setUpdateWarningOpen(false);
+          actions.setPendingUpdate(null);
         }}
         onUpdate={async () => {
-          if (pendingUpdate) {
-            await performUpdate(
-              pendingUpdate.communityDeck,
-              pendingUpdate.importedDeck,
+          if (actions.pendingUpdate) {
+            await actions.performUpdate(
+              actions.pendingUpdate.communityDeck,
+              actions.pendingUpdate.importedDeck,
             );
-            setUpdateWarningOpen(false);
-            setPendingUpdate(null);
+            actions.setUpdateWarningOpen(false);
+            actions.setPendingUpdate(null);
           }
         }}
       />
 
       {/* Unpublish from Community Dialog */}
-      <Dialog open={unpublishDialogOpen} onOpenChange={setUnpublishDialogOpen}>
+      <Dialog
+        open={actions.unpublishDialogOpen}
+        onOpenChange={actions.setUnpublishDialogOpen}
+      >
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Unpublish from Community</DialogTitle>
@@ -1217,58 +755,40 @@ export function CommunityPage() {
               Remove your deck from the Flashy community
             </DialogDescription>
           </DialogHeader>
-          {unpublishingDeck && (
+
+          {actions.unpublishingDeck && (
             <div className="space-y-4 py-4">
-              <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 space-y-2">
-                <div className="flex items-center gap-2">
-                  <div
-                    className="w-12 h-12 rounded-lg flex items-center justify-center text-2xl"
-                    style={{
-                      backgroundColor: unpublishingDeck.color || "#10B981",
-                    }}
-                  >
-                    {unpublishingDeck.emoji}
-                  </div>
-                  <div>
-                    <h3 className="font-medium dark:text-gray-100">
-                      {unpublishingDeck.name}
-                    </h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      {unpublishingDeck.cards?.length || 0}{" "}
-                      {unpublishingDeck.cards?.length === 1 ? "card" : "cards"}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex flex-wrap gap-2 pt-2">
-                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400">
-                    {unpublishingDeck.category}
-                  </span>
-                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400">
-                    {unpublishingDeck.subtopic}
-                  </span>
-                </div>
+              ...
+              <div
+                className="w-12 h-12 rounded-lg flex items-center justify-center text-2xl"
+                style={{
+                  backgroundColor: actions.unpublishingDeck.color || "#10B981",
+                }}
+              >
+                {actions.unpublishingDeck.emoji}
               </div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                This will remove your deck from the community, but you can
-                republish it later. Are you sure?
-              </p>
+              ...
             </div>
           )}
+
           <div className="flex gap-3">
             <Button
               variant="outline"
-              onClick={() => setUnpublishDialogOpen(false)}
-              disabled={unpublishingDeckId !== null}
+              onClick={() => actions.setUnpublishDialogOpen(false)}
+              disabled={actions.unpublishingDeckId !== null}
               className="flex-1"
             >
               Cancel
             </Button>
+
             <Button
-              onClick={confirmUnpublish}
-              disabled={unpublishingDeckId !== null}
+              onClick={actions.confirmUnpublish}
+              disabled={actions.unpublishingDeckId !== null}
               className="flex-1 bg-red-600 hover:bg-red-700 text-white"
             >
-              {unpublishingDeckId !== null ? "Unpublishing..." : "Unpublish"}
+              {actions.unpublishingDeckId !== null
+                ? "Unpublishing..."
+                : "Unpublish"}
             </Button>
           </div>
         </DialogContent>

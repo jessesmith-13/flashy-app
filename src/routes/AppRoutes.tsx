@@ -25,6 +25,7 @@ import { contactRoutes } from "@/features/contact";
 import { NotificationsScreen } from "@/components/Notifications/NotificationsScreen";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { betaTestingRoutes } from "@/features/beta-testing";
+import { useNavigate } from "react-router-dom";
 
 import { IS_BETA_TESTING_ENABLED } from "@/shared/config/featureFlags";
 
@@ -34,11 +35,8 @@ type AppRoutesProps = {
   onCloseUpgrade?: () => void; // optional so App.tsx can keep old behavior
 };
 
-export function AppRoutes({
-  user,
-  sharedDeckRoute,
-  onCloseUpgrade,
-}: AppRoutesProps) {
+export function AppRoutes({ user, sharedDeckRoute }: AppRoutesProps) {
+  const navigate = useNavigate();
   return (
     <Routes>
       {landingRoutes.map((r) => (
@@ -126,8 +124,7 @@ export function AppRoutes({
             <UpgradeModal
               open={true}
               onOpenChange={(open) => {
-                // preserve old behavior: when modal closes, caller decides where to go
-                if (!open) onCloseUpgrade?.();
+                if (!open) navigate(-1); // or navigate("/decks", { replace: true })
               }}
             />
           </ProtectedRoute>

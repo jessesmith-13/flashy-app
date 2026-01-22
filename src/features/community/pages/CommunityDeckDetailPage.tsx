@@ -1,5 +1,12 @@
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { toast } from "sonner";
+
+import { AppLayout } from "@/components/Layout/AppLayout";
 import { Button } from "@/shared/ui/button";
+import { useStore } from "@/shared/state/useStore";
+import { useIsSuperuser } from "@/shared/auth/roles";
+
 import {
   ArrowLeft,
   Star,
@@ -10,238 +17,139 @@ import {
   Check,
   Upload,
 } from "lucide-react";
+
 import { DeckRatingDisplay } from "../DeckRatingDisplay";
 import { DeckRating } from "../DeckRating";
 import { DeckComments } from "../DeckComments";
 import { DeckCardPreviewList } from "../DeckCardPreviewList";
-import { AppLayout } from "@/components/Layout/AppLayout";
+
 import { FlagDialog } from "../FlagDialog";
 import { DeletionDialog } from "../DeletionDialog";
-import { toast } from "sonner";
-import { useStore } from "@/shared/state/useStore";
-import {
-  deleteCommunityDeck,
-  deleteCommunityCard,
-} from "../../../shared/api/admin";
-import { UIDeck } from "@/types/decks";
-import { UICommunityDeck, UICommunityCard } from "@/types/community";
-import { UICard } from "@/types/decks";
+import { UpdateDeckWarningDialog } from "../UpdateDeckWarningDialog";
 
-type FlagTargetType = "deck" | "comment" | "card";
+import { useCommunityDecks } from "../hooks/useCommunityDecks";
+import { useCommunityActions } from "../hooks/useCommunityActions";
+import { useCommunityStudyNavigation } from "../hooks/useCommunityStudyNavigation";
 
-interface FlagTargetDetails {
-  deckId?: string;
-  commentText?: string;
-  front?: string;
-}
+import type { UIDeck } from "@/types/decks";
+import type { UICommunityDeck } from "@/types/community";
 
-interface FlagTarget {
-  type: FlagTargetType;
-  id: string;
-  name: string;
-  details?: FlagTargetDetails;
-}
+const CARDS_PER_PAGE = 20;
 
-interface CardToDelete {
-  id: string;
-  name: string;
-  deckId: string;
-}
+export function CommunityDeckDetailPage() {
+  const { deckId } = useParams<{ deckId: string }>();
+  const navigate = useNavigate();
 
-interface CommunityDeckDetailProps {
-  cards: UICard[] | UICommunityCard[]; // ✅ Accept both types
-  deck: UICommunityDeck;
-  userDecks: UIDeck[];
-  isSuperuser: boolean;
-  addingDeckId: string | null;
-  deletingDeckId: string | null;
-  featuringDeckId: string | null;
-  deckDetailPage: number;
-  cardsPerPage: number;
-  flaggedDecks: Set<string>;
-  flaggedCards: Set<string>;
-  targetCommentId?: string | null;
-  targetCardIndex?: number | null;
-  onBack: () => void;
-  onViewUser: (userId: string) => void;
-  onAddDeck: (deck: UICommunityDeck) => void;
-  onUpdateDeck: (communityDeck: UICommunityDeck, importedDeck: UIDeck) => void;
-  onToggleFeatured: (deckId: string) => void;
-  onDeleteDeck: (deckId: string, deckName: string) => void;
-  onDeleteCard?: (cardId: string, cardName: string, deckId: string) => void;
-  onFlagDeck: (deckId: string, deckName: string) => void;
-  onFlagCard: (cardId: string, cardName: string) => void;
-  onFlagComment: (
-    commentId: string,
-    commentText: string,
-    deckId: string,
-  ) => void;
-  onFlagUser: (userId: string, userName: string) => void;
-  onStudyDeck: (deck: UICommunityDeck) => void;
-  onDeckDetailPageChange: (page: number) => void;
-  onRatingChange: () => void;
-}
+  const {
+    accessToken,
+    decks,
+    targetCommentId,
+    targetCardIndex,
+    setTargetCommentId,
+    setTargetCardIndex,
+  } = useStore();
 
-export function CommunityDeckDetailPage({
-  deck,
-  userDecks,
-  isSuperuser,
-  addingDeckId,
-  deletingDeckId,
-  featuringDeckId,
-  deckDetailPage,
-  cardsPerPage,
-  flaggedDecks,
-  flaggedCards,
-  targetCommentId,
-  targetCardIndex,
-  onBack,
-  onViewUser,
-  onAddDeck,
-  onUpdateDeck,
-  onToggleFeatured,
-  onStudyDeck,
-  onDeckDetailPageChange,
-  onRatingChange,
-}: CommunityDeckDetailProps) {
-  const { accessToken, setTargetCardIndex, setTargetCommentId } = useStore();
-  const importedDeck = userDecks.find(
-    (d) => d.sourceCommunityDeckId === deck.id && !d.isDeleted,
-  );
+  const isSuperuser = useIsSuperuser();
+  const { communityDecks, loadCommunityDecks } = useCommunityDecks();
+  const { studyCommunityDeck } = useCommunityStudyNavigation();
+
+  const [deck, setDeck] = useState<UICommunityDeck | null>(null);
+  const [deckDetailPage, setDeckDetailPage] = useState(1);
+
+  const openUpgrade = (feature?: string) => {
+    navigate("/upgrade", { state: { feature } }); // optional feature
+  };
+
+  const actions = useCommunityActions({
+    loadCommunityDecks,
+    communityDecks,
+    setUpgradeModalOpen: (open) => {
+      if (open) openUpgrade(); // only care about opening
+    },
+    setUpgradeFeature: (f) => {
+      if (f) openUpgrade(f);
+    },
+    setViewingDeck: setDeck,
+    viewingDeck: deck,
+  });
+
+  useEffect(() => {
+    if (!deckId) {
+      navigate("/community");
+      return;
+    }
+
+    let cancelled = false;
+
+    (async () => {
+      if (communityDecks.length === 0) await loadCommunityDecks();
+      const loaded = await actions.loadDeckById(deckId);
+
+      if (cancelled) return;
+
+      if (!loaded) {
+        toast.error("Deck not found");
+        navigate("/community");
+        return;
+      }
+      setDeck(loaded);
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [deckId, communityDecks.length, loadCommunityDecks, actions, navigate]);
+
+  const importedDeck = useMemo(() => {
+    if (!deck) return undefined;
+    return decks.find(
+      (d) => d.sourceCommunityDeckId === deck.id && !d.isDeleted,
+    );
+  }, [decks, deck]);
+
   const isAdded = !!importedDeck;
-  const updateAvailable =
-    importedDeck &&
-    (deck.version || 1) > (importedDeck.importedFromVersion || 1);
-  const hasCards = deck.cardCount && deck.cardCount > 0;
 
-  // Local flag dialog state
-  const [flagDialogOpen, setFlagDialogOpen] = useState(false);
-  const [flagTarget, setFlagTarget] = useState<FlagTarget | null>(null);
+  const updateAvailable = useMemo(() => {
+    if (!deck || !importedDeck) return false;
+    return (deck.version || 1) > (importedDeck.importedFromVersion || 1);
+  }, [deck, importedDeck]);
 
-  // Local deletion dialog state
-  const [deleteDeckDialogOpen, setDeleteDeckDialogOpen] = useState(false);
-  const [deleteCardDialogOpen, setDeleteCardDialogOpen] = useState(false);
-  const [cardToDelete, setCardToDelete] = useState<CardToDelete | null>(null);
+  const hasCards = !!(deck?.cardCount && deck.cardCount > 0);
 
+  // keep your highlight navigation behavior
   const hasNavigatedToCard = useRef(false);
   const hasNavigatedToComment = useRef(false);
 
-  // Handle navigating to a specific card from a flag
   useEffect(() => {
+    if (!deck) return;
     if (targetCardIndex !== null && hasCards && !hasNavigatedToCard.current) {
-      // Calculate which page the card is on
-      const targetPage = Math.floor((targetCardIndex ?? 0) / cardsPerPage) + 1;
-      console.log(
-        `🎴 Navigating to card at index ${targetCardIndex}, page ${targetPage}, current page: ${deckDetailPage}`,
-      );
+      const targetPage =
+        Math.floor((targetCardIndex ?? 0) / CARDS_PER_PAGE) + 1;
 
-      // Change to the target page
-      onDeckDetailPageChange(targetPage);
+      setDeckDetailPage(targetPage);
       hasNavigatedToCard.current = true;
 
-      // Clear the target after navigation and highlighting (longer delay to keep highlight visible)
       setTimeout(() => {
-        console.log("🎴 Clearing targetCardIndex");
         setTargetCardIndex(null);
         hasNavigatedToCard.current = false;
-      }, 2000); // Increased from 500ms to 2000ms so highlight stays visible
+      }, 2000);
     }
-  }, [
-    targetCardIndex,
-    hasCards,
-    cardsPerPage,
-    deckDetailPage,
-    onDeckDetailPageChange,
-    setTargetCardIndex,
-  ]);
+  }, [deck, targetCardIndex, hasCards, setTargetCardIndex]);
 
-  // Handle navigating to a specific comment from a notification
   useEffect(() => {
     if (targetCommentId && !hasNavigatedToComment.current) {
-      console.log(`💬 Target comment detected: ${targetCommentId}`);
       hasNavigatedToComment.current = true;
-
-      // Clear the target after scrolling is complete (DeckComments component handles the actual scroll)
       setTimeout(() => {
-        console.log("💬 Clearing targetCommentId");
         setTargetCommentId(null);
         hasNavigatedToComment.current = false;
-      }, 3000); // Give 3 seconds for highlight to be visible
+      }, 3000);
     }
   }, [targetCommentId, setTargetCommentId]);
 
-  const handleOpenFlagDialog = (
-    type: FlagTargetType,
-    id: string,
-    name: string,
-    details?: FlagTargetDetails,
-  ) => {
-    console.log("🚩 Flag button clicked!", { type, id, name, details });
-    setFlagTarget({
-      type,
-      id,
-      name,
-      details,
-    });
-    setFlagDialogOpen(true);
-    console.log("🚩 Flag dialog state set to open");
-  };
-
-  const handleFlagComment = (commentId: string, commentText: string) => {
-    const commentPreview =
-      commentText.length > 40
-        ? commentText.substring(0, 40) + "..."
-        : commentText;
-    handleOpenFlagDialog("comment", commentId, `Comment: "${commentPreview}"`, {
-      deckId: deck.id,
-      commentText: commentText, // Store full comment text for moderator review
-    });
-  };
-
-  const handleDeleteCardLocal = (
-    cardId: string,
-    cardName: string,
-    deckId: string,
-  ) => {
-    setCardToDelete({ id: cardId, name: cardName, deckId });
-    setDeleteCardDialogOpen(true);
-  };
-
-  const confirmDeleteDeck = async (reason: string) => {
-    if (!accessToken) return;
-
-    try {
-      await deleteCommunityDeck(accessToken, deck.id, reason);
-      toast.success("Deck deleted successfully");
-      setDeleteDeckDialogOpen(false);
-      // Navigate back to community since the deck is deleted
-      onBack();
-    } catch (error) {
-      console.error("Failed to delete deck:", error);
-      const errorMessage =
-        error instanceof Error ? error.message : "Failed to delete deck";
-      toast.error(errorMessage);
-    }
-  };
-
-  const confirmDeleteCard = async (reason: string) => {
-    if (!cardToDelete || !accessToken) return;
-
-    try {
-      await deleteCommunityCard(accessToken, deck.id, cardToDelete.id, reason);
-      toast.success("Card deleted successfully");
-      setDeleteCardDialogOpen(false);
-      setCardToDelete(null);
-
-      // Reload the page or refresh the deck to show updated cards
-      // For now, just navigate back and let parent handle reload
-      onRatingChange(); // This triggers a reload in the parent
-    } catch (error) {
-      console.error("Failed to delete card:", error);
-      const errorMessage =
-        error instanceof Error ? error.message : "Failed to delete card";
-      toast.error(errorMessage);
-    }
+  const onBack = () => {
+    setTargetCommentId(null);
+    setTargetCardIndex(null);
+    navigate("/community");
   };
 
   const getDifficultyEmoji = (difficulty?: string): string => {
@@ -279,6 +187,18 @@ export function CommunityDeckDetailPage({
     }
   };
 
+  if (!deck) {
+    return (
+      <AppLayout>
+        <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex items-center justify-center">
+          <div className="text-emerald-600 dark:text-emerald-400">
+            Loading deck...
+          </div>
+        </div>
+      </AppLayout>
+    );
+  }
+
   return (
     <AppLayout>
       <div className="min-h-screen bg-gray-100 dark:bg-gray-900 p-4 sm:p-6 lg:p-8">
@@ -299,39 +219,47 @@ export function CommunityDeckDetailPage({
                 >
                   {deck.emoji}
                 </div>
+
                 <div className="min-w-0 flex-1">
                   <div className="flex items-start gap-2 mb-1 flex-wrap">
                     <h1 className="text-xl sm:text-2xl truncate dark:text-gray-100 flex-1 min-w-0">
                       {deck.name}
                     </h1>
+
                     {deck.featured && (
                       <span className="inline-flex items-center px-2 py-1 rounded-md text-xs bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 border border-purple-300 dark:border-purple-700 flex-shrink-0">
                         <Star className="w-3 h-3 mr-1 fill-current" />
                         Featured
                       </span>
                     )}
-                    {flaggedDecks.has(deck.id) && (
+
+                    {actions.flaggedDecks.has(deck.id) && (
                       <span className="inline-flex items-center px-2 py-1 rounded-md text-xs bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 border border-orange-300 dark:border-orange-700 flex-shrink-0">
                         <Flag className="w-3 h-3 mr-1" />
                         Marked for Review
                       </span>
                     )}
                   </div>
+
                   <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs sm:text-sm text-gray-600 dark:text-gray-400">
                     <button
-                      onClick={() => onViewUser(deck.ownerId)}
+                      onClick={() =>
+                        navigate(`/community/user/${deck.ownerId}`)
+                      }
                       className="flex items-center gap-1 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
                     >
                       <Users className="w-4 h-4" />
                       <span>by {deck.ownerDisplayName}</span>
                     </button>
+
                     <DeckRatingDisplay deckId={deck.id} />
+
                     <div className="flex items-center gap-1">
                       <Plus className="w-4 h-4" />
                       <span>{deck.downloadCount} downloads</span>
                     </div>
                   </div>
-                  {/* Date Information */}
+
                   <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs text-gray-500 dark:text-gray-500 mt-2">
                     {deck.publishedAt && (
                       <div className="flex items-center gap-1">
@@ -366,38 +294,34 @@ export function CommunityDeckDetailPage({
                   </div>
                 </div>
               </div>
+
               <div className="flex gap-2 w-full sm:w-auto flex-wrap">
-                {/* Superuser Admin Controls */}
                 {isSuperuser && (
                   <>
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => onToggleFeatured(deck.id)}
-                      disabled={featuringDeckId === deck.id}
+                      onClick={() => actions.handleToggleFeatured(deck.id)}
+                      disabled={actions.featuringDeckId === deck.id}
                       className="border-purple-300 dark:border-purple-700 text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 h-9 sm:h-10"
-                      title={
-                        deck.featured
-                          ? "Unfeature this deck"
-                          : "Feature this deck"
-                      }
                     >
                       <Star
-                        className={`w-4 h-4 mr-2 ${
-                          deck.featured ? "fill-current" : ""
-                        }`}
+                        className={`w-4 h-4 mr-2 ${deck.featured ? "fill-current" : ""}`}
                       />
-                      {featuringDeckId === deck.id
+                      {actions.featuringDeckId === deck.id
                         ? "Updating..."
                         : deck.featured
                           ? "Unfeature"
                           : "Feature"}
                     </Button>
+
                     <Button
                       variant="outline"
                       size="icon"
-                      onClick={() => setDeleteDeckDialogOpen(true)}
-                      disabled={deletingDeckId === deck.id}
+                      onClick={() =>
+                        actions.handleDeleteCommunityDeck(deck.id, deck.name)
+                      }
+                      disabled={actions.deletingDeckId === deck.id}
                       className="border-red-300 dark:border-red-700 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 h-9 sm:h-10 w-9 sm:w-10"
                       title="Delete this deck"
                     >
@@ -405,24 +329,26 @@ export function CommunityDeckDetailPage({
                     </Button>
                   </>
                 )}
+
                 <Button
                   variant="outline"
                   size="icon"
                   onClick={() =>
-                    handleOpenFlagDialog("deck", deck.id, deck.name)
+                    actions.openFlagDialog("deck", deck.id, deck.name)
                   }
                   className="border-orange-300 dark:border-orange-700 text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20 h-9 sm:h-10 w-9 sm:w-10"
                   title="Report this deck"
                 >
                   <Flag className="w-4 h-4" />
                 </Button>
+
                 <Button
                   onClick={() => {
                     if (!hasCards) {
                       toast.error("This deck has no cards to study");
                       return;
                     }
-                    onStudyDeck(deck);
+                    studyCommunityDeck(deck);
                   }}
                   disabled={!hasCards}
                   variant="outline"
@@ -431,14 +357,17 @@ export function CommunityDeckDetailPage({
                   <Star className="w-4 h-4 mr-2" />
                   Study Now
                 </Button>
+
                 {updateAvailable && importedDeck ? (
                   <Button
-                    onClick={() => onUpdateDeck(deck, importedDeck)}
-                    disabled={addingDeckId === deck.id}
+                    onClick={() =>
+                      actions.handleUpdateDeck(deck, importedDeck as UIDeck)
+                    }
+                    disabled={actions.addingDeckId === deck.id}
                     className="bg-blue-600 hover:bg-blue-700 text-white flex-1 sm:flex-initial text-sm sm:text-base h-9 sm:h-10 relative"
                   >
                     <Upload className="w-4 h-4 mr-2" />
-                    {addingDeckId === deck.id
+                    {actions.addingDeckId === deck.id
                       ? "Updating..."
                       : "Update Available"}
                     <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-pulse" />
@@ -446,13 +375,11 @@ export function CommunityDeckDetailPage({
                 ) : (
                   <Button
                     onClick={() => {
-                      if (isAdded) {
+                      if (isAdded)
                         toast.info("You have already added this deck");
-                      } else {
-                        onAddDeck(deck);
-                      }
+                      else actions.handleAddDeck(deck);
                     }}
-                    disabled={addingDeckId === deck.id}
+                    disabled={actions.addingDeckId === deck.id}
                     className={`${
                       isAdded
                         ? "bg-gray-400 hover:bg-gray-500"
@@ -467,7 +394,7 @@ export function CommunityDeckDetailPage({
                     ) : (
                       <>
                         <Plus className="w-4 h-4 mr-2" />
-                        {addingDeckId === deck.id
+                        {actions.addingDeckId === deck.id
                           ? "Adding..."
                           : "Add to My Decks"}
                       </>
@@ -507,73 +434,101 @@ export function CommunityDeckDetailPage({
           </div>
 
           <DeckCardPreviewList
-            cards={deck.cards}
+            cards={deck.cards.map((c) => ({
+              ...c,
+              favorite: c.favorite ?? false,
+              isIgnored: c.isIgnored ?? false,
+              deckId: c.deckId ?? deck.id, // ensure required string
+            }))}
             deckId={deck.id}
             currentPage={deckDetailPage}
-            cardsPerPage={cardsPerPage}
-            flaggedCards={flaggedCards}
+            cardsPerPage={CARDS_PER_PAGE}
+            flaggedCards={actions.flaggedCards}
             targetCardIndex={targetCardIndex}
             isSuperuser={isSuperuser}
-            onPageChange={onDeckDetailPageChange}
-            onFlagCard={(cardId, cardName, cardFront) =>
-              handleOpenFlagDialog("card", cardId, cardName, {
-                deckId: deck.id,
-                front: cardFront,
-              })
+            onPageChange={setDeckDetailPage}
+            onFlagCard={(cardId, cardName) =>
+              actions.openFlagDialog("card", cardId, cardName, deck.id)
             }
-            onDeleteCard={handleDeleteCardLocal}
+            onDeleteCard={(cardId, cardName) =>
+              actions.handleDeleteCard(cardId, cardName, deck.id)
+            }
           />
 
-          {/* Rating Section */}
           <div className="mb-4 sm:mb-6">
-            <DeckRating deckId={deck.id} onRatingChange={onRatingChange} />
+            <DeckRating deckId={deck.id} onRatingChange={loadCommunityDecks} />
           </div>
 
-          {/* Comment Section */}
           <DeckComments
             deckId={deck.id}
             deckAuthorId={deck.ownerId}
             targetCommentId={targetCommentId}
-            onViewUser={onViewUser}
-            onFlagComment={handleFlagComment}
+            onViewUser={(userId) => navigate(`/community/user/${userId}`)}
+            onFlagComment={(commentId, commentText) =>
+              actions.openFlagDialog("comment", commentId, commentText, deck.id)
+            }
           />
         </div>
       </div>
 
-      {/* Flag Dialog */}
-      {flagTarget && (
-        <FlagDialog
-          open={flagDialogOpen}
-          onOpenChange={setFlagDialogOpen}
-          targetType={flagTarget.type}
-          targetId={flagTarget.id}
-          targetName={flagTarget.name}
-          targetDetails={flagTarget.details}
-          accessToken={accessToken}
-        />
-      )}
+      {/* Global dialogs from actions */}
+      <FlagDialog
+        open={actions.flagDialogOpen}
+        onOpenChange={actions.setFlagDialogOpen}
+        targetType={actions.flagItemType}
+        targetId={actions.flagItemId}
+        targetName={actions.flagItemName}
+        targetDetails={actions.flagItemDetails}
+        accessToken={accessToken}
+      />
 
-      {/* Deletion Dialog */}
-      {deleteDeckDialogOpen && (
-        <DeletionDialog
-          open={deleteDeckDialogOpen}
-          onOpenChange={setDeleteDeckDialogOpen}
-          targetType="deck"
-          targetId={deck.id}
-          targetName={deck.name}
-          onConfirm={confirmDeleteDeck}
-        />
-      )}
-      {deleteCardDialogOpen && cardToDelete && (
-        <DeletionDialog
-          open={deleteCardDialogOpen}
-          onOpenChange={setDeleteCardDialogOpen}
-          targetType="card"
-          targetId={cardToDelete.id}
-          targetName={cardToDelete.name}
-          onConfirm={confirmDeleteCard}
-        />
-      )}
+      <DeletionDialog
+        open={actions.deleteDeckDialogOpen}
+        onOpenChange={actions.setDeleteDeckDialogOpen}
+        targetType="deck"
+        targetId={actions.deckToDelete?.id}
+        targetName={actions.deckToDelete?.name}
+        onConfirm={actions.confirmDeleteDeck}
+      />
+
+      <DeletionDialog
+        open={actions.deleteCardDialogOpen}
+        onOpenChange={actions.setDeleteCardDialogOpen}
+        targetType="card"
+        targetId={actions.cardToDelete?.id}
+        targetName={actions.cardToDelete?.name}
+        onConfirm={actions.confirmDeleteCard}
+      />
+
+      <UpdateDeckWarningDialog
+        open={actions.updateWarningOpen}
+        onOpenChange={actions.setUpdateWarningOpen}
+        communityDeck={
+          actions.pendingUpdate?.communityDeck
+            ? {
+                id: actions.pendingUpdate.communityDeck.id,
+                name: actions.pendingUpdate.communityDeck.name,
+                emoji: actions.pendingUpdate.communityDeck.emoji || "📚",
+                color: actions.pendingUpdate.communityDeck.color || "#10B981",
+              }
+            : null
+        }
+        importedDeck={actions.pendingUpdate?.importedDeck || null}
+        onCancel={() => {
+          actions.setUpdateWarningOpen(false);
+          actions.setPendingUpdate(null);
+        }}
+        onUpdate={async () => {
+          if (actions.pendingUpdate) {
+            await actions.performUpdate(
+              actions.pendingUpdate.communityDeck,
+              actions.pendingUpdate.importedDeck,
+            );
+            actions.setUpdateWarningOpen(false);
+            actions.setPendingUpdate(null);
+          }
+        }}
+      />
     </AppLayout>
   );
 }

@@ -45,7 +45,7 @@ export function DeckComments({
       const targetIndex = comments.findIndex(
         (c) =>
           c.id === targetCommentId ||
-          c.replies?.some((r) => r.id === targetCommentId)
+          c.replies?.some((r) => r.id === targetCommentId),
       );
       if (targetIndex >= visibleComments) {
         setVisibleComments(targetIndex + 1);
@@ -121,7 +121,7 @@ export function DeckComments({
         accessToken,
         deckId,
         commentText.trim(),
-        replyingTo?.id
+        replyingTo?.id,
       );
 
       toast.success(replyingTo ? "Reply posted!" : "Comment posted!");
@@ -220,8 +220,8 @@ export function DeckComments({
                 {posting
                   ? "Posting..."
                   : replyingTo
-                  ? "Post Reply"
-                  : "Post Comment"}
+                    ? "Post Reply"
+                    : "Post Comment"}
               </Button>
             </div>
           </div>
