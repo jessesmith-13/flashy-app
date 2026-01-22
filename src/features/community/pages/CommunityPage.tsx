@@ -1,26 +1,26 @@
 import { useState, useEffect } from "react";
 import { useStore } from "@/shared/state/useStore";
-import { useNavigation } from "../../../shared/hooks/useNavigation";
+import { useNavigation } from "@/shared/hooks/useNavigation";
 // Import community-specific functions from API
 import { getUserDeck } from "@/shared/api/users";
 import {
   toggleCommunityDeckFeatured,
   deleteCommunityDeck,
   deleteCommunityCard,
-} from "../../../shared/api/admin";
+} from "@/shared/api/admin";
 import {
   getCommunityDeck,
   addDeckFromCommunity,
   unpublishDeck,
-} from "../../../shared/api/community";
+} from "@/shared/api/community";
 import { updateImportedDeck, fetchDecks } from "@/shared/api/decks";
-import { publishDeck } from "../../../shared/api/community";
+import { publishDeck } from "@/shared/api/community";
 import { toast } from "sonner";
 import {
   canImportCommunityDecks,
   canPublishToCommunity,
 } from "@/shared/entitlements/subscription";
-import { useIsSuperuser } from "../../../shared/auth/roles";
+import { useIsSuperuser } from "@/shared/auth/roles";
 import { AppLayout } from "@/components/Layout/AppLayout";
 import { Button } from "@/shared/ui/button";
 import {
@@ -46,7 +46,7 @@ import { CommunityFilters } from "../CommunityFilters";
 import { UserProfileView } from "../UserProfileView";
 import { UserDeckViewer } from "../UserDeckViewer";
 import { Pagination } from "../../../components/Pagination/Pagination";
-import { UpgradeModal } from "../../../components/UpgradeModal";
+import { UpgradeModal } from "@/components/UpgradeModal";
 import { FlagDialog } from "../FlagDialog";
 import { DeletionDialog } from "../DeletionDialog";
 import { UpdateDeckWarningDialog } from "../UpdateDeckWarningDialog";
@@ -55,7 +55,7 @@ import { UICommunityDeck } from "@/types/community";
 import { useCommunityDecks } from "../hooks/useCommunityDecks";
 import { useCommunityUsersSearch } from "../hooks/useCommunityUsersSearch";
 import { useCommunityViewState } from "../hooks/useCommunityViewState";
-import { UISharedDeck } from "@/types/study";
+import { useCommunityStudyNavigation } from "../hooks/useCommunityStudyNavigation";
 
 interface FlagItemDetails {
   deckId?: string;
@@ -93,6 +93,7 @@ export function CommunityPage() {
     fetchDeckById,
   } = useCommunityDecks();
   const [searchQuery, setSearchQuery] = useState("");
+  const { studyCommunityDeck } = useCommunityStudyNavigation();
   const { searchedUsers } = useCommunityUsersSearch(searchQuery);
   const {
     selectedUserId,
@@ -557,12 +558,6 @@ export function CommunityPage() {
     }
   };
 
-  const handleStudyDeck = (deck: UICommunityDeck) => {
-    setTemporaryStudyDeck({ deck: deck as UISharedDeck, cards: deck.cards });
-    setReturnToCommunityDeck(deck);
-    navigateTo("study");
-  };
-
   // I think this is for admin/superuser only
   const handleDeleteCard = (
     cardId: string,
@@ -728,7 +723,7 @@ export function CommunityPage() {
         onFlagUser={(userId, userName) =>
           openFlagDialog("user", userId, userName)
         }
-        onStudyDeck={handleStudyDeck}
+        onStudyDeck={studyCommunityDeck}
         onDeckDetailPageChange={setDeckDetailPage}
         onRatingChange={loadCommunityDecks}
         onDeleteCard={handleDeleteCard}
