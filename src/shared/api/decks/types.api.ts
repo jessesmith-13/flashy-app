@@ -4,7 +4,7 @@ import type {
   UnsplashAttribution,
   DifficultyLevel,
   CardType,
-  Card,
+  UICard,
 } from "@/types/decks";
 
 /**
@@ -245,7 +245,7 @@ export type UpdateImportedDeckPayload = {
   name: string;
   color: string;
   emoji: string;
-  cards: Card[];
+  cards: UICard[];
   category?: string;
   subtopic?: string;
   version: number;
