@@ -164,6 +164,38 @@ const categories = [
   { category: "Science", subtopics: ["Biology", "Chemistry"] },
 ] as const;
 
+function Harness({
+  onSetSearchQuery,
+  ...props
+}: Partial<React.ComponentProps<typeof DecksFiltersBar>> & {
+  onSetSearchQuery?: (v: string) => void;
+}) {
+  const [searchQuery, setSearchQueryState] = React.useState("");
+
+  const setSearchQuery = (v: string) => {
+    setSearchQueryState(v);
+    onSetSearchQuery?.(v);
+  };
+
+  return (
+    <DecksFiltersBar
+      searchQuery={searchQuery}
+      setSearchQuery={setSearchQuery}
+      filterCategory="all"
+      setFilterCategory={() => {}}
+      filterSubtopic="all"
+      setFilterSubtopic={() => {}}
+      activeTab={"all" as DecksTab}
+      setActiveTab={() => {}}
+      sortOption={"custom" as SortOption}
+      setSortOption={() => {}}
+      counts={counts}
+      categories={categories}
+      {...props}
+    />
+  );
+}
+
 function renderBar(
   overrides?: Partial<React.ComponentProps<typeof DecksFiltersBar>>,
 ) {
@@ -207,13 +239,14 @@ function renderBar(
 describe("DecksFiltersBar", () => {
   it("calls setSearchQuery when typing and shows clear button", async () => {
     const user = userEvent.setup();
-    const { setSearchQuery } = renderBar({ searchQuery: "" });
+    const spy = vi.fn();
+
+    render(<Harness onSetSearchQuery={spy} />);
 
     const input = screen.getByPlaceholderText(/search decks/i);
     await user.type(input, "spanish");
 
-    // called per keystroke; just assert last call is full string
-    expect(setSearchQuery).toHaveBeenLastCalledWith("spanish");
+    expect(spy).toHaveBeenLastCalledWith("spanish");
   });
 
   it("clears search when clicking the X button", async () => {
@@ -221,7 +254,7 @@ describe("DecksFiltersBar", () => {
     const { setSearchQuery } = renderBar({ searchQuery: "abc" });
 
     // The X button only appears when searchQuery is truthy
-    const clearBtn = screen.getByRole("button");
+    const clearBtn = screen.getByRole("button", { name: /clear search/i });
     await user.click(clearBtn);
 
     expect(setSearchQuery).toHaveBeenCalledWith("");

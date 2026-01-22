@@ -860,7 +860,7 @@ export function CommunityScreen() {
     return (
       <CommunityDeckDetail
         deck={viewingDeck}
-        cards={viewingDeck.cards || []}
+        cards={(viewingDeck.cards || []) as unknown as Card[]}
         userDecks={decks}
         isSuperuser={isSuperuser}
         addingDeckId={addingDeckId}

@@ -30,6 +30,7 @@ import { CSVUploadTab } from "@/components/AI/CSVUploadTab";
 import { PDFUploadTab } from "@/components/AI/PDFUploadTab";
 import { mapApiCardToStoreCard } from "@/features/decks/mappers/cardMapper";
 import { ApiCard } from "@/types/decks";
+import type { CardType } from "@/types/decks";
 import { AI_API_BASE } from "@/supabase/runtime";
 
 const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -37,6 +38,36 @@ const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 type AIGeneratedCardWithNotes = GeneratedCard & {
   note?: unknown;
   notes?: unknown;
+};
+
+type ImageAttribution = {
+  photographerName: string;
+  photographerUsername: string;
+  photographerUrl: string;
+  unsplashUrl: string;
+  downloadUrl: string;
+};
+
+type CreateCardPayload = {
+  front: string;
+  back: string;
+  cardType: CardType;
+  correctAnswers?: string[];
+  incorrectAnswers?: string[];
+  acceptedAnswers?: string[];
+  frontAudio?: string;
+  backAudio?: string;
+  frontImageUrl?: string;
+  backImageUrl?: string;
+  frontImageAttribution?: ImageAttribution;
+  backImageAttribution?: ImageAttribution;
+};
+
+const toCardType = (value: unknown): CardType => {
+  if (value === "classic-flip") return "classic-flip";
+  if (value === "multiple-choice") return "multiple-choice";
+  if (value === "type-answer") return "type-answer";
+  return "classic-flip";
 };
 
 export function AIGenerateScreen() {
@@ -443,78 +474,33 @@ export function AIGenerateScreen() {
 
       // Prepare all cards for batch creation
       const cardsToSave = generatedCards.map((card) => {
-        const cardData: {
-          front: string;
-          back: string;
-          cardType: string;
-          correctAnswers?: string[];
-          incorrectAnswers?: string[];
-          acceptedAnswers?: string[];
-          frontAudio?: string;
-          backAudio?: string;
-          frontImageUrl?: string;
-          backImageUrl?: string;
-          frontImageAttribution?: {
-            photographerName: string;
-            photographerUsername: string;
-            photographerUrl: string;
-            unsplashUrl: string;
-            downloadUrl: string;
-          };
-          backImageAttribution?: {
-            photographerName: string;
-            photographerUsername: string;
-            photographerUrl: string;
-            unsplashUrl: string;
-            downloadUrl: string;
-          };
-        } = {
+        const cardData: CreateCardPayload = {
           front: card.front || "",
           back: card.back || "",
-          cardType: card.cardType || "classic-flip",
+          cardType: toCardType(card.cardType),
         };
 
-        // Add correct/incorrect answers for multiple-choice cards
         if (card.cardType === "multiple-choice") {
           cardData.correctAnswers = card.correctAnswers;
           cardData.incorrectAnswers = card.incorrectAnswers;
         }
 
-        // Add accepted answers for type-answer cards
         if (card.cardType === "type-answer" && card.acceptedAnswers) {
           cardData.acceptedAnswers = card.acceptedAnswers;
         }
 
-        // Add audio URLs if present
-        if (card.frontAudio) {
-          cardData.frontAudio = card.frontAudio;
-        }
-        if (card.backAudio) {
-          cardData.backAudio = card.backAudio;
-        }
+        if (card.frontAudio) cardData.frontAudio = card.frontAudio;
+        if (card.backAudio) cardData.backAudio = card.backAudio;
 
-        // Add image URLs if present (from AI-generated cards)
-        if (card.frontImageUrl) {
-          cardData.frontImageUrl = card.frontImageUrl;
-        }
-        if (card.backImageUrl) {
-          cardData.backImageUrl = card.backImageUrl;
-        }
+        if (card.frontImageUrl) cardData.frontImageUrl = card.frontImageUrl;
+        if (card.backImageUrl) cardData.backImageUrl = card.backImageUrl;
 
-        // ✅ Add image attribution if present
+        // ✅ KEEP ALL ATTRIBUTION FIELDS
         if (card.frontImageAttribution) {
           cardData.frontImageAttribution = card.frontImageAttribution;
-          console.log(
-            "📸 Saving front image attribution:",
-            card.frontImageAttribution,
-          );
         }
         if (card.backImageAttribution) {
           cardData.backImageAttribution = card.backImageAttribution;
-          console.log(
-            "📸 Saving back image attribution:",
-            card.backImageAttribution,
-          );
         }
 
         return cardData;
@@ -528,11 +514,11 @@ export function AIGenerateScreen() {
       );
 
       // Use batch API for much faster saving
-      const newCards: ApiCard[] = await createCardsBatch(
+      const newCards = (await createCardsBatch(
         accessToken,
         selectedDeckId,
         cardsToSave,
-      );
+      )) as unknown as ApiCard[];
 
       // Add all cards to store
       newCards.forEach((card) => {
