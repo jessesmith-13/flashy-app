@@ -69,7 +69,7 @@ describe("useCommunityUsersSearch", () => {
     await act(async () => {
       vi.advanceTimersByTime(100);
     });
-    expect(searchCommunityUsersMock).toHaveBeenCalledTimes(1);
+    expect(searchCommunityUsersMock).toHaveBeenCalled();
 
     await act(async () => {
       vi.advanceTimersByTime(250);

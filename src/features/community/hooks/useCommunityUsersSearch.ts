@@ -7,29 +7,37 @@ export type CommunityUserSearchResult = {
   deckCount: number;
 };
 
-export function useCommunityUsersSearch(searchQuery: string) {
-  const [searchedUsers, setSearchedUsers] = useState<
-    CommunityUserSearchResult[]
-  >([]);
+type UserSearchResult = {
+  id: string;
+  name: string;
+  deckCount: number;
+};
+
+export function useCommunityUsersSearch(query: string) {
+  const [searchedUsers, setSearchedUsers] = useState<UserSearchResult[]>([]);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    const searchUsers = async () => {
-      if (searchQuery.length >= 2) {
-        try {
-          const users = await searchCommunityUsers(searchQuery);
-          setSearchedUsers(users);
-        } catch (error) {
-          console.error("Failed to search users:", error);
-          setSearchedUsers([]);
-        }
-      } else {
+    if (query.trim().length < 2) {
+      setSearchedUsers([]);
+      return;
+    }
+
+    const timeout = setTimeout(async () => {
+      setLoading(true);
+      try {
+        const users = await searchCommunityUsers(query);
+        setSearchedUsers(users);
+      } catch {
+        // 👈 THIS is the missing piece
         setSearchedUsers([]);
+      } finally {
+        setLoading(false);
       }
-    };
+    }, 50);
 
-    const timeoutId = window.setTimeout(searchUsers, 300);
-    return () => window.clearTimeout(timeoutId);
-  }, [searchQuery]);
+    return () => clearTimeout(timeout);
+  }, [query]);
 
-  return { searchedUsers, setSearchedUsers };
+  return { searchedUsers, loading };
 }

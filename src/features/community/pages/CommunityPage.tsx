@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useStore } from "@/shared/state/useStore";
 import { useNavigation } from "@/shared/hooks/useNavigation";
 // Import community-specific functions from API
@@ -63,6 +63,20 @@ interface FlagItemDetails {
   front?: string;
 }
 
+function useDebouncedValue<T>(value: T, delayMs: number) {
+  const [debounced, setDebounced] = useState(value);
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebounced(value), delayMs);
+    return () => clearTimeout(t);
+  }, [value, delayMs]);
+
+  return debounced;
+}
+
+const ITEMS_PER_PAGE = 12;
+const CARDS_PER_PAGE = 20;
+
 export function CommunityPage() {
   const {
     user,
@@ -93,8 +107,14 @@ export function CommunityPage() {
     fetchDeckById,
   } = useCommunityDecks();
   const [searchQuery, setSearchQuery] = useState("");
+  const debouncedSearchQuery = useDebouncedValue(searchQuery, 150);
+  const normalizedSearchQuery = useMemo(
+    () => debouncedSearchQuery.trim().toLowerCase(),
+    [debouncedSearchQuery],
+  );
+
   const { studyCommunityDeck } = useCommunityStudyNavigation();
-  const { searchedUsers } = useCommunityUsersSearch(searchQuery);
+  const { searchedUsers } = useCommunityUsersSearch(debouncedSearchQuery);
   const {
     selectedUserId,
     setSelectedUserId,
@@ -151,8 +171,6 @@ export function CommunityPage() {
   const [showMyPublishedOnly, setShowMyPublishedOnly] = useState(false);
   const [showUpdatesOnly, setShowUpdatesOnly] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const ITEMS_PER_PAGE = 12;
-  const CARDS_PER_PAGE = 20;
 
   // Flag/Report state
   const [flagDialogOpen, setFlagDialogOpen] = useState(false);
@@ -184,7 +202,7 @@ export function CommunityPage() {
   useEffect(() => {
     setCurrentPage(1);
   }, [
-    searchQuery,
+    debouncedSearchQuery, // ✅ changed
     filterCategory,
     filterSubtopic,
     sortBy,
@@ -439,9 +457,15 @@ export function CommunityPage() {
     } else {
       setFlagItemDetails(undefined);
     }
+
     setFlagDialogOpen(true);
-    if (type === "deck") setFlaggedDecks(new Set([...flaggedDecks, id]));
-    if (type === "card") setFlaggedCards(new Set([...flaggedCards, id]));
+
+    if (type === "deck") {
+      setFlaggedDecks((prev) => new Set(prev).add(id));
+    }
+    if (type === "card") {
+      setFlaggedCards((prev) => new Set(prev).add(id));
+    }
   };
 
   const handleDeleteCommunityDeck = async (
@@ -519,6 +543,104 @@ export function CommunityPage() {
       setUnpublishDialogOpen(true);
     }
   };
+
+  const filteredAndSortedDecks = useMemo(() => {
+    const q = normalizedSearchQuery;
+
+    const filtered = communityDecks.filter((deck) => {
+      const name = (deck.name || "").toLowerCase();
+      const cat = (deck.category || "").toLowerCase();
+      const sub = (deck.subtopic || "").toLowerCase();
+
+      const matchesSearch =
+        !q || name.includes(q) || cat.includes(q) || sub.includes(q);
+
+      const matchesCategory =
+        filterCategory === "all" || deck.category === filterCategory;
+      const matchesSubtopic =
+        filterSubtopic === "all" || deck.subtopic === filterSubtopic;
+      const matchesFeatured = !showFeaturedOnly || deck.featured === true;
+      const matchesFlashy =
+        !showFlashyDecksOnly || deck.ownerDisplayName === "Flashy";
+      const matchesMyPublished =
+        !showMyPublishedOnly || deck.ownerId === user?.id;
+
+      return (
+        matchesSearch &&
+        matchesCategory &&
+        matchesSubtopic &&
+        matchesFeatured &&
+        matchesFlashy &&
+        matchesMyPublished
+      );
+    });
+
+    filtered.sort((a, b) => {
+      if (sortBy === "popular")
+        return (b.downloadCount || 0) - (a.downloadCount || 0);
+
+      if (sortBy === "rating") {
+        const ratingA = a.averageRating || 0;
+        const ratingB = b.averageRating || 0;
+        if (ratingB !== ratingA) return ratingB - ratingA;
+        return (b.ratingCount || 0) - (a.ratingCount || 0);
+      }
+
+      // newest
+      const dateA = a.publishedAt ? new Date(a.publishedAt).getTime() : 0;
+      const dateB = b.publishedAt ? new Date(b.publishedAt).getTime() : 0;
+      return dateB - dateA;
+    });
+
+    return filtered;
+  }, [
+    communityDecks,
+    normalizedSearchQuery,
+    filterCategory,
+    filterSubtopic,
+    sortBy,
+    showFeaturedOnly,
+    showFlashyDecksOnly,
+    showMyPublishedOnly,
+    user?.id,
+  ]);
+
+  const showingFeaturedSection = useMemo(() => {
+    return (
+      featuredDecks.length > 0 &&
+      !normalizedSearchQuery &&
+      filterCategory === "all" &&
+      !showFeaturedOnly
+    );
+  }, [
+    featuredDecks.length,
+    normalizedSearchQuery,
+    filterCategory,
+    showFeaturedOnly,
+  ]);
+
+  const featuredDeckIds = useMemo(() => {
+    return new Set(featuredDecks.map((d) => d.id));
+  }, [featuredDecks]);
+
+  const decksForGrid = useMemo(() => {
+    if (!showingFeaturedSection) return filteredAndSortedDecks;
+    return filteredAndSortedDecks.filter((d) => !featuredDeckIds.has(d.id));
+  }, [filteredAndSortedDecks, showingFeaturedSection, featuredDeckIds]);
+
+  const { totalPages, paginatedDecks } = useMemo(() => {
+    const total = Math.ceil(decksForGrid.length / ITEMS_PER_PAGE) || 1;
+    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    const end = start + ITEMS_PER_PAGE;
+    return {
+      totalPages: total,
+      paginatedDecks: decksForGrid.slice(start, end),
+    };
+  }, [decksForGrid, currentPage]);
+
+  const publishableDecks = useMemo(() => {
+    return decks.filter((d) => !d.sourceCommunityDeckId && d.cardCount > 0);
+  }, [decks]);
 
   const confirmUnpublish = async () => {
     if (!unpublishingDeck || !accessToken) return;
@@ -730,72 +852,6 @@ export function CommunityPage() {
       />
     );
   }
-
-  // Filter and sort decks
-  let filteredDecks = communityDecks.filter((deck) => {
-    const matchesSearch =
-      deck.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      deck.category?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      deck.subtopic?.toLowerCase().includes(searchQuery.toLowerCase());
-
-    const matchesCategory =
-      filterCategory === "all" || deck.category === filterCategory;
-    const matchesSubtopic =
-      filterSubtopic === "all" || deck.subtopic === filterSubtopic;
-    const matchesFeatured = !showFeaturedOnly || deck.featured === true;
-    const matchesFlashy =
-      !showFlashyDecksOnly || deck.ownerDisplayName === "Flashy";
-    const matchesMyPublished =
-      !showMyPublishedOnly || deck.ownerId === user?.id;
-
-    return (
-      matchesSearch &&
-      matchesCategory &&
-      matchesSubtopic &&
-      matchesFeatured &&
-      matchesFlashy &&
-      matchesMyPublished
-    );
-  });
-
-  // Sort decks
-  filteredDecks = [...filteredDecks].sort((a, b) => {
-    if (sortBy === "popular") return b.downloadCount - a.downloadCount;
-    if (sortBy === "rating") {
-      const ratingA = a.averageRating || 0;
-      const ratingB = b.averageRating || 0;
-      if (ratingB !== ratingA) return ratingB - ratingA;
-      return (b.ratingCount || 0) - (a.ratingCount || 0);
-    }
-    if (sortBy === "newest") {
-      const dateA = a.publishedAt ? new Date(a.publishedAt).getTime() : 0;
-      const dateB = b.publishedAt ? new Date(b.publishedAt).getTime() : 0;
-      return dateB - dateA;
-    }
-    return 0;
-  });
-
-  const showingFeaturedSection =
-    featuredDecks.length > 0 &&
-    !searchQuery &&
-    filterCategory === "all" &&
-    !showFeaturedOnly;
-  const decksForGrid = showingFeaturedSection
-    ? filteredDecks.filter(
-        (deck) => !featuredDecks.some((fd) => fd.id === deck.id),
-      )
-    : filteredDecks;
-
-  // Pagination
-  const totalPages = Math.ceil(decksForGrid.length / ITEMS_PER_PAGE);
-  const paginatedDecks = decksForGrid.slice(
-    (currentPage - 1) * ITEMS_PER_PAGE,
-    currentPage * ITEMS_PER_PAGE,
-  );
-
-  const publishableDecks = decks.filter(
-    (d) => !d.sourceCommunityDeckId && d.cardCount > 0,
-  );
 
   if (loading) {
     return (
@@ -1010,15 +1066,17 @@ export function CommunityPage() {
           {/* User Search Results */}
           {searchedUsers.length > 0 && (
             <div className="mb-6">
-              <div className="flex items-center justify-between mb-3">
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                  Users
-                </h2>
-                <span className="text-sm text-gray-500 dark:text-gray-400">
-                  {searchedUsers.length}{" "}
-                  {searchedUsers.length === 1 ? "user" : "users"} found
-                </span>
-              </div>
+              {searchedUsers.length > 0 && (
+                <div className="flex items-center justify-between mb-3">
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                    Users
+                  </h2>
+                  <span className="text-sm text-gray-500 dark:text-gray-400">
+                    {searchedUsers.length}{" "}
+                    {searchedUsers.length === 1 ? "user" : "users"} found
+                  </span>
+                </div>
+              )}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {searchedUsers.map((user) => (
                   <button
@@ -1045,7 +1103,7 @@ export function CommunityPage() {
           )}
 
           {/* Decks Section Header */}
-          {searchQuery && (
+          {normalizedSearchQuery && (
             <div className="mb-4">
               <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
                 Decks
@@ -1060,7 +1118,7 @@ export function CommunityPage() {
             showFeaturedSection={showingFeaturedSection}
             showFeaturedOnly={showFeaturedOnly}
             showUpdatesOnly={showUpdatesOnly}
-            searchQuery={searchQuery}
+            searchQuery={debouncedSearchQuery}
             filterCategory={filterCategory}
             userDecks={decks}
             userId={user?.id || null}
