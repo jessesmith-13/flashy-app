@@ -30,6 +30,7 @@ import { CSVUploadTab } from "@/components/AI/CSVUploadTab";
 import { PDFUploadTab } from "@/components/AI/PDFUploadTab";
 import { mapApiCardToStoreCard } from "@/features/decks/mappers/cardMapper";
 import { ApiCard } from "@/types/decks";
+import type { CardType } from "@/types/decks";
 import { AI_API_BASE } from "@/supabase/runtime";
 
 const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -37,6 +38,36 @@ const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 type AIGeneratedCardWithNotes = GeneratedCard & {
   note?: unknown;
   notes?: unknown;
+};
+
+type ImageAttribution = {
+  photographerName: string;
+  photographerUsername: string;
+  photographerUrl: string;
+  unsplashUrl: string;
+  downloadUrl: string;
+};
+
+type CreateCardPayload = {
+  front: string;
+  back: string;
+  cardType: CardType;
+  correctAnswers?: string[];
+  incorrectAnswers?: string[];
+  acceptedAnswers?: string[];
+  frontAudio?: string;
+  backAudio?: string;
+  frontImageUrl?: string;
+  backImageUrl?: string;
+  frontImageAttribution?: ImageAttribution;
+  backImageAttribution?: ImageAttribution;
+};
+
+const toCardType = (value: unknown): CardType => {
+  if (value === "classic-flip") return "classic-flip";
+  if (value === "multiple-choice") return "multiple-choice";
+  if (value === "type-answer") return "type-answer";
+  return "classic-flip";
 };
 
 export function AIGenerateScreen() {
@@ -119,7 +150,7 @@ export function AIGenerateScreen() {
         includeImages,
         difficulty,
         frontLanguage,
-        backLanguage
+        backLanguage,
       );
 
       if (response.cards && response.cards.length > 0) {
@@ -128,12 +159,12 @@ export function AIGenerateScreen() {
           response.cards as AIGeneratedCardWithNotes[]
         ).filter(
           (c: AIGeneratedCardWithNotes) =>
-            c.note !== undefined || c.notes !== undefined
+            c.note !== undefined || c.notes !== undefined,
         );
         if (cardsWithNotes.length > 0) {
           console.warn(
             "⚠️ WARNING: OpenAI generated cards with note fields:",
-            cardsWithNotes
+            cardsWithNotes,
           );
         }
 
@@ -160,7 +191,7 @@ export function AIGenerateScreen() {
             front: c.front,
             frontAudio: c.frontAudio,
             backAudio: c.backAudio,
-          }))
+          })),
         );
         setGeneratedCards(processedCards);
         toast.success(`Generated ${processedCards.length} flashcards!`);
@@ -189,7 +220,7 @@ export function AIGenerateScreen() {
 
   // Process cards to detect musical content and generate audio
   const processCardsWithAudio = async (
-    cards: GeneratedCard[]
+    cards: GeneratedCard[],
   ): Promise<GeneratedCard[]> => {
     const processedCards = await Promise.all(
       cards.map(async (card) => {
@@ -206,18 +237,18 @@ export function AIGenerateScreen() {
             console.log(`Detected music in front: ${card.front}`, frontRequest);
             const audioBlob = await audioSynthesis.generateAudioFile(
               card.front,
-              2
+              2,
             );
             if (audioBlob && accessToken) {
               // Upload to Supabase storage
               const audioUrl = await uploadAudioToStorage(
                 audioBlob,
-                `generated-${Date.now()}-front.wav`
+                `generated-${Date.now()}-front.wav`,
               );
               if (audioUrl) {
                 frontAudio = audioUrl;
                 console.log(
-                  `Generated and uploaded audio for front: ${audioUrl}`
+                  `Generated and uploaded audio for front: ${audioUrl}`,
                 );
               }
             }
@@ -228,18 +259,18 @@ export function AIGenerateScreen() {
             console.log(`Detected music in back: ${card.back}`, backRequest);
             const audioBlob = await audioSynthesis.generateAudioFile(
               card.back,
-              2
+              2,
             );
             if (audioBlob && accessToken) {
               // Upload to Supabase storage
               const audioUrl = await uploadAudioToStorage(
                 audioBlob,
-                `generated-${Date.now()}-back.wav`
+                `generated-${Date.now()}-back.wav`,
               );
               if (audioUrl) {
                 backAudio = audioUrl;
                 console.log(
-                  `Generated and uploaded audio for back: ${audioUrl}`
+                  `Generated and uploaded audio for back: ${audioUrl}`,
                 );
               }
             }
@@ -254,7 +285,7 @@ export function AIGenerateScreen() {
           console.error("Error processing card audio:", error);
           return card;
         }
-      })
+      }),
     );
 
     return processedCards;
@@ -263,7 +294,7 @@ export function AIGenerateScreen() {
   // Upload audio blob to Supabase storage
   const uploadAudioToStorage = async (
     audioBlob: Blob,
-    filename: string
+    filename: string,
   ): Promise<string | null> => {
     try {
       if (!accessToken) return null;
@@ -298,7 +329,7 @@ export function AIGenerateScreen() {
 
       const response = await generateCardsFromCSV(
         session.access_token,
-        csvFile
+        csvFile,
       );
 
       if (response.cards && response.cards.length > 0) {
@@ -338,7 +369,7 @@ export function AIGenerateScreen() {
         pdfFile,
         cardCount,
         pdfCustomInstructions,
-        pdfCardTypes
+        pdfCardTypes,
       );
 
       if (response.cards && response.cards.length > 0) {
@@ -348,7 +379,7 @@ export function AIGenerateScreen() {
         toast.error(response.error);
       } else {
         toast.error(
-          "Failed to process PDF. Please try using AI Chat with extracted text."
+          "Failed to process PDF. Please try using AI Chat with extracted text.",
         );
       }
     } catch (error) {
@@ -362,7 +393,7 @@ export function AIGenerateScreen() {
         toast.error("PDF import requires a Premium or Pro subscription");
       } else {
         toast.error(
-          errorMessage || "Failed to process PDF. Try using AI Chat instead."
+          errorMessage || "Failed to process PDF. Try using AI Chat instead.",
         );
       }
     } finally {
@@ -373,7 +404,7 @@ export function AIGenerateScreen() {
 
   const handleUpdateCard = (index: number, updatedCard: GeneratedCard) => {
     setGeneratedCards((prev) =>
-      prev.map((card, i) => (i === index ? updatedCard : card))
+      prev.map((card, i) => (i === index ? updatedCard : card)),
     );
     toast.success("Card updated");
   };
@@ -412,7 +443,7 @@ export function AIGenerateScreen() {
       // ✅ Trigger Unsplash download tracking
       if (downloadUrls.length > 0) {
         console.log(
-          `📸 Triggering Unsplash download tracking for ${downloadUrls.length} images`
+          `📸 Triggering Unsplash download tracking for ${downloadUrls.length} images`,
         );
         try {
           const response = await fetch(
@@ -424,13 +455,13 @@ export function AIGenerateScreen() {
                 "Content-Type": "application/json",
               },
               body: JSON.stringify({ downloadUrls }),
-            }
+            },
           );
 
           if (!response.ok) {
             console.error(
               "❌ Failed to track Unsplash downloads:",
-              await response.text()
+              await response.text(),
             );
           } else {
             console.log("✅ Successfully tracked Unsplash downloads");
@@ -443,78 +474,33 @@ export function AIGenerateScreen() {
 
       // Prepare all cards for batch creation
       const cardsToSave = generatedCards.map((card) => {
-        const cardData: {
-          front: string;
-          back: string;
-          cardType: string;
-          correctAnswers?: string[];
-          incorrectAnswers?: string[];
-          acceptedAnswers?: string[];
-          frontAudio?: string;
-          backAudio?: string;
-          frontImageUrl?: string;
-          backImageUrl?: string;
-          frontImageAttribution?: {
-            photographerName: string;
-            photographerUsername: string;
-            photographerUrl: string;
-            unsplashUrl: string;
-            downloadUrl: string;
-          };
-          backImageAttribution?: {
-            photographerName: string;
-            photographerUsername: string;
-            photographerUrl: string;
-            unsplashUrl: string;
-            downloadUrl: string;
-          };
-        } = {
+        const cardData: CreateCardPayload = {
           front: card.front || "",
           back: card.back || "",
-          cardType: card.cardType || "classic-flip",
+          cardType: toCardType(card.cardType),
         };
 
-        // Add correct/incorrect answers for multiple-choice cards
         if (card.cardType === "multiple-choice") {
           cardData.correctAnswers = card.correctAnswers;
           cardData.incorrectAnswers = card.incorrectAnswers;
         }
 
-        // Add accepted answers for type-answer cards
         if (card.cardType === "type-answer" && card.acceptedAnswers) {
           cardData.acceptedAnswers = card.acceptedAnswers;
         }
 
-        // Add audio URLs if present
-        if (card.frontAudio) {
-          cardData.frontAudio = card.frontAudio;
-        }
-        if (card.backAudio) {
-          cardData.backAudio = card.backAudio;
-        }
+        if (card.frontAudio) cardData.frontAudio = card.frontAudio;
+        if (card.backAudio) cardData.backAudio = card.backAudio;
 
-        // Add image URLs if present (from AI-generated cards)
-        if (card.frontImageUrl) {
-          cardData.frontImageUrl = card.frontImageUrl;
-        }
-        if (card.backImageUrl) {
-          cardData.backImageUrl = card.backImageUrl;
-        }
+        if (card.frontImageUrl) cardData.frontImageUrl = card.frontImageUrl;
+        if (card.backImageUrl) cardData.backImageUrl = card.backImageUrl;
 
-        // ✅ Add image attribution if present
+        // ✅ KEEP ALL ATTRIBUTION FIELDS
         if (card.frontImageAttribution) {
           cardData.frontImageAttribution = card.frontImageAttribution;
-          console.log(
-            "📸 Saving front image attribution:",
-            card.frontImageAttribution
-          );
         }
         if (card.backImageAttribution) {
           cardData.backImageAttribution = card.backImageAttribution;
-          console.log(
-            "📸 Saving back image attribution:",
-            card.backImageAttribution
-          );
         }
 
         return cardData;
@@ -523,16 +509,16 @@ export function AIGenerateScreen() {
       console.log(
         "💾 Saving cards with attribution:",
         cardsToSave.filter(
-          (c) => c.frontImageAttribution || c.backImageAttribution
-        )
+          (c) => c.frontImageAttribution || c.backImageAttribution,
+        ),
       );
 
       // Use batch API for much faster saving
-      const newCards: ApiCard[] = await createCardsBatch(
+      const newCards = (await createCardsBatch(
         accessToken,
         selectedDeckId,
-        cardsToSave
-      );
+        cardsToSave,
+      )) as unknown as ApiCard[];
 
       // Add all cards to store
       newCards.forEach((card) => {
@@ -547,7 +533,7 @@ export function AIGenerateScreen() {
       }
 
       toast.success(
-        `Saved ${newCards.length} cards to ${currentDeck?.name || "deck"}`
+        `Saved ${newCards.length} cards to ${currentDeck?.name || "deck"}`,
       );
 
       // Reset state and navigate back

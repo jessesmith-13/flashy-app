@@ -16,7 +16,7 @@ import {
   Download,
 } from "lucide-react";
 import { toast } from "sonner";
-import * as api from "../shared/api/decks";
+import * as api from "@/shared/api/decks";
 import { QRCodeSVG } from "qrcode.react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 
@@ -53,7 +53,7 @@ export function ShareDeckDialog({
       const result = await api.createShareLink(
         accessToken,
         deckId,
-        isCommunityDeck
+        isCommunityDeck,
       );
       const fullUrl = `${window.location.origin}/#/shared/${result.shareId}`;
       setShareUrl(fullUrl);
@@ -95,14 +95,14 @@ export function ShareDeckDialog({
             setTimeout(() => setCopied(false), 2000);
           } else {
             console.error(
-              "Failed to copy link - both clipboard methods failed"
+              "Failed to copy link - both clipboard methods failed",
             );
             toast.error("Failed to copy link. Please copy manually.");
           }
         } catch (fallbackError) {
           console.error(
             "Failed to copy link - both clipboard methods failed:",
-            fallbackError
+            fallbackError,
           );
           toast.error("Failed to copy link. Please copy manually.");
         }

@@ -5,7 +5,7 @@ import { ChevronLeft, X, Check, Star, EyeOff, Volume2 } from "lucide-react";
 import { useStore } from "@/shared/state/useStore";
 import { UICard } from "@/types/decks";
 import { toast } from "sonner";
-import { updateCard as updateCardApi } from "../../shared/api/decks";
+import { updateCard as updateCardApi } from "@/shared/api/decks";
 import { speak } from "../../shared/tts/textToSpeech";
 
 interface ClassicFlipModeProps {
@@ -50,7 +50,7 @@ export function ClassicFlipMode({
   const handleSpeak = (
     text: string | null,
     language: string | undefined,
-    e?: React.MouseEvent
+    e?: React.MouseEvent,
   ) => {
     if (e) {
       e.stopPropagation(); // Prevent card flip when clicking speaker button
@@ -103,7 +103,7 @@ export function ClassicFlipMode({
         favorite: newFavoriteValue,
       });
       toast.success(
-        newFavoriteValue ? "Added to favorites" : "Removed from favorites"
+        newFavoriteValue ? "Added to favorites" : "Removed from favorites",
       );
     } catch (error) {
       // Revert on error
@@ -129,7 +129,7 @@ export function ClassicFlipMode({
       toast.success(
         newIgnoredValue
           ? "Card ignored - will be excluded from future study sessions"
-          : "Card unignored"
+          : "Card unignored",
       );
     } catch (error) {
       // Revert on error

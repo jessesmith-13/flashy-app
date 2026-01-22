@@ -1,0 +1,93 @@
+export type AchievementsData = {
+  unlockedAchievements: string[]
+  decksCreated: number
+  totalCards: number
+  decksPublished: number
+  decksImported: number
+  studyStreak: number
+  totalStudySessions: number
+  cardsReviewed: number
+  correctAnswersInRow: number
+  averageAccuracy: number
+  totalStudyMinutes: number
+  lastStudyDate: string
+  studiedToday: boolean
+  perfectScores: number
+  studiedBeforeEightAM: boolean
+  studiedAfterMidnight: boolean
+  studiedSixtyMinutesNonstop: boolean
+  studiedThreeHoursInOneDay: boolean
+  customizedDeckTheme: boolean
+  hasProfilePicture: boolean
+  usedDarkMode: boolean
+  categoriesUsed: number
+  createdMultipleChoiceCard: boolean
+  createdTypeAnswerCard: boolean
+  createdImageCard: boolean
+  completedBeginnerDeck: boolean
+  completedIntermediateDeck: boolean
+  completedAdvancedDeck: boolean
+  completedExpertDeck: boolean
+  completedMasterDeck: boolean
+  friendsAdded: number
+  commentsLeft: number
+  ratingsGiven: number
+  deckFavorites: number
+  deckDownloads: number
+  deckRatings: number
+  usedAI: boolean
+  aiCardsGenerated: number
+  isPremium: boolean
+  flippedCardFiveTimes: boolean
+  studiedOnLowBattery: boolean
+  slowCardReview: boolean
+}
+
+/* ------------------------------------------------------------
+ * Defaults
+ * ---------------------------------------------------------- */
+
+export const DEFAULT_ACHIEVEMENTS: AchievementsData = {
+  unlockedAchievements: [],
+  decksCreated: 0,
+  totalCards: 0,
+  decksPublished: 0,
+  decksImported: 0,
+  studyStreak: 0,
+  totalStudySessions: 0,
+  cardsReviewed: 0,
+  correctAnswersInRow: 0,
+  averageAccuracy: 0,
+  totalStudyMinutes: 0,
+  lastStudyDate: '',
+  studiedToday: false,
+  perfectScores: 0,
+  studiedBeforeEightAM: false,
+  studiedAfterMidnight: false,
+  studiedSixtyMinutesNonstop: false,
+  studiedThreeHoursInOneDay: false,
+  customizedDeckTheme: false,
+  hasProfilePicture: false,
+  usedDarkMode: false,
+  categoriesUsed: 0,
+  createdMultipleChoiceCard: false,
+  createdTypeAnswerCard: false,
+  createdImageCard: false,
+  completedBeginnerDeck: false,
+  completedIntermediateDeck: false,
+  completedAdvancedDeck: false,
+  completedExpertDeck: false,
+  completedMasterDeck: false,
+  friendsAdded: 0,
+  commentsLeft: 0,
+  ratingsGiven: 0,
+  deckFavorites: 0,
+  deckDownloads: 0,
+  deckRatings: 0,
+  usedAI: false,
+  aiCardsGenerated: 0,
+  isPremium: false,
+  flippedCardFiveTimes: false,
+  studiedOnLowBattery: false,
+  slowCardReview: false,
+}

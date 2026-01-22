@@ -74,14 +74,14 @@ coverage/
 .env.test.local
 
 # =========================
-# Supabase / Build artifacts
+# Supabase (local CLI artifacts only)
 # =========================
 .supabase/
-functions/
+supabase/.temp/
+supabase/.branches/
+supabase/.cache/
+supabase/.settings/
 *.db
-tmp/
-temp/
-supabase/.temp
 
 # =========================
 # System files

@@ -6,7 +6,7 @@ import { ChevronRight, Check, X, Star, EyeOff, Volume2 } from "lucide-react";
 import { useStore } from "@/shared/state/useStore";
 import { UICard } from "@/types/decks";
 import { toast } from "sonner";
-import { updateCard as updateCardApi } from "../../shared/api/decks";
+import { updateCard as updateCardApi } from "@/shared/api/decks";
 import { speak } from "../../shared/tts/textToSpeech";
 
 interface TypeAnswerModeProps {
@@ -96,7 +96,7 @@ export function TypeAnswerMode({
     ) {
       correct = currentCard.acceptedAnswers.some(
         (acceptedAnswer) =>
-          normalizedAnswer === acceptedAnswer.trim().toLowerCase()
+          normalizedAnswer === acceptedAnswer.trim().toLowerCase(),
       );
     }
 
@@ -121,7 +121,7 @@ export function TypeAnswerMode({
         favorite: newFavoriteValue,
       });
       toast.success(
-        newFavoriteValue ? "Added to favorites" : "Removed from favorites"
+        newFavoriteValue ? "Added to favorites" : "Removed from favorites",
       );
     } catch (error) {
       // Revert on error
@@ -146,7 +146,7 @@ export function TypeAnswerMode({
       toast.success(
         newIgnoredValue
           ? "Card ignored - will be excluded from future study sessions"
-          : "Card unignored"
+          : "Card unignored",
       );
     } catch (error) {
       // Revert on error

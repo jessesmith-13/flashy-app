@@ -115,7 +115,7 @@ export interface UIDeck {
   createdAt: string;
   updatedAt: string;
   cardCount: number;
-  difficulty: DifficultyLevel;
+  difficulty: DifficultyLevel | null;
   sourceCommunityDeckId?: string | null;
   communityPublishedId?: string | null;
   frontLanguage?: string | null;
@@ -145,3 +145,28 @@ export type DifficultyLevel =
 export type CardType = "classic-flip" | "multiple-choice" | "type-answer";
 
 export type DeckType = "classic-flip" | "multiple-choice" | "type-answer";
+
+export type DecksTab =
+  | "all"
+  | "favorites"
+  | "learned"
+  | "added"
+  | "created"
+  | "published"
+  | "unpublished";
+
+export type SortOption =
+  | "custom"
+  | "alphabetical-asc"
+  | "alphabetical-desc"
+  | "newest"
+  | "oldest"
+  | "recently-studied"
+  | "most-studied"
+  | "least-studied";
+
+// minimum shape we need for sorting by study sessions
+export type StudySessionLike = {
+  deckId: string;
+  date: string; // ISO
+};
