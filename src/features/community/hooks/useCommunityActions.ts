@@ -503,10 +503,19 @@ export function useCommunityActions(opts: UseCommunityActionsOpts) {
   const [selectedDeckId, setSelectedDeckId] = useState("");
   const [publishing, setPublishing] = useState(false);
 
-  const publishableDecks = useMemo(
-    () => decks.filter((d) => !d.sourceCommunityDeckId && d.cardCount > 0),
-    [decks],
-  );
+  const publishableDecks = useMemo(() => {
+    if (!user) return [];
+
+    return decks.filter((d) => {
+      const isMine = d.userId === user.id;
+      const notDeleted = !d.isDeleted;
+      const notShared = !d.isShared; // if you have this field
+      const notImported = !d.sourceCommunityDeckId; // imported-from-community decks
+      const hasCards = (d.cardCount ?? 0) > 0;
+
+      return isMine && notDeleted && notShared && notImported && hasCards;
+    });
+  }, [decks, user]);
 
   const handlePublishDeck = useCallback(async () => {
     if (!accessToken || !selectedDeckId) {
