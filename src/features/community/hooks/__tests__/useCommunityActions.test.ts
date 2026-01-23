@@ -8,6 +8,7 @@ import { renderHook, act } from "@testing-library/react";
 import { useCommunityActions } from "../useCommunityActions";
 import type { UIDeck } from "../../../../types/decks";
 import type { UICommunityDeck } from "../../../../types/community";
+import { User } from "../../../../types/users";
 
 // -----------------------------
 // Mocks
@@ -669,18 +670,31 @@ describe("useCommunityActions", () => {
 
   it("publishableDecks excludes imported decks and empty decks", () => {
     setupStore({
+      user: { id: "user-1", subscriptionTier: "free" },
       decks: [
-        makeUserDeck({ id: "a", cardCount: 5, sourceCommunityDeckId: null }),
-        makeUserDeck({ id: "b", cardCount: 0, sourceCommunityDeckId: null }),
+        makeUserDeck({
+          id: "a",
+          userId: "user-1",
+          cardCount: 10,
+          sourceCommunityDeckId: undefined, // ✅ FIX
+        }),
+        makeUserDeck({
+          id: "b",
+          userId: "user-1",
+          cardCount: 0,
+          sourceCommunityDeckId: undefined, // ✅ FIX
+        }),
         makeUserDeck({
           id: "c",
+          userId: "user-1",
           cardCount: 10,
-          sourceCommunityDeckId: "comm_x",
+          sourceCommunityDeckId: "comm_x", // imported → excluded
         }),
       ],
     });
 
     const { result } = setupHook();
+
     expect(result.current.publishableDecks.map((d: UIDeck) => d.id)).toEqual([
       "a",
     ]);
