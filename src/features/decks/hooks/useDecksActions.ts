@@ -2,6 +2,7 @@ import { useCallback, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import type { DifficultyLevel, UIDeck, UICard } from "@/types/decks";
+import type { UICommunityCard } from "@/types/community";
 import { useStore } from "@/shared/state/useStore";
 
 import type {
@@ -16,8 +17,6 @@ import {
 } from "@/shared/api/decks";
 
 import { publishDeck, unpublishDeck } from "@/shared/api/community";
-
-import type { CommunityCard } from "@/types/community";
 
 import {
   canCreateDeck,
@@ -35,44 +34,41 @@ type ToggleKey = "favorite" | "learned";
 export function uiCardToCommunityCard(
   card: UICard,
   communityDeckId: string,
-): CommunityCard {
+): UICommunityCard {
   const nowIso = new Date().toISOString();
 
   return {
     id: card.id,
-    community_deck_id: communityDeckId,
+    communityDeckId,
 
     front: card.front ?? null,
     back: card.back ?? null,
 
-    card_type: card.cardType,
+    cardType: card.cardType,
 
-    correct_answers: card.correctAnswers ?? null,
-    incorrect_answers: card.incorrectAnswers ?? null,
-    accepted_answers: card.acceptedAnswers ?? null,
+    correctAnswers: card.correctAnswers ?? null,
+    incorrectAnswers: card.incorrectAnswers ?? null,
+    acceptedAnswers: card.acceptedAnswers ?? null,
 
-    // Your CommunityCard has BOTH audio_url and front_audio/back_audio.
-    // If you don't use audio_url in your UI model, keep it null.
-    audio_url: null,
+    audioUrl: null,
 
-    front_image_url: card.frontImageUrl ?? null,
-    back_image_url: card.backImageUrl ?? null,
+    frontImageUrl: card.frontImageUrl ?? null,
+    backImageUrl: card.backImageUrl ?? null,
 
-    front_audio: card.frontAudio ?? null,
-    back_audio: card.backAudio ?? null,
+    frontAudio: card.frontAudio ?? null,
+    backAudio: card.backAudio ?? null,
 
     position: card.position ?? 0,
 
-    // Required moderation/deletion fields
-    is_flagged: false,
-    is_deleted: false,
-    deleted_at: null,
-    deleted_reason: null,
-    deleted_by: null,
-    deleted_by_name: null,
+    isFlagged: false,
+    isDeleted: false,
+    deletedAt: null,
+    deletedReason: null,
+    deletedBy: null,
+    deletedByName: null,
 
-    created_at: card.createdAt ?? nowIso,
-    updated_at: card.createdAt ?? nowIso,
+    createdAt: card.createdAt ?? nowIso,
+    updatedAt: card.createdAt ?? nowIso,
   };
 }
 

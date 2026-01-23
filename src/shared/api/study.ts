@@ -46,7 +46,7 @@ const mapStudySession = (row: StudySessionRow): StudySession => ({
   studyMode: row.study_mode,
   timeSpentSeconds: row.time_spent_seconds,
   sessionData: row.session_data,
-  timeSpent: 0,
+  timeSpent: row.time_spent_seconds ?? 0,
 });
 
 /**
@@ -56,7 +56,7 @@ const mapStudySession = (row: StudySessionRow): StudySession => ({
  */
 
 export const fetchStudySessions = async (
-  accessToken: string
+  accessToken: string,
 ): Promise<StudySession[]> => {
   const response = await fetch(`${API_BASE}/study/sessions`, {
     headers: {
@@ -76,7 +76,7 @@ export const fetchStudySessions = async (
 
 export const saveStudySessionApi = async (
   accessToken: string,
-  session: StudySessionPayload
+  session: StudySessionPayload,
 ) => {
   const response = await fetch(`${API_BASE}/study/sessions`, {
     method: "POST",

@@ -7,10 +7,14 @@ const viewToRoute: Record<string, string> = {
   login: "/login",
   signup: "/signup",
   decks: "/decks",
-  "deck-detail": "/deck-detail", // Note: This needs deckId param
-  study: "/study", // Note: This needs deckId param
-  "study-options": "/study-options", // Note: This needs deckId param
+  "deck-detail": "/deck-detail", // needs selectedDeckId
+  study: "/study", // needs selectedDeckId
+  "study-options": "/study-options", // needs selectedDeckId
   community: "/community",
+
+  // ✅ NEW PAGE — community deck detail
+  "community-deck-detail": "/community/deck",
+
   profile: "/profile",
   "ai-generate": "/ai-generate",
   upgrade: "/upgrade",
@@ -31,37 +35,48 @@ export function useNavigation() {
 
   const navigateTo = (
     view: keyof typeof viewToRoute,
-    options?: { skipDeckIdCheck?: boolean }
+    options?: {
+      skipDeckIdCheck?: boolean;
+      deckId?: string; // ✅ only used for community deck detail
+    },
   ) => {
     const route = viewToRoute[view];
 
-    // For routes that require deckId, append it
+    // Existing personal-deck routes (UNCHANGED)
     if (
       view === "deck-detail" ||
       view === "study" ||
       view === "study-options"
     ) {
-      // If skipDeckIdCheck is true, navigate without deckId (for special study modes)
       if (options?.skipDeckIdCheck) {
         navigate(route);
       } else if (selectedDeckId) {
         navigate(`${route}/${selectedDeckId}`);
       } else {
-        // For study route, allow navigation without deckId (supports all-cards and temporary decks)
-        // For other routes, warn and redirect
         if (view === "study") {
           navigate(route);
         } else {
           console.warn(
-            `Attempted to navigate to ${view} without selectedDeckId`
+            `Attempted to navigate to ${view} without selectedDeckId`,
           );
-          // Redirect to decks list if no deck is selected
           navigate("/decks");
         }
       }
-    } else {
-      navigate(route);
+      return;
     }
+
+    // ✅ Community deck detail (explicit deckId, NOT selectedDeckId)
+    if (view === "community-deck-detail") {
+      if (!options?.deckId) {
+        console.warn("Missing deckId for community-deck-detail");
+        return;
+      }
+      navigate(`${route}/${options.deckId}`);
+      return;
+    }
+
+    // Everything else (UNCHANGED)
+    navigate(route);
   };
 
   return { navigateTo, navigate };

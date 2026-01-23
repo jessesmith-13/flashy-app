@@ -4,14 +4,17 @@ import type { UICommunityCard, UICommunityDeck } from "@/types/community";
 type ViewUserProfileDetail = { userId?: string };
 type ViewUserProfileEvent = CustomEvent<ViewUserProfileDetail>;
 
+type ReturnToUserDeck = {
+  deck: UICommunityDeck;
+  cards: UICommunityCard[];
+  ownerId: string;
+};
+
 export function useCommunityViewState(args: {
   // store-driven
   returnToCommunityDeck: UICommunityDeck | null;
-  returnToUserDeck: {
-    deck: UICommunityDeck;
-    cards: unknown[];
-    ownerId: string;
-  } | null;
+  returnToUserDeck: ReturnToUserDeck | null;
+
   viewingCommunityDeckId: string | null;
   setViewingCommunityDeckId: (id: string | null) => void;
   viewingUserId: string | null;
@@ -40,11 +43,8 @@ export function useCommunityViewState(args: {
 
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
 
-  const [viewingUserDeck, setViewingUserDeck] = useState<{
-    deck: UICommunityDeck;
-    cards: UICommunityCard[];
-    ownerId: string;
-  } | null>(null);
+  const [viewingUserDeck, setViewingUserDeck] =
+    useState<ReturnToUserDeck | null>(null);
 
   const [viewingDeck, setViewingDeck] = useState<UICommunityDeck | null>(null);
 
@@ -52,23 +52,13 @@ export function useCommunityViewState(args: {
 
   // Restore viewing deck when returning from study
   useEffect(() => {
-    if (returnToCommunityDeck) {
-      setViewingDeck(returnToCommunityDeck);
-    }
-    if (returnToUserDeck) {
-      setViewingUserDeck({
-        ...returnToUserDeck,
-        cards: returnToUserDeck.cards as UICommunityCard[],
-      });
-    }
-    // intentional: only restore when store values change
+    if (returnToCommunityDeck) setViewingDeck(returnToCommunityDeck);
+    if (returnToUserDeck) setViewingUserDeck(returnToUserDeck);
   }, [returnToCommunityDeck, returnToUserDeck]);
 
   // Reset deck detail page when viewing a new deck (unless navigating to a specific card)
   useEffect(() => {
-    if (!targetCardIndex) {
-      setDeckDetailPage(1);
-    }
+    if (!targetCardIndex) setDeckDetailPage(1);
   }, [viewingDeck?.id, targetCardIndex]);
 
   // Listen for custom event to view user profile

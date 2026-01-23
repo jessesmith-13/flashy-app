@@ -1,31 +1,41 @@
 import { useCallback } from "react";
 import { useStore } from "@/shared/state/useStore";
-import { useNavigation } from "@/shared/hooks/useNavigation"; // adjust path if yours differs
+import { useNavigation } from "@/shared/hooks/useNavigation";
 import type { UICommunityDeck } from "@/types/community";
-import type { UISharedDeck } from "@/types/study";
+import type { UIDeck, UICard, DifficultyLevel } from "@/types/decks";
 
-/**
- * Convert a community deck into the shared "study" deck shape.
- * This avoids unsafe casts and makes sure the study page always gets what it needs.
- */
-function toSharedDeck(deck: UICommunityDeck): UISharedDeck {
+// Make a UIDeck from a community deck (for temporary study)
+function toTempUIDeck(deck: UICommunityDeck): UIDeck {
+  const now = new Date().toISOString();
+
   return {
     id: deck.id,
+    userId: deck.ownerId ?? "", // required by UIDeck
     name: deck.name,
     emoji: deck.emoji ?? "📚",
     color: deck.color ?? "#10B981",
-    // These fields might differ in your types — adjust as needed:
     cardCount: deck.cards?.length ?? deck.cardCount ?? 0,
     category: deck.category ?? "",
     subtopic: deck.subtopic ?? "",
-    ownerId: deck.ownerId,
-    ownerDisplayName: deck.ownerDisplayName ?? "Unknown",
-    publishedAt: deck.publishedAt ?? new Date().toISOString(),
-    downloadCount: deck.downloadCount ?? 0,
-    createdAt: deck.createdAt ?? new Date().toISOString(),
+    createdAt: deck.createdAt ?? now,
+    updatedAt: now,
+
+    // required booleans
+    isPublic: true,
+    isPublished: true,
+
+    // required by UIDeck
+    difficulty: (deck.difficulty as DifficultyLevel) ?? "beginner",
+
+    // if your UIDeck has these fields, keep them (remove if not in your type)
+    sourceCommunityDeckId: deck.id ?? null,
+    communityPublishedId: null,
+    importedFromVersion: null,
+    isDeleted: false,
+    lastSyncedAt: null,
+
     frontLanguage: deck.frontLanguage ?? null,
     backLanguage: deck.backLanguage ?? null,
-    cards: deck.cards ?? [],
   };
 }
 
@@ -35,11 +45,22 @@ export function useCommunityStudyNavigation() {
 
   const studyCommunityDeck = useCallback(
     (deck: UICommunityDeck) => {
-      const shared = toSharedDeck(deck);
+      const tempDeck = toTempUIDeck(deck);
+
+      // Ensure cards satisfy UICard shape (if your community cards are already UICard, you can skip mapping)
+      const tempCards: UICard[] = (deck.cards ?? []).map((c, idx) => ({
+        ...c,
+        deckId: tempDeck.id,
+        position: c.position ?? idx,
+        favorite: false,
+        isIgnored: false,
+        createdAt: c.createdAt ?? new Date().toISOString(),
+        updatedAt: c.updatedAt ?? new Date().toISOString(),
+      }));
 
       setTemporaryStudyDeck({
-        deck: shared,
-        cards: shared.cards,
+        deck: tempDeck,
+        cards: tempCards,
       });
 
       setReturnToCommunityDeck(deck);

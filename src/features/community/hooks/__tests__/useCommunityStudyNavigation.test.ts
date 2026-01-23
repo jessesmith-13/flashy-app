@@ -51,19 +51,49 @@ describe("useCommunityStudyNavigation", () => {
     expect(mockSetTemporaryStudyDeck).toHaveBeenCalledTimes(1);
     const arg = mockSetTemporaryStudyDeck.mock.calls[0][0];
 
-    expect(arg).toMatchObject({
-      deck: {
-        id: "deck-1",
-        name: "Biology 101",
-        emoji: "🧬",
-        color: "#10B981",
-        ownerId: "user-1",
-        ownerDisplayName: "Jesse",
-        category: "Science",
-        subtopic: "Biology",
-      },
-      cards: [{ id: "c1", front: "Cell", back: "Basic unit of life" }],
-    });
+    // ✅ Only assert what matters + what mapper guarantees
+    expect(arg).toEqual(
+      expect.objectContaining({
+        deck: expect.objectContaining({
+          id: "deck-1",
+          name: "Biology 101",
+          emoji: "🧬",
+          color: "#10B981",
+          category: "Science",
+          subtopic: "Biology",
+
+          // ✅ this is what your mapper actually sets
+          userId: "user-1",
+          sourceCommunityDeckId: "deck-1",
+
+          cardCount: 1,
+
+          // defaults your mapper adds (don’t assert exact unless you want to)
+          difficulty: "beginner",
+          isPublic: true,
+          isPublished: true,
+          isDeleted: false,
+
+          frontLanguage: null,
+          backLanguage: null,
+
+          communityPublishedId: null,
+          importedFromVersion: null,
+          lastSyncedAt: null,
+
+          createdAt: "2026-01-01T00:00:00.000Z",
+          updatedAt: expect.any(String), // dynamic timestamp
+        }),
+
+        cards: expect.arrayContaining([
+          expect.objectContaining({
+            id: "c1",
+            front: "Cell",
+            back: "Basic unit of life",
+          }),
+        ]),
+      }),
+    );
 
     expect(mockSetReturnToCommunityDeck).toHaveBeenCalledWith(deck);
     expect(mockNavigateTo).toHaveBeenCalledWith("study");

@@ -6,25 +6,49 @@ import { Button } from "@/shared/ui/button";
 import { ArrowLeft, BookOpen, Check } from "lucide-react";
 import { toast } from "sonner";
 import { AppLayout } from "@/components/Layout/AppLayout";
-import { UICard } from "@/types/decks";
+import type { UIDeck, UICard, DifficultyLevel } from "@/types/decks";
+import type { SharedDeckData } from "@/types/sharedDeck";
 
 interface SharedDeckViewProps {
   shareId: string;
   onBack: () => void;
 }
 
+const toTempUIDeck = (shareId: string, d: SharedDeckData): UIDeck => {
+  const now = new Date().toISOString();
+
+  return {
+    id: shareId,
+    userId: d.userId,
+    name: d.name ?? "Shared Deck",
+    emoji: d.emoji ?? "📚",
+    color: d.color ?? "#10B981",
+    cardCount: d.cards.length,
+    category: d.category ?? "",
+    subtopic: d.subtopic ?? "",
+    createdAt: now,
+    updatedAt: now,
+
+    isPublic: true,
+    isPublished: true,
+
+    // if your UIDeck difficulty is DifficultyLevel (non-null), pick a default
+    difficulty: (d.difficulty as DifficultyLevel) ?? "beginner",
+
+    sourceCommunityDeckId: null,
+    communityPublishedId: null,
+    importedFromVersion: null,
+    isDeleted: false,
+    lastSyncedAt: null,
+  };
+};
+
 export function SharedDeckView({ shareId, onBack }: SharedDeckViewProps) {
-  const [deckData, setDeckData] = useState<any>(null);
+  const [deckData, setDeckData] = useState<SharedDeckData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-  const {
-    setTemporaryStudyDeck,
-    user,
-    accessToken,
-    setStudyOptions,
-    setReturnToSharedDeckId,
-  } = useStore();
+  const { setTemporaryStudyDeck, user, accessToken } = useStore();
   const { navigateTo } = useNavigation();
 
   useEffect(() => {
@@ -48,12 +72,9 @@ export function SharedDeckView({ shareId, onBack }: SharedDeckViewProps) {
   const loadSharedDeck = async () => {
     try {
       setLoading(true);
-      console.log("Loading shared deck with shareId:", shareId);
       const deck = await getSharedDeck(shareId);
-      console.log("Loaded shared deck:", deck);
       setDeckData(deck);
-    } catch (error: any) {
-      console.error("Failed to load shared deck:", error);
+    } catch {
       setError("Failed to load shared deck");
     } finally {
       setLoading(false);
@@ -63,60 +84,15 @@ export function SharedDeckView({ shareId, onBack }: SharedDeckViewProps) {
   const handleStudyDeck = () => {
     if (!deckData) return;
 
-    console.log(
-      "handleStudyDeck called - user:",
-      user ? `logged in as ${user.email}` : "not logged in",
-    );
-    console.log(
-      "Setting up temporary study deck with cards:",
-      deckData.cards.length,
-    );
-
-    // Set default study options for shared decks
-    setStudyOptions({
-      timedMode: false,
-      continuousShuffle: false,
-      order: "randomized",
-      excludeIgnored: false,
-      favoritesOnly: false,
-    });
-
-    // Mark that we should return to this shared deck after studying
-    setReturnToSharedDeckId(shareId);
-
-    // 🔧 FIX: Use the actual deck type from the data, not hardcoded 'classic-flip'
-    const actualDeckType = deckData.deckType || "classic-flip";
-
-    // Set up temporary study deck in store
+    const cards: UICard[] = Array.isArray(deckData?.cards)
+      ? deckData.cards
+      : [];
     setTemporaryStudyDeck({
-      deck: {
-        id: shareId,
-        name: deckData.name,
-        color: deckData.color,
-        emoji: deckData.emoji,
-        cardCount: deckData.cards.length,
-        category: deckData.category,
-        subtopic: deckData.subtopic,
-        ownerId: deckData.owner_id || "unknown",
-        ownerDisplayName: deckData.owner_display_name || "Unknown",
-        cards: deckData.cards,
-        publishedAt: new Date().toISOString(),
-        downloadCount: 0,
-        createdAt: new Date().toISOString(),
-      },
-      cards: deckData.cards,
+      deck: toTempUIDeck(shareId, deckData),
+      cards,
     });
 
-    console.log(
-      "Temporary study deck set with type:",
-      actualDeckType,
-      "navigating to study screen",
-    );
-
-    // Clear the shared deck view
     onBack();
-
-    // Navigate to study screen
     navigateTo("study");
   };
 
@@ -131,12 +107,14 @@ export function SharedDeckView({ shareId, onBack }: SharedDeckViewProps) {
       setTimeout(() => {
         navigateTo("decks");
       }, 1000);
-    } catch (error: any) {
-      console.error("Failed to save deck:", error);
-      if (error.message?.includes("already added")) {
-        toast.error("You already have this deck in your library");
-      } else {
-        toast.error("Failed to save deck");
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.error("Failed to save deck:", error);
+        if (error.message?.includes("already added")) {
+          toast.error("You already have this deck in your library");
+        } else {
+          toast.error("Failed to save deck");
+        }
       }
     } finally {
       setSaving(false);
@@ -300,6 +278,18 @@ export function SharedDeckView({ shareId, onBack }: SharedDeckViewProps) {
               <ArrowLeft className="w-4 h-4 mr-2" />
               Go Back
             </Button>
+          </div>
+        </div>
+      </AppLayout>
+    );
+  }
+
+  if (!deckData) {
+    return (
+      <AppLayout>
+        <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex items-center justify-center">
+          <div className="text-gray-600 dark:text-gray-400">
+            Deck data missing.
           </div>
         </div>
       </AppLayout>

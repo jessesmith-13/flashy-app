@@ -1,10 +1,20 @@
 import { API_BASE } from "@/supabase/runtime";
-import { CommunityCard } from "@/types/community";
+import { UICommunityCard } from "@/types/community";
 import { toast } from "sonner";
-import { ACHIEVEMENTS } from "../../features/achievements/achievements";
+import { ACHIEVEMENTS } from "../../../features/achievements/achievements";
 import type { Comment, Reply } from "@/types/community";
 import { useStore } from "@/shared/state/useStore";
 import type { UICommunityDeck } from "@/types/community";
+import {
+  mapCommunityDeckListApiToUI,
+  mapCommunityDeckApiToUI,
+} from "./mappers";
+import type {
+  CommunityDeckResponseApi,
+  CommunityDecksResponseApi,
+} from "./types.api";
+import { isApiErrorResponse } from "@/shared/api/types/api-error";
+import { toCommunityCardApiPayload } from "./mappers";
 
 const { fetchUserAchievements } = useStore.getState();
 
@@ -21,18 +31,23 @@ export const fetchCommunityDecks = async (): Promise<UICommunityDeck[]> => {
     },
   });
 
-  const data = await response.json();
+  const raw: unknown = await response.json();
 
   if (!response.ok) {
-    console.error("Failed to fetch community decks:", data.error);
-    throw new Error(data.error || "Failed to fetch community decks");
+    const errorMessage = isApiErrorResponse(raw)
+      ? raw.error
+      : "Failed to fetch community decks";
+
+    console.error("Failed to fetch community decks:", errorMessage);
+    throw new Error(errorMessage);
   }
 
-  return data.decks || [];
+  const data = raw as CommunityDecksResponseApi;
+  return mapCommunityDeckListApiToUI(data.decks);
 };
 
 export const getCommunityDeck = async (
-  deckId: string
+  deckId: string,
 ): Promise<UICommunityDeck | null> => {
   const response = await fetch(`${API_BASE}/community/decks/${deckId}`, {
     headers: {
@@ -40,33 +55,43 @@ export const getCommunityDeck = async (
     },
   });
 
-  const data = await response.json();
+  const raw: unknown = await response.json();
 
   if (!response.ok) {
-    console.error("Failed to fetch community deck:", data.error);
-    return null;
+    const errorMessage = isApiErrorResponse(raw)
+      ? raw.error
+      : "Failed to fetch community deck";
+
+    console.error("Failed to fetch community deck:", errorMessage);
+    throw new Error(errorMessage);
   }
 
-  return data.deck || null;
+  const data = raw as CommunityDeckResponseApi;
+  return data.deck ? mapCommunityDeckApiToUI(data.deck) : null;
 };
 
-export const fetchFeaturedCommunityDecks =
-  async (): Promise<UICommunityDeck> => {
-    const response = await fetch(`${API_BASE}/community/decks/featured`, {
-      headers: {
-        Authorization: `Bearer ${anonKey}`,
-      },
-    });
+export const fetchFeaturedCommunityDecks = async (): Promise<
+  UICommunityDeck[]
+> => {
+  const response = await fetch(`${API_BASE}/community/decks/featured`, {
+    headers: {
+      Authorization: `Bearer ${anonKey}`,
+    },
+  });
+  const raw: unknown = await response.json();
 
-    const data = await response.json();
+  if (!response.ok) {
+    const errorMessage = isApiErrorResponse(raw)
+      ? raw.error
+      : "Failed to fetch featured decks";
 
-    if (!response.ok) {
-      console.error("Failed to fetch featured decks:", data.error);
-      throw new Error(data.error || "Failed to fetch featured decks");
-    }
+    console.error("Failed to fetch featured decks:", errorMessage);
+    throw new Error(errorMessage);
+  }
 
-    return data.decks || [];
-  };
+  const data = raw as CommunityDecksResponseApi;
+  return mapCommunityDeckListApiToUI(data.decks);
+};
 
 // ============================================================
 // COMMUNITY PUBLISH / IMPORT
@@ -75,7 +100,7 @@ export const fetchFeaturedCommunityDecks =
 export const publishDeck = async (
   accessToken: string,
   deckId: string,
-  publishData: { category: string | undefined; subtopic: string | undefined }
+  publishData: { category: string | undefined; subtopic: string | undefined },
 ) => {
   console.log("📤 publishDeck called with:");
   console.log("  - deckId:", deckId);
@@ -186,7 +211,7 @@ export const addDeckFromCommunity = async (
     category?: string | null;
     subtopic?: string | null;
     version?: number;
-  }
+  },
 ) => {
   const response = await fetch(`${API_BASE}/community/add-deck`, {
     method: "POST",
@@ -231,9 +256,21 @@ export const updateCommunityDeck = async (
     category?: string;
     subtopic?: string;
     difficulty?: string;
-    cards: CommunityCard[];
-  }
+    cards: UICommunityCard[];
+  },
 ) => {
+  const payload = {
+    name: updates.name,
+    emoji: updates.emoji,
+    color: updates.color,
+    category: updates.category,
+    subtopic: updates.subtopic,
+    difficulty: updates.difficulty,
+
+    // ✅ convert UI cards -> API payload cards
+    cards: updates.cards.map(toCommunityCardApiPayload),
+  };
+
   const response = await fetch(
     `${API_BASE}/community/decks/${communityDeckId}`,
     {
@@ -242,17 +279,13 @@ export const updateCommunityDeck = async (
         "Content-Type": "application/json",
         Authorization: `Bearer ${accessToken}`,
       },
-      body: JSON.stringify(updates),
-    }
+      body: JSON.stringify(payload),
+    },
   );
 
   const data = await response.json();
-
-  if (!response.ok) {
-    console.error("Failed to update community deck:", data.error);
+  if (!response.ok)
     throw new Error(data.error || "Failed to update community deck");
-  }
-
   return data;
 };
 
@@ -287,7 +320,7 @@ export const searchCommunityUsers = async (query: string) => {
       headers: {
         Authorization: `Bearer ${anonKey}`,
       },
-    }
+    },
   );
 
   const data = await response.json();
@@ -307,7 +340,7 @@ export const searchCommunityUsers = async (query: string) => {
 export const rateDeck = async (
   accessToken: string,
   deckId: string,
-  rating: number
+  rating: number,
 ) => {
   const response = await fetch(`${API_BASE}/community/decks/${deckId}/rate`, {
     method: "POST",
@@ -349,7 +382,7 @@ export const getDeckRatings = async (deckId: string, accessToken?: string) => {
       headers: {
         Authorization: `Bearer ${accessToken || anonKey}`,
       },
-    }
+    },
   );
 
   const data = await response.json();
@@ -373,7 +406,7 @@ export const getDeckComments = async (deckId: string) => {
       headers: {
         Authorization: `Bearer ${anonKey}`,
       },
-    }
+    },
   );
 
   const data = await response.json();
@@ -415,7 +448,7 @@ export const postDeckComment = async (
   accessToken: string,
   deckId: string,
   text: string,
-  parentId?: string
+  parentId?: string,
 ) => {
   const response = await fetch(
     `${API_BASE}/community/decks/${deckId}/comments`,
@@ -426,7 +459,7 @@ export const postDeckComment = async (
         Authorization: `Bearer ${accessToken}`,
       },
       body: JSON.stringify({ content: text, parentCommentId: parentId }), // ✅ Fixed: use correct field names
-    }
+    },
   );
 
   const data = await response.json();
@@ -455,7 +488,7 @@ export const postDeckComment = async (
 export const likeComment = async (
   accessToken: string,
   deckId: string,
-  commentId: string
+  commentId: string,
 ) => {
   const response = await fetch(
     `${API_BASE}/community/decks/${deckId}/comments/${commentId}/like`,
@@ -464,7 +497,7 @@ export const likeComment = async (
       headers: {
         Authorization: `Bearer ${accessToken}`,
       },
-    }
+    },
   );
 
   const data = await response.json();

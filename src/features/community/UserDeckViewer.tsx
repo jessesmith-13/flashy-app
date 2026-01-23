@@ -1,45 +1,23 @@
 import { AppLayout } from "@/components/Layout/AppLayout";
 import { Button } from "@/shared/ui/button";
 import { ArrowLeft, Play } from "lucide-react";
-import { Deck } from "@/types/decks";
+import type { UICommunityDeck, UICommunityCard } from "@/types/community";
 
-type CardType = "classic-flip" | "multiple-choice" | "type-answer";
+type UserDeckViewerDeck = UICommunityDeck & {
+  // If this viewer expects an "isPublic" concept, keep it camel:
+  isPublic?: boolean;
+};
 
-interface ViewerCard {
-  id: string;
-  position?: number;
-  cardType: CardType;
-  front: string;
-  back: string;
-  correctAnswers?: string[] | null;
-  incorrectAnswers?: string[] | null;
-  acceptedAnswers?: string[] | null;
-  frontImageUrl?: string | null;
-  backImageUrl?: string | null;
-}
-
-interface UserDeckViewerProps {
-  deck: {
-    id: string;
-    name: string;
-    emoji: string;
-    color: string;
-    category?: string | null;
-    subtopic?: string | null;
-    owner_id: string;
-    is_public: boolean;
-    created_at: string;
-    updated_at: string;
-    card_count: number;
-    difficulty?: string | null;
-    is_published?: boolean;
-  };
-  cards: ViewerCard[];
+type UserDeckViewerProps = {
+  deck: UserDeckViewerDeck; // ✅ camel-only
+  cards: UICommunityCard[]; // ✅ camel-only
   ownerId: string;
   isOwner: boolean;
   onBack: () => void;
-  onStudy: (deck: Deck, cards: ViewerCard[]) => void;
-}
+
+  // If this component really needs "study cards", then make it explicit:
+  onStudy: (deck: UserDeckViewerDeck, cards: UICommunityCard[]) => void;
+};
 
 export function UserDeckViewer({
   deck,
@@ -49,7 +27,7 @@ export function UserDeckViewer({
   onStudy,
 }: UserDeckViewerProps) {
   const sortedCards = [...cards].sort(
-    (a, b) => (a.position ?? 0) - (b.position ?? 0)
+    (a, b) => (a.position ?? 0) - (b.position ?? 0),
   );
 
   return (
@@ -70,7 +48,7 @@ export function UserDeckViewer({
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 mb-6">
               <div
                 className="w-20 h-20 rounded-2xl flex items-center justify-center text-4xl flex-shrink-0"
-                style={{ backgroundColor: deck.color }}
+                style={{ backgroundColor: deck.color ?? "#10B981" }}
               >
                 {deck.emoji}
               </div>
@@ -100,19 +78,7 @@ export function UserDeckViewer({
 
               {!isOwner && cards.length > 0 && (
                 <Button
-                  onClick={() =>
-                    onStudy(
-                      {
-                        ...deck,
-                        user_id: deck.owner_id,
-                        updated_at: deck.created_at,
-                        card_count: cards.length,
-                        difficulty: "mixed",
-                        is_published: false,
-                      } as Deck,
-                      cards
-                    )
-                  }
+                  onClick={() => onStudy(deck, cards)}
                   className="bg-emerald-600 hover:bg-emerald-700 text-white w-full sm:w-auto"
                 >
                   <Play className="w-4 h-4 mr-2" />
@@ -162,8 +128,8 @@ export function UserDeckViewer({
                             {card.cardType === "classic-flip"
                               ? "Classic Flip"
                               : card.cardType === "multiple-choice"
-                              ? "Multiple Choice"
-                              : "Type Answer"}
+                                ? "Multiple Choice"
+                                : "Type Answer"}
                           </span>
                         </div>
 
