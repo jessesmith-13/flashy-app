@@ -1,7 +1,7 @@
 // useCommunityDeckAuthor.ts
 import { useCallback, useState } from "react";
 import { fetchCommunityDecks as apiFetchCommunityDecks } from "@/shared/api/community";
-import type { CommunityDeck } from "@/types/community";
+import type { UICommunityDeck } from "@/types/community";
 
 export function useCommunityDeckAuthor() {
   const [author, setAuthor] = useState<{ id: string; name: string } | null>(
@@ -12,7 +12,7 @@ export function useCommunityDeckAuthor() {
     try {
       const publishedDecks = await apiFetchCommunityDecks();
       const communityDeck = publishedDecks.find(
-        (d: CommunityDeck) => d.id === communityDeckId,
+        (d: UICommunityDeck) => d.id === communityDeckId,
       );
       if (communityDeck) {
         setAuthor({

@@ -186,7 +186,7 @@ export function registerDeckSharingRoutes(app: Hono) {
 
       return c.json({
         shareId: data.id,
-        deck, // <-- no toCamelCase
+        deck,
         createdAt: data.created_at,
       });
     } catch (error) {

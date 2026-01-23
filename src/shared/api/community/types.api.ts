@@ -152,3 +152,28 @@ export type CommunityDecksResponseApi = {
 export type CommunityDeckResponseApi = {
   deck: CommunityDeckApiInput | null;
 };
+
+export type CommunityCardApiPayload = {
+  id: string;
+  community_deck_id: string;
+  front: string | null;
+  back: string | null;
+  card_type: string;
+  correct_answers: string[] | null;
+  incorrect_answers: string[] | null;
+  accepted_answers: string[] | null;
+  audio_url: string | null;
+  front_image_url: string | null;
+  back_image_url: string | null;
+  front_audio: string | null;
+  back_audio: string | null;
+  position: number;
+  is_flagged: boolean;
+  is_deleted: boolean;
+  deleted_at: string | null;
+  deleted_reason: string | null;
+  deleted_by: string | null;
+  deleted_by_name: string | null;
+  created_at: string;
+  updated_at: string;
+};

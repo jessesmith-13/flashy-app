@@ -1,7 +1,11 @@
 // src/shared/api/community/mappers.ts
 
 import type { UICommunityDeck, UICommunityCard } from "@/types/community";
-import type { CommunityDeckApiInput, CommunityCardApiInput } from "./types.api";
+import type {
+  CommunityDeckApiInput,
+  CommunityCardApiInput,
+  CommunityCardApiPayload,
+} from "./types.api";
 
 // --------- helpers (typed, no any/unknown) ----------
 
@@ -166,4 +170,33 @@ export function mapCommunityDeckListApiToUI(
   decks: CommunityDeckApiInput[] | undefined | null,
 ): UICommunityDeck[] {
   return (decks ?? []).map(mapCommunityDeckApiToUI);
+}
+
+export function toCommunityCardApiPayload(
+  card: UICommunityCard,
+): CommunityCardApiPayload {
+  return {
+    id: card.id,
+    community_deck_id: card.communityDeckId,
+    front: card.front,
+    back: card.back,
+    card_type: card.cardType,
+    correct_answers: card.correctAnswers,
+    incorrect_answers: card.incorrectAnswers,
+    accepted_answers: card.acceptedAnswers,
+    audio_url: card.audioUrl,
+    front_image_url: card.frontImageUrl,
+    back_image_url: card.backImageUrl,
+    front_audio: card.frontAudio,
+    back_audio: card.backAudio,
+    position: card.position,
+    is_flagged: card.isFlagged,
+    is_deleted: card.isDeleted,
+    deleted_at: card.deletedAt,
+    deleted_reason: card.deletedReason,
+    deleted_by: card.deletedBy,
+    deleted_by_name: card.deletedByName,
+    created_at: card.createdAt,
+    updated_at: card.updatedAt,
+  };
 }

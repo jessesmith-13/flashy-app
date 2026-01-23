@@ -8,9 +8,11 @@ import { TypeAnswerMode } from "./TypeAnswerMode";
 import { StudyHeader } from "./StudyHeader";
 import { StudyStats } from "./StudyStats";
 import { EmptyDeckState } from "./EmptyDeckState";
+import { saveStudySessionApi } from "@/shared/api/study";
 
 export function StudyScreen() {
   const {
+    accessToken,
     selectedDeckId,
     decks,
     cards,
@@ -36,8 +38,8 @@ export function StudyScreen() {
   const deckCards = isTemporaryStudy
     ? temporaryStudyDeck.cards
     : studyAllCards
-    ? cards
-    : cards.filter((c) => c.deckId === selectedDeckId);
+      ? cards
+      : cards.filter((c) => c.deckId === selectedDeckId);
 
   const [sessionCards, setSessionCards] = useState<typeof deckCards>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -165,7 +167,7 @@ export function StudyScreen() {
   const completeSession = (
     finalCorrect?: number,
     finalWrong?: number,
-    finalCardsStudied?: number
+    finalCardsStudied?: number,
   ) => {
     const sessionDurationMinutes = (Date.now() - sessionStartTime) / 1000 / 60;
 
@@ -181,29 +183,71 @@ export function StudyScreen() {
 
       // Only save study session for personal decks, not temporary community decks
       if (!isTemporaryStudy && selectedDeckId) {
+        const startedAtIso = new Date(sessionStartTime).toISOString();
+        const endedAtIso = new Date().toISOString();
+        const timeSpentSeconds = Math.floor(
+          (Date.now() - sessionStartTime) / 1000,
+        );
+
+        // 1) Optimistically update local store (fast UI)
         addStudySession({
-          id: crypto.randomUUID(), // Generate unique ID
-          userId: "", // Will be set by the store
+          id: crypto.randomUUID(),
+          userId: "", // your store sets this
           deckId: selectedDeckId,
-          date: new Date().toISOString(),
+          date: endedAtIso,
           correctAnswers: correct,
           incorrectAnswers: wrong,
-          score: score,
-          timeSpent: Math.floor((Date.now() - sessionStartTime) / 1000),
+          score,
+          timeSpent: timeSpentSeconds, // seconds
           cardsStudied: studied,
-          totalQuestions: 0,
-          durationMinutes: null,
-          createdAt: "",
-          updatedAt: "",
-          startedAt: null,
-          endedAt: null,
-          correctCount: null,
-          incorrectCount: null,
-          skippedCount: null,
-          studyMode: null,
-          timeSpentSeconds: null,
+          totalQuestions,
+          durationMinutes: Math.round(timeSpentSeconds / 60),
+          createdAt: endedAtIso,
+          updatedAt: endedAtIso,
+          startedAt: startedAtIso,
+          endedAt: endedAtIso,
+          correctCount: correct,
+          incorrectCount: wrong,
+          skippedCount: 0,
+          studyMode: timedMode
+            ? "timed"
+            : continuousShuffle
+              ? "continuous"
+              : "review",
+          timeSpentSeconds,
           sessionData: null,
         });
+
+        // 2) Persist to server (achievements + db)
+        try {
+          if (accessToken) {
+            saveStudySessionApi(accessToken, {
+              deckId: selectedDeckId,
+              date: endedAtIso,
+              startedAt: startedAtIso,
+              endedAt: endedAtIso,
+              cardsStudied: studied,
+              correctCount: correct,
+              incorrectCount: wrong,
+              skippedCount: 0,
+              timeSpentSeconds,
+              score,
+              studyMode: timedMode
+                ? "timed"
+                : continuousShuffle
+                  ? "continuous"
+                  : "review",
+              lowBattery: false,
+            }).catch((e) => {
+              console.error("Failed to persist study session to server:", e);
+            });
+          } else {
+            console.warn("Missing access token, cannot save session to server");
+          }
+        } catch (e) {
+          console.error("Failed to persist study session to server:", e);
+          // optional: toast error
+        }
       }
     }
 

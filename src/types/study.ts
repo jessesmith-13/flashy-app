@@ -32,19 +32,21 @@ export interface StudySession {
   timeSpent: number;
 }
 
-export interface StudySessionPayload {
+export type StudySessionPayload = {
   id?: string;
   deckId: string;
+  date?: string;
   startedAt?: string;
   endedAt?: string;
   cardsStudied: number;
   correctCount: number;
   incorrectCount: number;
-  skippedCount: number;
+  skippedCount?: number;
   timeSpentSeconds: number;
-  mode?: string;
-  sessionData?: unknown;
-}
+  score: number;
+  studyMode?: string;
+  lowBattery?: boolean;
+};
 
 export interface StudyOptions {
   timedMode: boolean;

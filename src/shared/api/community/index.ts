@@ -14,6 +14,7 @@ import type {
   CommunityDecksResponseApi,
 } from "./types.api";
 import { isApiErrorResponse } from "@/shared/api/types/api-error";
+import { toCommunityCardApiPayload } from "./mappers";
 
 const { fetchUserAchievements } = useStore.getState();
 
@@ -258,6 +259,18 @@ export const updateCommunityDeck = async (
     cards: UICommunityCard[];
   },
 ) => {
+  const payload = {
+    name: updates.name,
+    emoji: updates.emoji,
+    color: updates.color,
+    category: updates.category,
+    subtopic: updates.subtopic,
+    difficulty: updates.difficulty,
+
+    // ✅ convert UI cards -> API payload cards
+    cards: updates.cards.map(toCommunityCardApiPayload),
+  };
+
   const response = await fetch(
     `${API_BASE}/community/decks/${communityDeckId}`,
     {
@@ -266,17 +279,13 @@ export const updateCommunityDeck = async (
         "Content-Type": "application/json",
         Authorization: `Bearer ${accessToken}`,
       },
-      body: JSON.stringify(updates),
+      body: JSON.stringify(payload),
     },
   );
 
   const data = await response.json();
-
-  if (!response.ok) {
-    console.error("Failed to update community deck:", data.error);
+  if (!response.ok)
     throw new Error(data.error || "Failed to update community deck");
-  }
-
   return data;
 };
 
