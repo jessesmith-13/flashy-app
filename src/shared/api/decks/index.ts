@@ -3,6 +3,8 @@
 import { API_BASE } from "@/supabase/runtime";
 import { useStore } from "@/shared/state/useStore";
 import type { UIDeck, UICard } from "@/types/decks";
+import type { SharedDeckData } from "@/types/sharedDeck";
+import { mapSharedDeckApiToSharedDeckData } from "./mappers.shared";
 
 import type {
   FetchDecksResponse,
@@ -15,7 +17,6 @@ import type {
   UpdateCardResponse,
   DeleteCardResponse,
   CreateShareLinkResponse,
-  GetSharedDeckResponse,
   AddSharedDeckToLibraryResponse,
   CreateDeckPayload,
   UpdateDeckPayload,
@@ -375,20 +376,24 @@ export async function createShareLink(
 }
 
 // Get shared deck
-export async function getSharedDeck(shareId: string): Promise<UIDeck> {
+export async function getSharedDeck(shareId: string): Promise<SharedDeckData> {
   const res = await fetch(`${API_BASE}/decks/shared/${shareId}`, {
     headers: { Authorization: `Bearer ${anonKey}` },
   });
 
-  const data = await readJson<GetSharedDeckResponse>(res);
+  const data = await readJson<unknown>(res);
 
   if (!res.ok) {
-    const msg = data?.error || data?.message || "Failed to get shared deck";
+    const msg =
+      (data as { error?: string; message?: string } | null)?.error ||
+      (data as { error?: string; message?: string } | null)?.message ||
+      "Failed to get shared deck";
     throw new Error(msg);
   }
 
-  if (!data?.deck) throw new Error("Malformed response: missing deck");
-  return mapApiDeckToUIDeck(data.deck);
+  // ✅ strict: no any, no casting to the wrong type
+  if (!data) throw new Error("Malformed response: empty body");
+  return mapSharedDeckApiToSharedDeckData(shareId, data as never);
 }
 
 // Add shared deck to user's library

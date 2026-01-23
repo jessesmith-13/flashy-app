@@ -147,8 +147,18 @@ export type CreateShareLinkResponse = ApiErrorResponse & {
   [k: string]: unknown;
 };
 
+export type ApiSharedDeck = ApiDeck & {
+  // backend may include cards in shared response
+  cards?: ApiCard[];
+  // optional extra fields if backend sends them
+  author_name?: string | null;
+  created_by?: string;
+};
+
 export type GetSharedDeckResponse = ApiErrorResponse & {
-  deck?: ApiDeck;
+  share_id?: string;
+  shareId?: string;
+  deck?: ApiSharedDeck;
 };
 
 export type AddSharedDeckToLibraryResponse = ApiErrorResponse & {
@@ -249,4 +259,31 @@ export type UpdateImportedDeckPayload = {
   category?: string;
   subtopic?: string;
   version: number;
+};
+
+// types.api.ts
+export type ApiSharedCard = {
+  id: string;
+  card_type: CardType;
+  front: string | null;
+  back?: string | null;
+
+  correct_answers: string[] | null;
+  incorrect_answers: string[] | null;
+  accepted_answers: string[] | null;
+
+  front_image_url: string | null;
+  back_image_url: string | null;
+
+  front_audio: string | null;
+  back_audio: string | null;
+
+  position: number;
+  favorite: boolean;
+  is_ignored: boolean;
+
+  created_at: string;
+
+  // allow backend additions
+  [k: string]: unknown;
 };
