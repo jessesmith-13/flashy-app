@@ -434,7 +434,7 @@ export function CommunityDeckDetailPage() {
           </div>
 
           <DeckCardPreviewList
-            cards={deck.cards.map((c) => ({
+            cards={(deck.cards || []).map((c) => ({
               ...c,
               favorite: c.favorite ?? false,
               isIgnored: c.isIgnored ?? false,
@@ -510,6 +510,7 @@ export function CommunityDeckDetailPage() {
                 name: actions.pendingUpdate.communityDeck.name,
                 emoji: actions.pendingUpdate.communityDeck.emoji || "📚",
                 color: actions.pendingUpdate.communityDeck.color || "#10B981",
+                cardsCount: actions.pendingUpdate.communityDeck.cardCount || 0,
               }
             : null
         }

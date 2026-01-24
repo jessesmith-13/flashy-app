@@ -451,6 +451,7 @@ export function useCommunityActions(opts: UseCommunityActionsOpts) {
     ],
   );
 
+  // Unpublish a community deck
   const handleUnpublishDeck = useCallback(
     async (deckId: string) => {
       if (!accessToken) {
@@ -526,6 +527,7 @@ export function useCommunityActions(opts: UseCommunityActionsOpts) {
     });
   }, [decks, user]);
 
+  // Publish a personal deck to the community
   const handlePublishDeck = useCallback(async () => {
     if (!accessToken || !selectedDeckId) {
       toast.error("Please select a deck");
