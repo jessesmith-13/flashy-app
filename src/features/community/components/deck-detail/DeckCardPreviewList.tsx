@@ -56,12 +56,10 @@ export function DeckCardPreviewList({
     );
   }
 
-  console.log(cards);
-
   const totalPages = Math.ceil(cards.length / cardsPerPage);
   const paginatedCards = cards.slice(
     (currentPage - 1) * cardsPerPage,
-    currentPage * cardsPerPage
+    currentPage * cardsPerPage,
   );
   const startIndex = (currentPage - 1) * cardsPerPage;
 
@@ -188,7 +186,7 @@ export function DeckCardPreviewList({
                       onFlagCard(
                         cardId,
                         `Card ${cardIndex + 1}`,
-                        card.front || ""
+                        card.front || "",
                       )
                     }
                     className="text-orange-600 dark:text-orange-400"

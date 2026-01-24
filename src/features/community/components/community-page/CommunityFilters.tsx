@@ -21,6 +21,7 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { DECK_CATEGORIES } from "@/shared/catelog/categories";
+import { CommunityTabs } from "@/types/community";
 
 interface CommunityFiltersProps {
   searchQuery: string;
@@ -202,7 +203,7 @@ export function CommunityFilters({
         <div className="w-full sm:w-64">
           <Tabs
             value={sortBy}
-            onValueChange={(value) => onSortChange(value as any)}
+            onValueChange={(value) => onSortChange(value as CommunityTabs)}
           >
             <TabsList className="grid w-full grid-cols-3 gap-1 bg-white dark:bg-gray-800 p-1">
               <TabsTrigger

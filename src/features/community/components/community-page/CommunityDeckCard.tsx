@@ -9,7 +9,7 @@ import {
   MessageCircle,
   EyeOff,
 } from "lucide-react";
-import { DeckRatingDisplay } from "./DeckRatingDisplay";
+import { DeckRatingDisplay } from "@/features/community/components/shared/DeckRatingDisplay";
 import { toast } from "sonner";
 import { UIDeck } from "@/types/decks";
 import { UICommunityDeck } from "@/types/community";

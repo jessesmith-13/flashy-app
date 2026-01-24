@@ -18,14 +18,14 @@ import {
   Upload,
 } from "lucide-react";
 
-import { DeckRatingDisplay } from "../DeckRatingDisplay";
-import { DeckRating } from "../DeckRating";
-import { DeckComments } from "../DeckComments";
-import { DeckCardPreviewList } from "../DeckCardPreviewList";
+import { DeckRatingDisplay } from "@/features/community/components/shared/DeckRatingDisplay";
+import { DeckRating } from "@/features/community/components/shared/DeckRating";
+import { DeckComments } from "../components/deck-detail/DeckComments";
+import { DeckCardPreviewList } from "../components/deck-detail/DeckCardPreviewList";
 
-import { FlagDialog } from "../FlagDialog";
-import { DeletionDialog } from "../DeletionDialog";
-import { UpdateDeckWarningDialog } from "../UpdateDeckWarningDialog";
+import { FlagDialog } from "@/features/community/components/dialogs/FlagDialog";
+import { DeletionDialog } from "../components/dialogs/DeletionDialog";
+import { UpdateDeckWarningDialog } from "../components/dialogs/UpdateDeckWarningDialog";
 
 import { useCommunityDecks } from "../hooks/useCommunityDecks";
 import { useCommunityActions } from "../hooks/useCommunityActions";

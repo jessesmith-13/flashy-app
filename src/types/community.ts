@@ -6,6 +6,8 @@ export type CommunityDeckDifficulty =
   | "mixed"
   | null;
 
+export type CommunityTabs = "popular" | "rating" | "newest";
+
 // -----------------------------
 // UI SHAPE (what the frontend uses; camelCase ONLY)
 // -----------------------------

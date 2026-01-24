@@ -18,7 +18,7 @@ import {
 } from "@/shared/ui/select";
 import { AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
-import { createFlag } from "../../shared/api/moderation";
+import { createFlag } from "@/shared/api/moderation";
 
 interface FlagDialogProps {
   open: boolean;
@@ -75,18 +75,20 @@ export function FlagDialog({
       });
 
       toast.success(
-        "Report submitted successfully. Thank you for helping keep our community safe!"
+        "Report submitted successfully. Thank you for helping keep our community safe!",
       );
       onOpenChange(false);
 
       // Reset form
       setReason("");
       setNotes("");
-    } catch (error: any) {
-      if (error.message.includes("already flagged")) {
-        toast.error("You have already reported this item");
-      } else {
-        toast.error(error.message || "Failed to submit report");
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        if (error.message.includes("already flagged")) {
+          toast.error("You have already reported this item");
+        } else {
+          toast.error(error.message || "Failed to submit report");
+        }
       }
     } finally {
       setSubmitting(false);
@@ -97,10 +99,10 @@ export function FlagDialog({
     targetType === "deck"
       ? "Deck"
       : targetType === "user"
-      ? "User"
-      : targetType === "card"
-      ? "Card"
-      : "Comment";
+        ? "User"
+        : targetType === "card"
+          ? "Card"
+          : "Comment";
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

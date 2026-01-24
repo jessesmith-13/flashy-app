@@ -14,6 +14,7 @@ import { EditCardModal } from "../components/deck-detail/EditCardModal";
 import { CardList } from "../components/deck-detail/CardList";
 import { DeckSettingsDialog } from "../components/shared/DeckSettingsDialog";
 import { PublishDeckDialog } from "../components/shared/PublishDeckDialog";
+import { UnpublishDeckDialog } from "@/shared/components/UnpublishDeckDialog";
 import {
   BulkAddCardsDialog,
   type CardFormData,
@@ -61,6 +62,7 @@ export function DeckDetailPage() {
   const [publishDialogOpen, setPublishDialogOpen] = useState(false);
   const [bulkAddDialogOpen, setBulkAddDialogOpen] = useState(false);
   const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
+  const [unpublishDialogOpen, setUnpublishDialogOpen] = useState(false);
 
   // loaders
   const loadCards = useDeckCardsLoader(setLoading);
@@ -126,15 +128,8 @@ export function DeckDetailPage() {
     await decksActions.publish(deck);
     setPublishDialogOpen(false);
   };
-
-  const handleUnpublishDeck = async () => {
-    if (!deck) return;
-    const confirmed = window.confirm(
-      "Are you sure you want to unpublish this deck from the community?",
-    );
-    if (!confirmed) return;
-
-    await decksActions.unpublish(deck);
+  const handleUnpublishDeck = () => {
+    setUnpublishDialogOpen(true);
   };
 
   const handleUpdateDeck = async (e: React.FormEvent) => {
@@ -330,6 +325,24 @@ export function DeckDetailPage() {
             onOpenSettings={() => {
               setPublishDialogOpen(false);
               setEditDialogOpen(true);
+            }}
+          />
+
+          <UnpublishDeckDialog
+            open={unpublishDialogOpen}
+            onOpenChange={setUnpublishDialogOpen}
+            deck={{
+              name: deck.name,
+              emoji: deck.emoji,
+              color: deck.color,
+              cardCount: deckCards.length, // or deck.cardCount ?? deckCards.length
+              category: deck.category ?? null,
+              subtopic: deck.subtopic ?? null,
+            }}
+            isLoading={decksActions.unpublishingDeckId === deck.id}
+            onConfirm={async () => {
+              await decksActions.unpublish(deck);
+              setUnpublishDialogOpen(false);
             }}
           />
 
