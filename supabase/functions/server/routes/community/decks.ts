@@ -277,7 +277,9 @@ export function registerCommunityDeckRoutes(app: Hono) {
           ...(category !== undefined && { category }),
           ...(subtopic !== undefined && { subtopic }),
           ...(difficulty !== undefined && { difficulty }),
-          ...(cardsChanged && { card_count: sourceDeck.card_count }),
+          ...(cardsChanged && {
+            card_count: preparedCommunityCards?.length ?? 0,
+          }),
           updated_at: now,
           ...(cardsChanged && { source_content_updated_at: now }),
           version: nextVersion,

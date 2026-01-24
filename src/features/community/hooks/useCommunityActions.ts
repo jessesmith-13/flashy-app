@@ -31,7 +31,6 @@ type FlagItemDetails = {
 type UseCommunityActionsOpts = {
   loadCommunityDecks: () => Promise<void>;
   communityDecks: UICommunityDeck[];
-  // route page can pass a setter; list page can ignore
   setViewingDeck?: (deck: UICommunityDeck | null) => void;
   viewingDeck?: UICommunityDeck | null;
   setUpgradeModalOpen: (open: boolean) => void;
@@ -65,6 +64,7 @@ export function useCommunityActions(opts: UseCommunityActionsOpts) {
     decks,
     setDecks,
     setReturnToCommunityDeck,
+    addDeck,
   } = useStore();
 
   const isSuperuser = useIsSuperuser();
@@ -91,7 +91,6 @@ export function useCommunityActions(opts: UseCommunityActionsOpts) {
     id: string;
     name: string;
   } | null>(null);
-
   const [deleteCardDialogOpen, setDeleteCardDialogOpen] = useState(false);
   const [cardToDelete, setCardToDelete] = useState<{
     id: string;
@@ -120,6 +119,11 @@ export function useCommunityActions(opts: UseCommunityActionsOpts) {
   // detail pagination (if you want it shared; otherwise keep local in view)
   const [deckDetailPage, setDeckDetailPage] = useState(1);
 
+  // publish dialog state
+  const [publishDialogOpen, setPublishDialogOpen] = useState(false);
+  const [selectedDeckId, setSelectedDeckId] = useState("");
+  const [publishing, setPublishing] = useState(false);
+
   const openFlagDialog = useCallback(
     (
       type: "deck" | "card" | "comment" | "user",
@@ -142,6 +146,7 @@ export function useCommunityActions(opts: UseCommunityActionsOpts) {
     [],
   );
 
+  // Reimport a community deck that has been updated/has changes
   const performUpdate = useCallback(
     async (communityDeck: UICommunityDeck, importedDeck: UIDeck) => {
       if (!accessToken) {
@@ -214,8 +219,15 @@ export function useCommunityActions(opts: UseCommunityActionsOpts) {
             new Date(importedDeck.lastSyncedAt).getTime()
           : false;
 
+      // ✅ If we might show the warning modal, fetch the detailed deck first
       if (userHasEdits) {
-        setPendingUpdate({ communityDeck, importedDeck });
+        const full = await getCommunityDeck(communityDeck.id);
+        if (!full) {
+          toast.error("Failed to load community deck details");
+          return;
+        }
+
+        setPendingUpdate({ communityDeck: full, importedDeck });
         setUpdateWarningOpen(true);
         return;
       }
@@ -225,6 +237,7 @@ export function useCommunityActions(opts: UseCommunityActionsOpts) {
     [accessToken, performUpdate],
   );
 
+  // Add a deck from community to user's personal decks
   const handleAddDeck = useCallback(
     async (deck: UICommunityDeck) => {
       if (!accessToken || !user) return;
@@ -257,7 +270,7 @@ export function useCommunityActions(opts: UseCommunityActionsOpts) {
 
       setAddingDeckId(deck.id);
       try {
-        await addDeckFromCommunity(accessToken, {
+        const newDeck = await addDeckFromCommunity(accessToken, {
           communityDeckId: deck.id,
           name: deck.name,
           color: deck.color || "#10B981",
@@ -275,12 +288,14 @@ export function useCommunityActions(opts: UseCommunityActionsOpts) {
           version: deck.version || 1,
         });
 
+        console.log("CARD COUNT:", newDeck.cardCount);
+
+        if (!newDeck) {
+          throw new Error("Server did not return deck");
+        }
+
         toast.success(`"${deck.name}" added to your decks!`);
-
-        const updatedDecks = await fetchDecks(accessToken);
-        setDecks(updatedDecks);
-
-        await loadCommunityDecks();
+        addDeck(newDeck);
 
         if (viewingDeck && viewingDeck.id === deck.id && setViewingDeck) {
           setViewingDeck({
@@ -301,8 +316,7 @@ export function useCommunityActions(opts: UseCommunityActionsOpts) {
       user,
       isSuperuser,
       decks,
-      setDecks,
-      loadCommunityDecks,
+      addDeck,
       viewingDeck,
       setViewingDeck,
       setUpgradeFeature,
@@ -437,6 +451,7 @@ export function useCommunityActions(opts: UseCommunityActionsOpts) {
     ],
   );
 
+  // Unpublish a community deck
   const handleUnpublishDeck = useCallback(
     async (deckId: string) => {
       if (!accessToken) {
@@ -498,11 +513,6 @@ export function useCommunityActions(opts: UseCommunityActionsOpts) {
     setViewingDeck,
   ]);
 
-  // publish dialog state
-  const [publishDialogOpen, setPublishDialogOpen] = useState(false);
-  const [selectedDeckId, setSelectedDeckId] = useState("");
-  const [publishing, setPublishing] = useState(false);
-
   const publishableDecks = useMemo(() => {
     if (!user) return [];
 
@@ -517,6 +527,7 @@ export function useCommunityActions(opts: UseCommunityActionsOpts) {
     });
   }, [decks, user]);
 
+  // Publish a personal deck to the community
   const handlePublishDeck = useCallback(async () => {
     if (!accessToken || !selectedDeckId) {
       toast.error("Please select a deck");

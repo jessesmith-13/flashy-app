@@ -97,6 +97,7 @@ export const fetchFeaturedCommunityDecks = async (): Promise<
 // COMMUNITY PUBLISH / IMPORT
 // ============================================================
 
+// Publish Deck to community
 export const publishDeck = async (
   accessToken: string,
   deckId: string,
@@ -193,6 +194,7 @@ export const unpublishDeck = async (accessToken: string, deckId: string) => {
   }
 };
 
+// Add a deck from community to user's personal decks
 export const addDeckFromCommunity = async (
   accessToken: string,
   communityDeck: {
@@ -243,6 +245,7 @@ export const addDeckFromCommunity = async (
     });
   }
 
+  console.log("CARD COUNT RETURNED FROM SERVER:", data.deck.cardCount);
   return data.deck;
 };
 

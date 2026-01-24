@@ -192,10 +192,16 @@ export function registerCardsRoutes(app: Hono) {
       }
 
       // Update deck card count
-      const newCardCount = (deck.card_count ?? 0) + createdCards.length;
+      const { count } = await supabase
+        .from("cards")
+        .select("*", { count: "exact", head: true })
+        .eq("deck_id", deckId);
+
+      const deckCardCount = count ?? 0;
+
       await supabase
         .from("decks")
-        .update({ card_count: newCardCount })
+        .update({ card_count: count ?? 0 })
         .eq("id", deckId);
 
       // ============================================================
@@ -251,7 +257,7 @@ export function registerCardsRoutes(app: Hono) {
 
       // Check Ambitious Creator achievement (100+ cards in a single deck)
       if (
-        newCardCount >= 100 &&
+        deckCardCount >= 100 &&
         !currentUnlocked.includes("hundred-card-deck")
       ) {
         newlyUnlocked.push("hundred-card-deck");
@@ -279,7 +285,7 @@ export function registerCardsRoutes(app: Hono) {
         );
       }
       console.log(
-        `🎴 Batch created ${createdCards.length} cards. Deck now has ${newCardCount} cards, user has ${newTotalCards} total cards`,
+        `🎴 Batch created ${createdCards.length} cards. Deck now has ${deckCardCount} cards, user has ${newTotalCards} total cards`,
       );
 
       return c.json({
@@ -369,10 +375,16 @@ export function registerCardsRoutes(app: Hono) {
       }
 
       // Update deck card count
-      const newCardCount = (deck.card_count ?? 0) + 1;
+      const { count } = await supabase
+        .from("cards")
+        .select("*", { count: "exact", head: true })
+        .eq("deck_id", deckId);
+
+      const deckCardCount = count ?? 0;
+
       await supabase
         .from("decks")
-        .update({ card_count: newCardCount })
+        .update({ card_count: count ?? 0 })
         .eq("id", deckId);
 
       // ============================================================
@@ -425,7 +437,7 @@ export function registerCardsRoutes(app: Hono) {
 
       // Check Ambitious Creator achievement (100+ cards in a single deck)
       if (
-        newCardCount >= 100 &&
+        deckCardCount >= 100 &&
         !currentUnlocked.includes("hundred-card-deck")
       ) {
         newlyUnlocked.push("hundred-card-deck");
@@ -459,7 +471,7 @@ export function registerCardsRoutes(app: Hono) {
         );
       }
       console.log(
-        `🎴 Created card. Deck now has ${newCardCount} cards, user has ${newTotalCards} total cards`,
+        `🎴 Created card. Deck now has ${deckCardCount} cards, user has ${newTotalCards} total cards`,
       );
 
       return c.json({ card: toCamelCase(newCard) });

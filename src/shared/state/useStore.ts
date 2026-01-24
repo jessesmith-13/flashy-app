@@ -257,7 +257,7 @@ export const useStore = create<AppState>((set, get) => ({
     set({ decks, decksLastLoaded: Date.now(), decksCacheInvalidated: false }),
   addDeck: (deck) =>
     set((state) => ({
-      decks: [...state.decks, deck],
+      decks: [deck, ...state.decks.filter((d) => d.id !== deck.id)],
       decksCacheInvalidated: true,
     })),
   updateDeck: (deckId, updates) => {

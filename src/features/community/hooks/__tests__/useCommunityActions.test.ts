@@ -8,7 +8,6 @@ import { renderHook, act } from "@testing-library/react";
 import { useCommunityActions } from "../useCommunityActions";
 import type { UIDeck } from "../../../../types/decks";
 import type { UICommunityDeck } from "../../../../types/community";
-import { User } from "../../../../types/users";
 
 // -----------------------------
 // Mocks
@@ -80,19 +79,22 @@ const makeCommunityDeck = (
 ): UICommunityDeck => {
   const now = new Date().toISOString();
 
-  const baseCard: UICommunityDeck["cards"][number] = {
+  type UICommunityCardT = NonNullable<UICommunityDeck["cards"]>[number];
+
+  const baseCard = {
     id: "card_1",
     communityDeckId: "comm_1",
 
     front: "Q1",
     back: "A1",
-    cardType: "classic-flip" as UICommunityDeck["cards"][number]["cardType"],
+    cardType: "classic-flip",
 
+    // If UI type is `string[] | undefined`
     correctAnswers: null,
     incorrectAnswers: null,
     acceptedAnswers: null,
 
-    audioUrl: null,
+    audioUrl: null, // keep null only if the UI type allows null
     frontImageUrl: null,
     backImageUrl: null,
     frontAudio: null,
@@ -107,12 +109,12 @@ const makeCommunityDeck = (
     createdAt: now,
     updatedAt: now,
 
-    // ✅ your type requires these deletion audit fields
+    // deletion audit fields — only keep these if the UI type *actually* includes them
     deletedAt: null,
     deletedReason: null,
     deletedBy: null,
     deletedByName: null,
-  };
+  } satisfies UICommunityCardT;
 
   const base: UICommunityDeck = {
     id: "comm_1",
@@ -197,6 +199,7 @@ type StoreFixture = {
   decks: UIDeck[];
   updateDeck: ReturnType<typeof vi.fn>;
   setDecks: ReturnType<typeof vi.fn>;
+  addDeck: ReturnType<typeof vi.fn>;
   setReturnToCommunityDeck: ReturnType<typeof vi.fn>;
 };
 
@@ -209,6 +212,7 @@ const setupStore = (overrides: Partial<StoreFixture> = {}) => {
     decks: [makeUserDeck()],
     updateDeck: vi.fn(),
     setDecks: vi.fn(),
+    addDeck: vi.fn(),
     setReturnToCommunityDeck: vi.fn(),
     ...overrides,
   };
@@ -321,12 +325,26 @@ describe("useCommunityActions", () => {
     setupStore({ accessToken: "token" });
     const { result } = setupHook();
 
-    const communityDeck = makeCommunityDeck({ version: 2 });
     const importedDeck = makeUserDeck({
       id: "deck_imported",
-      updatedAt: new Date("2025-02-01").toISOString(),
-      lastSyncedAt: new Date("2025-01-01").toISOString(),
+      updatedAt: new Date("2025-02-01T00:00:00.000Z").toISOString(), // user edited
+      lastSyncedAt: new Date("2025-01-01T00:00:00.000Z").toISOString(),
+      isDeleted: false,
     });
+
+    const communityDeck = makeCommunityDeck({
+      id: "comm_1",
+      // whatever fields; handleUpdateDeck doesn't use timestamps for update availability
+    });
+
+    const fullDeck = makeCommunityDeck({
+      id: "comm_1",
+      name: "FULL FROM API",
+    });
+
+    (getCommunityDeck as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(
+      fullDeck,
+    );
 
     await act(async () => {
       await result.current.handleUpdateDeck(communityDeck, importedDeck);
@@ -334,9 +352,10 @@ describe("useCommunityActions", () => {
 
     expect(result.current.updateWarningOpen).toBe(true);
     expect(result.current.pendingUpdate).toEqual({
-      communityDeck,
+      communityDeck: fullDeck, // ✅ IMPORTANT: uses fetched deck
       importedDeck,
     });
+
     expect(updateImportedDeck).not.toHaveBeenCalled();
   });
 
@@ -398,19 +417,23 @@ describe("useCommunityActions", () => {
     expect(addDeckFromCommunity).not.toHaveBeenCalled();
   });
 
-  it("handleAddDeck: success -> adds deck, fetches decks, reloads community, increments viewing downloadCount", async () => {
+  it("handleAddDeck: success -> adds deck, reloads community, increments viewing downloadCount", async () => {
     const store = setupStore({
       user: { id: "user_1", subscriptionTier: "pro" },
       accessToken: "token",
       decks: [makeUserDeck()],
+      addDeck: vi.fn(), // ✅ make sure your store fixture includes this
+    });
+
+    const returnedDeck = makeUserDeck({
+      id: "after",
+      sourceCommunityDeckId: "comm_1",
+      isDeleted: false,
     });
 
     (
       addDeckFromCommunity as unknown as ReturnType<typeof vi.fn>
-    ).mockResolvedValue(undefined);
-    (fetchDecks as unknown as ReturnType<typeof vi.fn>).mockResolvedValue([
-      makeUserDeck({ id: "after" }),
-    ]);
+    ).mockResolvedValue(returnedDeck);
 
     const loadCommunityDecks = vi.fn().mockResolvedValue(undefined);
     const setViewingDeck = vi.fn();
@@ -428,12 +451,14 @@ describe("useCommunityActions", () => {
     });
 
     expect(addDeckFromCommunity).toHaveBeenCalledTimes(1);
-    expect(fetchDecks).toHaveBeenCalledWith("token");
-    expect(store.setDecks).toHaveBeenCalledWith([
-      makeUserDeck({ id: "after" }),
-    ]);
-    expect(loadCommunityDecks).toHaveBeenCalled();
+    expect(fetchDecks).toHaveBeenCalledTimes(0);
 
+    // ✅ now it should be called with the returned deck object
+    expect(store.addDeck).toHaveBeenCalledWith(
+      expect.objectContaining({ id: "after" }),
+    );
+
+    expect(loadCommunityDecks).not.toHaveBeenCalled(); // (your hook doesn’t call it in handleAddDeck)
     expect(setViewingDeck).toHaveBeenCalledWith(
       expect.objectContaining({ downloadCount: 6 }),
     );

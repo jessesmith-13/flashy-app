@@ -6,7 +6,6 @@ import {
   DialogTitle,
 } from "@/shared/ui/dialog";
 import { Button } from "@/shared/ui/button";
-import { Card } from "@/types/decks";
 
 interface UpdateDeckWarningDialogProps {
   open: boolean;
@@ -16,7 +15,7 @@ interface UpdateDeckWarningDialogProps {
     name: string;
     emoji: string;
     color: string;
-    cards?: Card[];
+    cardsCount: number;
   } | null;
   importedDeck: {
     id: string;
@@ -65,7 +64,7 @@ export function UpdateDeckWarningDialog({
                     Your version: {importedDeck.cardCount} cards
                   </p>
                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                    Community version: {communityDeck.cards?.length || 0} cards
+                    Community version: {communityDeck.cardsCount ?? 0} cards
                   </p>
                 </div>
               </div>

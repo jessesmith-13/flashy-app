@@ -51,7 +51,7 @@ export type UICommunityDeck = {
   commentCount?: number;
   sourceContentUpdatedAt: string | null;
 
-  cards: UICommunityCard[];
+  cards?: UICommunityCard[];
 };
 
 // -----------------------------

@@ -108,12 +108,7 @@ export function CommunityDeckCard({
     });
 
     // Priority 1: Update available (for imported decks only)
-    console.log(`Update available?`, updateAvailable);
-    console.log(`ImportedDeck?`, importedDeck);
-    console.log(`isOwnDeck?`, isOwnDeck);
-    console.log(`isAdded?`, isAdded);
-    console.log(`isDELETED?`, isDeleted);
-    if (updateAvailable && importedDeck) {
+    if (updateAvailable && importedDeck && !importedDeck.isDeleted) {
       return "update-available";
     }
 
@@ -173,7 +168,7 @@ export function CommunityDeckCard({
             {deck.difficulty && (
               <span
                 className={`text-xs px-2 py-0.5 sm:py-1 rounded-full truncate max-w-[100px] ${getDifficultyClassName(
-                  deck.difficulty
+                  deck.difficulty,
                 )}`}
               >
                 {getDifficultyEmoji(deck.difficulty)}{" "}
@@ -222,7 +217,7 @@ export function CommunityDeckCard({
                   year: "numeric",
                   month: "short",
                   day: "numeric",
-                }
+                },
               )}
             </div>
           )}
@@ -260,8 +255,8 @@ export function CommunityDeckCard({
             {featuringDeckId === deck.id
               ? "Updating..."
               : deck.featured
-              ? "Unfeature"
-              : "Feature"}
+                ? "Unfeature"
+                : "Feature"}
           </Button>
           <Button
             variant="outline"
