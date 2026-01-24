@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Star } from "lucide-react";
-import { getDeckRatings } from "../../shared/api/community";
+import { getDeckRatings } from "@/shared/api/community";
 
 interface DeckRatingDisplayProps {
   deckId: string;

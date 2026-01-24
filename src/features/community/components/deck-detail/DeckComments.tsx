@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useStore } from "@/shared/state/useStore";
 import { Button } from "@/shared/ui/button";
 import { MessageCircle, Send, Reply } from "lucide-react";
-import { getDeckComments, postDeckComment } from "../../shared/api/community";
+import { getDeckComments, postDeckComment } from "@/shared/api/community";
 import { toast } from "sonner";
 import { CommentItem, Comment } from "./CommentItem";
 

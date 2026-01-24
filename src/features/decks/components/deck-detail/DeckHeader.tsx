@@ -92,42 +92,18 @@ export function DeckHeader({
           )}
 
           {/* Show unpublish button for published decks created by the user */}
-          {!deck.sourceCommunityDeckId &&
-            deck.communityPublishedId &&
-            onUnpublish && (
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="text-red-600 hover:text-red-700"
-                    disabled={unpublishing}
-                  >
-                    <UploadCloud className="w-5 h-5 rotate-180" />
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Unpublish Deck?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      This will remove your deck from the community. Users who
-                      have added it to their collection will keep their copies,
-                      but new users won&apos;t be able to discover it.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction
-                      onClick={onUnpublish}
-                      disabled={unpublishing}
-                      className="bg-red-600 hover:bg-red-700"
-                    >
-                      {unpublishing ? "Unpublishing..." : "Unpublish"}
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            )}
+          {!deck.sourceCommunityDeckId && deck.isPublished && onUnpublish && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-red-600 hover:text-red-700"
+              disabled={unpublishing}
+              onClick={onUnpublish}
+              type="button"
+            >
+              <UploadCloud className="w-5 h-5 rotate-180" />
+            </Button>
+          )}
 
           <AlertDialog>
             <AlertDialogTrigger asChild>
@@ -201,28 +177,28 @@ export function DeckHeader({
                       deck.difficulty === "beginner"
                         ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400"
                         : deck.difficulty === "intermediate"
-                        ? "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400"
-                        : deck.difficulty === "advanced"
-                        ? "bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400"
-                        : deck.difficulty === "expert"
-                        ? "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400"
-                        : "bg-gradient-to-r from-purple-100 to-pink-100 dark:from-purple-900/30 dark:to-pink-900/30 text-purple-700 dark:text-purple-400"
+                          ? "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400"
+                          : deck.difficulty === "advanced"
+                            ? "bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400"
+                            : deck.difficulty === "expert"
+                              ? "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400"
+                              : "bg-gradient-to-r from-purple-100 to-pink-100 dark:from-purple-900/30 dark:to-pink-900/30 text-purple-700 dark:text-purple-400"
                     }`}
                   >
                     {deck.difficulty === "beginner"
                       ? "🟢"
                       : deck.difficulty === "intermediate"
-                      ? "🟡"
-                      : deck.difficulty === "advanced"
-                      ? "🟠"
-                      : deck.difficulty === "expert"
-                      ? "🔴"
-                      : "🌈"}{" "}
+                        ? "🟡"
+                        : deck.difficulty === "advanced"
+                          ? "🟠"
+                          : deck.difficulty === "expert"
+                            ? "🔴"
+                            : "🌈"}{" "}
                     {deck.difficulty.charAt(0).toUpperCase() +
                       deck.difficulty.slice(1)}
                   </span>
                 )}
-                {deck.communityPublishedId && (
+                {deck.isPublished && (
                   <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400">
                     <Users className="w-3 h-3" />
                     Published

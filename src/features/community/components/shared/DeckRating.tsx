@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { useStore } from "@/shared/state/useStore";
 import { Star, Lock } from "lucide-react";
-import { getDeckRatings, rateDeck } from "../../shared/api/community";
+import { getDeckRatings, rateDeck } from "@/shared/api/community";
 import { toast } from "sonner";
-import { UpgradeModal } from "../../components/UpgradeModal";
+import { UpgradeModal } from "@/components/UpgradeModal";
 
 interface DeckRatingProps {
   deckId: string;
@@ -69,12 +69,14 @@ export function DeckRating({ deckId, onRatingChange }: DeckRatingProps) {
       if (onRatingChange) {
         onRatingChange();
       }
-    } catch (error: any) {
-      console.error("Failed to rate deck:", error);
-      if (error.message.includes("Premium feature")) {
-        setUpgradeModalOpen(true);
-      } else {
-        toast.error("Failed to submit rating");
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.error("Failed to rate deck:", error);
+        if (error.message.includes("Premium feature")) {
+          setUpgradeModalOpen(true);
+        } else {
+          toast.error("Failed to submit rating");
+        }
       }
     } finally {
       setSubmitting(false);
