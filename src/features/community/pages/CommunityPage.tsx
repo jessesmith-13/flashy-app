@@ -723,6 +723,7 @@ export function CommunityPage() {
                 name: actions.pendingUpdate.communityDeck.name,
                 emoji: actions.pendingUpdate.communityDeck.emoji || "📚",
                 color: actions.pendingUpdate.communityDeck.color || "#10B981",
+                cardsCount: actions.pendingUpdate.communityDeck.cardCount || 0,
               }
             : null
         }
@@ -758,16 +759,42 @@ export function CommunityPage() {
 
           {actions.unpublishingDeck && (
             <div className="space-y-4 py-4">
-              ...
-              <div
-                className="w-12 h-12 rounded-lg flex items-center justify-center text-2xl"
-                style={{
-                  backgroundColor: actions.unpublishingDeck.color || "#10B981",
-                }}
-              >
-                {actions.unpublishingDeck.emoji}
+              <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 space-y-2">
+                <div className="flex items-center gap-2">
+                  <div
+                    className="w-12 h-12 rounded-lg flex items-center justify-center text-2xl"
+                    style={{
+                      backgroundColor:
+                        actions.unpublishingDeck.color || "#10B981",
+                    }}
+                  >
+                    {actions.unpublishingDeck.emoji}
+                  </div>
+                  <div>
+                    <h3 className="font-medium dark:text-gray-100">
+                      {actions.unpublishingDeck.name}
+                    </h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      {actions.unpublishingDeck.cards?.length || 0}{" "}
+                      {actions.unpublishingDeck.cards?.length === 1
+                        ? "card"
+                        : "cards"}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-2 pt-2">
+                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400">
+                    {actions.unpublishingDeck.category}
+                  </span>
+                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400">
+                    {actions.unpublishingDeck.subtopic}
+                  </span>
+                </div>
               </div>
-              ...
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                This will remove your deck from the community, but you can
+                republish it later. Are you sure?
+              </p>
             </div>
           )}
 

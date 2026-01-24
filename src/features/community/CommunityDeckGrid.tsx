@@ -1,30 +1,30 @@
-import { Star, RefreshCw } from 'lucide-react'
-import { CommunityDeckCard } from './CommunityDeckCard'
-import { UIDeck } from '@/types/decks'
-import { UICommunityDeck } from '@/types/community'
+import { Star, RefreshCw } from "lucide-react";
+import { CommunityDeckCard } from "./CommunityDeckCard";
+import { UIDeck } from "@/types/decks";
+import { UICommunityDeck } from "@/types/community";
 
 interface CommunityDeckGridProps {
-  decks: UICommunityDeck[]
-  featuredDecks: UICommunityDeck[]
-  showFeaturedSection: boolean
-  showFeaturedOnly: boolean
-  showUpdatesOnly: boolean
-  searchQuery: string
-  filterCategory: string
-  userDecks: UIDeck[]
-  userId: string | null
-  isSuperuser: boolean
-  addingDeckId: string | null
-  deletingDeckId: string | null
-  featuringDeckId: string | null
-  unpublishingDeckId: string | null
-  onViewDeck: (deck: UICommunityDeck) => void
-  onViewUser: (userId: string) => void
-  onAddDeck: (deck: UICommunityDeck) => void
-  onUpdateDeck: (communityDeck: UICommunityDeck, importedDeck: UIDeck) => void
-  onToggleFeatured: (deckId: string) => void
-  onDeleteDeck: (deckId: string, deckName: string) => void
-  onUnpublishDeck: (deckId: string, deckName: string) => void
+  decks: UICommunityDeck[];
+  featuredDecks: UICommunityDeck[];
+  showFeaturedSection: boolean;
+  showFeaturedOnly: boolean;
+  showUpdatesOnly: boolean;
+  searchQuery: string;
+  filterCategory: string;
+  userDecks: UIDeck[];
+  userId: string | null;
+  isSuperuser: boolean;
+  addingDeckId: string | null;
+  deletingDeckId: string | null;
+  featuringDeckId: string | null;
+  unpublishingDeckId: string | null;
+  onViewDeck: (deck: UICommunityDeck) => void;
+  onViewUser: (userId: string) => void;
+  onAddDeck: (deck: UICommunityDeck) => void;
+  onUpdateDeck: (communityDeck: UICommunityDeck, importedDeck: UIDeck) => void;
+  onToggleFeatured: (deckId: string) => void;
+  onDeleteDeck: (deckId: string, deckName: string) => void;
+  onUnpublishDeck: (deckId: string, deckName: string) => void;
 }
 
 export function CommunityDeckGrid({
@@ -48,34 +48,37 @@ export function CommunityDeckGrid({
   onUpdateDeck,
   onToggleFeatured,
   onDeleteDeck,
-  onUnpublishDeck
+  onUnpublishDeck,
 }: CommunityDeckGridProps) {
   const renderDeckCard = (deck: UICommunityDeck, isFeatured: boolean) => {
-    const importedDeck = userDecks.find(d => d.sourceCommunityDeckId === deck.id)
-    const ownDeck = userDecks.find(d => d.id === deck.originalDeckId)
-    console.log(`OWN DECK`, ownDeck);
+    const importedDeck = userDecks.find(
+      (d) => d.sourceCommunityDeckId === deck.id,
+    );
+    const ownDeck = userDecks.find((d) => d.id === deck.originalDeckId);
     const isOwnDeck = deck.ownerId === userId;
 
     // Is it currently in your decks (not deleted)?
     const isAdded = !!(
-      (importedDeck && !importedDeck.isDeleted) || 
+      (importedDeck && !importedDeck.isDeleted) ||
       (isOwnDeck && ownDeck && !ownDeck.isDeleted)
-    )
+    );
 
     // Did you delete your own published deck?
-    const isDeleted = ownDeck?.isDeleted || false
+    const isDeleted = ownDeck?.isDeleted || false;
 
-    const updateAvailable = importedDeck && deck.sourceContentUpdatedAt && importedDeck.lastSyncedAt
-      ? new Date(deck.sourceContentUpdatedAt).getTime() > new Date(importedDeck.lastSyncedAt).getTime()
-      : false
+    const updateAvailable =
+      importedDeck && deck.sourceContentUpdatedAt && importedDeck.lastSyncedAt
+        ? new Date(deck.sourceContentUpdatedAt).getTime() >
+          new Date(importedDeck.lastSyncedAt).getTime()
+        : false;
 
-    console.log('🔍 Update check:', {
+    console.log("🔍 Update check:", {
       deckName: deck.name,
       sourceContentUpdatedAt: deck.sourceContentUpdatedAt,
       lastSyncedAt: importedDeck?.lastSyncedAt,
-      updateAvailable
-    })
-    
+      updateAvailable,
+    });
+
     return (
       <CommunityDeckCard
         key={deck.id}
@@ -99,32 +102,41 @@ export function CommunityDeckGrid({
         importedDeck={importedDeck}
         isFeatured={isFeatured}
       />
-    )
-  }
+    );
+  };
 
   // Filter decks based on update availability
   const getFilteredDecks = (deckList: UICommunityDeck[]) => {
-    if (!showUpdatesOnly) return deckList
+    if (!showUpdatesOnly) return deckList;
 
-    return deckList.filter(deck => {
-      const importedDeck = userDecks.find(d => d.sourceCommunityDeckId === deck.id)
-      const updateAvailable = importedDeck && deck.sourceContentUpdatedAt && importedDeck.lastSyncedAt
-        ? new Date(deck.sourceContentUpdatedAt).getTime() > new Date(importedDeck.lastSyncedAt).getTime()
-        : false
-      return updateAvailable
-    })
-  }
+    return deckList.filter((deck) => {
+      const importedDeck = userDecks.find(
+        (d) => d.sourceCommunityDeckId === deck.id,
+      );
+      const updateAvailable =
+        importedDeck && deck.sourceContentUpdatedAt && importedDeck.lastSyncedAt
+          ? new Date(deck.sourceContentUpdatedAt).getTime() >
+            new Date(importedDeck.lastSyncedAt).getTime()
+          : false;
+      return updateAvailable;
+    });
+  };
 
-  const filteredDecks = getFilteredDecks(decks)
-  const filteredFeaturedDecks = getFilteredDecks(featuredDecks)
+  const filteredDecks = getFilteredDecks(decks);
+  const filteredFeaturedDecks = getFilteredDecks(featuredDecks);
 
   // Count decks with updates available
-  const updatesCount = decks.filter(deck => {
-    const importedDeck = userDecks.find(d => d.sourceCommunityDeckId === deck.id)
-    return importedDeck && deck.sourceContentUpdatedAt && importedDeck.lastSyncedAt
-      ? new Date(deck.sourceContentUpdatedAt).getTime() > new Date(importedDeck.lastSyncedAt).getTime()
-      : false
-  }).length
+  const updatesCount = decks.filter((deck) => {
+    const importedDeck = userDecks.find(
+      (d) => d.sourceCommunityDeckId === deck.id,
+    );
+    return importedDeck &&
+      deck.sourceContentUpdatedAt &&
+      importedDeck.lastSyncedAt
+      ? new Date(deck.sourceContentUpdatedAt).getTime() >
+          new Date(importedDeck.lastSyncedAt).getTime()
+      : false;
+  }).length;
 
   return (
     <>
@@ -133,7 +145,9 @@ export function CommunityDeckGrid({
         <div className="mb-8">
           <div className="flex items-center gap-2 mb-4">
             <Star className="w-5 h-5 text-purple-600 dark:text-purple-400 fill-current" />
-            <h2 className="text-xl sm:text-2xl text-gray-900 dark:text-gray-100">Featured Decks</h2>
+            <h2 className="text-xl sm:text-2xl text-gray-900 dark:text-gray-100">
+              Featured Decks
+            </h2>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
             {filteredFeaturedDecks.map((deck) => renderDeckCard(deck, true))}
@@ -146,7 +160,9 @@ export function CommunityDeckGrid({
       {showFeaturedOnly && !showUpdatesOnly && (
         <div className="mb-4 flex items-center gap-2">
           <Star className="w-5 h-5 text-purple-600 dark:text-purple-400 fill-current" />
-          <h2 className="text-xl text-gray-900 dark:text-gray-100">Featured Decks</h2>
+          <h2 className="text-xl text-gray-900 dark:text-gray-100">
+            Featured Decks
+          </h2>
         </div>
       )}
       {showUpdatesOnly && (
@@ -162,16 +178,26 @@ export function CommunityDeckGrid({
           </h2>
         </div>
       )}
-      {!showFeaturedOnly && !showUpdatesOnly && featuredDecks.length > 0 && !searchQuery && filterCategory === 'all' && (
-        <div className="mb-4">
-          <h2 className="text-xl text-gray-900 dark:text-gray-100">All Community Decks</h2>
-        </div>
-      )}
-      {!showFeaturedOnly && !showUpdatesOnly && (searchQuery || filterCategory !== 'all') && (
-        <div className="mb-4">
-          <h2 className="text-xl text-gray-900 dark:text-gray-100">Search Results</h2>
-        </div>
-      )}
+      {!showFeaturedOnly &&
+        !showUpdatesOnly &&
+        featuredDecks.length > 0 &&
+        !searchQuery &&
+        filterCategory === "all" && (
+          <div className="mb-4">
+            <h2 className="text-xl text-gray-900 dark:text-gray-100">
+              All Community Decks
+            </h2>
+          </div>
+        )}
+      {!showFeaturedOnly &&
+        !showUpdatesOnly &&
+        (searchQuery || filterCategory !== "all") && (
+          <div className="mb-4">
+            <h2 className="text-xl text-gray-900 dark:text-gray-100">
+              Search Results
+            </h2>
+          </div>
+        )}
 
       {/* Decks Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -181,15 +207,14 @@ export function CommunityDeckGrid({
       {filteredDecks.length === 0 && (
         <div className="text-center py-16 bg-white dark:bg-gray-800 rounded-xl">
           <p className="text-gray-600 dark:text-gray-400">
-            {showUpdatesOnly 
-              ? 'No deck updates available'
-              : showFeaturedOnly 
-                ? 'No featured decks available' 
-                : 'No decks found matching your search'
-            }
+            {showUpdatesOnly
+              ? "No deck updates available"
+              : showFeaturedOnly
+                ? "No featured decks available"
+                : "No decks found matching your search"}
           </p>
         </div>
       )}
     </>
-  )
+  );
 }

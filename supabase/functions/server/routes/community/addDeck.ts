@@ -1,5 +1,40 @@
 import type { Hono, Context } from "npm:hono@4";
 import { supabase } from "../../lib/supabase.ts";
+import { toCamelCase } from "../../lib/utils/case.ts";
+
+async function fetchPersonalDeckById(deckId: string, userId: string) {
+  const { data, error } = await supabase
+    .from("decks")
+    .select("*")
+    .eq("id", deckId)
+    .eq("user_id", userId)
+    .single();
+
+  if (error || !data) {
+    console.error("❌ Failed to fetch deck after mutation", {
+      deckId,
+      userId,
+      error,
+    });
+    throw new Error("Failed to fetch updated deck");
+  }
+
+  return data;
+}
+
+async function respondWithDeck(
+  c: Context,
+  userId: string,
+  deckId: string,
+  payload: Record<string, unknown>,
+) {
+  const deck = await fetchPersonalDeckById(deckId, userId);
+  return c.json({
+    ...payload,
+    deckId,
+    deck: toCamelCase(deck), // remove this if you truly want snake_case
+  });
+}
 
 // Add a deck from community to your personal decks
 export function registerCommunityAddDeckRoutes(app: Hono) {
@@ -55,7 +90,7 @@ export function registerCommunityAddDeckRoutes(app: Hono) {
       // 🔧 SCENARIO 1: Own deck that's deleted - Just undelete it
       if (ownsOriginal && ownsOriginal.is_deleted) {
         console.log(
-          `🔄 User re-adding their own deleted deck ${ownsOriginal.id}`
+          `🔄 User re-adding their own deleted deck ${ownsOriginal.id}`,
         );
 
         // Undelete the cards (don't delete and recreate!)
@@ -78,19 +113,23 @@ export function registerCommunityAddDeckRoutes(app: Hono) {
           .eq("id", ownsOriginal.id);
 
         console.log(`✅ Restored deck ${ownsOriginal.id} and its cards`);
-        return c.json({ restored: true, deckId: ownsOriginal.id });
+        return await respondWithDeck(c, user.id, ownsOriginal.id, {
+          restored: true,
+        });
       }
 
       // Need to fetch community cards for scenarios 2 & 3
-      const { data: communityCards } = await supabase
+      const { data: communityCards, error: cardsErr } = await supabase
         .from("community_cards")
         .select("*")
         .eq("community_deck_id", communityDeckId)
-        .order("position");
+        .eq("is_deleted", false)
+        .is("deleted_at", null)
+        .order("position", { ascending: true });
 
-      if (!communityCards || communityCards.length === 0) {
+      if (cardsErr) return c.json({ error: cardsErr.message }, 500);
+      if (!communityCards?.length)
         return c.json({ error: "Community deck has no cards" }, 400);
-      }
 
       // 🔧 SCENARIO 2: Imported deck exists (deleted or not) - Update it
       if (importedDeck) {
@@ -100,7 +139,7 @@ export function registerCommunityAddDeckRoutes(app: Hono) {
         // 🔧 TIMESTAMP-BASED CHECK (replaces version check)
         if (!isDeleted) {
           const communityUpdatedAt = new Date(
-            communityDeck.source_content_updated_at || communityDeck.updated_at
+            communityDeck.source_content_updated_at || communityDeck.updated_at,
           ).getTime();
           const lastSyncedAt = importedDeck.last_synced_at
             ? new Date(importedDeck.last_synced_at).getTime()
@@ -108,22 +147,22 @@ export function registerCommunityAddDeckRoutes(app: Hono) {
 
           console.log(
             `📊 Community deck last updated: ${new Date(
-              communityUpdatedAt
-            ).toISOString()}`
+              communityUpdatedAt,
+            ).toISOString()}`,
           );
           console.log(
             `📊 Imported deck last synced: ${
               importedDeck.last_synced_at
                 ? new Date(lastSyncedAt).toISOString()
                 : "never"
-            }`
+            }`,
           );
 
           if (lastSyncedAt >= communityUpdatedAt) {
             console.log(`⚠️ User already has the latest version`);
             return c.json(
               { error: "You already have the latest version" },
-              400
+              400,
             );
           }
         }
@@ -131,7 +170,7 @@ export function registerCommunityAddDeckRoutes(app: Hono) {
         console.log(
           isDeleted
             ? `🔄 Restoring deleted imported deck ${importedDeck.id}`
-            : `📥 Updating imported deck ${importedDeck.id}`
+            : `📥 Updating imported deck ${importedDeck.id}`,
         );
 
         // Hard delete old cards (imported decks get fresh cards)
@@ -139,15 +178,15 @@ export function registerCommunityAddDeckRoutes(app: Hono) {
 
         console.log(
           "IMPORTING COMMUNITY CARDS STARTING WITH (correct answers): ",
-          communityCards[0].correct_answers
+          communityCards[0].correct_answers,
         );
         console.log(
           "IMPORTING COMMUNITY CARDS STARTING WITH (incorrect answers): ",
-          communityCards[0].incorrect_answers
+          communityCards[0].incorrect_answers,
         );
         console.log(
           "IMPORTING COMMUNITY CARDS STARTING WITH: ",
-          communityCards[0]
+          communityCards[0],
         );
         // Insert new cards
         await supabase.from("cards").insert(
@@ -166,7 +205,7 @@ export function registerCommunityAddDeckRoutes(app: Hono) {
             back_audio: c.back_audio,
             position: i,
             created_at: now,
-          }))
+          })),
         );
 
         // 🔧 Update deck (and undelete if needed) + store last_synced_at
@@ -179,7 +218,7 @@ export function registerCommunityAddDeckRoutes(app: Hono) {
             category: communityDeck.category,
             subtopic: communityDeck.subtopic,
             difficulty: communityDeck.difficulty,
-            card_count: communityCards.length,
+            // card_count: communityCards.length,
             imported_from_version: communityDeck.version, // Keep for backwards compat
             last_synced_at:
               communityDeck.source_content_updated_at ||
@@ -193,18 +232,17 @@ export function registerCommunityAddDeckRoutes(app: Hono) {
         console.log(
           `✅ ${isDeleted ? "Restored" : "Updated"} imported deck ${
             importedDeck.id
-          }`
+          }`,
         );
-        return c.json({
+        return await respondWithDeck(c, user.id, importedDeck.id, {
           updated: !isDeleted,
           restored: isDeleted,
-          deckId: importedDeck.id,
         });
       }
 
       // 🔧 SCENARIO 3: First time importing - Create new
       console.log(
-        `📥 Creating new imported deck from community deck ${communityDeckId}`
+        `📥 Creating new imported deck from community deck ${communityDeckId}`,
       );
 
       const newDeckId = crypto.randomUUID();
@@ -219,7 +257,7 @@ export function registerCommunityAddDeckRoutes(app: Hono) {
         category: communityDeck.category,
         subtopic: communityDeck.subtopic,
         difficulty: communityDeck.difficulty,
-        card_count: communityCards.length,
+        // card_count: communityCards.length,
         is_community: true,
         is_published: false,
         source_community_deck_id: communityDeckId,
@@ -230,29 +268,37 @@ export function registerCommunityAddDeckRoutes(app: Hono) {
         created_at: now,
       });
 
+      console.log("🟦 CREATED deck row payload", {
+        newDeckId,
+        settingCardCountTo: communityCards.length,
+      });
+
       if (error) {
         console.log(`❌ Failed to create imported deck: ${error.message}`);
         return c.json({ error: error.message }, 500);
       }
 
-      await supabase.from("cards").insert(
-        communityCards.map((c, i) => ({
-          id: crypto.randomUUID(),
-          deck_id: newDeckId,
-          front: c.front,
-          back: c.back,
-          card_type: c.card_type,
-          correct_answers: c.correct_answers,
-          incorrect_answers: c.incorrect_answers,
-          accepted_answers: c.accepted_answers,
-          front_image_url: c.front_image_url,
-          back_image_url: c.back_image_url,
-          front_audio: c.front_audio,
-          back_audio: c.back_audio,
-          position: i,
-          created_at: now,
-        }))
-      );
+      await supabase
+        .from("cards")
+        .insert(
+          communityCards.map((c, i) => ({
+            id: crypto.randomUUID(),
+            deck_id: newDeckId,
+            front: c.front,
+            back: c.back,
+            card_type: c.card_type,
+            correct_answers: c.correct_answers,
+            incorrect_answers: c.incorrect_answers,
+            accepted_answers: c.accepted_answers,
+            front_image_url: c.front_image_url,
+            back_image_url: c.back_image_url,
+            front_audio: c.front_audio,
+            back_audio: c.back_audio,
+            position: i,
+            created_at: now,
+          })),
+        )
+        .select("id"); // even just ids
 
       // Increment download count
       await supabase
@@ -274,11 +320,11 @@ export function registerCommunityAddDeckRoutes(app: Hono) {
 
         if (countError) {
           console.log(
-            `⚠️ Error counting imported decks: ${countError.message}`
+            `⚠️ Error counting imported decks: ${countError.message}`,
           );
         } else {
           console.log(
-            `📊 User ${user.id} has imported ${importedCount || 0} deck(s)`
+            `📊 User ${user.id} has imported ${importedCount || 0} deck(s)`,
           );
 
           // Get current achievements for the IMPORTER
@@ -291,7 +337,7 @@ export function registerCommunityAddDeckRoutes(app: Hono) {
 
           if (achievementError && achievementError.code !== "PGRST116") {
             console.log(
-              `⚠️ Error fetching achievements: ${achievementError.message}`
+              `⚠️ Error fetching achievements: ${achievementError.message}`,
             );
           } else {
             const currentUnlocked =
@@ -313,12 +359,12 @@ export function registerCommunityAddDeckRoutes(app: Hono) {
                     ],
                     updated_at: new Date().toISOString(),
                   },
-                  { onConflict: "user_id" }
+                  { onConflict: "user_id" },
                 );
 
               if (upsertError) {
                 console.log(
-                  `❌ Error upserting achievements: ${upsertError.message}`
+                  `❌ Error upserting achievements: ${upsertError.message}`,
                 );
               } else {
                 console.log(`🎉 User ${user.id} unlocked: community-explorer`);
@@ -328,7 +374,7 @@ export function registerCommunityAddDeckRoutes(app: Hono) {
         }
       } catch (achievementTrackingError) {
         console.log(
-          `❌ Achievement tracking error: ${achievementTrackingError}`
+          `❌ Achievement tracking error: ${achievementTrackingError}`,
         );
       }
 
@@ -341,7 +387,7 @@ export function registerCommunityAddDeckRoutes(app: Hono) {
         const ownerId = communityDeck.owner_id;
 
         console.log(
-          `📊 Deck ${communityDeckId} now has ${newDownloadCount} download(s)`
+          `📊 Deck ${communityDeckId} now has ${newDownloadCount} download(s)`,
         );
 
         // Get owner's current achievements
@@ -354,7 +400,7 @@ export function registerCommunityAddDeckRoutes(app: Hono) {
 
         if (achievementError && achievementError.code !== "PGRST116") {
           console.log(
-            `⚠️ Error fetching owner achievements: ${achievementError.message}`
+            `⚠️ Error fetching owner achievements: ${achievementError.message}`,
           );
         } else {
           const currentUnlocked =
@@ -380,11 +426,11 @@ export function registerCommunityAddDeckRoutes(app: Hono) {
           if (ownerDecks && ownerDecks.length > 0) {
             const totalDownloads = ownerDecks.reduce(
               (sum, deck) => sum + (deck.download_count ?? 0),
-              0
+              0,
             );
 
             console.log(
-              `📊 Owner ${ownerId} has ${totalDownloads} total download(s) across ${ownerDecks.length} deck(s)`
+              `📊 Owner ${ownerId} has ${totalDownloads} total download(s) across ${ownerDecks.length} deck(s)`,
             );
 
             if (
@@ -409,30 +455,30 @@ export function registerCommunityAddDeckRoutes(app: Hono) {
                   ],
                   updated_at: new Date().toISOString(),
                 },
-                { onConflict: "user_id" }
+                { onConflict: "user_id" },
               );
 
             if (upsertError) {
               console.log(
-                `❌ Error upserting achievements: ${upsertError.message}`
+                `❌ Error upserting achievements: ${upsertError.message}`,
               );
             } else {
               console.log(
                 `🎉 Owner ${ownerId} unlocked achievements: ${newlyUnlocked.join(
-                  ", "
-                )}`
+                  ", ",
+                )}`,
               );
             }
           }
         }
       } catch (achievementTrackingError) {
         console.log(
-          `❌ Achievement tracking error: ${achievementTrackingError}`
+          `❌ Achievement tracking error: ${achievementTrackingError}`,
         );
       }
 
       console.log(`✅ Created new imported deck ${newDeckId}`);
-      return c.json({ created: true, deckId: newDeckId });
+      return await respondWithDeck(c, user.id, newDeckId, { created: true });
     } catch (error) {
       console.error("❌ Add deck from community error:", error);
       return c.json({ error: "Failed to add deck from community" }, 500);

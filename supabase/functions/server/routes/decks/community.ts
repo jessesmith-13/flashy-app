@@ -45,7 +45,7 @@ export function registerCommunityDeckRoutes(app: Hono) {
       if (deck.creator_id === user.id) {
         return c.json(
           { error: "You cannot update your own deck from community" },
-          400
+          400,
         );
       }
 
@@ -62,7 +62,7 @@ export function registerCommunityDeckRoutes(app: Hono) {
       if (communityError || !communityDeck) {
         return c.json(
           { error: "Community deck no longer exists or is unpublished" },
-          404
+          404,
         );
       }
 
@@ -70,7 +70,7 @@ export function registerCommunityDeckRoutes(app: Hono) {
       // 🔧 TIMESTAMP-BASED FRESHNESS CHECK (replaces version check)
       // ------------------------------------------------------------
       const communityUpdatedAt = new Date(
-        communityDeck.source_content_updated_at || communityDeck.updated_at
+        communityDeck.source_content_updated_at || communityDeck.updated_at,
       ).getTime();
       const lastSyncedAt = deck.last_synced_at
         ? new Date(deck.last_synced_at).getTime()
@@ -78,13 +78,13 @@ export function registerCommunityDeckRoutes(app: Hono) {
 
       console.log(
         `📊 Community deck last updated: ${new Date(
-          communityUpdatedAt
-        ).toISOString()}`
+          communityUpdatedAt,
+        ).toISOString()}`,
       );
       console.log(
         `📊 Personal deck last synced: ${
           deck.last_synced_at ? new Date(lastSyncedAt).toISOString() : "never"
-        }`
+        }`,
       );
 
       if (lastSyncedAt >= communityUpdatedAt) {
@@ -139,6 +139,13 @@ export function registerCommunityDeckRoutes(app: Hono) {
         return c.json({ error: "Failed to insert updated cards" }, 500);
       }
 
+      const { count: actualCount } = await supabase
+        .from("cards")
+        .select("*", { count: "exact", head: true })
+        .eq("deck_id", deck.id);
+
+      const deckCardCount = actualCount ?? 0;
+
       // ------------------------------------------------------------
       // 🔧 Update deck metadata + last_synced_at timestamp
       // ------------------------------------------------------------
@@ -151,7 +158,7 @@ export function registerCommunityDeckRoutes(app: Hono) {
           category: communityDeck.category,
           subtopic: communityDeck.subtopic,
           difficulty: communityDeck.difficulty,
-          card_count: communityCards.length,
+          card_count: deckCardCount,
           content_updated_at: communityDeck.source_content_updated_at,
           updated_at: now,
           last_synced_at:
@@ -229,7 +236,7 @@ export function registerCommunityDeckRoutes(app: Hono) {
             error: "This deck is banned from publishing",
             reason: deck.publish_banned_reason || null,
           },
-          403
+          403,
         );
       }
 
@@ -237,7 +244,7 @@ export function registerCommunityDeckRoutes(app: Hono) {
         console.log(`❌ Cannot publish a community deck`);
         return c.json(
           { error: "Cannot publish a deck that was imported from community" },
-          403
+          403,
         );
       }
 
@@ -270,7 +277,7 @@ export function registerCommunityDeckRoutes(app: Hono) {
         console.log(`❌ No cards found for deck ${deckId}`);
         return c.json(
           { error: "Deck must have at least one card to publish" },
-          400
+          400,
         );
       }
 
@@ -296,37 +303,37 @@ export function registerCommunityDeckRoutes(app: Hono) {
       // ============================================================
       if (existingCommunityDeck?.is_published) {
         console.log(
-          `🔄 Updating already-published community deck ${existingCommunityDeck.id}`
+          `🔄 Updating already-published community deck ${existingCommunityDeck.id}`,
         );
 
         // 🔧 Check if there are actual changes to publish
         const sourceUpdatedAt = new Date(deck.updated_at).getTime();
         const communityUpdatedAt = new Date(
           existingCommunityDeck.source_content_updated_at ||
-            existingCommunityDeck.updated_at
+            existingCommunityDeck.updated_at,
         ).getTime();
 
         console.log(
           `📊 Source deck last updated: ${new Date(
-            sourceUpdatedAt
-          ).toISOString()}`
+            sourceUpdatedAt,
+          ).toISOString()}`,
         );
         console.log(
           `📊 Community deck last synced: ${new Date(
-            communityUpdatedAt
-          ).toISOString()}`
+            communityUpdatedAt,
+          ).toISOString()}`,
         );
 
         if (sourceUpdatedAt <= communityUpdatedAt) {
           console.log(
-            `⚠️ No changes detected - source deck hasn't been updated since last publish`
+            `⚠️ No changes detected - source deck hasn't been updated since last publish`,
           );
           return c.json(
             {
               error:
                 "No changes detected. Make edits to the deck to publish an update.",
             },
-            400
+            400,
           );
         }
 
@@ -354,7 +361,7 @@ export function registerCommunityDeckRoutes(app: Hono) {
 
         if (updateError) {
           console.log(
-            `❌ Error updating community deck: ${updateError.message}`
+            `❌ Error updating community deck: ${updateError.message}`,
           );
           return c.json({ error: "Failed to update community deck" }, 500);
         }
@@ -371,7 +378,7 @@ export function registerCommunityDeckRoutes(app: Hono) {
         }
 
         console.log(
-          `🗑️ Deleted old cards, inserting ${cards.length} new cards`
+          `🗑️ Deleted old cards, inserting ${cards.length} new cards`,
         );
 
         const communityCards = cards.map((card) => ({
@@ -398,7 +405,7 @@ export function registerCommunityDeckRoutes(app: Hono) {
           console.log(`❌ Error inserting cards: ${insertCardsError.message}`);
           return c.json(
             { error: `Failed to insert cards: ${insertCardsError.message}` },
-            500
+            500,
           );
         }
 
@@ -413,7 +420,7 @@ export function registerCommunityDeckRoutes(app: Hono) {
 
         if (needsMetadataUpdate) {
           console.log(
-            `📝 Updating source deck metadata (category/subtopic/published status changed)`
+            `📝 Updating source deck metadata (category/subtopic/published status changed)`,
           );
           await supabase
             .from("decks")
@@ -425,7 +432,7 @@ export function registerCommunityDeckRoutes(app: Hono) {
             .eq("id", deckId);
         } else {
           console.log(
-            `⏭️ Skipping source deck metadata update - no changes needed`
+            `⏭️ Skipping source deck metadata update - no changes needed`,
           );
         }
 
@@ -447,7 +454,7 @@ export function registerCommunityDeckRoutes(app: Hono) {
       // ============================================================
       if (existingCommunityDeck && !existingCommunityDeck.is_published) {
         console.log(
-          `🔄 Re-publishing existing community deck ${existingCommunityDeck.id}`
+          `🔄 Re-publishing existing community deck ${existingCommunityDeck.id}`,
         );
 
         // Update metadata + republish
@@ -473,7 +480,7 @@ export function registerCommunityDeckRoutes(app: Hono) {
 
         if (updateError) {
           console.log(
-            `❌ Error updating community deck: ${updateError.message}`
+            `❌ Error updating community deck: ${updateError.message}`,
           );
           return c.json({ error: "Failed to update community deck" }, 500);
         }
@@ -490,7 +497,7 @@ export function registerCommunityDeckRoutes(app: Hono) {
         }
 
         console.log(
-          `🗑️ Deleted old cards, inserting ${cards.length} new cards`
+          `🗑️ Deleted old cards, inserting ${cards.length} new cards`,
         );
 
         const communityCards = cards.map((card) => ({
@@ -517,7 +524,7 @@ export function registerCommunityDeckRoutes(app: Hono) {
           console.log(`❌ Error inserting cards: ${insertCardsError.message}`);
           return c.json(
             { error: `Failed to insert cards: ${insertCardsError.message}` },
-            500
+            500,
           );
         }
 
@@ -531,7 +538,7 @@ export function registerCommunityDeckRoutes(app: Hono) {
 
         if (needsMetadataUpdate) {
           console.log(
-            `📝 Updating source deck metadata (category/subtopic/published status changed)`
+            `📝 Updating source deck metadata (category/subtopic/published status changed)`,
           );
           await supabase
             .from("decks")
@@ -543,7 +550,7 @@ export function registerCommunityDeckRoutes(app: Hono) {
             .eq("id", deckId);
         } else {
           console.log(
-            `⏭️ Skipping source deck metadata update - no changes needed`
+            `⏭️ Skipping source deck metadata update - no changes needed`,
           );
         }
 
@@ -564,13 +571,13 @@ export function registerCommunityDeckRoutes(app: Hono) {
 
           if (countError) {
             console.log(
-              `⚠️ Error counting published decks: ${countError.message}`
+              `⚠️ Error counting published decks: ${countError.message}`,
             );
           } else {
             console.log(
               `📊 User ${user.id} now has ${
                 publishedCount || 0
-              } published deck(s)`
+              } published deck(s)`,
             );
 
             // Get current achievements
@@ -583,7 +590,7 @@ export function registerCommunityDeckRoutes(app: Hono) {
 
             if (achievementError && achievementError.code !== "PGRST116") {
               console.log(
-                `⚠️ Error fetching achievements: ${achievementError.message}`
+                `⚠️ Error fetching achievements: ${achievementError.message}`,
               );
             } else {
               const currentUnlocked =
@@ -617,18 +624,18 @@ export function registerCommunityDeckRoutes(app: Hono) {
                       ],
                       updated_at: new Date().toISOString(),
                     },
-                    { onConflict: "user_id" }
+                    { onConflict: "user_id" },
                   );
 
                 if (upsertError) {
                   console.log(
-                    `❌ Error upserting achievements: ${upsertError.message}`
+                    `❌ Error upserting achievements: ${upsertError.message}`,
                   );
                 } else {
                   console.log(
                     `🎉 User ${
                       user.id
-                    } unlocked achievements: ${newlyUnlocked.join(", ")}`
+                    } unlocked achievements: ${newlyUnlocked.join(", ")}`,
                   );
                   achievementsUnlocked = newlyUnlocked;
                 }
@@ -637,7 +644,7 @@ export function registerCommunityDeckRoutes(app: Hono) {
           }
         } catch (achievementTrackingError) {
           console.log(
-            `❌ Achievement tracking error: ${achievementTrackingError}`
+            `❌ Achievement tracking error: ${achievementTrackingError}`,
           );
         }
 
@@ -683,7 +690,7 @@ export function registerCommunityDeckRoutes(app: Hono) {
 
       if (insertDeckError) {
         console.log(
-          `❌ Error inserting community deck: ${insertDeckError.message}`
+          `❌ Error inserting community deck: ${insertDeckError.message}`,
         );
         return c.json({ error: "Failed to publish deck" }, 500);
       }
@@ -721,7 +728,7 @@ export function registerCommunityDeckRoutes(app: Hono) {
 
       console.log(
         `📦 First card sample:`,
-        JSON.stringify(communityCards[0], null, 2)
+        JSON.stringify(communityCards[0], null, 2),
       );
 
       const { error: insertCardsError } = await supabase
@@ -732,7 +739,7 @@ export function registerCommunityDeckRoutes(app: Hono) {
         console.log(`❌ Error inserting cards: ${insertCardsError.message}`);
         console.log(
           `❌ Error details:`,
-          JSON.stringify(insertCardsError, null, 2)
+          JSON.stringify(insertCardsError, null, 2),
         );
 
         // Clean up the community deck since cards failed
@@ -743,7 +750,7 @@ export function registerCommunityDeckRoutes(app: Hono) {
 
         return c.json(
           { error: `Failed to insert cards: ${insertCardsError.message}` },
-          500
+          500,
         );
       }
 
@@ -761,12 +768,12 @@ export function registerCommunityDeckRoutes(app: Hono) {
 
       if (markPublishedError) {
         console.log(
-          `⚠️ Warning: Failed to mark source deck as published: ${markPublishedError.message}`
+          `⚠️ Warning: Failed to mark source deck as published: ${markPublishedError.message}`,
         );
       }
 
       console.log(
-        `✅ Successfully published deck ${deckId} as community deck ${communityDeck.id}`
+        `✅ Successfully published deck ${deckId} as community deck ${communityDeck.id}`,
       );
 
       // ============================================================
@@ -784,13 +791,13 @@ export function registerCommunityDeckRoutes(app: Hono) {
 
         if (countError) {
           console.log(
-            `⚠️ Error counting published decks: ${countError.message}`
+            `⚠️ Error counting published decks: ${countError.message}`,
           );
         } else {
           console.log(
             `📊 User ${user.id} now has ${
               publishedCount || 0
-            } published deck(s)`
+            } published deck(s)`,
           );
 
           // Get current achievements
@@ -803,7 +810,7 @@ export function registerCommunityDeckRoutes(app: Hono) {
 
           if (achievementError && achievementError.code !== "PGRST116") {
             console.log(
-              `⚠️ Error fetching achievements: ${achievementError.message}`
+              `⚠️ Error fetching achievements: ${achievementError.message}`,
             );
           } else {
             const currentUnlocked =
@@ -837,18 +844,18 @@ export function registerCommunityDeckRoutes(app: Hono) {
                     ],
                     updated_at: new Date().toISOString(),
                   },
-                  { onConflict: "user_id" }
+                  { onConflict: "user_id" },
                 );
 
               if (upsertError) {
                 console.log(
-                  `❌ Error upserting achievements: ${upsertError.message}`
+                  `❌ Error upserting achievements: ${upsertError.message}`,
                 );
               } else {
                 console.log(
                   `🎉 User ${
                     user.id
-                  } unlocked achievements: ${newlyUnlocked.join(", ")}`
+                  } unlocked achievements: ${newlyUnlocked.join(", ")}`,
                 );
                 achievementsUnlocked = newlyUnlocked;
               }
@@ -857,7 +864,7 @@ export function registerCommunityDeckRoutes(app: Hono) {
         }
       } catch (achievementTrackingError) {
         console.log(
-          `❌ Achievement tracking error: ${achievementTrackingError}`
+          `❌ Achievement tracking error: ${achievementTrackingError}`,
         );
       }
 
@@ -917,7 +924,7 @@ export function registerCommunityDeckRoutes(app: Hono) {
             error:
               "Only the deck author or a superuser can unpublish this deck",
           },
-          403
+          403,
         );
       }
 
@@ -930,7 +937,7 @@ export function registerCommunityDeckRoutes(app: Hono) {
       if (unpublishError) {
         console.error(
           "❌ Failed to unpublish community deck:",
-          unpublishError.message
+          unpublishError.message,
         );
         return c.json({ error: "Failed to unpublish community deck" }, 500);
       }
@@ -946,7 +953,7 @@ export function registerCommunityDeckRoutes(app: Hono) {
       if (deckUpdateError) {
         console.error(
           "❌ Failed to update deck publish state:",
-          deckUpdateError.message
+          deckUpdateError.message,
         );
         return c.json({ error: "Failed to update deck publish state" }, 500);
       }
